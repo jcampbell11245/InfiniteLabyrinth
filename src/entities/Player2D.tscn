@@ -1,4 +1,4 @@
-[gd_scene load_steps=64 format=2]
+[gd_scene load_steps=65 format=2]
 
 [ext_resource path="res://src/entities/Player2D.gd" type="Script" id=1]
 [ext_resource path="res://sprites/player/future_knight_right_walk.png" type="Texture" id=2]
@@ -118,35 +118,35 @@ region = Rect2( 40, 0, 40, 48 )
 atlas = ExtResource( 11 )
 region = Rect2( 0, 48, 40, 48 )
 
-[sub_resource type="AtlasTexture" id=31]
+[sub_resource type="AtlasTexture" id=51]
 atlas = ExtResource( 10 )
 region = Rect2( 0, 0, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=32]
+[sub_resource type="AtlasTexture" id=52]
 atlas = ExtResource( 10 )
 region = Rect2( 48, 0, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=33]
+[sub_resource type="AtlasTexture" id=53]
 atlas = ExtResource( 10 )
 region = Rect2( 0, 48, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=34]
+[sub_resource type="AtlasTexture" id=54]
 atlas = ExtResource( 10 )
 region = Rect2( 48, 48, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=35]
+[sub_resource type="AtlasTexture" id=55]
 atlas = ExtResource( 12 )
 region = Rect2( 0, 0, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=36]
+[sub_resource type="AtlasTexture" id=56]
 atlas = ExtResource( 12 )
 region = Rect2( 48, 0, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=37]
+[sub_resource type="AtlasTexture" id=57]
 atlas = ExtResource( 12 )
 region = Rect2( 0, 48, 48, 48 )
 
-[sub_resource type="AtlasTexture" id=38]
+[sub_resource type="AtlasTexture" id=58]
 atlas = ExtResource( 12 )
 region = Rect2( 48, 48, 48, 48 )
 
@@ -212,12 +212,12 @@ animations = [ {
 "speed": 5.0
 }, {
 "frames": [ SubResource( 43 ), SubResource( 44 ), SubResource( 45 ), SubResource( 46 ) ],
-"loop": true,
+"loop": false,
 "name": "slash_down",
-"speed": 10.0
+"speed": 15.0
 }, {
 "frames": [ SubResource( 22 ), SubResource( 23 ), SubResource( 24 ) ],
-"loop": true,
+"loop": false,
 "name": "shoot_left",
 "speed": 5.0
 }, {
@@ -227,29 +227,29 @@ animations = [ {
 "speed": 5.0
 }, {
 "frames": [ SubResource( 47 ), SubResource( 48 ), SubResource( 49 ), SubResource( 50 ) ],
-"loop": true,
+"loop": false,
 "name": "slash_up",
-"speed": 10.0
+"speed": 15.0
 }, {
 "frames": [ SubResource( 25 ), SubResource( 26 ), SubResource( 27 ) ],
-"loop": true,
+"loop": false,
 "name": "shoot_down",
 "speed": 5.0
 }, {
 "frames": [ SubResource( 28 ), SubResource( 29 ), SubResource( 30 ) ],
-"loop": true,
+"loop": false,
 "name": "shoot_up",
 "speed": 5.0
 }, {
-"frames": [ SubResource( 31 ), SubResource( 32 ), SubResource( 33 ), SubResource( 34 ) ],
-"loop": true,
+"frames": [ SubResource( 51 ), SubResource( 52 ), SubResource( 53 ), SubResource( 54 ) ],
+"loop": false,
 "name": "slash_left",
-"speed": 10.0
+"speed": 15.0
 }, {
-"frames": [ SubResource( 35 ), SubResource( 36 ), SubResource( 37 ), SubResource( 38 ) ],
-"loop": true,
+"frames": [ SubResource( 55 ), SubResource( 56 ), SubResource( 57 ), SubResource( 58 ) ],
+"loop": false,
 "name": "slash_right",
-"speed": 10.0
+"speed": 15.0
 }, {
 "frames": [ SubResource( 39 ), SubResource( 40 ), SubResource( 41 ), SubResource( 42 ) ],
 "loop": true,
@@ -267,7 +267,7 @@ animations = [ {
 "speed": 5.0
 }, {
 "frames": [ SubResource( 19 ), SubResource( 20 ), SubResource( 21 ) ],
-"loop": true,
+"loop": false,
 "name": "shoot_right",
 "speed": 5.0
 }, {
@@ -278,15 +278,28 @@ animations = [ {
 } ]
 
 [sub_resource type="RectangleShape2D" id=6]
-extents = Vector2( 20, 24 )
+extents = Vector2( 11.5, 24 )
+
+[sub_resource type="RectangleShape2D" id=59]
+extents = Vector2( 10, 20 )
 
 [node name="Player2D" type="KinematicBody2D"]
 script = ExtResource( 1 )
 
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 5 )
-animation = "idle_right"
+animation = "slash_right"
+frame = 3
 playing = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="Hurtbox" type="CollisionShape2D" parent="."]
 shape = SubResource( 6 )
+
+[node name="HitboxPivot" type="Position2D" parent="."]
+
+[node name="Hitbox" type="Area2D" parent="HitboxPivot"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitboxPivot/Hitbox"]
+position = Vector2( 18, 0 )
+shape = SubResource( 59 )
+disabled = true
