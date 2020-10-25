@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/placeholder.png-cd4bf9c314ab7a7391e17816e634626d.stex"
+path="res://.import/future_knight_right_stand.png-9228e6dbd37552df96ff4540fb0e9216.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/player/placeholder.png"
-dest_files=[ "res://.import/placeholder.png-cd4bf9c314ab7a7391e17816e634626d.stex" ]
+source_file="res://sprites/player/future_knight_right_stand.png"
+dest_files=[ "res://.import/future_knight_right_stand.png-9228e6dbd37552df96ff4540fb0e9216.stex" ]
 
 [params]
 
