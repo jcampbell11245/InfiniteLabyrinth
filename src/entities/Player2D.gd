@@ -41,12 +41,14 @@ func get_input():
 	if(Input.is_action_just_pressed("melee_attack")):
 		hitbox.disabled = false;
 		
+	print(shoot_cooldown.time_left)
 	#Ranged Attacking
-	if(Input.is_action_just_pressed("ranged_attack")):
+	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
 		var arrow = Arrow.instance()
 		get_parent().add_child(arrow)
 		arrow.position = position
 		arrow.direction = direction
+		shoot_cooldown.start(0.5)
 
 #Animates the player
 func animate():
@@ -88,7 +90,7 @@ func animate():
 		animator.animation = "slash_" + direction
 	
 	#Ranged Attacking
-	if(Input.is_action_just_pressed("ranged_attack") && animator.animation.substr(0, 5) != "shoot"):
+	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
 		animator.animation = "shoot_" + direction
 
 #Updates the collision boxes
