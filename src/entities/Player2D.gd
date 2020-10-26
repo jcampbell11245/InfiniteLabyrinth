@@ -16,6 +16,8 @@ func _physics_process(delta):
 	get_input()
 	animate()
 	collision()
+	#if ($Hurtbox.area_shape_exited()):
+		#damage()
 	velocity = move_and_slide(velocity)
 
 func get_input():
@@ -95,20 +97,4 @@ func collision():
 	if(animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = true;
 
-func damage():
-	if(direction == "right"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
-		hurtbox.position = Vector2(-4.5, 0)
-		$HitboxPivot.rotation_degrees = 0
-	elif(direction == "left"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
-		hurtbox.position = Vector2(4.5, 0)
-		$HitboxPivot.rotation_degrees = 180
-	elif(direction == "down"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
-		hurtbox.position = Vector2(0, 0)
-		$HitboxPivot.rotation_degrees = 90
-	elif(direction == "up"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
-		hurtbox.position = Vector2(0, 0)
-		$HitboxPivot.rotation_degrees = 270
+#func damage():
