@@ -1,8 +1,10 @@
 extends KinematicBody2D
 
 onready var animator = $AnimatedSprite #Player's animated sprite
-onready var hurtbox = $Hurtbox #Player's hurtbox
+onready var hurtbox = $Hurtbox/CollisionShape2D #Player's hurtbox
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
+
+var health = 10
 
 var speed = 200  #Speed in pixels/sec
 
@@ -92,3 +94,21 @@ func collision():
 	
 	if(animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = true;
+
+func damage():
+	if(direction == "right"):
+		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.position = Vector2(-4.5, 0)
+		$HitboxPivot.rotation_degrees = 0
+	elif(direction == "left"):
+		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.position = Vector2(4.5, 0)
+		$HitboxPivot.rotation_degrees = 180
+	elif(direction == "down"):
+		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.position = Vector2(0, 0)
+		$HitboxPivot.rotation_degrees = 90
+	elif(direction == "up"):
+		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.position = Vector2(0, 0)
+		$HitboxPivot.rotation_degrees = 270
