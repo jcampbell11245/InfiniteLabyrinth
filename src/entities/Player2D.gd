@@ -3,6 +3,7 @@ extends KinematicBody2D
 onready var animator = $AnimatedSprite #Player's animated sprite
 onready var hurtbox = $Hurtbox/CollisionShape2D #Player's hurtbox
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
+onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
 
 var health = 10
 
@@ -11,6 +12,8 @@ var speed = 200  #Speed in pixels/sec
 var direction = "right" #Direction the player is facing
 
 var velocity = Vector2.ZERO #Player's velocity vector
+
+const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _physics_process(delta):
 	get_input()
@@ -23,7 +26,7 @@ func _physics_process(delta):
 func get_input():
 	#Movement
 	velocity = Vector2.ZERO
-	if(animator.animation.substr(0, 5) != "slash"):
+	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot"):
 		if Input.is_action_pressed('right'):
 			velocity.x += 1
 		if Input.is_action_pressed('left'):
@@ -34,9 +37,16 @@ func get_input():
 			velocity.y -= 1
 		velocity = velocity.normalized() * speed
 	
-	#Attacking
+	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack")):
 		hitbox.disabled = false;
+		
+	#Ranged Attacking
+	if(Input.is_action_just_pressed("ranged_attack")):
+		var arrow = Arrow.instance()
+		get_parent().add_child(arrow)
+		arrow.position = position
+		arrow.direction = direction
 
 #Animates the player
 func animate():
@@ -55,9 +65,11 @@ func animate():
 		direction = "up"
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == 3:
 		animator.animation = "idle_" + direction
+	if animator.animation.substr(0, 5) == "shoot" && animator.frame == 2:
+		animator.animation = "idle_" + direction
 	
 	#Movement
-	if(animator.animation.substr(0, 5) != "slash"):
+	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot"):
 		if Input.is_action_pressed('right'):
 			animator.animation = "walk_right"
 			direction = "right"
@@ -71,9 +83,13 @@ func animate():
 			animator.animation = "walk_up"
 			direction = "up"
 	
-	#Attacking
+	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack")):
 		animator.animation = "slash_" + direction
+	
+	#Ranged Attacking
+	if(Input.is_action_just_pressed("ranged_attack") && animator.animation.substr(0, 5) != "shoot"):
+		animator.animation = "shoot_" + direction
 
 #Updates the collision boxes
 func collision():
