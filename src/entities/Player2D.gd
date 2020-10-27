@@ -17,8 +17,8 @@ var velocity = Vector2.ZERO #Player's velocity vector
 
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
-func _ready():
-	level_countdown.start(5)
+#func _ready():
+	#level_countdown.start(5)
 
 func _process(delta):
 	control_flash()
@@ -52,7 +52,6 @@ func get_input():
 	
 	#Ranged Attacking
 	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
-		#hurtbox.disabled = true;
 		var arrow = Arrow.instance()
 		get_parent().add_child(arrow)
 		arrow.position = position

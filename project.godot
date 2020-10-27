@@ -58,6 +58,11 @@ ranged_attack={
  ]
 }
 
+[layer_names]
+
+2d_physics/layer_1="everything else"
+2d_physics/layer_2="arrow"
+
 [rendering]
 
 quality/driver/driver_name="GLES2"
