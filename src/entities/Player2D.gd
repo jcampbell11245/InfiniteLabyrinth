@@ -52,6 +52,7 @@ func get_input():
 	
 	#Ranged Attacking
 	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
+		#hurtbox.disabled = true;
 		var arrow = Arrow.instance()
 		get_parent().add_child(arrow)
 		arrow.position = position
@@ -139,7 +140,7 @@ func control_flash():
 
 #for timer of level running out causing death
 func _on_LevelCountdown_timeout():
-	get_tree().reload_current_scene()
+	get_tree().quit()
 
 #hurtbox enetered = damage taken
 func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):

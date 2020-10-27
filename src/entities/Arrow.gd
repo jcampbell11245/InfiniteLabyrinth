@@ -35,5 +35,6 @@ func _physics_process(delta):
 	velocity = move_and_slide(velocity)
 
 #if the arrow hits anything it disappears
-func _on_Area2D_area_entered(area):
-	queue_free()
+func _on_Area2D_area_shape_entered(area_id, area, area_shape, self_shape):
+	if (area.get_rid().get_id() != get_parent().get_child(0).get_child(1).get_child(0).get_rid().get_id() + 3):
+		queue_free()
