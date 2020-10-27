@@ -4,7 +4,8 @@ onready var animator = $AnimatedSprite #Player's animated sprite
 onready var hurtbox = $Hurtbox/CollisionShape2D #Player's hurtbox
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
 onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
-onready var invincibility_cooldown = $ShootCooldown #Cooldown to when the player can get hit again
+onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
+onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
 
 var health = 10
 
@@ -17,7 +18,7 @@ var velocity = Vector2.ZERO #Player's velocity vector
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
-	damage()
+	level_countdown.start(5)
 
 func _process(delta):
 	control_flash()
@@ -28,6 +29,7 @@ func _physics_process(delta):
 	collision()
 	#if ($Hurtbox.area_shape_exited()):
 		#damage()
+#	death()
 	velocity = move_and_slide(velocity)
 
 func get_input():
@@ -121,10 +123,6 @@ func collision():
 	if(animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = true;
 
-func damage():
-	invincibility_cooldown.start(1)
-	
-
 #Controls flashing the character sprite during invincibility frames
 func control_flash():
 	#print(invincibility_cooldown.time_left)
@@ -138,3 +136,11 @@ func control_flash():
 			animator.modulate(10,10,10,10)
 		elif (invincibility_cooldown.time_left == 0.2):
 			animator.modulate(1,1,1,1)
+
+#for timer of level running out causing death
+func _on_LevelCountdown_timeout():
+	get_tree().reload_current_scene()
+
+#hurtbox enetered = damage taken
+func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
+	invincibility_cooldown.start(1)
