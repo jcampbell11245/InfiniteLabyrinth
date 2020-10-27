@@ -4,6 +4,7 @@ onready var animator = $AnimatedSprite #Player's animated sprite
 onready var hurtbox = $Hurtbox/CollisionShape2D #Player's hurtbox
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
 onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
+onready var invincibility_cooldown = $ShootCooldown #Cooldown to when the player can get hit again
 
 var health = 10
 
@@ -14,6 +15,12 @@ var direction = "right" #Direction the player is facing
 var velocity = Vector2.ZERO #Player's velocity vector
 
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
+
+func _ready():
+	damage()
+
+func _process(delta):
+	control_flash()
 
 func _physics_process(delta):
 	get_input()
@@ -40,8 +47,7 @@ func get_input():
 	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack")):
 		hitbox.disabled = false;
-		
-	print(shoot_cooldown.time_left)
+	
 	#Ranged Attacking
 	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
 		var arrow = Arrow.instance()
@@ -90,7 +96,7 @@ func animate():
 		animator.animation = "slash_" + direction
 	
 	#Ranged Attacking
-	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
+	if(Input.is_action_just_pressed("ranged_attack")):
 		animator.animation = "shoot_" + direction
 
 #Updates the collision boxes
@@ -115,4 +121,20 @@ func collision():
 	if(animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = true;
 
-#func damage():
+func damage():
+	invincibility_cooldown.start(1)
+	
+
+#Controls flashing the character sprite during invincibility frames
+func control_flash():
+	#print(invincibility_cooldown.time_left)
+	if(invincibility_cooldown.time_left != 0):
+		if (invincibility_cooldown.time_left == 0.8):
+			print("hey")
+			animator.modulate(10,10,10,10) 
+		elif (invincibility_cooldown.time_left == 0.6):
+			animator.modulate(1,1,1,1)
+		elif (invincibility_cooldown.time_left == 0.4):
+			animator.modulate(10,10,10,10)
+		elif (invincibility_cooldown.time_left == 0.2):
+			animator.modulate(1,1,1,1)
