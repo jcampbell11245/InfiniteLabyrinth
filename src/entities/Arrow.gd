@@ -12,7 +12,7 @@ func _ready():
 #func _process(delta):
 #	pass
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	#Sets arrow direction
 	if(direction == "right"):
 		$SpritePivot/Sprite.set_flip_h(true)
@@ -35,6 +35,6 @@ func _physics_process(delta):
 	velocity = move_and_slide(velocity)
 
 #if the arrow hits anything it disappears
-func _on_Area2D_body_shape_entered(body_id, body, body_shape, area_shape):
+func _on_Area2D_body_shape_entered(_body_id, body, _body_shape, _area_shape):
 	if (body.get_rid().get_id() != get_parent().get_child(0).get_rid().get_id()):
 		queue_free()

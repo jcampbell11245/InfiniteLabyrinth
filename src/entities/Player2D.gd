@@ -20,10 +20,10 @@ const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 #func _ready():
 	#level_countdown.start(5)
 
-func _process(delta):
+func _process(_delta):
 	control_flash()
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	get_input()
 	animate()
 	collision()
@@ -142,5 +142,5 @@ func _on_LevelCountdown_timeout():
 	get_tree().quit()
 
 #hurtbox enetered = damage taken
-func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
+func _on_Hurtbox_area_shape_entered(_area_id, _area, _area_shape, _self_shape):
 	invincibility_cooldown.start(1)
