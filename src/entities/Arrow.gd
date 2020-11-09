@@ -35,6 +35,8 @@ func _physics_process(_delta):
 	velocity = move_and_slide(velocity)
 
 #if the arrow hits anything it disappears
-#func _on_Area2D_body_shape_entered(_body_id, body, _body_shape, _area_shape):
-	#if (body.get_rid().get_id() != get_parent().get_child(0).get_rid().get_id()):
-		#queue_free()
+func _on_Area2D_body_shape_entered(body_id, body, _body_shape, _area_shape):
+	if (body.get_class() != "KinematicBody2D"):
+		queue_free()
+	elif (body.get_rid().get_id() != get_parent().get_child(2).get_rid().get_id()):
+		queue_free()

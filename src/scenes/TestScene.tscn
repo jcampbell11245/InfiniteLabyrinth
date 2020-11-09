@@ -4,7 +4,7 @@
 [ext_resource path="res://sprites/player/placeholder.png" type="Texture" id=2]
 [ext_resource path="res://sprites/tileset/cave.png" type="Texture" id=3]
 
-[sub_resource type="ConvexPolygonShape2D" id=3]
+[sub_resource type="ConvexPolygonShape2D" id=1]
 points = PoolVector2Array( 23.9805, 23.9162, 0, 24, 0, 0, 24, 0.0133438 )
 
 [sub_resource type="TileSet" id=2]
@@ -32,19 +32,19 @@ points = PoolVector2Array( 23.9805, 23.9162, 0, 24, 0, 0, 24, 0.0133438 )
 1/navigation_offset = Vector2( 0, 0 )
 1/shape_offset = Vector2( 0, 0 )
 1/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-1/shape = SubResource( 3 )
+1/shape = SubResource( 1 )
 1/shape_one_way = false
 1/shape_one_way_margin = 1.0
 1/shapes = [ {
 "autotile_coord": Vector2( 0, 0 ),
 "one_way": false,
 "one_way_margin": 1.0,
-"shape": SubResource( 3 ),
+"shape": SubResource( 1 ),
 "shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
 } ]
 1/z_index = 0
 
-[sub_resource type="RectangleShape2D" id=1]
+[sub_resource type="RectangleShape2D" id=3]
 extents = Vector2( 19.9834, 24 )
 
 [node name="TestScene" type="Node2D"]
@@ -64,7 +64,7 @@ texture = ExtResource( 2 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TestWall"]
 position = Vector2( 361, 272 )
-shape = SubResource( 1 )
+shape = SubResource( 3 )
 
 [node name="Player2D" parent="." instance=ExtResource( 1 )]
 position = Vector2( 510.661, 273.341 )
