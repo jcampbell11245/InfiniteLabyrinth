@@ -6,6 +6,7 @@ onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
 onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
 onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
 onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
+onready var hearts = $Camera2D/HudLayer/Hud/Hearts #Player's hearts
 
 var health = 10
 
@@ -57,6 +58,10 @@ func get_input():
 		arrow.position = position
 		arrow.direction = direction
 		shoot_cooldown.start(0.5)
+	
+	#Taking damage (testing only)
+	if(Input.is_action_just_pressed("damage")):
+		take_damage(0.5)
 
 #Animates the player
 func animate():
@@ -136,6 +141,10 @@ func control_flash():
 			animator.modulate(10,10,10,10)
 		elif (invincibility_cooldown.time_left == 0.2):
 			animator.modulate(1,1,1,1)
+
+#Method called when the player takes damage
+func take_damage(damage):
+	hearts.update_health(-damage)
 
 #for timer of level running out causing death
 func _on_LevelCountdown_timeout():
