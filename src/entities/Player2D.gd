@@ -21,9 +21,6 @@ const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 #func _ready():
 	#level_countdown.start(5)
 
-func _process(_delta):
-	control_flash()
-
 func _physics_process(_delta):
 	get_input()
 	animate()
@@ -132,24 +129,37 @@ func collision():
 func control_flash():
 	#print(invincibility_cooldown.time_left)
 	if(invincibility_cooldown.time_left != 0):
-		if (invincibility_cooldown.time_left == 0.8):
+		if (invincibility_cooldown.time_left >= 0.79 && invincibility_cooldown.time_left <= 0.81):
 			print("hey")
-			animator.modulate(10,10,10,10) 
-		elif (invincibility_cooldown.time_left == 0.6):
-			animator.modulate(1,1,1,1)
-		elif (invincibility_cooldown.time_left == 0.4):
-			animator.modulate(10,10,10,10)
-		elif (invincibility_cooldown.time_left == 0.2):
-			animator.modulate(1,1,1,1)
+			animator.modulate = Color(1,1,1,1)
+		if (invincibility_cooldown.time_left >= 0.69 && invincibility_cooldown.time_left <= 0.61):
+			animator.modulate = Color(1,1,1,1)
+		if (invincibility_cooldown.time_left >= 0.49 && invincibility_cooldown.time_left <= 0.41):
+			animator.modulate = Color(10,10,10,10)
+		if (invincibility_cooldown.time_left >= 0.29 && invincibility_cooldown.time_left <= 0.21):
+			animator.modulate = Color(1,1,1,1)
 
 #Method called when the player takes damage
 func take_damage(damage):
-	hearts.update_health(-damage)
+	if(invincibility_cooldown.time_left == 0):
+		hearts.update_health(-damage)
+		if(hearts.hearts <= 0):
+			die()
+		invincibility_cooldown.start(1)
+		animator.modulate.a = 0.5
+	
+#Method called when the player dies
+func die():
+	get_tree().quit()
 
 #for timer of level running out causing death
 func _on_LevelCountdown_timeout():
-	get_tree().quit()
+	die()
 
 #hurtbox enetered = damage taken
 func _on_Hurtbox_area_shape_entered(_area_id, _area, _area_shape, _self_shape):
 	invincibility_cooldown.start(1)
+
+#Player returns back to normal opacity once invincibility cooldown ends
+func _on_InvincibilityCooldown_timeout():
+	animator.modulate.a = 1

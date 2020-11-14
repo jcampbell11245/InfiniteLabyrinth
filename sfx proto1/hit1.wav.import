@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/hit1.wav-33289ba3e91d06e1bff798b2728885b8.sample"
+
+[deps]
+
+source_file="res://sfx proto1/hit1.wav"
+dest_files=[ "res://.import/hit1.wav-33289ba3e91d06e1bff798b2728885b8.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

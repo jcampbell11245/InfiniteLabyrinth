@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/wilhelm.wav-76d6b1f1cf5e20f100a848015eeb78ad.sample"
+
+[deps]
+
+source_file="res://sfx proto1/wilhelm.wav"
+dest_files=[ "res://.import/wilhelm.wav-76d6b1f1cf5e20f100a848015eeb78ad.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0
