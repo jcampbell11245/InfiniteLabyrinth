@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://src/entities/Player2D.tscn" type="PackedScene" id=1]
 [ext_resource path="res://sprites/player/placeholder.png" type="Texture" id=2]
 [ext_resource path="res://sprites/tileset/cave.png" type="Texture" id=3]
+[ext_resource path="res://src/entities/Goblin.tscn" type="PackedScene" id=4]
 
 [sub_resource type="ConvexPolygonShape2D" id=1]
 points = PoolVector2Array( 23.9805, 23.9162, 0, 24, 0, 0, 24, 0.0133438 )
@@ -68,3 +69,6 @@ shape = SubResource( 3 )
 
 [node name="Player2D" parent="." instance=ExtResource( 1 )]
 position = Vector2( 510.661, 273.341 )
+
+[node name="Goblin" parent="." instance=ExtResource( 4 )]
+position = Vector2( 658.542, 271.836 )
