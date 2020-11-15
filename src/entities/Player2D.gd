@@ -155,8 +155,9 @@ func _on_LevelCountdown_timeout():
 	die()
 
 #hurtbox enetered = damage taken
-func _on_Hurtbox_area_shape_entered(_area_id, _area, _area_shape, _self_shape):
-	take_damage(0.5, _area.get_parent().get_parent().direction)
+func _on_Hurtbox_area_shape_entered(area_id, area, _area_shape, _self_shape):
+	if (area.get_name() == "Hitbox" && area_id != 1415):
+		take_damage(0.5, area.get_parent().get_parent().direction)
 
 #Player returns back to normal opacity once invincibility cooldown ends
 func _on_InvincibilityCooldown_timeout():
