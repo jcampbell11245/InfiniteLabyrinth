@@ -31,19 +31,19 @@ atlas = ExtResource( 5 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=5]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 7 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=6]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 7 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=7]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 7 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=8]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 7 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=9]
@@ -63,67 +63,67 @@ atlas = ExtResource( 12 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=13]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 13 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=14]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 13 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=15]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 13 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=16]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 13 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=17]
-atlas = ExtResource( 10 )
+atlas = ExtResource( 11 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=18]
-atlas = ExtResource( 10 )
+atlas = ExtResource( 11 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=19]
-atlas = ExtResource( 10 )
+atlas = ExtResource( 11 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=20]
-atlas = ExtResource( 10 )
+atlas = ExtResource( 11 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=21]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 10 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=22]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 10 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=23]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 10 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=24]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 10 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=25]
-atlas = ExtResource( 13 )
+atlas = ExtResource( 9 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=26]
-atlas = ExtResource( 13 )
+atlas = ExtResource( 9 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=27]
-atlas = ExtResource( 13 )
+atlas = ExtResource( 9 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=28]
-atlas = ExtResource( 13 )
+atlas = ExtResource( 9 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=29]
@@ -149,9 +149,9 @@ animations = [ {
 "name": "idle_right",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 2 ) ],
+"frames": [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ), SubResource( 4 ) ],
 "loop": true,
-"name": "idle_left",
+"name": "walk_down",
 "speed": 5.0
 }, {
 "frames": [ ExtResource( 3 ) ],
@@ -159,20 +159,10 @@ animations = [ {
 "name": "idle_up",
 "speed": 5.0
 }, {
-"frames": [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ), SubResource( 4 ) ],
-"loop": true,
-"name": "walk_down",
-"speed": 5.0
-}, {
-"frames": [ ExtResource( 4 ) ],
-"loop": true,
-"name": "idle_down",
-"speed": 5.0
-}, {
 "frames": [ SubResource( 5 ), SubResource( 6 ), SubResource( 7 ), SubResource( 8 ) ],
-"loop": true,
-"name": "walk_left",
-"speed": 5.0
+"loop": false,
+"name": "slash_up",
+"speed": 10.0
 }, {
 "frames": [ SubResource( 9 ), SubResource( 10 ), SubResource( 11 ), SubResource( 12 ) ],
 "loop": false,
@@ -180,23 +170,33 @@ animations = [ {
 "speed": 10.0
 }, {
 "frames": [ SubResource( 13 ), SubResource( 14 ), SubResource( 15 ), SubResource( 16 ) ],
-"loop": false,
-"name": "slash_up",
-"speed": 10.0
+"loop": true,
+"name": "walk_up",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 2 ) ],
+"loop": true,
+"name": "idle_left",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 4 ) ],
+"loop": true,
+"name": "idle_down",
+"speed": 5.0
 }, {
 "frames": [ SubResource( 17 ), SubResource( 18 ), SubResource( 19 ), SubResource( 20 ) ],
+"loop": true,
+"name": "walk_left",
+"speed": 5.0
+}, {
+"frames": [ SubResource( 21 ), SubResource( 22 ), SubResource( 23 ), SubResource( 24 ) ],
 "loop": false,
 "name": "slash_right",
 "speed": 10.0
 }, {
-"frames": [ SubResource( 21 ), SubResource( 22 ), SubResource( 23 ), SubResource( 24 ) ],
-"loop": true,
-"name": "walk_right",
-"speed": 5.0
-}, {
 "frames": [ SubResource( 25 ), SubResource( 26 ), SubResource( 27 ), SubResource( 28 ) ],
 "loop": true,
-"name": "walk_up",
+"name": "walk_right",
 "speed": 5.0
 }, {
 "frames": [ SubResource( 29 ), SubResource( 30 ), SubResource( 31 ), SubResource( 32 ) ],
@@ -251,5 +251,6 @@ shape = SubResource( 36 )
 
 [node name="InvincibilityCooldown" type="Timer" parent="."]
 one_shot = true
+[connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityTimer_timeout"]
