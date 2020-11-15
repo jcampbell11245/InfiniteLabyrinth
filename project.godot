@@ -65,8 +65,10 @@ damage={
 
 [layer_names]
 
-2d_physics/layer_1="everything else"
-2d_physics/layer_2="arrow"
+2d_physics/layer_1="general"
+2d_physics/layer_2="enemy"
+2d_physics/layer_3="player"
+2d_physics/layer_4="arrow"
 
 [rendering]
 

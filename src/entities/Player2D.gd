@@ -20,7 +20,6 @@ var knockback = Vector2.ZERO #Player's knockback vector
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
-	#level_countdown.start(5)
 	z_index = 1
 
 func _process(delta):
@@ -163,7 +162,7 @@ func _on_LevelCountdown_timeout():
 
 #hurtbox enetered = damage taken
 func _on_Hurtbox_area_shape_entered(area_id, area, _area_shape, _self_shape):
-	if (area.get_name() == "Hitbox" && area_id != 1415):
+	if (area.get_name() == "Hitbox"):
 		take_damage(0.5, area.get_parent().get_parent().direction)
 
 #Player returns back to normal opacity once invincibility cooldown ends
