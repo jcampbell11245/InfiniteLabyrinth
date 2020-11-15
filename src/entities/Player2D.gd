@@ -7,7 +7,7 @@ onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can sho
 onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
 onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
 onready var hearts = $Camera2D/HudLayer/Hud/Hearts #Player's hearts
-
+onready var level_countdown_text = $Camera2D/HudLayer/Hud/Timer/TimerText #The visual level countdown
 
 var health = 10
 var speed = 200  #Speed in pixels/sec
@@ -22,6 +22,9 @@ const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 func _ready():
 	#level_countdown.start(5)
 	z_index = 1
+
+func _process(delta):
+	timer()
 
 func _physics_process(delta):
 	get_input()
@@ -145,7 +148,11 @@ func take_damage(damage, direction):
 		hearts.update_health(-damage)
 		if(hearts.hearts <= 0):
 			die()
-	
+
+#Method called every frame to update the visual timer
+func timer():
+	level_countdown_text.set_bbcode(str(floor(level_countdown.get_time_left())))
+
 #Method called when the player dies
 func die():
 	get_tree().quit()
