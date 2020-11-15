@@ -1,4 +1,4 @@
-[gd_scene load_steps=50 format=2]
+[gd_scene load_steps=52 format=2]
 
 [ext_resource path="res://src/entities/WeakEnemy.gd" type="Script" id=1]
 [ext_resource path="res://sprites/goblin/goblin_left_stand.png" type="Texture" id=2]
@@ -13,6 +13,8 @@
 [ext_resource path="res://sprites/goblin/goblin_left_walk.png" type="Texture" id=11]
 [ext_resource path="res://sprites/goblin/goblin_left_slash.png" type="Texture" id=12]
 [ext_resource path="res://sprites/goblin/goblin_up_walk.png" type="Texture" id=13]
+[ext_resource path="res://sfx proto1/gobdeath1.wav" type="AudioStream" id=14]
+[ext_resource path="res://sfx proto1/gobatk1.wav" type="AudioStream" id=15]
 
 [sub_resource type="AtlasTexture" id=1]
 atlas = ExtResource( 5 )
@@ -251,6 +253,13 @@ shape = SubResource( 36 )
 
 [node name="InvincibilityCooldown" type="Timer" parent="."]
 one_shot = true
+
+[node name="Attack" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 15 )
+
+[node name="Die" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 14 )
 [connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityTimer_timeout"]
+[connection signal="finished" from="Die" to="." method="_on_Die_finished"]

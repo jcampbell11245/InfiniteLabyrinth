@@ -67,6 +67,7 @@ func animate():
 
 #Called when the enemy attacks
 func attack():
+	$Attack.play()
 	attack_cooldown.start(1)
 
 #Called when the enemy takes damage
@@ -93,7 +94,8 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
-	get_parent().remove_child(self)
+	$Die.play()
+	animator.visible = false
 
 func _on_InvincibilityTimer_timeout():
 	animator.modulate.a = 1
@@ -109,3 +111,7 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "slash" && animator.frame == 1):
 		hitbox.disabled = false
+
+
+func _on_Die_finished():
+	get_parent().remove_child(self)

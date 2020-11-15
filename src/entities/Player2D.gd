@@ -52,6 +52,7 @@ func get_input():
 	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack")):
 		hitbox.disabled = false;
+		$Slash.play()
 	
 	#Ranged Attacking
 	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
@@ -60,6 +61,7 @@ func get_input():
 		arrow.position = position
 		arrow.direction = direction
 		shoot_cooldown.start(0.5)
+		$Shoot.play()
 
 #Animates the player
 func animate():
@@ -143,6 +145,8 @@ func take_damage(damage, direction):
 		else:
 			dir = Vector2.DOWN
 		knockback = dir * 150
+		
+		$Hit.play()
 		
 		hearts.update_health(-damage)
 		if(hearts.hearts <= 0):
