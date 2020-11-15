@@ -4,10 +4,13 @@ var speed = 80
 var direction
 var health = 3
 
+var knockback = Vector2.ZERO
+
 onready var player = get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
 onready var attack_cooldown = $AttackCooldown
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
+onready var invincibility_cooldown = $InvincibilityCooldown
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -43,6 +46,10 @@ func _physics_process(delta):
 		move_and_collide(dir * speed * delta)
 	elif(attack_cooldown.time_left == 0):
 		attack()
+		
+	#Knockback
+	knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
+	knockback = move_and_slide(knockback)
 
 #Animates the enemy
 func animate():
@@ -63,5 +70,33 @@ func attack():
 	hitbox.disabled = false
 
 #Called when the enemy takes damage
-func damage():
-	health = health - 1
+func take_damage(direction):
+	if(invincibility_cooldown.time_left == 0):
+		invincibility_cooldown.start(1)
+		animator.modulate.a = 0.5
+		
+		var dir = Vector2.ZERO
+		if(direction == "right"):
+			dir = Vector2.RIGHT
+		elif(direction == "left"):
+			dir = Vector2.LEFT
+		elif(direction == "up"):
+			dir = Vector2.UP
+		else:
+			dir = Vector2.DOWN
+		knockback = dir * 200
+		
+		health = health - 1
+		if(health <= 0):
+			die()
+
+#Called when the enemy dies
+func die():
+	get_parent().remove_child(self)
+
+func _on_InvincibilityTimer_timeout():
+	animator.modulate.a = 1
+
+func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
+	if (area.get_name() == "Hitbox" && area_id != 1434):
+		take_damage(area.get_parent().get_parent().direction)
