@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/gobatk1.wav-18e338c4a5e0c7bcd2d7ca2763464bb6.sample"
+
+[deps]
+
+source_file="res://sfx proto1/gobatk1.wav"
+dest_files=[ "res://.import/gobatk1.wav-18e338c4a5e0c7bcd2d7ca2763464bb6.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

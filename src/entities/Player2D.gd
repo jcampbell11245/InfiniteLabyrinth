@@ -8,28 +8,31 @@ onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when th
 onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
 onready var hearts = $Camera2D/HudLayer/Hud/Hearts #Player's hearts
 
-var health = 10
 
+var health = 10
 var speed = 200  #Speed in pixels/sec
 
 var direction = "right" #Direction the player is facing
 
 var velocity = Vector2.ZERO #Player's velocity vector
+var knockback = Vector2.ZERO #Player's knockback vector
 
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
-#func _ready():
+func _ready():
 	#level_countdown.start(5)
+	z_index = 1
 
-func _physics_process(_delta):
+func _physics_process(delta):
 	get_input()
 	animate()
 	collision()
-	#if ($Hurtbox.area_shape_exited()):
-		#damage()
-#	death()
 	velocity = move_and_slide(velocity)
-
+	
+	#Knockback
+	knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
+	knockback = move_and_slide(knockback)
+	
 func get_input():
 	#Movement
 	velocity = Vector2.ZERO
@@ -55,10 +58,6 @@ func get_input():
 		arrow.position = position
 		arrow.direction = direction
 		shoot_cooldown.start(0.5)
-	
-	#Taking damage (testing only)
-	if(Input.is_action_just_pressed("damage")):
-		take_damage(0.5)
 
 #Animates the player
 func animate():
@@ -125,28 +124,27 @@ func collision():
 	if(animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = true;
 
-#Controls flashing the character sprite during invincibility frames
-func control_flash():
-	#print(invincibility_cooldown.time_left)
-	if(invincibility_cooldown.time_left != 0):
-		if (invincibility_cooldown.time_left >= 0.79 && invincibility_cooldown.time_left <= 0.81):
-			print("hey")
-			animator.modulate = Color(1,1,1,1)
-		if (invincibility_cooldown.time_left >= 0.69 && invincibility_cooldown.time_left <= 0.61):
-			animator.modulate = Color(1,1,1,1)
-		if (invincibility_cooldown.time_left >= 0.49 && invincibility_cooldown.time_left <= 0.41):
-			animator.modulate = Color(10,10,10,10)
-		if (invincibility_cooldown.time_left >= 0.29 && invincibility_cooldown.time_left <= 0.21):
-			animator.modulate = Color(1,1,1,1)
-
 #Method called when the player takes damage
-func take_damage(damage):
+func take_damage(damage, direction):
 	if(invincibility_cooldown.time_left == 0):
+		invincibility_cooldown.start(1)
+		animator.modulate.a = 0.5
+		
+		print(direction)
+		var dir = Vector2.ZERO
+		if(direction == "right"):
+			dir = Vector2.RIGHT
+		elif(direction == "left"):
+			dir = Vector2.LEFT
+		elif(direction == "up"):
+			dir = Vector2.UP
+		else:
+			dir = Vector2.DOWN
+		knockback = dir * 150
+		
 		hearts.update_health(-damage)
 		if(hearts.hearts <= 0):
 			die()
-		invincibility_cooldown.start(1)
-		animator.modulate.a = 0.5
 	
 #Method called when the player dies
 func die():
@@ -158,7 +156,7 @@ func _on_LevelCountdown_timeout():
 
 #hurtbox enetered = damage taken
 func _on_Hurtbox_area_shape_entered(_area_id, _area, _area_shape, _self_shape):
-	invincibility_cooldown.start(1)
+	take_damage(0.5, _area.get_parent().get_parent().direction)
 
 #Player returns back to normal opacity once invincibility cooldown ends
 func _on_InvincibilityCooldown_timeout():
