@@ -2,6 +2,8 @@ extends KinematicBody2D
 
 var speed = 80
 var direction
+var health = 3
+
 onready var player = get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
 onready var attack_cooldown = $AttackCooldown
@@ -59,3 +61,7 @@ func animate():
 func attack():
 	attack_cooldown.start(1)
 	hitbox.disabled = false
+
+#Called when the enemy takes damage
+func damage():
+	health = health - 1
