@@ -41,7 +41,7 @@ func _physics_process(delta):
 			z_index = 0
 			$HitboxPivot.rotation_degrees = 90
 	
-	if(abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25 && animator.animation.substr(0, 5) != "slash"):
+	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash"):
 		var dir = (player.global_position - global_position).normalized()
 		move_and_collide(dir * speed * delta)
 	elif(attack_cooldown.time_left == 0):
@@ -57,7 +57,7 @@ func animate():
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == 3:
 		animator.animation = "idle_" + direction
 	
-	if(abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25 && animator.animation.substr(0, 5) != "slash"):
+	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash"):
 		animator.animation = "walk_" + direction
 	elif(animator.animation.substr(0, 5) != "slash" && attack_cooldown.time_left == 0):
 		animator.animation = "slash_" + direction
