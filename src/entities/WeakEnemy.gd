@@ -10,6 +10,7 @@ onready var player = get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
 onready var attack_cooldown = $AttackCooldown
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
+onready var hurtbox = $Hurtbox/CollisionShape2D
 onready var invincibility_cooldown = $InvincibilityCooldown
 
 # Called when the node enters the scene tree for the first time.
@@ -72,6 +73,7 @@ func attack():
 #Called when the enemy takes damage
 func take_damage(direction):
 	if(invincibility_cooldown.time_left == 0):
+		hurtbox.disabled = true
 		invincibility_cooldown.start(1)
 		animator.modulate.a = 0.5
 		
@@ -96,7 +98,10 @@ func die():
 
 func _on_InvincibilityTimer_timeout():
 	animator.modulate.a = 1
+	hurtbox.disabled = false
 
 func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
-	if (area.get_name() == "Hitbox" && area_id != 1434):
+	if (area.get_name() == "Hitbox"):
 		take_damage(area.get_parent().get_parent().direction)
+	elif (area.get_name() == "ArrowHitbox"):
+		take_damage(area.get_parent().direction)
