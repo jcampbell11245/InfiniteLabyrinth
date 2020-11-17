@@ -33,18 +33,24 @@ func _physics_process(delta):
 	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
 		if(player.global_position.x - global_position.x < 0):
 			direction = "left"
-			$HitboxPivot.rotation_degrees = 180
 		else:
 			direction = "right"
-			$HitboxPivot.rotation_degrees = 0
 	else:
 		if(player.global_position.y - global_position.y < 0):
 			direction = "up"
 			z_index = 10
-			$HitboxPivot.rotation_degrees = 270
 		else:
 			direction = "down"
 			z_index = 0
+	
+	if(animator.animation.substr(0, 5) != "slash"):
+		if(direction == "left"):
+			$HitboxPivot.rotation_degrees = 180
+		elif(direction == "right"):
+			$HitboxPivot.rotation_degrees = 0
+		elif(direction == "up"):
+			$HitboxPivot.rotation_degrees = 270
+		elif(direction == "down"):
 			$HitboxPivot.rotation_degrees = 90
 	
 	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash"):
