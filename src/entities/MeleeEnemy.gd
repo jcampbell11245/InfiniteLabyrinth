@@ -2,8 +2,11 @@ extends KinematicBody2D
 
 export var speed : float
 export var attack_speed : float
+export var knockback_speed : float
 export var damage : float
 export var health : float
+export var slash_length : int
+export var attack_cooldown_length : float
 var direction
 
 var knockback = Vector2.ZERO
@@ -48,6 +51,7 @@ func _physics_process(delta):
 		var dir = (player.global_position - global_position).normalized()
 		move_and_collide(dir * speed * delta)
 	elif(attack_cooldown.time_left == 0):
+		animate()
 		attack()
 		
 	#Knockback
@@ -57,7 +61,7 @@ func _physics_process(delta):
 #Animates the enemy
 func animate():
 	#Reset to idle
-	if animator.animation.substr(0, 5) == "slash" && animator.frame == 3:
+	if animator.animation.substr(0, 5) == "slash" && animator.frame == slash_length:
 		animator.animation = "idle_" + direction
 	
 	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash"):
@@ -69,14 +73,15 @@ func animate():
 
 #Called when the enemy attacks
 func attack():
-	$Attack.play()
-	attack_cooldown.start(1)
+	if(animator.visible == true):
+		$Attack.play()
+		attack_cooldown.start(attack_cooldown_length)
 
 #Called when the enemy takes damage
 func take_damage(direction):
 	if(invincibility_cooldown.time_left == 0):
 		hurtbox.disabled = true
-		invincibility_cooldown.start(1)
+		invincibility_cooldown.start(0.3)
 		animator.modulate.a = 0.5
 		
 		var dir = Vector2.ZERO
@@ -88,7 +93,7 @@ func take_damage(direction):
 			dir = Vector2.UP
 		else:
 			dir = Vector2.DOWN
-		knockback = dir * 200
+		knockback = dir * knockback_speed
 		
 		health = health - 1
 		if(health <= 0):
@@ -96,10 +101,10 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
-	$Die.play()
-	animator.visible = false
+	get_parent().death_sound(get_name())
+	get_parent().remove_child(self)
 
-func _on_InvincibilityTimer_timeout():
+func _on_InvincibilityCooldown_timeout():
 	animator.modulate.a = 1
 	hurtbox.disabled = false
 
@@ -109,11 +114,6 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 	elif (area.get_name() == "ArrowHitbox"):
 		take_damage(area.get_parent().direction)
 
-
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "slash" && animator.frame == attack_speed):
 		hitbox.disabled = false
-
-
-func _on_Die_finished():
-	get_parent().remove_child(self)
