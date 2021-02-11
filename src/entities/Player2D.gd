@@ -50,7 +50,7 @@ func get_input():
 		velocity = velocity.normalized() * speed
 	
 	#Melee Attacking
-	if(Input.is_action_just_pressed("melee_attack")):
+	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = false;
 		$Slash.play()
 	
@@ -103,7 +103,7 @@ func animate():
 			direction = "up"
 	
 	#Melee Attacking
-	if(Input.is_action_just_pressed("melee_attack")):
+	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash"):
 		animator.animation = "slash_" + direction
 	
 	#Ranged Attacking
@@ -138,7 +138,6 @@ func take_damage(damage, direction):
 		invincibility_cooldown.start(1)
 		animator.modulate.a = 0.5
 		
-		print(direction)
 		var dir = Vector2.ZERO
 		if(direction == "right"):
 			dir = Vector2.RIGHT
