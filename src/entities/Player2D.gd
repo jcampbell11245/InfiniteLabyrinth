@@ -62,6 +62,10 @@ func get_input():
 		arrow.direction = direction
 		shoot_cooldown.start(0.5)
 		$Shoot.play()
+	
+	#Quitting the game
+	if(Input.is_action_just_released("quit")):
+		get_tree().quit()
 
 #Animates the player
 func animate():
@@ -168,6 +172,9 @@ func _on_LevelCountdown_timeout():
 func _on_Hurtbox_area_shape_entered(area_id, area, _area_shape, _self_shape):
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction)
+	elif(area.get_name() == "ProjectileHitbox"):
+		take_damage(area.get_parent().damage, area.get_parent().direction)
+
 
 #Player returns back to normal opacity once invincibility cooldown ends
 func _on_InvincibilityCooldown_timeout():

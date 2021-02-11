@@ -7,8 +7,8 @@ export var damage : float
 export var health : float
 export var slash_length : int
 export var attack_cooldown_length : float
-var direction
 
+var direction
 var knockback = Vector2.ZERO
 
 onready var player = get_parent().get_node("Player2D")
@@ -115,6 +115,7 @@ func _on_InvincibilityCooldown_timeout():
 	hurtbox.disabled = false
 
 func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
+	print(area.get_name())
 	if (area.get_name() == "Hitbox"):
 		take_damage(area.get_parent().get_parent().direction)
 	elif (area.get_name() == "ArrowHitbox"):
