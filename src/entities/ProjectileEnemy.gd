@@ -111,6 +111,15 @@ func at_edge():
 		return true
 	return false
 
+#Spawns a fireball at the enemy
+func shoot_fireball():
+	var fireball = Fireball.instance()
+	get_parent().add_child(fireball)
+	fireball.position = position
+	fireball.direction = animator.animation.split("_")[1]
+	fireball.damage = damage
+	attack_cooldown.start(1)
+
 func _on_InvincibilityCooldown_timeout():
 	animator.modulate.a = 1
 	hurtbox.disabled = false
@@ -124,9 +133,13 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "shoot" && animator.frame == attack_speed):
-		var fireball = Fireball.instance()
-		get_parent().add_child(fireball)
-		fireball.position = position
-		fireball.direction = animator.animation.split("_")[1]
-		fireball.damage = damage
-		attack_cooldown.start(1)
+		shoot_fireball()
+		$SecondShotCountdown.start(0.25)
+		$ThirdShotCountdown.start(0.5)
+
+func _on_SecondShotCountdown_timeout():
+	shoot_fireball()
+
+
+func _on_ThirdShotCountdown_timeout():
+	shoot_fireball()

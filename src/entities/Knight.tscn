@@ -1,4 +1,4 @@
-[gd_scene load_steps=66 format=2]
+[gd_scene load_steps=67 format=2]
 
 [ext_resource path="res://src/entities/MeleeEnemy.gd" type="Script" id=1]
 [ext_resource path="res://sprites/armored/armored_right_stand.png" type="Texture" id=2]
@@ -13,6 +13,7 @@
 [ext_resource path="res://sprites/armored/armored_right_chop.png" type="Texture" id=11]
 [ext_resource path="res://sprites/armored/armored_left_walk.png" type="Texture" id=12]
 [ext_resource path="res://sprites/armored/armored_left_chop.png" type="Texture" id=13]
+[ext_resource path="res://sfx proto1/clank1.wav" type="AudioStream" id=14]
 
 [sub_resource type="AtlasTexture" id=1]
 atlas = ExtResource( 13 )
@@ -288,7 +289,7 @@ knockback_speed = 100.0
 damage = 1.5
 health = 5.0
 slash_length = 7
-attack_cooldown_length = 2.0
+attack_cooldown_length = 1.0
 only_hit_during_attack = true
 
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
@@ -329,6 +330,9 @@ one_shot = true
 one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="."]
+
+[node name="Block" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 14 )
 [connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]

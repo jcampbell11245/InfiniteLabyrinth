@@ -265,6 +265,14 @@ one_shot = true
 
 [node name="MoveCooldown" type="Timer" parent="."]
 one_shot = true
+
+[node name="SecondShotCountdown" type="Timer" parent="."]
+one_shot = true
+
+[node name="ThirdShotCountdown" type="Timer" parent="."]
+one_shot = true
 [connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]
+[connection signal="timeout" from="SecondShotCountdown" to="." method="_on_SecondShotCountdown_timeout"]
+[connection signal="timeout" from="ThirdShotCountdown" to="." method="_on_ThirdShotCountdown_timeout"]

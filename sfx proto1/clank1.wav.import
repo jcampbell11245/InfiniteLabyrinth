@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/clank1.wav-559c465e87909d4aa4b35b02df75b366.sample"
+
+[deps]
+
+source_file="res://sfx proto1/clank1.wav"
+dest_files=[ "res://.import/clank1.wav-559c465e87909d4aa4b35b02df75b366.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

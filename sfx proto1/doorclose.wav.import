@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/doorclose.wav-b71271d6df7492349e0aa70cd9a8a06f.sample"
+
+[deps]
+
+source_file="res://sfx proto1/doorclose.wav"
+dest_files=[ "res://.import/doorclose.wav-b71271d6df7492349e0aa70cd9a8a06f.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

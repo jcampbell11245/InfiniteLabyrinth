@@ -8,6 +8,7 @@ export var health : float
 export var slash_length : int
 export var attack_cooldown_length : float
 export var only_hit_during_attack : bool
+export var starting_direction = "right"
 
 var direction
 var knockback = Vector2.ZERO
@@ -21,7 +22,8 @@ onready var invincibility_cooldown = $InvincibilityCooldown
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass # Replace with function body.
+	direction = starting_direction
+	animator.animation = "idle_" + direction
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -31,12 +33,12 @@ func _process(delta):
 	animate()
 
 func _physics_process(delta):
-	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
+	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && is_detected()):
 		if(player.global_position.x - global_position.x < 0):
 			direction = "left"
 		else:
 			direction = "right"
-	else:
+	elif is_detected():
 		if(player.global_position.y - global_position.y < 0):
 			direction = "up"
 			z_index = 10
@@ -47,17 +49,21 @@ func _physics_process(delta):
 	if(animator.animation.substr(0, 5) != "slash"):
 		if(direction == "left"):
 			$HitboxPivot.rotation_degrees = 180
+			$DetectionZonePivot.rotation_degrees = 180
 		elif(direction == "right"):
 			$HitboxPivot.rotation_degrees = 0
+			$DetectionZonePivot.rotation_degrees = 0
 		elif(direction == "up"):
 			$HitboxPivot.rotation_degrees = 270
+			$DetectionZonePivot.rotation_degrees = 270
 		elif(direction == "down"):
 			$HitboxPivot.rotation_degrees = 90
+			$DetectionZonePivot.rotation_degrees = 90
 	
-	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash"):
+	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && is_detected()):
 		var dir = (player.global_position - global_position).normalized()
 		move_and_collide(dir * speed * delta)
-	elif(attack_cooldown.time_left == 0):
+	elif(attack_cooldown.time_left == 0) && is_detected():
 		if(!only_hit_during_attack || $BlockStun.time_left == 0):
 			animate()
 			attack()
@@ -72,9 +78,9 @@ func animate():
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == slash_length:
 		animator.animation = "idle_" + direction
 	
-	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash"):
+	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && is_detected()):
 		animator.animation = "walk_" + direction
-	elif(animator.animation.substr(0, 5) != "slash" && attack_cooldown.time_left == 0):
+	elif(animator.animation.substr(0, 5) != "slash" && attack_cooldown.time_left == 0) && is_detected():
 		animator.animation = "slash_" + direction
 	elif(animator.animation.substr(0, 5) != "slash"):
 		animator.animation = "idle_" + direction
@@ -101,6 +107,7 @@ func take_damage(direction):
 		
 		if(only_hit_during_attack && animator.animation.substr(0, 5) != "slash"):
 			$BlockStun.start(1)
+			$Block.play()
 		else:
 			if animator.animation.substr(0, 5) == "slash":
 				animator.animation = "idle_" + direction
@@ -117,6 +124,10 @@ func take_damage(direction):
 func die():
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)
+
+#Checks if the player is within the detection zone
+func is_detected():
+	return $DetectionZonePivot/DetectionZone.get_overlapping_bodies().has(player)
 
 func _on_InvincibilityCooldown_timeout():
 	animator.modulate.a = 1

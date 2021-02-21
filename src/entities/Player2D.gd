@@ -10,7 +10,7 @@ onready var hearts = $Camera2D/HudLayer/Hud/Hearts #Player's hearts
 onready var level_countdown_text = $Camera2D/HudLayer/Hud/Timer/TimerText #The visual level countdown
 
 var health = 10
-var speed = 200  #Speed in pixels/sec
+var speed = 125  #Speed in pixels/sec
 
 var direction = "right" #Direction the player is facing
 
@@ -32,7 +32,7 @@ func _physics_process(delta):
 	velocity = move_and_slide(velocity)
 	
 	#Knockback
-	knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
+	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
 	knockback = move_and_slide(knockback)
 	
 func get_input():
