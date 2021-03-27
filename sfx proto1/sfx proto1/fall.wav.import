@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/fall.wav-5b491f05ba25e67fca206fc32ce99481.sample"
+
+[deps]
+
+source_file="res://sfx proto1/sfx proto1/fall.wav"
+dest_files=[ "res://.import/fall.wav-5b491f05ba25e67fca206fc32ce99481.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

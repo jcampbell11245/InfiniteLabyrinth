@@ -33,12 +33,12 @@ func _process(delta):
 	animate()
 
 func _physics_process(delta):
-	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && is_detected()):
+	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && (is_detected() || $InvincibilityCooldown.time_left != 0)):
 		if(player.global_position.x - global_position.x < 0):
 			direction = "left"
 		else:
 			direction = "right"
-	elif is_detected():
+	elif (is_detected() || $InvincibilityCooldown.time_left != 0):
 		if(player.global_position.y - global_position.y < 0):
 			direction = "up"
 			z_index = 10
@@ -127,7 +127,7 @@ func die():
 
 #Checks if the player is within the detection zone
 func is_detected():
-	return $DetectionZonePivot/DetectionZone.get_overlapping_bodies().has(player)
+	return get_parent().player_active == true && $DetectionZonePivot/DetectionZone.get_overlapping_bodies().has(player)
 
 func _on_InvincibilityCooldown_timeout():
 	animator.modulate.a = 1
