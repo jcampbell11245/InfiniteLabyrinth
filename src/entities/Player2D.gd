@@ -226,7 +226,6 @@ func _on_FeetBox_body_entered(body):
 		get_parent().player_active = false
 		respawn_cooldown.start(1.1)
 
-
 func _on_RespawnCooldown_timeout():
 	visible = true
 	get_parent().player_active = true

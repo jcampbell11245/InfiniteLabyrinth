@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=2]
+[gd_scene load_steps=29 format=2]
 
 [ext_resource path="res://sprites/tileset/into_the_voooiid.png" type="Texture" id=1]
 [ext_resource path="res://sprites/tileset/cave_wall_top_top.png" type="Texture" id=2]
@@ -18,6 +18,8 @@
 [ext_resource path="res://sprites/tileset/cave_floor.png" type="Texture" id=16]
 [ext_resource path="res://sprites/tileset/lever_right.png" type="Texture" id=17]
 [ext_resource path="res://sprites/tileset/cave_door_top.png" type="Texture" id=18]
+[ext_resource path="res://sprites/tileset/enemy_lock.png" type="Texture" id=19]
+[ext_resource path="res://sprites/tileset/switch_lock.png" type="Texture" id=20]
 
 [sub_resource type="ConvexPolygonShape2D" id=1]
 points = PoolVector2Array( 24, 24, 0, 24, 0, 0.0779495, 24, 0.0779495 )
@@ -26,15 +28,21 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0.0779495, 24, 0.0779495 )
 points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=3]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0.046936 )
-
-[sub_resource type="ConvexPolygonShape2D" id=4]
-points = PoolVector2Array( 24, 24, 0.0779419, 24, 0, 0.0779495, 23.9162, 0 )
-
-[sub_resource type="ConvexPolygonShape2D" id=5]
 points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
-[sub_resource type="TileSet" id=6]
+[sub_resource type="ConvexPolygonShape2D" id=4]
+points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+
+[sub_resource type="ConvexPolygonShape2D" id=5]
+points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0.046936 )
+
+[sub_resource type="ConvexPolygonShape2D" id=6]
+points = PoolVector2Array( 24, 24, 0.0779419, 24, 0, 0.0779495, 23.9162, 0 )
+
+[sub_resource type="ConvexPolygonShape2D" id=7]
+points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+
+[sub_resource type="TileSet" id=8]
 0/name = "cave_floor.png 0"
 0/texture = ExtResource( 16 )
 0/tex_offset = Vector2( 0, 0 )
@@ -115,14 +123,14 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 5/navigation_offset = Vector2( 0, 0 )
 5/shape_offset = Vector2( 0, 0 )
 5/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-5/shape = SubResource( 3 )
+5/shape = SubResource( 5 )
 5/shape_one_way = false
 5/shape_one_way_margin = 1.0
 5/shapes = [ {
 "autotile_coord": Vector2( 0, 0 ),
 "one_way": false,
 "one_way_margin": 1.0,
-"shape": SubResource( 3 ),
+"shape": SubResource( 5 ),
 "shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
 } ]
 5/z_index = 0
@@ -136,14 +144,14 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 6/navigation_offset = Vector2( 0, 0 )
 6/shape_offset = Vector2( 0, 0 )
 6/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-6/shape = SubResource( 4 )
+6/shape = SubResource( 6 )
 6/shape_one_way = false
 6/shape_one_way_margin = 1.0
 6/shapes = [ {
 "autotile_coord": Vector2( 0, 0 ),
 "one_way": false,
 "one_way_margin": 1.0,
-"shape": SubResource( 4 ),
+"shape": SubResource( 6 ),
 "shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
 } ]
 6/z_index = 0
@@ -157,14 +165,14 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 7/navigation_offset = Vector2( 0, 0 )
 7/shape_offset = Vector2( 0, 0 )
 7/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-7/shape = SubResource( 5 )
+7/shape = SubResource( 7 )
 7/shape_one_way = false
 7/shape_one_way_margin = 1.0
 7/shapes = [ {
 "autotile_coord": Vector2( 0, 0 ),
 "one_way": false,
 "one_way_margin": 1.0,
-"shape": SubResource( 5 ),
+"shape": SubResource( 7 ),
 "shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
 } ]
 7/z_index = 20
@@ -322,9 +330,51 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 17/shape_one_way_margin = 0.0
 17/shapes = [  ]
 17/z_index = 0
+18/name = "switch_lock.png 18"
+18/texture = ExtResource( 20 )
+18/tex_offset = Vector2( 0, 0 )
+18/modulate = Color( 1, 1, 1, 1 )
+18/region = Rect2( 0, 0, 24, 24 )
+18/tile_mode = 0
+18/occluder_offset = Vector2( 0, 0 )
+18/navigation_offset = Vector2( 0, 0 )
+18/shape_offset = Vector2( 0, 0 )
+18/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+18/shape = SubResource( 3 )
+18/shape_one_way = false
+18/shape_one_way_margin = 1.0
+18/shapes = [ {
+"autotile_coord": Vector2( 0, 0 ),
+"one_way": false,
+"one_way_margin": 1.0,
+"shape": SubResource( 3 ),
+"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
+} ]
+18/z_index = 0
+19/name = "enemy_lock.png 19"
+19/texture = ExtResource( 19 )
+19/tex_offset = Vector2( 0, 0 )
+19/modulate = Color( 1, 1, 1, 1 )
+19/region = Rect2( 0, 0, 24, 24 )
+19/tile_mode = 0
+19/occluder_offset = Vector2( 0, 0 )
+19/navigation_offset = Vector2( 0, 0 )
+19/shape_offset = Vector2( 0, 0 )
+19/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+19/shape = SubResource( 4 )
+19/shape_one_way = false
+19/shape_one_way_margin = 1.0
+19/shapes = [ {
+"autotile_coord": Vector2( 0, 0 ),
+"one_way": false,
+"one_way_margin": 1.0,
+"shape": SubResource( 4 ),
+"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
+} ]
+19/z_index = 0
 
 [node name="Tiles" type="TileMap"]
-tile_set = SubResource( 6 )
+tile_set = SubResource( 8 )
 cell_size = Vector2( 24, 24 )
 format = 1
 tile_data = PoolIntArray( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8, 0, 524297, 6, 0, 524298, 6, 0, 524299, 6, 0, 524300, 6, 0, 524301, 1, 0, 524302, 6, 0, 524303, 6, 0, 524304, 6, 0, 524305, 6, 0, 524306, 11, 0, 589832, 7, 0, 589835, 0, 0, 589836, 0, 0, 589837, 0, 0, 589838, 0, 0, 589839, 0, 0, 589842, 10, 0, 655368, 7, 0, 655371, 17, 0, 655372, 0, 0, 655373, 0, 0, 655374, 0, 0, 655378, 10, 0, 720904, 7, 0, 720905, 0, 0, 720909, 0, 0, 720913, 0, 0, 720914, 10, 0, 786440, 7, 0, 786441, 0, 0, 786442, 0, 0, 786445, 0, 0, 786448, 0, 0, 786449, 0, 0, 786450, 10, 0, 851976, 16, 0, 851977, 0, 0, 851978, 0, 0, 851979, 0, 0, 851980, 0, 0, 851981, 0, 0, 851982, 0, 0, 851983, 0, 0, 851984, 0, 0, 851985, 0, 0, 851986, 16, 0, 917512, 7, 0, 917513, 0, 0, 917514, 0, 0, 917517, 0, 0, 917520, 0, 0, 917521, 0, 0, 917522, 10, 0, 983048, 7, 0, 983049, 0, 0, 983053, 0, 0, 983057, 0, 0, 983058, 10, 0, 1048584, 7, 0, 1048588, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048594, 10, 0, 1114120, 7, 0, 1114123, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0, 1114130, 10, 0, 1179656, 5, 0, 1179657, 5, 0, 1179658, 5, 0, 1179659, 5, 0, 1179660, 5, 0, 1179661, 5, 0, 1179662, 5, 0, 1179663, 5, 0, 1179664, 5, 0, 1179665, 5, 0, 1179666, 5, 0 )

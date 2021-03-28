@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -8,6 +8,7 @@
 [ext_resource path="res://src/entities/Player2D.tscn" type="PackedScene" id=6]
 [ext_resource path="res://src/entities/Goblin.tscn" type="PackedScene" id=7]
 [ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
+[ext_resource path="res://src/tilesets/TopWalls.tscn" type="PackedScene" id=9]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -18,7 +19,8 @@ tile_data = PoolIntArray( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8,
 [node name="Pitfalls" parent="." instance=ExtResource( 2 )]
 
 [node name="Top" parent="." instance=ExtResource( 5 )]
-tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 589832, 4, 0, 589842, 5, 0, 655368, 4, 0, 655378, 5, 0, 720904, 4, 0, 720914, 5, 0, 786440, 4, 0, 786450, 5, 0, 851976, 2, 0, 851986, 3, 0, 917512, 4, 0, 917522, 5, 0, 983048, 4, 0, 983058, 5, 0, 1048584, 4, 0, 1048594, 5, 0, 1114120, 4, 0, 1114130, 5, 0 )
+
+[node name="TopWalls" parent="." instance=ExtResource( 9 )]
 
 [node name="Player2D" parent="." instance=ExtResource( 6 )]
 position = Vector2( 328, 406 )
@@ -41,5 +43,4 @@ position = Vector2( 371.01, 307.633 )
 
 [node name="Goblin4" parent="." instance=ExtResource( 7 )]
 position = Vector2( 323, 343.461 )
-scale = Vector2( 0.75, 0.75 )
 starting_direction = "down"

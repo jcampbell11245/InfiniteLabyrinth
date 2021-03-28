@@ -44,7 +44,7 @@ func _physics_process(delta):
 			z_index = 10
 		else:
 			direction = "down"
-			z_index = 0
+			z_index = 1
 	
 	if(animator.animation.substr(0, 5) != "slash"):
 		if(direction == "left"):
@@ -122,6 +122,7 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
+	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)
 

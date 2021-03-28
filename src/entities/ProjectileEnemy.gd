@@ -7,10 +7,6 @@ export var damage : float
 export var health : float
 export var shoot_length : int
 export var attack_cooldown_length : float
-export var left_boundary : float
-export var top_boundary : float
-export var right_boundary : float
-export var bottom_boundary : float
 
 var direction
 var knockback = Vector2.ZERO
@@ -48,8 +44,9 @@ func _physics_process(delta):
 				z_index = 0
 		
 		if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-			var dir = -(player.global_position - global_position).normalized()
-			move_and_collide(dir * speed * delta)
+			if(direction == "left" && position.x < 424 || direction == "right" && position.x > 232 || direction == "up" && position.y > 214 || direction == "down" && position.y < 406):
+				var dir = -(player.global_position - global_position).normalized()
+				move_and_collide(dir * speed * delta)
 		elif(attack_cooldown.time_left == 0):
 			animate()
 			attack()
@@ -101,16 +98,9 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
+	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)
-	
-#Returns whether or not the player is at the edge of the boundaries
-func at_edge():
-	if(position.x >= right_boundary || position.x <= left_boundary):
-		return true
-	if(position.y >= top_boundary || position.y <= bottom_boundary):
-		return true
-	return false
 
 #Spawns a fireball at the enemy
 func shoot_fireball():

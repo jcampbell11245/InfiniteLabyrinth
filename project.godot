@@ -19,10 +19,6 @@ config/name="TSAGame2021"
 run/main_scene="res://src/scenes/TestScene.tscn"
 config/icon="res://icon.png"
 
-[display]
-
-window/size/fullscreen=true
-
 [input]
 
 left={
@@ -84,6 +80,10 @@ quit={
 2d_physics/layer_3="player"
 2d_physics/layer_4="arrow"
 2d_physics/layer_5="enemy_projectile"
+2d_physics/layer_6="pitfall"
+2d_physics/layer_7="feet"
+2d_physics/layer_8="detection_zone"
+2d_physics/layer_9="top_tiles"
 
 [rendering]
 
