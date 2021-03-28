@@ -41,5 +41,4 @@ position = Vector2( 371.01, 307.633 )
 
 [node name="Goblin4" parent="." instance=ExtResource( 22 )]
 position = Vector2( 323, 343.461 )
-scale = Vector2( 0.75, 0.75 )
 starting_direction = "down"
