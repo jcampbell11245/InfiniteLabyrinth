@@ -1,6 +1,7 @@
 extends Node2D
 
 export var columns : int
+export var room_count : int
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

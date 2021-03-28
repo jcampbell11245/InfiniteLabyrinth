@@ -7,8 +7,8 @@ onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can sho
 onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
 onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
 onready var respawn_cooldown = $RespawnCooldown #The cooldown until the player respawns from falling in a pitfall
-onready var hearts = get_parent().get_child(get_parent().get_child_count() - 1).get_child(0).get_child(0).get_child(1) #Player's hearts
-onready var level_countdown_text = get_parent().get_child(get_parent().get_child_count() - 1).get_child(0).get_child(0).get_child(0).get_child(0) #The visual level countdown
+onready var hearts = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Hearts") #Player's hearts
+onready var level_countdown_text = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Timer/TimerText") #The visual level countdown
 
 var respawn_x = [232, 256, 280, 304, 328, 352, 376, 400, 424]
 var respawn_y = [214, 238, 262, 286, 310, 334, 358, 382, 406]
@@ -232,7 +232,7 @@ func _on_FeetBox_body_entered(body):
 
 func _on_RespawnCooldown_timeout():
 	visible = true
-	get_parent().get_child(0).player_active = true
+	get_parent().get_child(current_room).player_active = true
 	position = last_tile
 	take_damage(0.5,  "none", true)
 

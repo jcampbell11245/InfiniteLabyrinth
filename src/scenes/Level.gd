@@ -2,6 +2,8 @@ extends Node2D
 
 onready var goblin_death = $GoblinDeath
 onready var knight_death = $KnightDeath
+onready var player = get_parent().get_node("Player2D")
+onready var animator = $Void/AnimatedSprite
 
 export var completion_criteria = "none"
 export var enemy_count = 0
@@ -15,7 +17,16 @@ var locked = false
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if(!locked && get_parent().get_child(get_parent().get_child_count() - 2).current_room == room_id):
+	#Fade in/out
+	if(room_id == 1):
+		print(animator.animation)
+	if(player.current_room == room_id):
+		print("hey")
+		animator.animation = "fade_out"
+	elif(player.current_room != room_id && animator.animation != "fade_in" && animator.animation != "black"):
+		animator.animation = "fade_in"
+	
+	if(!locked && player.current_room == room_id):
 		locked = true
 		if(completion_criteria == "switches"):
 			$Tiles.set_cell(13, 8, 21)

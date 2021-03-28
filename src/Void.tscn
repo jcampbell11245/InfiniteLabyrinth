@@ -1,0 +1,35 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://sprites/tileset/void_1.png" type="Texture" id=1]
+[ext_resource path="res://sprites/tileset/void_0.png" type="Texture" id=2]
+[ext_resource path="res://sprites/tileset/void_4.png" type="Texture" id=3]
+[ext_resource path="res://sprites/tileset/void_3.png" type="Texture" id=4]
+[ext_resource path="res://sprites/tileset/void_5.png" type="Texture" id=5]
+[ext_resource path="res://sprites/tileset/void_2.png" type="Texture" id=6]
+
+[sub_resource type="SpriteFrames" id=1]
+animations = [ {
+"frames": [ ExtResource( 5 ) ],
+"loop": true,
+"name": "black",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 5 ), ExtResource( 3 ), ExtResource( 4 ), ExtResource( 6 ), ExtResource( 1 ), ExtResource( 2 ) ],
+"loop": false,
+"name": "fade_in",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 2 ), ExtResource( 1 ), ExtResource( 6 ), ExtResource( 4 ), ExtResource( 3 ), ExtResource( 5 ) ],
+"loop": false,
+"name": "fade_out",
+"speed": 5.0
+} ]
+
+[node name="Void" type="Node2D"]
+
+[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+position = Vector2( 324.412, 312.555 )
+scale = Vector2( 10.9939, 11.986 )
+z_index = 100
+frames = SubResource( 1 )
+animation = "fade_in"
