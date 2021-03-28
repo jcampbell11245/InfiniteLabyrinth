@@ -1,0 +1,85 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://fonts/8-BIT WONDER.TTF" type="DynamicFontData" id=1]
+[ext_resource path="res://src/hud/Pause.gd" type="Script" id=2]
+[ext_resource path="res://src/hud/Resume.gd" type="Script" id=3]
+[ext_resource path="res://src/hud/Quit.gd" type="Script" id=4]
+
+[sub_resource type="DynamicFont" id=1]
+font_data = ExtResource( 1 )
+
+[sub_resource type="DynamicFont" id=2]
+font_data = ExtResource( 1 )
+
+[sub_resource type="DynamicFont" id=3]
+font_data = ExtResource( 1 )
+
+[node name="PauseLayer" type="CanvasLayer"]
+
+[node name="Pause" type="Control" parent="."]
+pause_mode = 2
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 125.0
+margin_top = 75.0
+margin_right = -125.0
+margin_bottom = -75.0
+script = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ColorRect" type="ColorRect" parent="Pause"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.490196 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="PauseVBox" type="VBoxContainer" parent="Pause"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -80.0
+margin_top = -99.0
+margin_right = 80.0
+margin_bottom = 99.0
+custom_constants/separation = 90
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Pause/PauseVBox"]
+margin_right = 160.0
+margin_bottom = 16.0
+custom_fonts/font = SubResource( 1 )
+text = "pause"
+align = 1
+uppercase = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ButtonVBox" type="VBoxContainer" parent="Pause/PauseVBox"]
+margin_top = 106.0
+margin_right = 160.0
+margin_bottom = 180.0
+custom_constants/separation = 30
+
+[node name="Resume" type="Button" parent="Pause/PauseVBox/ButtonVBox"]
+margin_right = 160.0
+margin_bottom = 22.0
+custom_fonts/font = SubResource( 2 )
+text = "resume"
+script = ExtResource( 3 )
+
+[node name="Quit" type="Button" parent="Pause/PauseVBox/ButtonVBox"]
+margin_top = 52.0
+margin_right = 160.0
+margin_bottom = 74.0
+custom_fonts/font = SubResource( 3 )
+text = "quit"
+script = ExtResource( 4 )
