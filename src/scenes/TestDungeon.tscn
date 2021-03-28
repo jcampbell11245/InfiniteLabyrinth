@@ -1,0 +1,28 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://src/scenes/rooms/R2.tscn" type="PackedScene" id=1]
+[ext_resource path="res://src/scenes/rooms/R1.tscn" type="PackedScene" id=2]
+[ext_resource path="res://src/entities/Player2D.tscn" type="PackedScene" id=3]
+[ext_resource path="res://src/scenes/TestDungeon.gd" type="Script" id=4]
+[ext_resource path="res://src/Cam.tscn" type="PackedScene" id=5]
+[ext_resource path="res://src/scenes/rooms/R3.tscn" type="PackedScene" id=6]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource( 4 )
+columns = 2
+
+[node name="Node2D" parent="." instance=ExtResource( 2 )]
+
+[node name="Node2D2" parent="." instance=ExtResource( 1 )]
+position = Vector2( 260.349, 0 )
+room_id = 1
+
+[node name="Node2D3" parent="." instance=ExtResource( 6 )]
+position = Vector2( 521.027, 0 )
+
+[node name="Player2D" parent="." instance=ExtResource( 3 )]
+position = Vector2( 584.637, 411.776 )
+
+[node name="Camera2D" parent="." instance=ExtResource( 5 )]
+position = Vector2( 584.637, 323 )
+offset = Vector2( 1.373, 0 )

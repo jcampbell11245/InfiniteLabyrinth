@@ -11,7 +11,7 @@ export var attack_cooldown_length : float
 var direction
 var knockback = Vector2.ZERO
 
-onready var player = get_parent().get_node("Player2D")
+onready var player = get_parent().get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
 onready var attack_cooldown = $AttackCooldown
 onready var move_cooldown = $MoveCooldown
@@ -29,7 +29,7 @@ func _process(delta):
 	animate()
 
 func _physics_process(delta):
-	if(get_parent().player_active == true):
+	if(get_parent().player_active == true && player.current_room == get_parent().room_id):
 		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
 			if(player.global_position.x - global_position.x < 0):
 				direction = "left"
@@ -57,20 +57,21 @@ func _physics_process(delta):
 
 #Animates the enemy
 func animate():
-	#Reset to idle
-	if animator.animation.substr(0, 5) == "shoot" && animator.frame == shoot_length:
-		animator.animation = "idle_" + direction
-	
-	if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-		animator.animation = "walk_" + direction
-	elif(animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-		animator.animation = "shoot_" + direction
-	elif(animator.animation.substr(0, 5) != "shoot"):
-		animator.animation = "idle_" + direction
+	if(player.current_room == get_parent().room_id):
+		#Reset to idle
+		if animator.animation.substr(0, 5) == "shoot" && animator.frame == shoot_length:
+			animator.animation = "idle_" + direction
+		
+		if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+			animator.animation = "walk_" + direction
+		elif(animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+			animator.animation = "shoot_" + direction
+		elif(animator.animation.substr(0, 5) != "shoot"):
+			animator.animation = "idle_" + direction
 
 #Called when the enemy attacks
 func attack():
-	if(animator.visible == true):
+	if(animator.visible == true && player.current_room == get_parent().room_id):
 		$Attack.play()
 		attack_cooldown.start(attack_cooldown_length)
 
@@ -104,12 +105,13 @@ func die():
 
 #Spawns a fireball at the enemy
 func shoot_fireball():
-	var fireball = Fireball.instance()
-	get_parent().add_child(fireball)
-	fireball.position = position
-	fireball.direction = animator.animation.split("_")[1]
-	fireball.damage = damage
-	attack_cooldown.start(1)
+	if(player.current_room == get_parent().room_id):
+		var fireball = Fireball.instance()
+		get_parent().add_child(fireball)
+		fireball.position = position
+		fireball.direction = animator.animation.split("_")[1]
+		fireball.damage = damage
+		attack_cooldown.start(1)
 
 func _on_InvincibilityCooldown_timeout():
 	animator.modulate.a = 1

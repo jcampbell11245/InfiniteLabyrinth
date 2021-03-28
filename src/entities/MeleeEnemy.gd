@@ -13,7 +13,7 @@ export var starting_direction = "right"
 var direction
 var knockback = Vector2.ZERO
 
-onready var player = get_parent().get_node("Player2D")
+onready var player = get_parent().get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
 onready var attack_cooldown = $AttackCooldown
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
@@ -33,12 +33,12 @@ func _process(delta):
 	animate()
 
 func _physics_process(delta):
-	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && (is_detected() || $InvincibilityCooldown.time_left != 0)):
+	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && (is_detected() || $InvincibilityCooldown.time_left != 0 || only_hit_during_attack && $Block.playing) && player.current_room == get_parent().room_id):
 		if(player.global_position.x - global_position.x < 0):
 			direction = "left"
 		else:
 			direction = "right"
-	elif (is_detected() || $InvincibilityCooldown.time_left != 0):
+	elif (is_detected() || $InvincibilityCooldown.time_left != 0 || only_hit_during_attack && $Block.playing && player.current_room == get_parent().room_id):
 		if(player.global_position.y - global_position.y < 0):
 			direction = "up"
 			z_index = 10

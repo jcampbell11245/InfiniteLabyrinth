@@ -32,19 +32,19 @@ atlas = ExtResource( 12 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=5]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 5 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=6]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 5 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=7]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 5 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=8]
-atlas = ExtResource( 7 )
+atlas = ExtResource( 5 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=9]
@@ -80,19 +80,19 @@ atlas = ExtResource( 13 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=17]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 9 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=18]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 9 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=19]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 9 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=20]
-atlas = ExtResource( 11 )
+atlas = ExtResource( 9 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=21]
@@ -112,68 +112,53 @@ atlas = ExtResource( 10 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=25]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 11 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=26]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 11 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=27]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 11 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=28]
-atlas = ExtResource( 9 )
+atlas = ExtResource( 11 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=29]
-atlas = ExtResource( 5 )
+atlas = ExtResource( 7 )
 region = Rect2( 0, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=30]
-atlas = ExtResource( 5 )
+atlas = ExtResource( 7 )
 region = Rect2( 40, 0, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=31]
-atlas = ExtResource( 5 )
+atlas = ExtResource( 7 )
 region = Rect2( 0, 48, 40, 48 )
 
 [sub_resource type="AtlasTexture" id=32]
-atlas = ExtResource( 5 )
+atlas = ExtResource( 7 )
 region = Rect2( 40, 48, 40, 48 )
 
 [sub_resource type="SpriteFrames" id=33]
 animations = [ {
-"frames": [ ExtResource( 6 ) ],
-"loop": true,
-"name": "idle_right",
-"speed": 5.0
-}, {
 "frames": [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ), SubResource( 4 ) ],
 "loop": false,
 "name": "slash_left",
 "speed": 10.0
-}, {
-"frames": [ ExtResource( 3 ) ],
-"loop": true,
-"name": "idle_up",
-"speed": 5.0
 }, {
 "frames": [ ExtResource( 2 ) ],
 "loop": true,
 "name": "idle_left",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 4 ) ],
-"loop": true,
-"name": "idle_down",
-"speed": 5.0
-}, {
 "frames": [ SubResource( 5 ), SubResource( 6 ), SubResource( 7 ), SubResource( 8 ) ],
-"loop": false,
-"name": "slash_up",
-"speed": 10.0
+"loop": true,
+"name": "walk_down",
+"speed": 5.0
 }, {
 "frames": [ SubResource( 9 ), SubResource( 10 ), SubResource( 11 ), SubResource( 12 ) ],
 "loop": false,
@@ -185,9 +170,19 @@ animations = [ {
 "name": "walk_up",
 "speed": 5.0
 }, {
+"frames": [ ExtResource( 6 ) ],
+"loop": true,
+"name": "idle_right",
+"speed": 5.0
+}, {
 "frames": [ SubResource( 17 ), SubResource( 18 ), SubResource( 19 ), SubResource( 20 ) ],
 "loop": true,
-"name": "walk_left",
+"name": "walk_right",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 3 ) ],
+"loop": true,
+"name": "idle_up",
 "speed": 5.0
 }, {
 "frames": [ SubResource( 21 ), SubResource( 22 ), SubResource( 23 ), SubResource( 24 ) ],
@@ -197,12 +192,17 @@ animations = [ {
 }, {
 "frames": [ SubResource( 25 ), SubResource( 26 ), SubResource( 27 ), SubResource( 28 ) ],
 "loop": true,
-"name": "walk_right",
+"name": "walk_left",
 "speed": 5.0
 }, {
 "frames": [ SubResource( 29 ), SubResource( 30 ), SubResource( 31 ), SubResource( 32 ) ],
+"loop": false,
+"name": "slash_up",
+"speed": 10.0
+}, {
+"frames": [ ExtResource( 4 ) ],
 "loop": true,
-"name": "walk_down",
+"name": "idle_down",
 "speed": 5.0
 } ]
 

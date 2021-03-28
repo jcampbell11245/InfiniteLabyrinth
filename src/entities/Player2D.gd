@@ -6,15 +6,16 @@ onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
 onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
 onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
 onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
-onready var hearts = $Camera2D/HudLayer/Hud/Hearts #Player's hearts
-onready var level_countdown_text = $Camera2D/HudLayer/Hud/Timer/TimerText #The visual level countdown
 onready var respawn_cooldown = $RespawnCooldown #The cooldown until the player respawns from falling in a pitfall
+onready var hearts = get_parent().get_child(get_parent().get_child_count() - 1).get_child(0).get_child(0).get_child(1) #Player's hearts
+onready var level_countdown_text = get_parent().get_child(get_parent().get_child_count() - 1).get_child(0).get_child(0).get_child(0).get_child(0) #The visual level countdown
 
 var respawn_x = [232, 256, 280, 304, 328, 352, 376, 400, 424]
 var respawn_y = [214, 238, 262, 286, 310, 334, 358, 382, 406]
 
 var health = 10
 var speed = 125  #Speed in pixels/sec
+var current_room = 0
 
 var direction = "right" #Direction the player is facing
 
@@ -29,6 +30,7 @@ func _ready():
 	z_index = 1
 
 func _process(delta):
+	#print(current_room)
 	timer()
 
 func _physics_process(delta):
@@ -175,13 +177,15 @@ func die():
 	get_tree().quit()
 
 func set_last_tile():
-	var tiles = get_parent().get_child(0)
+	var tiles = get_parent().get_child(current_room).get_child(0)
+	var y_shift = (current_room / get_parent().columns) * 276
+	var x_shift = (current_room % get_parent().columns) * 252
 	
 	var locked_x
 	var locked_y
 	for x in range(0, 9):
-		if(respawn_x[x] > position.x):
-			if(x == 0 || position.x - respawn_x[x-1] > respawn_x[x] - position.x):
+		if(respawn_x[x] + x_shift > position.x):
+			if(x == 0 || position.x - (respawn_x[x-1] + x_shift) > respawn_x[x] + x_shift - position.x):
 				locked_x = x
 			else:
 				locked_x = x - 1
@@ -189,8 +193,8 @@ func set_last_tile():
 	if(locked_x == null):
 		locked_x = 8
 	for y in range(0, 9):
-		if(respawn_y[y] > position.y):
-			if(y == 0 || position.y - respawn_y[y-1] > respawn_y[y] - position.y):
+		if(respawn_y[y] + y_shift > position.y):
+			if(y == 0 || position.y - (respawn_y[y-1] + y_shift) > respawn_y[y] + y_shift - position.y):
 				locked_y = y
 			else:
 				locked_y = y - 1
@@ -199,7 +203,7 @@ func set_last_tile():
 		locked_y = 8
 	
 	if(tiles.get_used_cells().has(Vector2(locked_x + 9, locked_y + 9))):
-		last_tile = Vector2(respawn_x[locked_x], respawn_y[locked_y])
+		last_tile = Vector2(respawn_x[locked_x] + x_shift, respawn_y[locked_y] + y_shift)
 
 #for timer of level running out causing death
 func _on_LevelCountdown_timeout():
@@ -223,11 +227,15 @@ func _on_FeetBox_body_entered(body):
 	if(respawn_cooldown.time_left == 0):
 		$Fall.play()
 		visible = false
-		get_parent().player_active = false
+		get_parent().get_child(current_room).player_active = false
 		respawn_cooldown.start(1.1)
 
 func _on_RespawnCooldown_timeout():
 	visible = true
-	get_parent().player_active = true
+	get_parent().get_child(0).player_active = true
 	position = last_tile
 	take_damage(0.5,  "none", true)
+
+
+func _on_RoomDetector_area_entered(area):
+	current_room = area.get_parent().room_id

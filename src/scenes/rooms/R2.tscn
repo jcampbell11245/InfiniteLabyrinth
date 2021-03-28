@@ -5,7 +5,7 @@
 [ext_resource path="res://src/sfx/KnightDeath.tscn" type="PackedScene" id=3]
 [ext_resource path="res://src/tilesets/Tiles.tscn" type="PackedScene" id=4]
 [ext_resource path="res://src/tilesets/Top.tscn" type="PackedScene" id=5]
-[ext_resource path="res://src/entities/Player2D.tscn" type="PackedScene" id=6]
+[ext_resource path="res://src/RoomDetection.tscn" type="PackedScene" id=6]
 [ext_resource path="res://src/entities/Goblin.tscn" type="PackedScene" id=7]
 [ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
 [ext_resource path="res://src/tilesets/TopWalls.tscn" type="PackedScene" id=9]
@@ -21,10 +21,6 @@ tile_data = PoolIntArray( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8,
 [node name="Top" parent="." instance=ExtResource( 5 )]
 
 [node name="TopWalls" parent="." instance=ExtResource( 9 )]
-
-[node name="Player2D" parent="." instance=ExtResource( 6 )]
-position = Vector2( 328, 406 )
-scale = Vector2( 0.75, 0.75 )
 
 [node name="GoblinDeath" parent="." instance=ExtResource( 8 )]
 
@@ -44,3 +40,5 @@ position = Vector2( 371.01, 307.633 )
 [node name="Goblin4" parent="." instance=ExtResource( 7 )]
 position = Vector2( 323, 343.461 )
 starting_direction = "down"
+
+[node name="RoomDetection" parent="." instance=ExtResource( 6 )]

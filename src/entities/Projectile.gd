@@ -8,7 +8,7 @@ export var rotates : bool #Whether or not the projectile rotates
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass
+	$ExistenceTime.start(5)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
@@ -42,4 +42,7 @@ func _on_Hitbox_area_shape_entered(area_id, area, area_shape, self_shape):
 	queue_free()
 	
 func _on_ProjectileHitbox_area_shape_entered(area_id, area, area_shape, self_shape):
+	queue_free()
+
+func _on_ExistenceTime_timeout():
 	queue_free()
