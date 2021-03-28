@@ -13,7 +13,7 @@ onready var level_countdown_text = get_parent().get_node("CameraHolder/Camera2D/
 var respawn_x = [232, 256, 280, 304, 328, 352, 376, 400, 424]
 var respawn_y = [214, 238, 262, 286, 310, 334, 358, 382, 406]
 
-var health = 10
+var health = 10 #Player's health
 var speed = 125  #Speed in pixels/sec
 var current_room = 0
 
