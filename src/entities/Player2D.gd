@@ -26,7 +26,6 @@ var last_tile = Vector2.ZERO
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
-	set_last_tile()
 	z_index = 1
 
 func _process(delta):
