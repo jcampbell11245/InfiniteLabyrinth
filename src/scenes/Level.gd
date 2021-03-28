@@ -17,14 +17,14 @@ var locked = false
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	#Fade in/out
-	if(room_id == 1):
-		print(animator.animation)
-	if(player.current_room == room_id):
-		print("hey")
-		animator.animation = "fade_out"
-	elif(player.current_room != room_id && animator.animation != "fade_in" && animator.animation != "black"):
-		animator.animation = "fade_in"
+#	#Fade in/out
+#	if(room_id == 1):
+#		print(animator.animation)
+#	if(player.current_room == room_id):
+#		print("hey")
+#		animator.animation = "fade_out"
+#	elif(player.current_room != room_id && animator.animation != "fade_in" && animator.animation != "black"):
+#		animator.animation = "fade_in"
 	
 	if(!locked && player.current_room == room_id):
 		locked = true
