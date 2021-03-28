@@ -177,7 +177,11 @@ func die():
 	get_tree().quit()
 
 func set_last_tile():
-	var tiles = get_parent().get_child(current_room).get_child(0)
+	var tiles
+	if(current_room == 0):
+		tiles = get_parent().get_node("Node2D").get_child(0)
+	else:
+		tiles = get_parent().get_node("Node2D" + current_room).get_child(0)
 	var y_shift = (current_room / get_parent().columns) * 276
 	var x_shift = (current_room % get_parent().columns) * 252
 	
