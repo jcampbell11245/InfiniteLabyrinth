@@ -1,23 +1,27 @@
 extends Node2D
 
-var matrix = []
+#264x288
+
+onready var matrix = []
+
+var rng = RandomNumberGenerator.new()
 var rooms = []
 var keyrooms = []
 var start_room = "res://src/scenes/StartRoom.tscn"
 var end_room = "res://src/scenes/EndRoom.tscn"
-var scenes = []
+export var columns = 6
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	rooms()
 	keyrooms()
 	worldgen()
-	doors()
-	print(matrix)
-	pass # Replace with function body.
+#	doors()
+	roomspawn()
+#	print(matrix)
 
 func rooms():
-	var numScenes = 0
+	var _numScenes = 0
 	var dir = Directory.new()
 	if dir.open("res://src/scenes/rooms/") == OK:
 		dir.list_dir_begin()
@@ -29,12 +33,12 @@ func rooms():
 				pass
 			else:
 				rooms.push_back("res://src/scenes/rooms/"+file_name)
-				numScenes += 1
+				_numScenes += 1
 			file_name = dir.get_next()
 #		print("Got a list of "+str(numScenes)+" files")
 
 func keyrooms():
-	var numScenes = 0
+	var _numScenes = 0
 	var dir = Directory.new()
 	if dir.open("res://src/scenes/keyrooms/") == OK:
 		dir.list_dir_begin()
@@ -46,23 +50,25 @@ func keyrooms():
 				pass
 			else:
 				keyrooms.push_back("res://src/scenes/keyrooms/"+file_name)
-				numScenes += 1
+				_numScenes += 1
 			file_name = dir.get_next()
 #		print("Got a list of "+str(numScenes)+" files")
 
 func worldgen():
+	rng.randomize()
+	
 	var key_y = []
-	for i in range(3):
-		var rand = int(rand_range(1, 7))
+	for _i in range(3):
+		var rand = int(rng.randi_range(1, 6))
 		while (rand in key_y):
-			rand = int(rand_range(1, 7))
+			rand = int(rng.randi_range(1, 6))
 		key_y.append(rand)
 	
 	var key_x = []
-	for i in range(3):
-		var rand = int(rand_range(0, 5))
+	for _i in range(3):
+		var rand = int(rng.randi_range(0, 4))
 		while (rand in key_x):
-			rand = int(rand_range(0, 5))
+			rand = int(rng.randi_range(0, 4))
 		key_x.append(rand)
 	
 	for x in range(5):
@@ -89,16 +95,38 @@ func worldgen():
 			print(matrix[x][y])
 
 func randomscene(var scenes):
-	return scenes[int(rand_range(0, scenes.size()))]
+	return scenes[int(rng.randi_range(0, scenes.size()-1))]
 
 func doors():
 	for x in range(5):
 		if(x == 2):
 			continue
 		for y in range(1, 7):
-			if (x == 0):
-				var node = scenes.get(matrix[x][y].substr(-7, 2)).instance
-#continue work on doors, ^ will get the particular preloaded scene(all rooms will be preloaded at top) and instance it
+			var room = load(matrix[x][y]).instance()
+			if(x == 0):
+				room.door_status[0] = false
+			elif(x == 4):
+				room.door_status[2] = false
+			if(y == 1):
+				room.door_status[3] = false
+			elif(y == 6):
+				room.door_status[1] = false
+
+func roomspawn():
+	print(matrix[2][0])
+	var start = load(matrix[2][0]).instance()
+	add_child(start)
+	start.position = Vector2(0, 288*2)
+	
+	var end = load(matrix[2][7]).instance()
+	add_child(end)
+	end.position = Vector2(264*7, 288*2)
+	
+	for x in range(5):
+		for y in range(1, 7):
+			var room = load(matrix[x][y]).instance()
+			add_child(room)
+			room.position = Vector2(264*y, 288*x)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):

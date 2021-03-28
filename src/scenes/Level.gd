@@ -15,7 +15,7 @@ var locked = false
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if(!locked && get_parent().get_child(get_parent().get_child_count() - 2).current_room == room_id):
+	if(!locked && get_parent().get_node("Player2D").current_room == room_id):
 		locked = true
 		if(completion_criteria == "switches"):
 			$Tiles.set_cell(13, 8, 21)
