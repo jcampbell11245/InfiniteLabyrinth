@@ -24,6 +24,7 @@ tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0
 
 [node name="Player2D" parent="." instance=ExtResource( 4 )]
 position = Vector2( 328, 406 )
+scale = Vector2( 0.75, 0.75 )
 
 [node name="GoblinDeath" parent="." instance=ExtResource( 6 )]
 
