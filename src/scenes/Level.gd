@@ -3,7 +3,7 @@ extends Node2D
 onready var goblin_death = $GoblinDeath
 onready var knight_death = $KnightDeath
 onready var player = get_parent().get_node("Player2D")
-onready var animator = $Void/AnimatedSprite
+onready var animator = $Void/Fade
 
 export var completion_criteria = "none"
 export var enemy_count = 0
@@ -11,6 +11,7 @@ export var room_id : int
 
 var player_active = true
 var locked = false
+var faded_out = true
 
 # Called when the node enters the scene tree for the first time.
 #func _ready():
@@ -18,13 +19,12 @@ var locked = false
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	#Fade in/out
-	if(room_id == 1):
-		print(animator.animation)
-	if(player.current_room == room_id):
-		print("hey")
-		animator.animation = "fade_out"
-	elif(player.current_room != room_id && animator.animation != "fade_in" && animator.animation != "black"):
-		animator.animation = "fade_in"
+	if(player.current_room != room_id && !faded_out):
+		animator.play("FadeOut")
+		faded_out = true
+	elif(player.current_room == room_id && faded_out):
+		animator.play("FadeIn")
+		faded_out = false
 	
 	if(!locked && player.current_room == room_id):
 		locked = true
