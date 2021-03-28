@@ -16,7 +16,7 @@ func _ready():
 	rooms()
 	keyrooms()
 	worldgen()
-#	doors()
+	doors()
 	roomspawn()
 #	print(matrix)
 
