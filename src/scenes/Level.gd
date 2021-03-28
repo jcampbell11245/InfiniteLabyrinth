@@ -12,12 +12,26 @@ export var room_id : int
 var player_active = true
 var locked = false
 var faded_out = true
+var doors = [true, true, true, true]
 
 # Called when the node enters the scene tree for the first time.
 #func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+	#Set doors
+	if(!doors[0]):
+		$Tiles.set_cell(13, 8, 6)
+		$Top.set_cell(13, 7, 1)
+	if(!doors[1]):
+		$Tiles.set_cell(18, 13, 0)
+		$TopWalls.set_cell(18, 13, 1)
+	if(!doors[2]):
+		$TopWalls.set_cell(13, 18, 5)
+	if(!doors[3]):
+		$Tiles.set_cell(8, 13, 0)
+		$TopWalls.set_cell(8, 13, 0)
+	
 	#Fade in/out
 	if(player.current_room != room_id && !faded_out):
 		animator.play("FadeOut")

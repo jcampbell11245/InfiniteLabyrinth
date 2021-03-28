@@ -123,7 +123,7 @@ func take_damage(direction):
 #Called when the enemy dies
 func die():
 	get_parent().enemy_count -= 1
-	get_parent().death_sound(get_name())
+	get_parent().death_sound(get_name().substr(0, 6))
 	get_parent().remove_child(self)
 
 #Checks if the player is within the detection zone

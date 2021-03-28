@@ -1,6 +1,6 @@
 extends KinematicBody2D
 
-onready var player = get_parent().get_child(get_parent().room_count)
+onready var player = get_parent().get_node("Player2D")
 
 var last_room_number = 1
 
@@ -14,7 +14,7 @@ func _physics_process(delta):
 	last_room_number = player.current_room
 	
 	var x = (player.current_room % get_parent().columns) * 261 - 261
-	var y = (player.current_room / get_parent().columns) * 261
+	var y = (player.current_room / get_parent().columns) * 288
 	
 	if (position.distance_to(Vector2(x, y)) > 5):
 		var velocity = position.direction_to(Vector2(x, y)) * 500
