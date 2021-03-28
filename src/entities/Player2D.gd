@@ -225,10 +225,10 @@ func _on_FeetBox_body_entered(body):
 		visible = false
 		get_parent().player_active = false
 		respawn_cooldown.start(1.1)
-		take_damage(0.5,  "none", true)
 
 
 func _on_RespawnCooldown_timeout():
 	visible = true
 	get_parent().player_active = true
 	position = last_tile
+	take_damage(0.5,  "none", true)
