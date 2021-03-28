@@ -16,8 +16,9 @@ func _ready():
 	rooms()
 	keyrooms()
 	worldgen()
-	doors()
 	roomspawn()
+#	doors()
+
 #	print(matrix)
 
 func rooms():
@@ -104,13 +105,13 @@ func doors():
 		for y in range(1, 7):
 			var room = load(matrix[x][y]).instance()
 			if(x == 0):
-				room.door_status[0] = false
+				room.doors[0] = false
 			elif(x == 4):
-				room.door_status[2] = false
+				room.doors[2] = false
 			if(y == 1):
-				room.door_status[3] = false
+				room.doors[3] = false
 			elif(y == 6):
-				room.door_status[1] = false
+				room.doors[1] = false
 
 func roomspawn():
 	print(matrix[2][0])
