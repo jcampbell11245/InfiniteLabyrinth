@@ -41,7 +41,5 @@ starting_direction = "left"
 position = Vector2( 351.117, 360.994 )
 
 [node name="RoomDetection" parent="." instance=ExtResource( 10 )]
-visible = false
 
 [node name="Void" parent="." instance=ExtResource( 11 )]
-visible = false

@@ -13,6 +13,7 @@ export var starting_direction = "right"
 var direction
 var knockback = Vector2.ZERO
 var critical_chance = 0
+var looting = 0
 
 onready var player = get_parent().get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
@@ -32,6 +33,14 @@ func _ready():
 	crit_file.open("user://damage.save", File.READ)
 	critical_chance = int(crit_file.get_line())
 	crit_file.close()
+	
+	var looting_file = File.new()
+	if not looting_file.file_exists("user://looting.save"):
+		print("Aborting, no savefile")
+		return
+	looting_file.open("user://looting.save", File.READ)
+	looting = int(looting_file.get_line())
+	looting_file.close()
 	
 	direction = starting_direction
 	animator.animation = "idle_" + direction
@@ -127,9 +136,11 @@ func take_damage(direction):
 			animator.modulate.a = 0.5
 			
 			var rng = RandomNumberGenerator.new()
-			var rand = rng.randi_range(0, 10)
+			rng.randomize()
+			var rand = rng.randi_range(0, 30)
 			
 			if(rand - critical_chance < 0):
+				$Crit.play()
 				health = 0
 			else:
 				health = health - 1
@@ -139,9 +150,9 @@ func take_damage(direction):
 #Called when the enemy dies
 func die():
 	if(only_hit_during_attack):
-		coins.add_coins(3 * overworld.floor_number)
+		coins.add_coins(3 * overworld.floor_number * looting)
 	else:
-		coins.add_coins(1 * overworld.floor_number)
+		coins.add_coins(1 * overworld.floor_number * looting)
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name().substr(0, 6))
 	get_parent().remove_child(self)

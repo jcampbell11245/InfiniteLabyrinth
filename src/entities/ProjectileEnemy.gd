@@ -10,6 +10,8 @@ export var attack_cooldown_length : float
 
 var direction
 var knockback = Vector2.ZERO
+var critical_chance = 0
+var looting = 0
 
 onready var player = get_parent().get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
@@ -24,7 +26,21 @@ const Fireball = preload("res://src/entities/Fireball.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass # Replace with function body.
+	var crit_file = File.new()
+	if not crit_file.file_exists("user://damage.save"):
+		print("Aborting, no savefile")
+		return
+	crit_file.open("user://damage.save", File.READ)
+	critical_chance = int(crit_file.get_line())
+	crit_file.close()
+	
+	var looting_file = File.new()
+	if not looting_file.file_exists("user://looting.save"):
+		print("Aborting, no savefile")
+		return
+	looting_file.open("user://looting.save", File.READ)
+	looting = int(looting_file.get_line())
+	looting_file.close()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -95,13 +111,19 @@ func take_damage(direction):
 			dir = Vector2.DOWN
 		knockback = dir * knockback_speed
 		
-		health = health - 1
+		var rng = RandomNumberGenerator.new()
+		var rand = rng.randi_range(0, 30)
+		
+		if(rand - critical_chance < 0):
+			health = 0
+		else:
+			health = health - 1
 		if(health <= 0):
 			die()
 
 #Called when the enemy dies
 func die():
-	coins.add_coins(5 * overworld.floor_number)
+	coins.add_coins(5 * overworld.floor_number * looting)
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)

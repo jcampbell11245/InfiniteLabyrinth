@@ -51,7 +51,6 @@ __meta__ = {
 visible = false
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart2" type="AnimatedSprite" parent="."]
@@ -59,7 +58,6 @@ visible = false
 position = Vector2( 12, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart3" type="AnimatedSprite" parent="."]
@@ -67,7 +65,6 @@ visible = false
 position = Vector2( 24, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart4" type="AnimatedSprite" parent="."]
@@ -75,7 +72,6 @@ visible = false
 position = Vector2( 36, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart5" type="AnimatedSprite" parent="."]
@@ -83,7 +79,6 @@ visible = false
 position = Vector2( 48, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart6" type="AnimatedSprite" parent="."]
@@ -91,7 +86,6 @@ visible = false
 position = Vector2( 60, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart7" type="AnimatedSprite" parent="."]
@@ -99,7 +93,6 @@ visible = false
 position = Vector2( 72, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart8" type="AnimatedSprite" parent="."]
@@ -107,7 +100,6 @@ visible = false
 position = Vector2( 84, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart9" type="AnimatedSprite" parent="."]
@@ -115,7 +107,6 @@ visible = false
 position = Vector2( 96, 0.027 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart10" type="AnimatedSprite" parent="."]
@@ -123,7 +114,6 @@ visible = false
 position = Vector2( 108, 0.027 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart11" type="AnimatedSprite" parent="."]
@@ -131,7 +121,6 @@ visible = false
 position = Vector2( 118, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart12" type="AnimatedSprite" parent="."]
@@ -139,7 +128,6 @@ visible = false
 position = Vector2( 130, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart13" type="AnimatedSprite" parent="."]
@@ -147,7 +135,6 @@ visible = false
 position = Vector2( 142, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart14" type="AnimatedSprite" parent="."]
@@ -155,7 +142,6 @@ visible = false
 position = Vector2( 154, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true
 
 [node name="Heart15" type="AnimatedSprite" parent="."]
@@ -163,5 +149,4 @@ visible = false
 position = Vector2( 166, 0 )
 frames = SubResource( 5 )
 animation = "full"
-frame = 3
 playing = true

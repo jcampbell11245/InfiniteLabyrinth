@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=2]
+[gd_scene load_steps=53 format=2]
 
 [ext_resource path="res://src/entities/MeleeEnemy.gd" type="Script" id=1]
 [ext_resource path="res://sprites/goblin/goblin_left_stand.png" type="Texture" id=2]
@@ -13,6 +13,7 @@
 [ext_resource path="res://sprites/goblin/goblin_left_walk.png" type="Texture" id=11]
 [ext_resource path="res://sprites/goblin/goblin_left_slash.png" type="Texture" id=12]
 [ext_resource path="res://sprites/goblin/goblin_up_walk.png" type="Texture" id=13]
+[ext_resource path="res://sfx proto1/crit1.wav" type="AudioStream" id=14]
 [ext_resource path="res://sfx proto1/gobatk1.wav" type="AudioStream" id=15]
 
 [sub_resource type="AtlasTexture" id=1]
@@ -267,6 +268,9 @@ one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 15 )
+
+[node name="Crit" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 14 )
 
 [node name="DetectionZonePivot" type="Position2D" parent="."]
 

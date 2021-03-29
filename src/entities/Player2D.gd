@@ -26,8 +26,6 @@ var last_tile = Vector2.ZERO
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
-	
-	
 	z_index = 2
 
 func _process(delta):
@@ -224,10 +222,10 @@ func _on_LevelCountdown_timeout():
 func _on_Hurtbox_area_shape_entered(area_id, area, _area_shape, _self_shape):
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		direction = area.get_parent().get_parent().direction
-		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
+		#take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
 	elif(area.get_name() == "ProjectileHitbox"):
 		direction = area.get_parent().direction
-		take_damage(area.get_parent().damage, area.get_parent().direction, false)
+		#take_damage(area.get_parent().damage, area.get_parent().direction, false)
 
 #Player returns back to normal opacity once invincibility cooldown ends
 func _on_InvincibilityCooldown_timeout():
