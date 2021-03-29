@@ -117,7 +117,13 @@ func doors():
 	start.room_id = 60
 	start.doors[0] = false
 	start.doors[2] = false
-	start.doors[3] = false
+	
+	var broom = load("res://src/scenes/B1.tscn").instance()
+	broom.position = Vector2(-264-191, 288*2-168)
+	broom.room_id = 62
+	broom.doors[0] = false
+	broom.doors[2] = false
+	broom.doors[3] = false
 
 	var end = load(matrix[2][7]).instance()
 	add_child(end)
