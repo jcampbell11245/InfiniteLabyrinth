@@ -3,7 +3,7 @@ extends Node2D
 onready var goblin_death = $GoblinDeath
 onready var knight_death = $KnightDeath
 onready var player = get_parent().get_node("Player2D")
-onready var animator = $Void/Fade
+onready var animator = get_node("Void").get_node("Fade")
 
 export var completion_criteria = "none"
 export var enemy_count = 0

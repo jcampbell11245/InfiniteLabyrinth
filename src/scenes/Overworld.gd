@@ -16,8 +16,8 @@ func _ready():
 	rooms()
 	keyrooms()
 	worldgen()
-	roomspawn()
-#	doors()
+#	roomspawn()
+	doors()
 
 #	print(matrix)
 
@@ -85,12 +85,12 @@ func worldgen():
 					matrix[x].append(end_room)
 				else:
 					matrix[x].append('Null')
-			elif(x == key_x[0] and y == key_y[0]):
-				matrix[x].append(randomscene(keyrooms))
-			elif(x == key_x[1] and y == key_y[1]):
-				matrix[x].append(randomscene(keyrooms))
-			elif(x == key_x[2] and y == key_y[2]):
-				matrix[x].append(randomscene(keyrooms))
+#			elif(x == key_x[0] and y == key_y[0]):
+#				matrix[x].append(randomscene(keyrooms))
+#			elif(x == key_x[1] and y == key_y[1]):
+#				matrix[x].append(randomscene(keyrooms))
+#			elif(x == key_x[2] and y == key_y[2]):
+#				matrix[x].append(randomscene(keyrooms))
 			else:
 				matrix[x].append(randomscene(rooms))
 			print(matrix[x][y])
@@ -99,12 +99,30 @@ func randomscene(var scenes):
 	return scenes[int(rng.randi_range(0, scenes.size()-1))]
 
 func doors():
+#	print(matrix[2][0])
+	var start = load(matrix[2][0]).instance()
+	add_child(start)
+	start.position = Vector2(0-191, 288*2-168)
+	start.doors[0] = false
+	start.doors[2] = false
+	start.doors[3] = false
+
+	var end = load(matrix[2][7]).instance()
+	add_child(end)
+	end.position = Vector2(264*7-191, 288*2-168)
+	end.doors[0] = false
+	end.doors[1] = false
+	end.doors[2] = false
+	
 	for x in range(5):
-		if(x == 2):
-			continue
 		for y in range(1, 7):
 			var room = load(matrix[x][y]).instance()
-			if(x == 0):
+			add_child(room)
+			room.position = Vector2(264*y-191, 288*x-168)
+			
+			if(x == 2):
+				continue
+			elif(x == 0):
 				room.doors[0] = false
 			elif(x == 4):
 				room.doors[2] = false
@@ -112,22 +130,24 @@ func doors():
 				room.doors[3] = false
 			elif(y == 6):
 				room.doors[1] = false
+				
+	print(get_children())
 
-func roomspawn():
-	print(matrix[2][0])
-	var start = load(matrix[2][0]).instance()
-	add_child(start)
-	start.position = Vector2(0, 288*2)
-	
-	var end = load(matrix[2][7]).instance()
-	add_child(end)
-	end.position = Vector2(264*7, 288*2)
-	
-	for x in range(5):
-		for y in range(1, 7):
-			var room = load(matrix[x][y]).instance()
-			add_child(room)
-			room.position = Vector2(264*y, 288*x)
+#func roomspawn():
+#	print(matrix[2][0])
+#	var start = load(matrix[2][0]).instance()
+#	add_child(start)
+#	start.position = Vector2(0, 288*2)
+#
+#	var end = load(matrix[2][7]).instance()
+#	add_child(end)
+#	end.position = Vector2(264*7, 288*2)
+#
+#	for x in range(5):
+#		for y in range(1, 7):
+#			var room = load(matrix[x][y]).instance()
+#			add_child(room)
+#			room.position = Vector2(264*y, 288*x)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
