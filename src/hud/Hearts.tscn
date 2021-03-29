@@ -66,3 +66,17 @@ frames = SubResource( 5 )
 animation = "full"
 frame = 1
 playing = true
+
+[node name="Heart4" type="AnimatedSprite" parent="."]
+position = Vector2( 36, 0 )
+frames = SubResource( 5 )
+animation = "full"
+frame = 1
+playing = true
+
+[node name="Heart5" type="AnimatedSprite" parent="."]
+position = Vector2( 48, 0 )
+frames = SubResource( 5 )
+animation = "full"
+frame = 1
+playing = true

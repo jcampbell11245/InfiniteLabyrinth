@@ -29,7 +29,5 @@ tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0
 [node name="KnightDeath" parent="." instance=ExtResource( 3 )]
 
 [node name="RoomDetection" parent="." instance=ExtResource( 6 )]
-visible = false
 
 [node name="Void" parent="." instance=ExtResource( 7 )]
-visible = false

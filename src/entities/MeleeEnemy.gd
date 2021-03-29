@@ -19,9 +19,11 @@ onready var attack_cooldown = $AttackCooldown
 onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
 onready var hurtbox = $Hurtbox/CollisionShape2D
 onready var invincibility_cooldown = $InvincibilityCooldown
+onready var coins = get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Coins")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	#print(get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Coins").name())
 	direction = starting_direction
 	animator.animation = "idle_" + direction
 
@@ -122,6 +124,10 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
+	if(only_hit_during_attack):
+		coins.add_coins(3)
+	else:
+		coins.add_coins(1)
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name().substr(0, 6))
 	get_parent().remove_child(self)

@@ -93,7 +93,6 @@ func worldgen():
 #				matrix[x].append(randomscene(keyrooms))
 			else:
 				matrix[x].append(randomscene(rooms))
-			print(matrix[x][y])
 
 func randomscene(var scenes):
 	return scenes[int(rng.randi_range(0, scenes.size()-1))]
@@ -111,7 +110,7 @@ func doors():
 	var end = load(matrix[2][7]).instance()
 	add_child(end)
 	end.position = Vector2(264*7-191, 288*2-168)
-	end.room_id = 60
+	end.room_id = 61
 	end.doors[0] = false
 	end.doors[1] = false
 	end.doors[2] = false
@@ -136,7 +135,6 @@ func doors():
 			elif(y == 6):
 				room.doors[1] = false
 	
-	print(get_children())
 
 #func roomspawn():
 #	print(matrix[2][0])

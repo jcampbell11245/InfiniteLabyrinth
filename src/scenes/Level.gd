@@ -54,15 +54,23 @@ func _process(delta):
 			$Tiles.set_cell(18, 13, 24)
 	
 	if(completion_criteria == "switches" && $Switches.unlocked()):
-		$Tiles.set_cell(13, 8, 1)
-		$Tiles.set_cell(8, 13, 16)
-		$Tiles.set_cell(13, 18, 16)
-		$Tiles.set_cell(18, 13, 16)
+		if(doors[0]):
+			$Tiles.set_cell(13, 8, 1)
+		if(doors[3]):
+			$Tiles.set_cell(8, 13, 16)
+		if(doors[2]):
+			$Tiles.set_cell(13, 18, 16)
+		if(doors[1]):
+			$Tiles.set_cell(18, 13, 16)
 	elif(completion_criteria == "enemies" && enemy_count == 0):
-		$Tiles.set_cell(13, 8, 1)
-		$Tiles.set_cell(8, 13, 16)
-		$Tiles.set_cell(13, 18, 16)
-		$Tiles.set_cell(18, 13, 16)
+		if(doors[0]):
+			$Tiles.set_cell(13, 8, 1)
+		if(doors[3]):
+			$Tiles.set_cell(8, 13, 16)
+		if(doors[2]):
+			$Tiles.set_cell(13, 18, 16)
+		if(doors[1]):
+			$Tiles.set_cell(18, 13, 16)
 
 func death_sound(enemy_type):
 	if(enemy_type == "Goblin"):

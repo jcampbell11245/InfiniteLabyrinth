@@ -1,7 +1,7 @@
 extends HBoxContainer
 
-var hearts = 3
-var max_hearts = 3
+var hearts = 5
+var max_hearts = 5
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

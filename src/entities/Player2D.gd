@@ -26,7 +26,7 @@ var last_tile = Vector2.ZERO
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
-	z_index = 1
+	z_index = 2
 
 func _process(delta):
 	#print(current_room)
@@ -177,12 +177,14 @@ func die():
 
 func set_last_tile():
 	var tiles
-	if(current_room == 0):
-		tiles = get_parent().get_node("Node2D").get_child(0)
+	if(current_room == 60):
+		tiles = get_parent().get_child(3).get_child(0)
+	elif(current_room == 61):
+		tiles = get_parent().get_child(get_parent().get_child_count() - 1).get_child(0)
 	else:
-		tiles = get_parent().get_node("Node2D" + current_room).get_child(0)
-	var y_shift = (current_room / get_parent().columns) * 276
-	var x_shift = (current_room % get_parent().columns) * 252
+		tiles = get_parent().get_child(current_room + 4).get_child(0)
+	var y_shift = (current_room / get_parent().columns) * 288 - 65
+	var x_shift = (current_room % get_parent().columns) * 261 - 5
 	
 	var locked_x
 	var locked_y

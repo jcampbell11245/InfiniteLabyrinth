@@ -17,6 +17,7 @@ onready var attack_cooldown = $AttackCooldown
 onready var move_cooldown = $MoveCooldown
 onready var hurtbox = $Hurtbox/CollisionShape2D
 onready var invincibility_cooldown = $InvincibilityCooldown
+onready var coins = get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Coins")
 
 const Fireball = preload("res://src/entities/Fireball.tscn")
 
@@ -99,6 +100,7 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
+	coins.add_coins(5)
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)
