@@ -12,7 +12,7 @@ export var room_id : int
 var player_active = true
 var locked = false
 var faded_out = true
-var doors = [true, true, false, false]
+var doors = [true, true, true, true]
 
 # Called when the node enters the scene tree for the first time.
 #func _ready():

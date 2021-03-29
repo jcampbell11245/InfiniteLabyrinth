@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -11,6 +11,7 @@
 [ext_resource path="res://src/tilesets/TopWalls.tscn" type="PackedScene" id=9]
 [ext_resource path="res://src/entities/Switch.tscn" type="PackedScene" id=10]
 [ext_resource path="res://src/entities/Wizard.tscn" type="PackedScene" id=11]
+[ext_resource path="res://src/entities/Switches.gd" type="Script" id=12]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -38,6 +39,7 @@ visible = false
 visible = false
 
 [node name="Switches" type="Node2D" parent="."]
+script = ExtResource( 12 )
 
 [node name="Switch" parent="Switches" instance=ExtResource( 10 )]
 position = Vector2( 0, 73.7054 )

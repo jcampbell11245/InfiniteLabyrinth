@@ -103,6 +103,7 @@ func doors():
 	var start = load(matrix[2][0]).instance()
 	add_child(start)
 	start.position = Vector2(0-191, 288*2-168)
+	start.room_id = 60
 	start.doors[0] = false
 	start.doors[2] = false
 	start.doors[3] = false
@@ -110,6 +111,7 @@ func doors():
 	var end = load(matrix[2][7]).instance()
 	add_child(end)
 	end.position = Vector2(264*7-191, 288*2-168)
+	end.room_id = 60
 	end.doors[0] = false
 	end.doors[1] = false
 	end.doors[2] = false
@@ -119,18 +121,21 @@ func doors():
 			var room = load(matrix[x][y]).instance()
 			add_child(room)
 			room.position = Vector2(264*y-191, 288*x-168)
+			room.room_id = 6 * x + (y - 1)
 			
 			if(x == 2):
 				continue
-			elif(x == 0):
+			
+			if(x == 0):
 				room.doors[0] = false
 			elif(x == 4):
 				room.doors[2] = false
+			
 			if(y == 1):
 				room.doors[3] = false
 			elif(y == 6):
 				room.doors[1] = false
-				
+	
 	print(get_children())
 
 #func roomspawn():

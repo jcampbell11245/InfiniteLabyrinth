@@ -1,4 +1,4 @@
-[gd_scene load_steps=73 format=2]
+[gd_scene load_steps=72 format=2]
 
 [ext_resource path="res://src/entities/Player2D.gd" type="Script" id=1]
 [ext_resource path="res://sprites/player/future_knight_right_walk.png" type="Texture" id=2]
@@ -17,7 +17,6 @@
 [ext_resource path="res://sprites/player/future_knight_down_shoot.png" type="Texture" id=15]
 [ext_resource path="res://sprites/player/future_knight_down_slash.png" type="Texture" id=16]
 [ext_resource path="res://sprites/player/future_knight_up_slash.png" type="Texture" id=17]
-[ext_resource path="res://src/Cam.tscn" type="PackedScene" id=18]
 [ext_resource path="res://sfx proto1/slash1.wav" type="AudioStream" id=20]
 [ext_resource path="res://sfx proto1/shoot1.wav" type="AudioStream" id=21]
 [ext_resource path="res://sfx proto1/hit1.wav" type="AudioStream" id=22]
@@ -352,8 +351,6 @@ collision_mask = 512
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RoomDetector"]
 position = Vector2( 0, 18.9167 )
 shape = SubResource( 50 )
-
-[node name="Camera2D" parent="." instance=ExtResource( 18 )]
 
 [node name="ShootCooldown" type="Timer" parent="."]
 one_shot = true
