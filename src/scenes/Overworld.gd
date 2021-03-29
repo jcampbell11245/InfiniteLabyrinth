@@ -85,14 +85,15 @@ func worldgen():
 					matrix[x].append(end_room)
 				else:
 					matrix[x].append('Null')
-#			elif(x == key_x[0] and y == key_y[0]):
-#				matrix[x].append(randomscene(keyrooms))
-#			elif(x == key_x[1] and y == key_y[1]):
-#				matrix[x].append(randomscene(keyrooms))
-#			elif(x == key_x[2] and y == key_y[2]):
-#				matrix[x].append(randomscene(keyrooms))
+			elif(x == key_x[0] and y == key_y[0]):
+				matrix[x].append(keyrooms[0])
+			elif(x == key_x[1] and y == key_y[1]):
+				matrix[x].append(keyrooms[1])
+			elif(x == key_x[2] and y == key_y[2]):
+				matrix[x].append(keyrooms[2])
 			else:
 				matrix[x].append(randomscene(rooms))
+	print(matrix)
 
 func randomscene(var scenes):
 	return scenes[int(rng.randi_range(0, scenes.size()-1))]
