@@ -25,7 +25,14 @@ onready var overworld = get_parent().get_parent()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	#print(get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Coins").name())
+	var crit_file = File.new()
+	if not crit_file.file_exists("user://damage.save"):
+		print("Aborting, no savefile")
+		return
+	crit_file.open("user://damage.save", File.READ)
+	critical_chance = int(crit_file.get_line())
+	crit_file.close()
+	
 	direction = starting_direction
 	animator.animation = "idle_" + direction
 
@@ -122,8 +129,10 @@ func take_damage(direction):
 			var rng = RandomNumberGenerator.new()
 			var rand = rng.randi_range(0, 10)
 			
-			if(rand)
-			health = health - 1
+			if(rand - critical_chance < 0):
+				health = 0
+			else:
+				health = health - 1
 			if(health <= 0):
 				die()
 
