@@ -37,7 +37,6 @@ speed = 150.0
 
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 4 )
-frame = 2
 playing = true
 
 [node name="ProjectileHitbox" type="Area2D" parent="."]

@@ -13,3 +13,6 @@ func _ready():
 func add_coins(add):
 	coins += add
 	$Counter/CoinText.set_bbcode(String(coins))
+
+func update_text():
+	$Counter/CoinText.set_bbcode(String(coins))

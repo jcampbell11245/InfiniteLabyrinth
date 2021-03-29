@@ -26,6 +26,8 @@ var last_tile = Vector2.ZERO
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
+	
+	
 	z_index = 2
 
 func _process(delta):
@@ -173,6 +175,10 @@ func timer():
 
 #Method called when the player dies
 func die():
+	var floor_save = File.new()
+	floor_save.open("user://floor.save", File.WRITE)
+	floor_save.store_line("1")
+	floor_save.close()
 	get_tree().quit()
 
 func set_last_tile():
@@ -180,7 +186,7 @@ func set_last_tile():
 	if(current_room == 60):
 		tiles = get_parent().get_child(3).get_child(0)
 	elif(current_room == 61):
-		tiles = get_parent().get_child(get_parent().get_child_count() - 1).get_child(0)
+		tiles = get_parent().get_node("EndRoom").get_child(0)
 	else:
 		tiles = get_parent().get_child(current_room + 4).get_child(0)
 	var y_shift = (current_room / get_parent().columns) * 288 - 65

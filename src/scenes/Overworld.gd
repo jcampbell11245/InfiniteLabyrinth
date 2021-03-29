@@ -9,10 +9,21 @@ var rooms = []
 var keyrooms = []
 var start_room = "res://src/scenes/StartRoom.tscn"
 var end_room = "res://src/scenes/EndRoom.tscn"
+var floor_number
 export var columns = 6
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	load_coins()
+	var floor_save = File.new()
+	if not floor_save.file_exists("user://floor.save"):
+		print("Aborting, no savefile")
+		return
+
+	floor_save.open("user://floor.save", File.READ)
+	floor_number = int(floor_save.get_line())
+	floor_save.close()
+	
 	rooms()
 	keyrooms()
 	worldgen()
@@ -93,7 +104,7 @@ func worldgen():
 				matrix[x].append(keyrooms[2])
 			else:
 				matrix[x].append(randomscene(rooms))
-	print(matrix)
+	#print(matrix)
 
 func randomscene(var scenes):
 	return scenes[int(rng.randi_range(0, scenes.size()-1))]
@@ -136,6 +147,36 @@ func doors():
 			elif(y == 6):
 				room.doors[1] = false
 	
+
+func reset_world():
+	var floor_save = File.new()
+	floor_save.open("user://floor.save", File.WRITE)
+	floor_save.store_line(String(floor_number + 1))
+	floor_save.close()
+	
+	save_coins()
+	get_tree().change_scene("res://src/scenes/Overworld.tscn")
+
+func load_coins():
+	print("Loading...")
+
+	var save_file = File.new()
+	if not save_file.file_exists("user://savefile.save"):
+		print("Aborting, no savefile")
+		return
+
+	save_file.open("user://savefile.save", File.READ)
+	get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins = int(save_file.get_line())
+	get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").update_text()
+	save_file.close()
+
+func save_coins():
+	print("Saving...")
+
+	var save_file = File.new()
+	save_file.open("user://savefile.save", File.WRITE)
+	save_file.store_line(String(get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins))
+	save_file.close()
 
 #func roomspawn():
 #	print(matrix[2][0])

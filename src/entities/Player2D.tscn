@@ -1,4 +1,4 @@
-[gd_scene load_steps=72 format=2]
+[gd_scene load_steps=73 format=2]
 
 [ext_resource path="res://src/entities/Player2D.gd" type="Script" id=1]
 [ext_resource path="res://sprites/player/future_knight_right_walk.png" type="Texture" id=2]
@@ -17,6 +17,7 @@
 [ext_resource path="res://sprites/player/future_knight_down_shoot.png" type="Texture" id=15]
 [ext_resource path="res://sprites/player/future_knight_down_slash.png" type="Texture" id=16]
 [ext_resource path="res://sprites/player/future_knight_up_slash.png" type="Texture" id=17]
+[ext_resource path="res://src/entities/LevelCountdown.gd" type="Script" id=18]
 [ext_resource path="res://sfx proto1/slash1.wav" type="AudioStream" id=20]
 [ext_resource path="res://sfx proto1/shoot1.wav" type="AudioStream" id=21]
 [ext_resource path="res://sfx proto1/hit1.wav" type="AudioStream" id=22]
@@ -356,9 +357,9 @@ shape = SubResource( 50 )
 one_shot = true
 
 [node name="LevelCountdown" type="Timer" parent="."]
-wait_time = 600.0
 one_shot = true
 autostart = true
+script = ExtResource( 18 )
 
 [node name="RespawnCooldown" type="Timer" parent="."]
 one_shot = true

@@ -20,7 +20,7 @@ var doors = [true, true, true, true]
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	#Set doors
-	if(!doors[0]):
+	if(!doors[0] && room_id != 61):
 		$Tiles.set_cell(13, 8, 6)
 		$Top.set_cell(13, 7, 1)
 	if(!doors[1]):
@@ -31,6 +31,10 @@ func _process(delta):
 	if(!doors[3]):
 		$Tiles.set_cell(8, 13, 0)
 		$TopWalls.set_cell(8, 13, 0)
+		
+	if(room_id == 61):
+		if(get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Keys").get_keys() == 3):
+			$Tiles.set_cell(13, 8, 1)
 	
 	#Fade in/out
 	if(player.current_room != room_id && !faded_out):
@@ -77,3 +81,7 @@ func death_sound(enemy_type):
 		goblin_death.play()
 	elif(enemy_type == "Knight"):
 		knight_death.play()
+
+
+func _on_NextFloor_area_entered(area):
+	get_parent().reset_world()

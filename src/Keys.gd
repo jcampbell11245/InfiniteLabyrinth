@@ -14,5 +14,5 @@ func add_keys(add):
 	keys += add
 	$Counter/KeyText.set_bbcode(String(keys))
 
-func get_coins():
+func get_keys():
 	return keys

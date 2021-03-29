@@ -1,12 +1,12 @@
 [gd_scene load_steps=2 format=2]
 
 [sub_resource type="RectangleShape2D" id=1]
-extents = Vector2( 100, 100 )
+extents = Vector2( 95, 95 )
 
 [node name="RoomDetection" type="Area2D"]
 collision_layer = 512
 collision_mask = 1024
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2( 324, 324 )
+position = Vector2( 324, 324.397 )
 shape = SubResource( 1 )

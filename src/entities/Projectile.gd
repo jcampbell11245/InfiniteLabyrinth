@@ -15,6 +15,9 @@ func _ready():
 #	pass
 
 func _physics_process(_delta):
+	if(!rotates && get_parent().get_parent().get_node("Player2D").current_room == 61):
+		queue_free()
+	
 	#Sets projectile direction
 	if(rotates):
 		if(direction == "right"):

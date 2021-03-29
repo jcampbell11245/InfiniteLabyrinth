@@ -12,6 +12,7 @@ export var starting_direction = "right"
 
 var direction
 var knockback = Vector2.ZERO
+var critical_chance = 0
 
 onready var player = get_parent().get_parent().get_node("Player2D")
 onready var animator = $AnimatedSprite
@@ -20,6 +21,7 @@ onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
 onready var hurtbox = $Hurtbox/CollisionShape2D
 onready var invincibility_cooldown = $InvincibilityCooldown
 onready var coins = get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Coins")
+onready var overworld = get_parent().get_parent()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -90,7 +92,6 @@ func animate():
 #Called when the enemy attacks
 func attack():
 	if(animator.visible == true):
-		$Attack.play()
 		attack_cooldown.start(attack_cooldown_length)
 
 #Called when the enemy takes damage
@@ -117,7 +118,11 @@ func take_damage(direction):
 			hurtbox.disabled = true
 			invincibility_cooldown.start(0.3)
 			animator.modulate.a = 0.5
-		
+			
+			var rng = RandomNumberGenerator.new()
+			var rand = rng.randi_range(0, 10)
+			
+			if(rand)
 			health = health - 1
 			if(health <= 0):
 				die()
@@ -125,9 +130,9 @@ func take_damage(direction):
 #Called when the enemy dies
 func die():
 	if(only_hit_during_attack):
-		coins.add_coins(3)
+		coins.add_coins(3 * overworld.floor_number)
 	else:
-		coins.add_coins(1)
+		coins.add_coins(1 * overworld.floor_number)
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name().substr(0, 6))
 	get_parent().remove_child(self)
@@ -148,4 +153,5 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "slash" && animator.frame == attack_speed):
+		$Attack.play()
 		hitbox.disabled = false

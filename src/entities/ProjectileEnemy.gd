@@ -18,6 +18,7 @@ onready var move_cooldown = $MoveCooldown
 onready var hurtbox = $Hurtbox/CollisionShape2D
 onready var invincibility_cooldown = $InvincibilityCooldown
 onready var coins = get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Coins")
+onready var overworld = get_parent().get_parent()
 
 const Fireball = preload("res://src/entities/Fireball.tscn")
 
@@ -63,17 +64,17 @@ func animate():
 		if animator.animation.substr(0, 5) == "shoot" && animator.frame == shoot_length:
 			animator.animation = "idle_" + direction
 		
-		if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-			animator.animation = "walk_" + direction
-		elif(animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-			animator.animation = "shoot_" + direction
-		elif(animator.animation.substr(0, 5) != "shoot"):
-			animator.animation = "idle_" + direction
+		if(direction != null):
+			if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+				animator.animation = "walk_" + direction
+			elif(animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+				animator.animation = "shoot_" + direction
+			elif(animator.animation.substr(0, 5) != "shoot"):
+				animator.animation = "idle_" + direction
 
 #Called when the enemy attacks
 func attack():
 	if(animator.visible == true && player.current_room == get_parent().room_id):
-		$Attack.play()
 		attack_cooldown.start(attack_cooldown_length)
 
 #Called when the enemy takes damage
@@ -100,7 +101,7 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
-	coins.add_coins(5)
+	coins.add_coins(5 * overworld.floor_number)
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)
@@ -108,6 +109,7 @@ func die():
 #Spawns a fireball at the enemy
 func shoot_fireball():
 	if(player.current_room == get_parent().room_id):
+		$Attack.play()
 		var fireball = Fireball.instance()
 		get_parent().add_child(fireball)
 		fireball.position = position

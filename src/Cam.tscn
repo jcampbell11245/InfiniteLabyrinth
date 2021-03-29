@@ -126,7 +126,6 @@ script = ExtResource( 4 )
 [node name="Coin" type="AnimatedSprite" parent="HudLayer/Hud/Coins"]
 position = Vector2( 290.084, -0.172779 )
 frames = SubResource( 6 )
-frame = 1
 playing = true
 
 [node name="Counter" type="Position2D" parent="HudLayer/Hud/Coins"]
@@ -151,7 +150,7 @@ script = ExtResource( 6 )
 [node name="Key" type="AnimatedSprite" parent="HudLayer/Hud/Keys"]
 position = Vector2( 232.765, -0.0212564 )
 frames = SubResource( 18 )
-frame = 4
+frame = 5
 playing = true
 
 [node name="Counter" type="Position2D" parent="HudLayer/Hud/Keys"]
