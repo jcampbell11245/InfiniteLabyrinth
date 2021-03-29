@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -10,6 +10,8 @@
 [ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
 [ext_resource path="res://src/entities/Switch.tscn" type="PackedScene" id=9]
 [ext_resource path="res://src/entities/Wizard.tscn" type="PackedScene" id=10]
+[ext_resource path="res://src/RoomDetection.tscn" type="PackedScene" id=11]
+[ext_resource path="res://src/Void.tscn" type="PackedScene" id=12]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -49,3 +51,7 @@ position = Vector2( 396.495, 240.39 )
 
 [node name="Wizard3" parent="." instance=ExtResource( 10 )]
 position = Vector2( 323.392, 354.282 )
+
+[node name="RoomDetection" parent="." instance=ExtResource( 11 )]
+
+[node name="Void" parent="." instance=ExtResource( 12 )]

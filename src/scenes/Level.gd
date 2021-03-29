@@ -12,7 +12,7 @@ export var room_id : int
 var player_active = true
 var locked = false
 var faded_out = true
-var doors = [true, true, true, true]
+var doors = [true, true, false, false]
 
 # Called when the node enters the scene tree for the first time.
 #func _ready():
@@ -27,7 +27,7 @@ func _process(delta):
 		$Tiles.set_cell(18, 13, 0)
 		$TopWalls.set_cell(18, 13, 1)
 	if(!doors[2]):
-		$TopWalls.set_cell(13, 18, 5)
+		$Tiles.set_cell(13, 18, 5)
 	if(!doors[3]):
 		$Tiles.set_cell(8, 13, 0)
 		$TopWalls.set_cell(8, 13, 0)
