@@ -1,4 +1,4 @@
-extends Node2D
+extends HBoxContainer
 
 var keys = 0
 
