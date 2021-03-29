@@ -129,8 +129,8 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "shoot" && animator.frame == attack_speed):
 		shoot_fireball()
-		$SecondShotCountdown.start(0.25)
-		$ThirdShotCountdown.start(0.5)
+		$SecondShotCountdown.start(0.5)
+		$ThirdShotCountdown.start(1)
 
 func _on_SecondShotCountdown_timeout():
 	shoot_fireball()
