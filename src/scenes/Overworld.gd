@@ -107,7 +107,9 @@ func worldgen():
 	#print(matrix)
 
 func randomscene(var scenes):
-	return scenes[int(rng.randi_range(0, scenes.size()-1))]
+	var room = scenes[int(rng.randi_range(0, scenes.size()-1))]
+	scenes.erase(room)
+	return room
 
 func doors():
 #	print(matrix[2][0])
