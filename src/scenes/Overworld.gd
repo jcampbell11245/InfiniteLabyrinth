@@ -153,7 +153,7 @@ func doors():
 				room.doors[3] = false
 			elif(y == 6):
 				room.doors[1] = false
-	
+	print(matrix)
 
 func reset_world():
 	var floor_save = File.new()
