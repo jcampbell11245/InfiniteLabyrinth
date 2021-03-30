@@ -16,7 +16,7 @@ _global_script_class_icons={
 [application]
 
 config/name="TSAGame2021"
-run/main_scene="res://src/scenes/Overworld.tscn"
+run/main_scene="res://src/Starting.tscn"
 config/icon="res://icon.png"
 
 [input]

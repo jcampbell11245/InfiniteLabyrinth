@@ -156,11 +156,6 @@ func doors():
 	print(matrix)
 
 func reset_world():
-	var floor_save = File.new()
-	floor_save.open("user://floor.save", File.WRITE)
-	floor_save.store_line(String(floor_number + 1))
-	floor_save.close()
-	
 	save_coins()
 	get_tree().change_scene("res://src/scenes/Overworld.tscn")
 

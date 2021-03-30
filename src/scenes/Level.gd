@@ -46,16 +46,16 @@ func _process(delta):
 	
 	if(!locked && player.current_room == room_id):
 		locked = true
-#		if(completion_criteria == "switches"):
-#			$Tiles.set_cell(13, 8, 21)
-#			$Tiles.set_cell(8, 13, 23)
-#			$Tiles.set_cell(13, 18, 18)
-#			$Tiles.set_cell(18, 13, 25)
-#		elif(completion_criteria == "enemies"):
-#			$Tiles.set_cell(13, 8, 20)
-#			$Tiles.set_cell(8, 13, 22)
-#			$Tiles.set_cell(13, 18, 19)
-#			$Tiles.set_cell(18, 13, 24)
+		if(completion_criteria == "switches"):
+			$Tiles.set_cell(13, 8, 21)
+			$Tiles.set_cell(8, 13, 23)
+			$Tiles.set_cell(13, 18, 18)
+			$Tiles.set_cell(18, 13, 25)
+		elif(completion_criteria == "enemies"):
+			$Tiles.set_cell(13, 8, 20)
+			$Tiles.set_cell(8, 13, 22)
+			$Tiles.set_cell(13, 18, 19)
+			$Tiles.set_cell(18, 13, 24)
 	
 	if(completion_criteria == "switches" && $Switches.unlocked()):
 		if(doors[0]):

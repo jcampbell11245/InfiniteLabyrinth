@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/title_screen_loop.wav-404fe90d78eaa6b87b4ac4f87ba3c7de.sample"
+
+[deps]
+
+source_file="res://tsamusic/title_screen_loop.wav"
+dest_files=[ "res://.import/title_screen_loop.wav-404fe90d78eaa6b87b4ac4f87ba3c7de.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

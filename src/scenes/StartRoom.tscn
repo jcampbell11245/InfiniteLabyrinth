@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -9,6 +9,31 @@
 [ext_resource path="res://src/Void.tscn" type="PackedScene" id=7]
 [ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
 [ext_resource path="res://src/tilesets/TopWalls.tscn" type="PackedScene" id=9]
+[ext_resource path="res://sprites/tileset/boss_door_new.png" type="Texture" id=10]
+
+[sub_resource type="AtlasTexture" id=1]
+atlas = ExtResource( 10 )
+region = Rect2( 0, 0, 24, 24 )
+
+[sub_resource type="AtlasTexture" id=2]
+atlas = ExtResource( 10 )
+region = Rect2( 24, 0, 24, 24 )
+
+[sub_resource type="AtlasTexture" id=3]
+atlas = ExtResource( 10 )
+region = Rect2( 0, 24, 24, 24 )
+
+[sub_resource type="AtlasTexture" id=4]
+atlas = ExtResource( 10 )
+region = Rect2( 24, 24, 24, 24 )
+
+[sub_resource type="SpriteFrames" id=5]
+animations = [ {
+"frames": [ SubResource( 1 ), SubResource( 2 ), SubResource( 3 ), SubResource( 4 ) ],
+"loop": true,
+"name": "default",
+"speed": 5.0
+} ]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -31,3 +56,9 @@ tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0
 [node name="RoomDetection" parent="." instance=ExtResource( 6 )]
 
 [node name="Void" parent="." instance=ExtResource( 7 )]
+
+[node name="BossDoor" type="AnimatedSprite" parent="."]
+position = Vector2( 201.444, 324.023 )
+frames = SubResource( 5 )
+frame = 1
+playing = true

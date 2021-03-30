@@ -60,6 +60,10 @@ func show_menu():
 
 func _on_Continue_pressed():
 	show_menu()
+	var floor_save = File.new()
+	floor_save.open("user://floor.save", File.WRITE)
+	floor_save.store_line(String(get_parent().get_parent().get_parent().get_parent().floor_number))
+	floor_save.close()
 	get_parent().get_parent().get_parent().get_parent().reset_world()
 
 func _on_Button_pressed():
