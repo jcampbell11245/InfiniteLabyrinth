@@ -155,7 +155,7 @@ func doors():
 				room.doors[3] = false
 			elif(y == 6):
 				room.doors[1] = false
-	print(matrix)
+#	print(matrix)
 
 func reset_world():
 	save_coins()
