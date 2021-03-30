@@ -119,6 +119,7 @@ func doors():
 	start.doors[2] = false
 	
 	var broom = load("res://src/scenes/B1.tscn").instance()
+	add_child(broom)
 	broom.position = Vector2(-264-191, 288*2-168)
 	broom.room_id = 62
 	broom.doors[0] = false
