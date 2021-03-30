@@ -123,7 +123,7 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
-	coins.add_coins(5 * overworld.floor_number * looting)
+	coins.add_coins(5 * overworld.floor_number * (looting + 1))
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)

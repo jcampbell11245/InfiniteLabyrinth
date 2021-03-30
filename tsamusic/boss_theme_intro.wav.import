@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/boss_theme_intro.wav-193f05e70f21208040b271f8c62f5cea.sample"
+
+[deps]
+
+source_file="res://tsamusic/boss_theme_intro.wav"
+dest_files=[ "res://.import/boss_theme_intro.wav-193f05e70f21208040b271f8c62f5cea.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

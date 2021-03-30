@@ -35,3 +35,7 @@ func update_health(change):
 			get_child(n).animation = "empty"
 	
 	return hearts
+
+
+func _on_Timer_timeout():
+	pass # Replace with function body.

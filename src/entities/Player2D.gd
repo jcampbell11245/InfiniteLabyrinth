@@ -26,9 +26,14 @@ var last_tile = Vector2.ZERO
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
+	$DungeonMusic.play()
 	z_index = 2
 
 func _process(delta):
+	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
+		$DungeonMusic.stop()
+		$BossMusic.play()
+	
 	#print(current_room)
 	timer()
 
@@ -177,7 +182,9 @@ func die():
 	floor_save.open("user://floor.save", File.WRITE)
 	floor_save.store_line("1")
 	floor_save.close()
-	get_tree().quit()
+	
+	get_parent().get_node("CameraHolder/Camera2D/GameOver").game_over()
+	get_tree().paused = true
 
 func set_last_tile():
 	var tiles
@@ -185,6 +192,8 @@ func set_last_tile():
 		tiles = get_parent().get_child(3).get_child(0)
 	elif(current_room == 61):
 		tiles = get_parent().get_node("EndRoom").get_child(0)
+	elif(current_room == 62):
+		tiles = get_parent().get_node("BossRoom").get_child(0)
 	else:
 		tiles = get_parent().get_child(current_room + 4).get_child(0)
 	var y_shift = (current_room / get_parent().columns) * 288 - 65
@@ -222,10 +231,10 @@ func _on_LevelCountdown_timeout():
 func _on_Hurtbox_area_shape_entered(area_id, area, _area_shape, _self_shape):
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		direction = area.get_parent().get_parent().direction
-		#take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
+		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
 	elif(area.get_name() == "ProjectileHitbox"):
 		direction = area.get_parent().direction
-		#take_damage(area.get_parent().damage, area.get_parent().direction, false)
+		take_damage(area.get_parent().damage, area.get_parent().direction, false)
 
 #Player returns back to normal opacity once invincibility cooldown ends
 func _on_InvincibilityCooldown_timeout():
@@ -236,15 +245,20 @@ func _on_FeetBox_body_entered(body):
 	if(respawn_cooldown.time_left == 0):
 		$Fall.play()
 		visible = false
-		get_parent().get_child(current_room).player_active = false
+		get_parent().get_child(current_room + 3).player_active = false
 		respawn_cooldown.start(1.1)
 
 func _on_RespawnCooldown_timeout():
 	visible = true
-	get_parent().get_child(current_room).player_active = true
+	get_parent().get_child(current_room + 3).player_active = true
 	position = last_tile
 	take_damage(0.5,  "none", true)
 
 
 func _on_RoomDetector_area_entered(area):
 	current_room = area.get_parent().room_id
+
+
+func _on_BossMusic_finished():
+	if(!$BossMusicLoop.playing):
+		$BossMusicLoop.play()

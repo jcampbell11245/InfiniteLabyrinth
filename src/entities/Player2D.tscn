@@ -1,4 +1,4 @@
-[gd_scene load_steps=73 format=2]
+[gd_scene load_steps=76 format=2]
 
 [ext_resource path="res://src/entities/Player2D.gd" type="Script" id=1]
 [ext_resource path="res://sprites/player/future_knight_right_walk.png" type="Texture" id=2]
@@ -18,10 +18,13 @@
 [ext_resource path="res://sprites/player/future_knight_down_slash.png" type="Texture" id=16]
 [ext_resource path="res://sprites/player/future_knight_up_slash.png" type="Texture" id=17]
 [ext_resource path="res://src/entities/LevelCountdown.gd" type="Script" id=18]
+[ext_resource path="res://tsamusic/dungeon.wav" type="AudioStream" id=19]
 [ext_resource path="res://sfx proto1/slash1.wav" type="AudioStream" id=20]
 [ext_resource path="res://sfx proto1/shoot1.wav" type="AudioStream" id=21]
 [ext_resource path="res://sfx proto1/hit1.wav" type="AudioStream" id=22]
 [ext_resource path="res://sfx proto1/fall.wav" type="AudioStream" id=23]
+[ext_resource path="res://tsamusic/boss_theme_intro.wav" type="AudioStream" id=24]
+[ext_resource path="res://tsamusic/boss_theme_loop.wav" type="AudioStream" id=25]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 11, 6 )
@@ -375,6 +378,17 @@ stream = ExtResource( 22 )
 
 [node name="Fall" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 23 )
+
+[node name="DungeonMusic" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 19 )
+volume_db = -10.0
+autoplay = true
+
+[node name="BossMusicLoop" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 25 )
+
+[node name="BossMusic" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 24 )
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="area_entered" from="FeetBox" to="." method="_on_FeetBox_area_entered"]
@@ -382,3 +396,4 @@ stream = ExtResource( 23 )
 [connection signal="area_entered" from="RoomDetector" to="." method="_on_RoomDetector_area_entered"]
 [connection signal="timeout" from="LevelCountdown" to="." method="_on_LevelCountdown_timeout"]
 [connection signal="timeout" from="RespawnCooldown" to="." method="_on_RespawnCooldown_timeout"]
+[connection signal="finished" from="BossMusic" to="." method="_on_BossMusic_finished"]

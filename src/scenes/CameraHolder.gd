@@ -18,6 +18,9 @@ func _physics_process(delta):
 	elif(player.current_room == 61):
 		x = 1998
 		y = 710
+	elif(player.current_room == 62):
+		x = -130
+		y = 710
 	else:
 		x = (player.current_room % get_parent().columns) * 261 + 411
 		y = (player.current_room / get_parent().columns) * 288 + 133

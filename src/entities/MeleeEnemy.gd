@@ -150,9 +150,9 @@ func take_damage(direction):
 #Called when the enemy dies
 func die():
 	if(only_hit_during_attack):
-		coins.add_coins(3 * overworld.floor_number * looting)
+		coins.add_coins(3 * overworld.floor_number * (looting + 1))
 	else:
-		coins.add_coins(1 * overworld.floor_number * looting)
+		coins.add_coins(1 * overworld.floor_number * (looting + 1))
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name().substr(0, 6))
 	get_parent().remove_child(self)
