@@ -16,6 +16,7 @@ func _ready():
 
 func _on_Area2D_area_entered(area):
 	if((area.get_name() == "Hitbox") && !open):
+		$Open.play()
 		open = true
 		$AnimatedSprite.animation = "open_" + direction
 		keys.add_keys(1)

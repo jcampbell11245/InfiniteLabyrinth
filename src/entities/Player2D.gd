@@ -50,7 +50,7 @@ func _physics_process(delta):
 func get_input():
 	#Movement
 	velocity = Vector2.ZERO
-	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && $RespawnCooldown.time_left == 0):
+	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && $RespawnCooldown.time_left == 0):
 		if Input.is_action_pressed('right'):
 			set_last_tile()
 			velocity.x += 1
@@ -66,12 +66,12 @@ func get_input():
 		velocity = velocity.normalized() * speed
 	
 	#Melee Attacking
-	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash"):
+	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 6) != "damage"):
 		hitbox.disabled = false;
 		$Slash.play()
 	
 	#Ranged Attacking
-	if(Input.is_action_just_pressed("ranged_attack") && shoot_cooldown.time_left == 0):
+	if(Input.is_action_just_pressed("ranged_attack") && animator.animation.substr(0, 6) != "damage" && shoot_cooldown.time_left == 0):
 		var arrow = Arrow.instance()
 		get_parent().add_child(arrow)
 		arrow.position = position
@@ -98,13 +98,15 @@ func animate():
 	elif Input.is_action_just_released('up'):
 		animator.animation = "idle_up"
 		direction = "up"
-	if animator.animation.substr(0, 5) == "slash" && animator.frame == 3:
+	if animator.animation.substr(0, 5) == "slash" && animator.frame == 7:
 		animator.animation = "idle_" + direction
-	if animator.animation.substr(0, 5) == "shoot" && animator.frame == 2:
+	if animator.animation.substr(0, 5) == "shoot" && animator.frame == 1:
+		animator.animation = "idle_" + direction
+	if animator.animation.substr(0, 6) == "damage" && animator.frame == 4:
 		animator.animation = "idle_" + direction
 	
 	#Movement
-	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot"):
+	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && animator.animation.substr(0, 9) != "walkshoot"):
 		if Input.is_action_pressed('right'):
 			animator.animation = "walk_right"
 			direction = "right"
@@ -119,12 +121,15 @@ func animate():
 			direction = "up"
 	
 	#Melee Attacking
-	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash"):
+	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 6) != "damage"):
 		animator.animation = "slash_" + direction
 	
 	#Ranged Attacking
-	if(Input.is_action_just_pressed("ranged_attack")):
-		animator.animation = "shoot_" + direction
+	if(Input.is_action_just_pressed("ranged_attack") && animator.animation.substr(0, 6) != "damage"):
+		if(animator.animation.substr(0, 4) == "walk"):
+			animator.animation = "walkshoot_" + direction
+		elif(animator.animation):
+			animator.animation = "shoot_" + direction
 
 #Updates the collision boxes
 func collision():
@@ -153,6 +158,8 @@ func take_damage(damage, direction, mute):
 	if(invincibility_cooldown.time_left == 0):
 		invincibility_cooldown.start(1)
 		animator.modulate.a = 0.5
+		
+		animator.animation = "damage_" + direction
 		
 		var dir = Vector2.ZERO
 		if(direction == "right"):

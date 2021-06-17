@@ -15,7 +15,58 @@ var faded_out = true
 var doors = [true, true, true, true]
 
 # Called when the node enters the scene tree for the first time.
-#func _ready():
+func _ready():
+	#Set stalagmites
+	if($Stalagmites != null):
+		for x in range(9,18):
+			for y in range(9, 10):
+				if($Stalagmites.get_cell(x, y) != -1):
+					var fileName = "stalagmites"
+					if($Stalagmites.get_cell(x, y - 1) != -1):
+						fileName += "_t"
+					if($Stalagmites.get_cell(x - 1, y) != -1):
+						fileName += "_l"
+					if($Stalagmites.get_cell(x + 1, y) != -1):
+						fileName += "_r"
+					if($Stalagmites.get_cell(x, y + 1) != -1):
+						fileName += "_b"
+					
+					var tile_id
+					match fileName:
+						"stalagmites":
+							tile_id = 0
+						"stalagmites_b":
+							tile_id = 1
+						"stalagmites_l":
+							tile_id = 2
+						"stalagmites_l_b":
+							tile_id = 3
+						"stalagmites_l_r":
+							tile_id = 4
+						"stalagmites_l_r_b":
+							tile_id = 5
+						"stalagmites_r":
+							tile_id = 6
+						"stalagmites_r_b":
+							tile_id = 7
+						"stalagmites_t":
+							tile_id = 8
+						"stalagmites_t_b":
+							tile_id = 9
+						"stalagmites_t_l":
+							tile_id = 10
+						"stalagmites_t_l_b":
+							tile_id = 11
+						"stalagmites_t_l_r":
+							tile_id = 12
+						"stalagmites_t_l_r_b":
+							tile_id = 13
+						"stalagmites_t_r":
+							tile_id = 14
+						"stalagmites_t_r_b":
+							tile_id = 15
+					
+					$Stalagmites.set_cell(x, y, tile_id)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
