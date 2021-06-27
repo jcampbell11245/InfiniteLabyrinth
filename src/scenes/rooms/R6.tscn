@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -11,6 +11,7 @@
 [ext_resource path="res://src/Void.tscn" type="PackedScene" id=9]
 [ext_resource path="res://src/tilesets/Stalagmites.tscn" type="PackedScene" id=10]
 [ext_resource path="res://src/tilesets/Spikes.tscn" type="PackedScene" id=11]
+[ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=12]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -29,7 +30,9 @@ tile_data = PoolIntArray(  )
 tile_data = PoolIntArray( 851978, 0, 0, 851983, 0, 0, 917514, 0, 0, 917515, 0, 0, 917519, 0, 0, 983051, 0, 0, 983052, 0, 0, 983053, 0, 0, 983054, 0, 0 )
 
 [node name="Stalagmites" parent="." instance=ExtResource( 10 )]
-tile_data = PoolIntArray( 655371, 1, 0, 655375, 1, 0, 720907, 8, 0, 720911, 8, 0, 851978, 1, 0, 851984, 1, 0, 917514, 14, 0, 917515, 3, 0, 917519, 7, 0, 917520, 10, 0, 983051, 14, 0, 983052, 5, 0, 983053, 5, 0, 983054, 5, 0, 983055, 10, 0, 1048588, 14, 0, 1048589, 12, 0, 1048590, 10, 0 )
+tile_data = PoolIntArray( 655371, 1, 0, 655375, 1, 0, 720907, 8, 0, 720911, 8, 0, 851978, 1, 0, 851984, 1, 0, 917514, 14, 0, 917515, 3, 0, 917519, 16, 0, 917520, 10, 0, 983051, 14, 0, 983052, 5, 0, 983053, 5, 0, 983054, 5, 0, 983055, 10, 0, 1048588, 14, 0, 1048589, 12, 0, 1048590, 10, 0 )
+
+[node name="Decorations" parent="." instance=ExtResource( 12 )]
 
 [node name="GoblinDeath" parent="." instance=ExtResource( 8 )]
 
@@ -38,4 +41,3 @@ tile_data = PoolIntArray( 655371, 1, 0, 655375, 1, 0, 720907, 8, 0, 720911, 8, 0
 [node name="RoomDetection" parent="." instance=ExtResource( 7 )]
 
 [node name="Void" parent="." instance=ExtResource( 9 )]
-visible = false

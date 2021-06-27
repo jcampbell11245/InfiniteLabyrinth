@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -15,6 +15,7 @@
 [ext_resource path="res://src/Void.tscn" type="PackedScene" id=13]
 [ext_resource path="res://src/tilesets/Spikes.tscn" type="PackedScene" id=14]
 [ext_resource path="res://src/tilesets/Stalagmites.tscn" type="PackedScene" id=15]
+[ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=16]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -34,6 +35,8 @@ collision_mask = 3
 [node name="Stalagmites" parent="." instance=ExtResource( 15 )]
 
 [node name="Spikes" parent="." instance=ExtResource( 14 )]
+
+[node name="Decorations" parent="." instance=ExtResource( 16 )]
 
 [node name="GoblinDeath" parent="." instance=ExtResource( 8 )]
 

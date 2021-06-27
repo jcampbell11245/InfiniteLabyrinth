@@ -17,56 +17,120 @@ var doors = [true, true, true, true]
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	#Set stalagmites
-	if($Stalagmites != null):
-		for x in range(9,18):
-			for y in range(9, 10):
-				if($Stalagmites.get_cell(x, y) != -1):
-					var fileName = "stalagmites"
-					if($Stalagmites.get_cell(x, y - 1) != -1):
-						fileName += "_t"
-					if($Stalagmites.get_cell(x - 1, y) != -1):
-						fileName += "_l"
-					if($Stalagmites.get_cell(x + 1, y) != -1):
-						fileName += "_r"
-					if($Stalagmites.get_cell(x, y + 1) != -1):
-						fileName += "_b"
-					
-					var tile_id
-					match fileName:
-						"stalagmites":
-							tile_id = 0
-						"stalagmites_b":
-							tile_id = 1
-						"stalagmites_l":
-							tile_id = 2
-						"stalagmites_l_b":
-							tile_id = 3
-						"stalagmites_l_r":
-							tile_id = 4
-						"stalagmites_l_r_b":
-							tile_id = 5
-						"stalagmites_r":
-							tile_id = 6
-						"stalagmites_r_b":
-							tile_id = 7
-						"stalagmites_t":
-							tile_id = 8
-						"stalagmites_t_b":
-							tile_id = 9
-						"stalagmites_t_l":
-							tile_id = 10
-						"stalagmites_t_l_b":
-							tile_id = 11
-						"stalagmites_t_l_r":
-							tile_id = 12
-						"stalagmites_t_l_r_b":
-							tile_id = 13
-						"stalagmites_t_r":
-							tile_id = 14
-						"stalagmites_t_r_b":
-							tile_id = 15
-					
-					$Stalagmites.set_cell(x, y, tile_id)
+	#if($Stalagmites != null):
+	#	for x in range(9,18):
+	#		for y in range(9, 10):
+	#			if($Stalagmites.get_cell(x, y - 1) != -1):
+	#					fileName += "_t"
+	#				if($Stalagmites.get_cell(x - 1, y) != -1):
+	#					fileName += "_l"
+	#				if($Stalagmites.get_cell(x + 1, y) != -1):
+	#					fileName += "_r"
+	#				if($Stalagmites.get_cell(x, y + 1) != -1):
+	#					fileName += "_b"
+	#				
+	#				var tile_id
+	#				match fileName:
+	#					"stalagmites":
+	#						tile_id = 0
+	#					"stalagmites_b":
+	#						tile_id = 1
+	#					"stalagmites_l":
+	#						tile_id = 2
+	#					"stalagmites_l_b":
+	#						tile_id = 3
+	#					"stalagmites_l_r":
+	#						tile_id = 4
+	#					"stalagmites_l_r_b":
+	#						tile_id = 5
+	#					"stalagmites_r":
+	#						tile_id = 6
+	#					"stalagmites_r_b":
+	#						tile_id = 7
+	#					"stalagmites_t":
+	#						tile_id = 8
+	#					"stalagmites_t_b":
+	#						tile_id = 9
+	#					"stalagmites_t_l":
+	#						tile_id = 10
+	#					"stalagmites_t_l_b":
+	#						tile_id = 11
+	#					"stalagmites_t_l_r":
+	#						tile_id = 12
+	#					"stalagmites_t_l_r_b":
+	#						tile_id = 13
+	#					"stalagmites_t_r":
+	#						tile_id = 14
+	#					"stalagmites_t_r_b":
+	#						tile_id = 15
+	#				
+	#				$Stalagmites.set_cell(x, y, tile_id)
+
+	if($Decorations != null):
+		for x in range(9,17):
+			for y in range(9, 17):
+				if($Tiles.get_cell(x, y) == 0):
+					print("hey")
+					var rng = RandomNumberGenerator.new()
+					rng.randomize()
+					var variant = rng.randi_range(0, 33)
+					if(variant > 29):
+						if(variant < 30):
+							$Decorations.set_cell(x, y, 0)
+						if(variant < 32):
+							$Decorations.set_cell(x, y, 1)
+						if(variant < 33):
+							$Decorations.set_cell(x, y, 2)
+						else:
+							$Decorations.set_cell(x, y, 3)
+
+	for x in range(10,17):
+		for y in range(10, 17):
+			if($Tiles.get_cell(x, y) == 0):
+				var rng = RandomNumberGenerator.new()
+				rng.randomize()
+				var variant = rng.randi_range(0, 2)
+				$Tiles.set_cell(x, y, 32 + variant)
+	
+	for x in range(10,17):
+		if($Tiles.get_cell(x, 9) == 0):
+			var rng = RandomNumberGenerator.new()
+			rng.randomize()
+			var variant = rng.randi_range(0, 1)
+			$Tiles.set_cell(x, 9, 39 + variant)
+	
+	for x in range(10,17):
+		if($Tiles.get_cell(x, 17) == 0):
+			var rng = RandomNumberGenerator.new()
+			rng.randomize()
+			var variant = rng.randi_range(0, 1)
+			$Tiles.set_cell(x, 17, 28 + variant)
+	
+	for y in range(10,17):
+		if($Tiles.get_cell(9, y) == 0):
+			var rng = RandomNumberGenerator.new()
+			rng.randomize()
+			var variant = rng.randi_range(0, 1)
+			$Tiles.set_cell(9, y, 30 + variant)
+	
+	for y in range(10,17):
+		if($Tiles.get_cell(17, y) == 0):
+			var rng = RandomNumberGenerator.new()
+			rng.randomize()
+			var variant = rng.randi_range(0, 1)
+			$Tiles.set_cell(17, y, 37 + variant)
+	
+	if($Tiles.get_cell(9, 9) == 0):
+		$Tiles.set_cell(9, 9, 35)
+	
+	if($Tiles.get_cell(17, 9) == 0):
+		$Tiles.set_cell(17, 9, 36)
+	
+	if($Tiles.get_cell(9, 17) == 0):
+		$Tiles.set_cell(9, 17, 26)
+	
+	if($Tiles.get_cell(17, 17) == 0):
+		$Tiles.set_cell(17, 17, 27)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):

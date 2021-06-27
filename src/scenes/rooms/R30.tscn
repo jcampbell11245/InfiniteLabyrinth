@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -13,6 +13,7 @@
 [ext_resource path="res://src/entities/Wizard.tscn" type="PackedScene" id=11]
 [ext_resource path="res://src/entities/Goblin.tscn" type="PackedScene" id=12]
 [ext_resource path="res://src/tilesets/Stalagmites.tscn" type="PackedScene" id=13]
+[ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=14]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -32,6 +33,8 @@ tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0
 
 [node name="Stalagmites" parent="." instance=ExtResource( 13 )]
 tile_data = PoolIntArray( 655370, 0, 0, 655372, 0, 0, 655374, 0, 0, 655376, 0, 0, 786442, 0, 0, 786444, 0, 0, 786446, 0, 0, 786448, 0, 0, 917514, 0, 0, 917516, 0, 0, 917518, 0, 0, 917520, 0, 0, 1048586, 0, 0, 1048588, 0, 0, 1048590, 0, 0, 1048592, 0, 0 )
+
+[node name="Decorations" parent="." instance=ExtResource( 14 )]
 
 [node name="GoblinDeath" parent="." instance=ExtResource( 8 )]
 

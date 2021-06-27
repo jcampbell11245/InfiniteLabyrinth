@@ -536,7 +536,7 @@ animations = [ {
 "frames": [ SubResource( 133 ), SubResource( 134 ), SubResource( 135 ), SubResource( 136 ), SubResource( 137 ) ],
 "loop": false,
 "name": "damage_up",
-"speed": 15.0
+"speed": 8.0
 }, {
 "frames": [ ExtResource( 8 ), ExtResource( 8 ) ],
 "loop": false,
@@ -561,7 +561,7 @@ animations = [ {
 "frames": [ SubResource( 146 ), SubResource( 147 ), SubResource( 148 ), SubResource( 149 ), SubResource( 150 ) ],
 "loop": false,
 "name": "damage_left",
-"speed": 15.0
+"speed": 8.0
 }, {
 "frames": [ SubResource( 151 ), SubResource( 152 ), SubResource( 153 ), SubResource( 154 ) ],
 "loop": true,
@@ -581,7 +581,7 @@ animations = [ {
 "frames": [ SubResource( 163 ), SubResource( 164 ), SubResource( 165 ), SubResource( 166 ), SubResource( 167 ) ],
 "loop": false,
 "name": "damage_right",
-"speed": 15.0
+"speed": 8.0
 }, {
 "frames": [ SubResource( 168 ), SubResource( 169 ), SubResource( 170 ), SubResource( 171 ), SubResource( 172 ), SubResource( 173 ), SubResource( 174 ), SubResource( 175 ) ],
 "loop": false,
@@ -601,7 +601,7 @@ animations = [ {
 "frames": [ SubResource( 95 ), SubResource( 96 ), SubResource( 97 ), SubResource( 98 ), SubResource( 99 ) ],
 "loop": false,
 "name": "damage_down",
-"speed": 15.0
+"speed": 8.0
 }, {
 "frames": [ SubResource( 197 ), SubResource( 198 ), SubResource( 199 ), SubResource( 200 ), SubResource( 201 ), SubResource( 202 ), SubResource( 203 ), SubResource( 204 ) ],
 "loop": true,
