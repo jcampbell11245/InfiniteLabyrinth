@@ -70,7 +70,6 @@ func _ready():
 		for x in range(9,17):
 			for y in range(9, 17):
 				if($Tiles.get_cell(x, y) == 0):
-					print("hey")
 					var rng = RandomNumberGenerator.new()
 					rng.randomize()
 					var variant = rng.randi_range(0, 33)

@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://src/Fade.gd" type="Script" id=1]
+[ext_resource path="res://src/Void.gd" type="Script" id=2]
 
-[sub_resource type="Animation" id=3]
+[sub_resource type="Animation" id=1]
 resource_name = "FadeIn"
 length = 2.0
 tracks/0/type = "bezier"
@@ -92,8 +93,10 @@ tracks/3/keys = {
 
 [node name="Void" type="Area2D"]
 z_index = 100
+script = ExtResource( 2 )
 
 [node name="ColorRect" type="ColorRect" parent="."]
+visible = false
 margin_left = 191.0
 margin_top = 168.0
 margin_right = 456.0
@@ -105,7 +108,7 @@ __meta__ = {
 
 [node name="Fade" type="AnimationPlayer" parent="."]
 playback_speed = 4.0
-anims/FadeIn = SubResource( 3 )
+anims/FadeIn = SubResource( 1 )
 anims/FadeOut = SubResource( 2 )
 script = ExtResource( 1 )
 [connection signal="animation_finished" from="Fade" to="Fade" method="_on_Fade_animation_finished"]

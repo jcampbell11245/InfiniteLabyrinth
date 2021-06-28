@@ -250,10 +250,18 @@ func _on_InvincibilityCooldown_timeout():
 #When a player hits a collision box
 func _on_FeetBox_body_entered(body):
 	if(respawn_cooldown.time_left == 0):
-		$Fall.play()
-		visible = false
-		get_parent().get_child(current_room + 3).player_active = false
-		respawn_cooldown.start(1.1)
+		#print($FeetBox.global_position)
+		#print(body.get_parent().global_position)
+		#if(abs($FeetBox.global_position - body.position) > 5):
+		#var body_extents = body.shape.extents
+		#var area_extents = $FeetBox.get_node('CollisionShape2D').shape.extents
+		#var body_rect = Rect2(body.global_position - body_extents, body_extents * 2)
+		#var area_rect = Rect2($FeetBox.global_position - area_extents, area_extents * 2)
+		#if area_rect.encloses(body_rect):
+			$Fall.play()
+			visible = false
+			get_parent().get_child(current_room + 3).player_active = false
+			respawn_cooldown.start(1.1)
 
 func _on_RespawnCooldown_timeout():
 	visible = true

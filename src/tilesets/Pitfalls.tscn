@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=2]
+[gd_scene load_steps=37 format=2]
 
 [ext_resource path="res://sprites/tileset/into_the_voooiid.png" type="Texture" id=1]
 [ext_resource path="res://sprites/tileset/pitfall_r.png" type="Texture" id=2]
@@ -17,6 +17,7 @@
 [ext_resource path="res://sprites/tileset/pitfall_rlb.png" type="Texture" id=15]
 [ext_resource path="res://sprites/tileset/pitfall_t.png" type="Texture" id=16]
 [ext_resource path="res://sprites/tileset/pitfall_lr.png" type="Texture" id=17]
+[ext_resource path="res://sprites/tileset/pitfall.png" type="Texture" id=18]
 
 [sub_resource type="ConvexPolygonShape2D" id=1]
 points = PoolVector2Array( 18.5326, 21.7627, 5.47761, 21.7627, 5.47761, 19.2056, 18.5326, 19.2056 )
@@ -427,6 +428,20 @@ points = PoolVector2Array( 24, 24, 8.43855, 24, 8.43855, 15.9755, 0, 15.9755, 0,
 "shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
 } ]
 17/z_index = 0
+18/name = "pitfall.png 18"
+18/texture = ExtResource( 18 )
+18/tex_offset = Vector2( 0, 0 )
+18/modulate = Color( 1, 1, 1, 1 )
+18/region = Rect2( 0, 0, 24, 24 )
+18/tile_mode = 0
+18/occluder_offset = Vector2( 0, 0 )
+18/navigation_offset = Vector2( 0, 0 )
+18/shape_offset = Vector2( 0, 0 )
+18/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+18/shape_one_way = false
+18/shape_one_way_margin = 0.0
+18/shapes = [  ]
+18/z_index = 0
 
 [node name="Pitfalls" type="TileMap"]
 tile_set = SubResource( 18 )
