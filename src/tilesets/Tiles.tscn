@@ -112,7 +112,7 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 1/shape_one_way = false
 1/shape_one_way_margin = 0.0
 1/shapes = [  ]
-1/z_index = 0
+1/z_index = -20
 2/name = "cave_door_bottom_locked.png 2"
 2/texture = ExtResource( 11 )
 2/tex_offset = Vector2( 0, 0 )
@@ -182,7 +182,7 @@ points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 "shape": SubResource( 12 ),
 "shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
 } ]
-5/z_index = 0
+5/z_index = 20
 6/name = "cave_wall_bottom_top.png 6"
 6/texture = ExtResource( 6 )
 6/tex_offset = Vector2( 0, 0 )

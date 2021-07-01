@@ -139,12 +139,12 @@ func _process(delta):
 		$Top.set_cell(13, 7, 1)
 	if(!doors[1]):
 		$Tiles.set_cell(18, 13, 0)
-		$TopWalls.set_cell(18, 13, 1)
+		#$TopWalls.set_cell(18, 13, 1)
 	if(!doors[2]):
 		$Tiles.set_cell(13, 18, 5)
 	if(!doors[3]):
 		$Tiles.set_cell(8, 13, 0)
-		$TopWalls.set_cell(8, 13, 0)
+		#$TopWalls.set_cell(8, 13, 0)
 		
 	if(room_id == 61):
 		if(get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Keys").get_keys() == 3):
