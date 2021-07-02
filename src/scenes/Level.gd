@@ -69,66 +69,66 @@ func _ready():
 	if($Decorations != null):
 		for x in range(9,17):
 			for y in range(9, 17):
-				if($Tiles.get_cell(x, y) == 0):
+				if($Tiles.get_cell(x, y) == 0 && $Pitfalls.get_cell(x, y) == -1 && ($Stalagmites == null || $Stalagmites.get_cell(x, y) == -1)):
 					var rng = RandomNumberGenerator.new()
 					rng.randomize()
-					var variant = rng.randi_range(0, 33)
-					if(variant > 29):
-						if(variant < 30):
+					var variant = rng.randi_range(0, 66)
+					if(variant > 58):
+						if(variant < 60):
 							$Decorations.set_cell(x, y, 0)
-						if(variant < 32):
+						if(variant < 64):
 							$Decorations.set_cell(x, y, 1)
-						if(variant < 33):
+						if(variant < 66):
 							$Decorations.set_cell(x, y, 2)
 						else:
 							$Decorations.set_cell(x, y, 3)
 
 	for x in range(10,17):
 		for y in range(10, 17):
-			if($Tiles.get_cell(x, y) == 0):
+			if($Tiles.get_cell(x, y) == 0 || $Tiles.get_cell(x, y) == 4):
 				var rng = RandomNumberGenerator.new()
 				rng.randomize()
 				var variant = rng.randi_range(0, 2)
 				$Tiles.set_cell(x, y, 32 + variant)
 	
 	for x in range(10,17):
-		if($Tiles.get_cell(x, 9) == 0):
+		if($Tiles.get_cell(x, 9) == 0) || $Tiles.get_cell(x, 9) == 4:
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
 			var variant = rng.randi_range(0, 1)
 			$Tiles.set_cell(x, 9, 39 + variant)
 	
 	for x in range(10,17):
-		if($Tiles.get_cell(x, 17) == 0):
+		if($Tiles.get_cell(x, 17) == 0 || $Tiles.get_cell(x, 17) == 4):
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
 			var variant = rng.randi_range(0, 1)
 			$Tiles.set_cell(x, 17, 28 + variant)
 	
 	for y in range(10,17):
-		if($Tiles.get_cell(9, y) == 0):
+		if($Tiles.get_cell(9, y) == 0 || $Tiles.get_cell(9, y) == 4):
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
 			var variant = rng.randi_range(0, 1)
 			$Tiles.set_cell(9, y, 30 + variant)
 	
 	for y in range(10,17):
-		if($Tiles.get_cell(17, y) == 0):
+		if($Tiles.get_cell(17, y) == 0 || $Tiles.get_cell(17, y) == 4):
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
 			var variant = rng.randi_range(0, 1)
 			$Tiles.set_cell(17, y, 37 + variant)
 	
-	if($Tiles.get_cell(9, 9) == 0):
+	if($Tiles.get_cell(9, 9) == 0 || $Tiles.get_cell(9, 9) == 4):
 		$Tiles.set_cell(9, 9, 35)
 	
-	if($Tiles.get_cell(17, 9) == 0):
+	if($Tiles.get_cell(17, 9) == 0 || $Tiles.get_cell(17, 9) == 4):
 		$Tiles.set_cell(17, 9, 36)
 	
-	if($Tiles.get_cell(9, 17) == 0):
+	if($Tiles.get_cell(9, 17) == 0 || $Tiles.get_cell(9, 17) == 4):
 		$Tiles.set_cell(9, 17, 26)
 	
-	if($Tiles.get_cell(17, 17) == 0):
+	if($Tiles.get_cell(17, 17) == 0 || $Tiles.get_cell(17, 17) == 4):
 		$Tiles.set_cell(17, 17, 27)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -136,15 +136,25 @@ func _process(delta):
 	#Set doors
 	if(!doors[0] && room_id != 61):
 		$Tiles.set_cell(13, 8, 6)
+		$Top.set_cell(13, 8, 3)
 		$Top.set_cell(13, 7, 1)
 	if(!doors[1]):
-		$Tiles.set_cell(18, 13, 0)
-		#$TopWalls.set_cell(18, 13, 1)
+		$Top.set_cell(18, 13, 13)
+		$Top.set_cell(18, 12, 13)
+		$Top.set_cell(18, 11, 13)
+		$Tiles.set_cell(18, 13, 10)
+		$Tiles.set_cell(18, 12, 10)
+		$Tiles.set_cell(18, 11, 10)
 	if(!doors[2]):
 		$Tiles.set_cell(13, 18, 5)
+		$Top.set_cell(13, 18, 3)
 	if(!doors[3]):
-		$Tiles.set_cell(8, 13, 0)
-		#$TopWalls.set_cell(8, 13, 0)
+		$Top.set_cell(8, 13, 4)
+		$Top.set_cell(8, 12, 4)
+		$Top.set_cell(8, 11, 4)
+		$Tiles.set_cell(8, 13, 7)
+		$Tiles.set_cell(8, 12, 7)
+		$Tiles.set_cell(8, 11, 7)
 		
 	if(room_id == 61):
 		if(get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Keys").get_keys() == 3):
@@ -162,33 +172,41 @@ func _process(delta):
 		locked = true
 		if(completion_criteria == "switches"):
 			$Tiles.set_cell(13, 8, 21)
-			$Tiles.set_cell(8, 13, 23)
+			$Locks.set_cell(8, 13, 1)
+			$Locks.set_cell(8, 12, 5)
 			$Tiles.set_cell(13, 18, 18)
-			$Tiles.set_cell(18, 13, 25)
+			$Locks.set_cell(18, 13, 2)
+			$Locks.set_cell(18, 12, 6)
 		elif(completion_criteria == "enemies"):
 			$Tiles.set_cell(13, 8, 20)
-			$Tiles.set_cell(8, 13, 22)
-			$Tiles.set_cell(13, 18, 19)
-			$Tiles.set_cell(18, 13, 24)
+			$Locks.set_cell(8, 13, 0)
+			$Locks.set_cell(8, 12, 4)
+			$Tiles.set_cell(13, 18, 18)
+			$Locks.set_cell(18, 13, 3)
+			$Locks.set_cell(18, 12, 7)
 	
 	if(completion_criteria == "switches" && $Switches.unlocked()):
 		if(doors[0]):
 			$Tiles.set_cell(13, 8, 1)
 		if(doors[3]):
-			$Tiles.set_cell(8, 13, 16)
+			$Locks.set_cell(8, 13, 8)
+			$Locks.set_cell(8, 12, 8)
 		if(doors[2]):
 			$Tiles.set_cell(13, 18, 16)
 		if(doors[1]):
-			$Tiles.set_cell(18, 13, 16)
+			$Locks.set_cell(18, 13, 8)
+			$Locks.set_cell(18, 12, 8)
 	elif(completion_criteria == "enemies" && enemy_count == 0):
 		if(doors[0]):
 			$Tiles.set_cell(13, 8, 1)
 		if(doors[3]):
-			$Tiles.set_cell(8, 13, 16)
+			$Locks.set_cell(8, 13, 8)
+			$Locks.set_cell(8, 12, 8)
 		if(doors[2]):
 			$Tiles.set_cell(13, 18, 16)
 		if(doors[1]):
-			$Tiles.set_cell(18, 13, 16)
+			$Locks.set_cell(18, 13, 8)
+			$Locks.set_cell(18, 12, 8)
 
 func death_sound(enemy_type):
 	if(enemy_type == "Goblin"):

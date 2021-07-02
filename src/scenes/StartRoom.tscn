@@ -64,5 +64,5 @@ tile_data = PoolIntArray( 589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0
 [node name="BossDoor" type="AnimatedSprite" parent="."]
 position = Vector2( 201.444, 324.023 )
 frames = SubResource( 5 )
-frame = 1
+frame = 3
 playing = true

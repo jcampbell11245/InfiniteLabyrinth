@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=19 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -17,6 +17,7 @@
 [ext_resource path="res://src/tilesets/Stalagmites.tscn" type="PackedScene" id=15]
 [ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=16]
 [ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=17]
+[ext_resource path="res://src/Locks.tscn" type="PackedScene" id=18]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -37,6 +38,8 @@ tile_data = PoolIntArray( 458765, 3, 0, 589832, 0, 0, 589842, 1, 0, 655378, 1, 0
 [node name="Top" parent="." instance=ExtResource( 5 )]
 collision_mask = 3
 tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 720904, 8, 0, 720914, 11, 0, 786440, 7, 0, 786450, 10, 0, 851976, 6, 0, 851986, 9, 0, 1179661, 14, 0 )
+
+[node name="Locks" parent="." instance=ExtResource( 18 )]
 
 [node name="Stalagmites" parent="." instance=ExtResource( 15 )]
 

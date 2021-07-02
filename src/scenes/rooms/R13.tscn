@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=19 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -17,6 +17,7 @@
 [ext_resource path="res://src/tilesets/Spikes.tscn" type="PackedScene" id=15]
 [ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=16]
 [ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=17]
+[ext_resource path="res://src/Locks.tscn" type="PackedScene" id=18]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -33,6 +34,8 @@ tile_data = PoolIntArray(  )
 [node name="Top" parent="." instance=ExtResource( 5 )]
 tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 524301, 12, 0, 589832, 4, 0, 589842, 5, 0, 655368, 4, 0, 655378, 5, 0, 720904, 8, 0, 720914, 11, 0, 786440, 7, 0, 786450, 10, 0, 851976, 6, 0, 851986, 9, 0, 917512, 4, 0, 917522, 5, 0, 983048, 4, 0, 983058, 5, 0, 1048584, 4, 0, 1048594, 5, 0, 1114120, 4, 0, 1114130, 5, 0, 1179661, 14, 0 )
 
+[node name="Locks" parent="." instance=ExtResource( 18 )]
+
 [node name="TopWalls" parent="." instance=ExtResource( 9 )]
 tile_data = PoolIntArray( 589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0, 917512, 0, 0, 917522, 1, 0, 983048, 0, 0, 983058, 1, 0, 1048584, 0, 0, 1048594, 1, 0, 1114120, 0, 0, 1114130, 1, 0 )
 
@@ -40,7 +43,7 @@ tile_data = PoolIntArray( 589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0
 tile_data = PoolIntArray( 655370, 0, 0, 655375, 0, 0, 786445, 0, 0, 851978, 0, 0, 851981, 0, 0, 917514, 0, 0, 983055, 0, 0, 1048588, 0, 0 )
 
 [node name="Stalagmites" parent="." instance=ExtResource( 14 )]
-tile_data = PoolIntArray( 655370, 7, 0, 655371, 4, 0, 655372, 4, 0, 655373, 4, 0, 655374, 4, 0, 655375, 4, 0, 655376, 3, 0, 720906, 9, 0, 720912, 9, 0, 786442, 9, 0, 786444, 6, 0, 786445, 4, 0, 786446, 3, 0, 786448, 9, 0, 851978, 9, 0, 851982, 9, 0, 851984, 9, 0, 917514, 15, 0, 917515, 4, 0, 917516, 4, 0, 917517, 4, 0, 917518, 10, 0, 917520, 9, 0, 983050, 9, 0, 983056, 9, 0, 1048586, 8, 0, 1048588, 7, 0, 1048589, 4, 0, 1048590, 4, 0, 1048591, 4, 0, 1048592, 10, 0, 1114124, 8, 0 )
+tile_data = PoolIntArray( 655370, 16, 0, 655371, 4, 0, 655372, 4, 0, 655373, 4, 0, 655374, 4, 0, 655375, 4, 0, 655376, 3, 0, 720906, 9, 0, 720912, 9, 0, 786442, 9, 0, 786444, 6, 0, 786445, 4, 0, 786446, 3, 0, 786448, 9, 0, 851978, 9, 0, 851982, 9, 0, 851984, 9, 0, 917514, 15, 0, 917515, 4, 0, 917516, 4, 0, 917517, 4, 0, 917518, 10, 0, 917520, 9, 0, 983050, 9, 0, 983056, 9, 0, 1048586, 8, 0, 1048588, 16, 0, 1048589, 4, 0, 1048590, 4, 0, 1048591, 4, 0, 1048592, 10, 0, 1114124, 8, 0 )
 
 [node name="Decorations" parent="." instance=ExtResource( 16 )]
 

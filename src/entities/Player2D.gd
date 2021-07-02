@@ -170,12 +170,12 @@ func take_damage(damage, direction, mute):
 			dir = Vector2.UP
 		elif(direction == "down"):
 			dir = Vector2.DOWN
-		knockback = dir * 150
+		#knockback = dir * 150
 		
 		if(!mute):
 			$Hit.play()
 		
-		hearts.update_health(-damage)
+		#hearts.update_health(-damage)
 		if(hearts.hearts <= 0):
 			die()
 

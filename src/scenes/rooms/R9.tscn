@@ -1,10 +1,11 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
 [ext_resource path="res://src/sfx/KnightDeath.tscn" type="PackedScene" id=3]
 [ext_resource path="res://src/tilesets/Tiles.tscn" type="PackedScene" id=4]
 [ext_resource path="res://src/tilesets/Top.tscn" type="PackedScene" id=5]
+[ext_resource path="res://src/Locks.tscn" type="PackedScene" id=6]
 [ext_resource path="res://src/entities/Switches.gd" type="Script" id=7]
 [ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
 [ext_resource path="res://src/entities/Switch.tscn" type="PackedScene" id=9]
@@ -28,6 +29,8 @@ tile_data = PoolIntArray( 655371, 0, 0, 655372, 0, 0, 655374, 0, 0, 655375, 0, 0
 
 [node name="Top" parent="." instance=ExtResource( 5 )]
 tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 720904, 8, 0, 720914, 11, 0, 786440, 7, 0, 786450, 10, 0, 851976, 6, 0, 851986, 9, 0, 1179661, 14, 0 )
+
+[node name="Locks" parent="." instance=ExtResource( 6 )]
 
 [node name="Decorations" parent="." instance=ExtResource( 13 )]
 
