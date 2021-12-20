@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -14,6 +14,7 @@
 [ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=12]
 [ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=13]
 [ext_resource path="res://src/Locks.tscn" type="PackedScene" id=14]
+[ext_resource path="res://src/tilesets/PitfallTransitions.tscn" type="PackedScene" id=15]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -25,6 +26,8 @@ tile_data = PoolIntArray( 458760, 9, 0, 458761, 4, 0, 458762, 4, 0, 458763, 4, 0
 
 [node name="Pitfalls" parent="." instance=ExtResource( 2 )]
 tile_data = PoolIntArray(  )
+
+[node name="PitfallTransitions" parent="." instance=ExtResource( 15 )]
 
 [node name="TopWalls" parent="." instance=ExtResource( 6 )]
 tile_data = PoolIntArray( 458765, 3, 0, 524301, 4, 0, 589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0, 720904, 0, 0, 720914, 1, 0, 917512, 0, 0, 917522, 1, 0, 983048, 0, 0, 983058, 1, 0, 1048584, 0, 0, 1048594, 1, 0, 1114120, 0, 0, 1114130, 1, 0 )

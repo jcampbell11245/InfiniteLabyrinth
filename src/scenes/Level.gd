@@ -130,6 +130,33 @@ func _ready():
 	
 	if($Tiles.get_cell(17, 17) == 0 || $Tiles.get_cell(17, 17) == 4):
 		$Tiles.set_cell(17, 17, 27)
+	
+	#Sets pitfall transitions
+	if($PitfallTransitions != null):
+		for x in range(9,17):
+			for y in range(9, 17):
+				if($Pitfalls.get_cell(x, y) != -1):
+					var top = $Pitfalls.get_cell(x, y - 1) == -1
+					var right = $Pitfalls.get_cell(x + 1, y) == -1
+					var bottom = $Pitfalls.get_cell(x, y + 1) == -1
+					var left = $Pitfalls.get_cell(x - 1, y) == -1
+					
+					if(top && right):
+						$PitfallTransitions.set_cell(x, y, 4)
+					elif(top && left):
+						$PitfallTransitions.set_cell(x, y, 4)
+					elif(bottom && right):
+						$PitfallTransitions.set_cell(x, y, 4)
+					elif(bottom && left):
+						$PitfallTransitions.set_cell(x, y, 4)
+					elif(top):
+						$PitfallTransitions.set_cell(x, y, 0)
+					elif(right):
+						$PitfallTransitions.set_cell(x, y, 1)
+					elif(bottom):
+						$PitfallTransitions.set_cell(x, y, 2)
+					elif(left):
+						$PitfallTransitions.set_cell(x, y, 3)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):

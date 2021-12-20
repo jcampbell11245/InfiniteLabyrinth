@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -13,6 +13,7 @@
 [ext_resource path="res://src/entities/Goblin.tscn" type="PackedScene" id=11]
 [ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=12]
 [ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=13]
+[ext_resource path="res://src/tilesets/PitfallTransitions.tscn" type="PackedScene" id=14]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -24,6 +25,8 @@ tile_data = PoolIntArray( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8,
 
 [node name="Pitfalls" parent="." instance=ExtResource( 2 )]
 tile_data = PoolIntArray( 589833, 0, 0, 589834, 0, 0, 589835, 0, 0, 589839, 0, 0, 655369, 2, 0, 655370, 2, 0, 655371, 14, 0, 655372, 0, 0, 655375, 17, 0, 720907, 15, 0, 720911, 17, 0, 786447, 15, 0, 786448, 0, 0, 851979, 0, 0, 851981, 0, 0, 917515, 15, 0, 917517, 14, 0, 917518, 0, 0, 917520, 15, 0, 983050, 0, 0, 983054, 17, 0, 1048586, 17, 0, 1048588, 0, 0, 1048590, 14, 0, 1048591, 0, 0, 1048592, 0, 0, 1114122, 17, 0, 1114127, 17, 0 )
+
+[node name="PitfallTransitions" parent="." instance=ExtResource( 14 )]
 
 [node name="Top" parent="." instance=ExtResource( 5 )]
 tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 589832, 4, 0, 589842, 5, 0, 655368, 4, 0, 655378, 5, 0, 720904, 8, 0, 720914, 11, 0, 786440, 7, 0, 786450, 10, 0, 851976, 6, 0, 851986, 9, 0, 917512, 4, 0, 917522, 5, 0, 983048, 4, 0, 983058, 5, 0, 1048584, 4, 0, 1048594, 5, 0, 1114120, 4, 0, 1114130, 5, 0, 1179661, 14, 0 )

@@ -18,6 +18,7 @@ position = Vector2( 150, 719 )
 script = ExtResource( 5 )
 
 [node name="Camera2D" parent="CameraHolder" instance=ExtResource( 1 )]
+zoom = Vector2( 0.35, 0.35 )
 script = ExtResource( 6 )
 
 [node name="PauseLayer" parent="." instance=ExtResource( 4 )]

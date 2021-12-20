@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/into_the_void.png-73a960f444776d8c25b0fe0a6ec18b31.stex"
+path="res://.import/into_the_void_right.png-8af4a1aaff303430db569f45c3968849.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/tileset/into_the_void.png"
-dest_files=[ "res://.import/into_the_void.png-73a960f444776d8c25b0fe0a6ec18b31.stex" ]
+source_file="res://sprites/tileset/into_the_void_right.png"
+dest_files=[ "res://.import/into_the_void_right.png-8af4a1aaff303430db569f45c3968849.stex" ]
 
 [params]
 

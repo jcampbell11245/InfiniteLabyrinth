@@ -10,8 +10,8 @@ onready var respawn_cooldown = $RespawnCooldown #The cooldown until the player r
 onready var hearts = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Hearts") #Player's hearts
 onready var level_countdown_text = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Timer/TimerText") #The visual level countdown
 
-var respawn_x = [232, 256, 280, 304, 328, 352, 376, 400, 424]
-var respawn_y = [214, 238, 262, 286, 310, 334, 358, 382, 406]
+var respawn_x = [304, 328, 352, 376, 400, 424, 448, 472, 496]
+var respawn_y = [46, 70, 94, 118, 142, 166, 190, 214, 238]
 
 var health = 10 #Player's health
 var speed = 125  #Speed in pixels/sec
@@ -47,21 +47,19 @@ func _physics_process(delta):
 	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
 	knockback = move_and_slide(knockback)
 	
+	set_last_tile()
+	
 func get_input():
 	#Movement
 	velocity = Vector2.ZERO
 	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && $RespawnCooldown.time_left == 0):
 		if Input.is_action_pressed('right'):
-			set_last_tile()
 			velocity.x += 1
 		if Input.is_action_pressed('left'):
-			set_last_tile()
 			velocity.x -= 1
 		if Input.is_action_pressed('down'):
-			set_last_tile()
 			velocity.y += 1
 		if Input.is_action_pressed('up'):
-			set_last_tile()
 			velocity.y -= 1
 		velocity = velocity.normalized() * speed
 	
@@ -175,7 +173,7 @@ func take_damage(damage, direction, mute):
 		if(!mute):
 			$Hit.play()
 		
-		#hearts.update_health(-damage)
+		hearts.update_health(-damage)
 		if(hearts.hearts <= 0):
 			die()
 
@@ -202,9 +200,9 @@ func set_last_tile():
 	elif(current_room == 62):
 		tiles = get_parent().get_node("BossRoom").get_child(0)
 	else:
-		tiles = get_parent().get_child(current_room + 4).get_child(0)
-	var y_shift = (current_room / get_parent().columns) * 288 - 65
-	var x_shift = (current_room % get_parent().columns) * 261 - 5
+		tiles = get_parent().get_child(current_room + 6).get_child(0)
+	var y_shift = (current_room / get_parent().columns) * 288
+	var x_shift = (current_room % get_parent().columns) * 261
 	
 	var locked_x
 	var locked_y
@@ -227,8 +225,10 @@ func set_last_tile():
 	if(locked_y == null):
 		locked_y = 8
 	
-	if(tiles.get_used_cells().has(Vector2(locked_x + 9, locked_y + 9))):
-		last_tile = Vector2(respawn_x[locked_x] + x_shift, respawn_y[locked_y] + y_shift)
+	if(tiles.get_cell(locked_x + 9, locked_y + 9) != -1):
+		last_tile = Vector2(respawn_x[locked_x] + x_shift, respawn_y[locked_y] + y_shift + 9)
+		print(str(locked_x) + " " + str(locked_y))
+		print(tiles.get_cell(locked_x + 9, locked_y + 9))
 
 #for timer of level running out causing death
 func _on_LevelCountdown_timeout():
@@ -237,10 +237,8 @@ func _on_LevelCountdown_timeout():
 #hurtbox enetered = damage taken
 func _on_Hurtbox_area_shape_entered(area_id, area, _area_shape, _self_shape):
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
-		direction = area.get_parent().get_parent().direction
 		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
 	elif(area.get_name() == "ProjectileHitbox"):
-		direction = area.get_parent().direction
 		take_damage(area.get_parent().damage, area.get_parent().direction, false)
 
 #Player returns back to normal opacity once invincibility cooldown ends
