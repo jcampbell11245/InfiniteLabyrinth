@@ -25,7 +25,7 @@ tile_data = PoolIntArray( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8,
 [node name="DoorBottoms" parent="." instance=ExtResource( 13 )]
 
 [node name="Pitfalls" parent="." instance=ExtResource( 2 )]
-tile_data = PoolIntArray( 786444, 0, 0, 786445, 0, 0, 786446, 0, 0, 851980, 4, 0, 851981, 3, 0, 851982, 6, 0, 917516, 5, 0, 917518, 7, 0 )
+tile_data = PoolIntArray( 786444, 0, 0, 786445, 0, 0, 786446, 0, 0, 851980, 4, 0, 851981, 3, 0, 851982, 6, 0, 917516, 5, 0, 917517, 19, 0, 917518, 7, 0 )
 
 [node name="PitfallTransitions" parent="." instance=ExtResource( 15 )]
 

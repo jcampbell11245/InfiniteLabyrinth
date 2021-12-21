@@ -49,3 +49,11 @@ func _on_ProjectileHitbox_area_shape_entered(area_id, area, area_shape, self_sha
 
 func _on_ExistenceTime_timeout():
 	queue_free()
+
+
+func _on_ProjectileHitbox_area_entered(area):
+	queue_free()
+
+
+func _on_ProjectileHitbox_body_entered(body):
+	queue_free()
