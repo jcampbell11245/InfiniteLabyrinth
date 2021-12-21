@@ -56,4 +56,9 @@ func _on_ProjectileHitbox_area_entered(area):
 
 
 func _on_ProjectileHitbox_body_entered(body):
-	queue_free()
+	speed = 0
+	$AnimatedSprite.animation = "break"
+
+func _on_AnimatedSprite_animation_finished():
+	if($AnimatedSprite.animation == "break"):
+		queue_free()
