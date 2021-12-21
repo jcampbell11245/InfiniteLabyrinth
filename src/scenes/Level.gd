@@ -133,30 +133,53 @@ func _ready():
 	
 	#Sets pitfall transitions
 	if($PitfallTransitions != null):
-		for x in range(9,17):
-			for y in range(9, 17):
+		for x in range(9,18):
+			for y in range(9, 18):
 				if($Pitfalls.get_cell(x, y) != -1):
 					var top = $Pitfalls.get_cell(x, y - 1) == -1
 					var right = $Pitfalls.get_cell(x + 1, y) == -1
 					var bottom = $Pitfalls.get_cell(x, y + 1) == -1
 					var left = $Pitfalls.get_cell(x - 1, y) == -1
 					
-					if(top && right):
-						$PitfallTransitions.set_cell(x, y, 4)
-					elif(top && left):
-						$PitfallTransitions.set_cell(x, y, 4)
-					elif(bottom && right):
-						$PitfallTransitions.set_cell(x, y, 4)
-					elif(bottom && left):
-						$PitfallTransitions.set_cell(x, y, 4)
-					elif(top):
+					if(top):
 						$PitfallTransitions.set_cell(x, y, 0)
-					elif(right):
-						$PitfallTransitions.set_cell(x, y, 1)
-					elif(bottom):
-						$PitfallTransitions.set_cell(x, y, 2)
-					elif(left):
-						$PitfallTransitions.set_cell(x, y, 3)
+						$PitfallTransitions.z_index = -1
+					if(right):
+						var tileset = load("res://src/tilesets/PitfallTransitionsR.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
+					if(bottom):
+						var tileset = load("res://src/tilesets/PitfallTransitionsB.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
+					if(left):
+						var tileset = load("res://src/tilesets/PitfallTransitionsL.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
+					
+					if(top && right):
+						var tileset = load("res://src/tilesets/PitfallTransitionsTR.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
+					if(bottom && right):
+						var tileset = load("res://src/tilesets/PitfallTransitionsBR.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
+					if(bottom && left):
+						var tileset = load("res://src/tilesets/PitfallTransitionsBL.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
+					if(top && left):
+						var tileset = load("res://src/tilesets/PitfallTransitionsTL.tscn").instance()
+						tileset.set_cell(x, y, 0)
+						tileset.z_index = -1
+						add_child(tileset)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):

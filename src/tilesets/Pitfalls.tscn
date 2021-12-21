@@ -434,6 +434,7 @@ points = PoolVector2Array( 24, 24, 8.43855, 24, 8.43855, 15.9755, 0, 15.9755, 0,
 19/z_index = 0
 
 [node name="Pitfalls" type="TileMap"]
+z_index = -2
 tile_set = SubResource( 17 )
 cell_size = Vector2( 24, 24 )
 collision_layer = 32

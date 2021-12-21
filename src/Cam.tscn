@@ -93,41 +93,41 @@ animations = [ {
 [sub_resource type="DynamicFont" id=19]
 font_data = ExtResource( 1 )
 
-[sub_resource type="AtlasTexture" id=29]
+[sub_resource type="AtlasTexture" id=20]
 atlas = ExtResource( 8 )
 region = Rect2( 0, 0, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=30]
+[sub_resource type="AtlasTexture" id=21]
 atlas = ExtResource( 8 )
 region = Rect2( 160, 0, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=31]
+[sub_resource type="AtlasTexture" id=22]
 atlas = ExtResource( 8 )
 region = Rect2( 0, 90, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=32]
+[sub_resource type="AtlasTexture" id=23]
 atlas = ExtResource( 8 )
 region = Rect2( 160, 90, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=33]
+[sub_resource type="AtlasTexture" id=24]
 atlas = ExtResource( 8 )
 region = Rect2( 0, 180, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=34]
+[sub_resource type="AtlasTexture" id=25]
 atlas = ExtResource( 8 )
 region = Rect2( 160, 180, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=35]
+[sub_resource type="AtlasTexture" id=26]
 atlas = ExtResource( 8 )
 region = Rect2( 0, 270, 160, 90 )
 
-[sub_resource type="AtlasTexture" id=36]
+[sub_resource type="AtlasTexture" id=27]
 atlas = ExtResource( 8 )
 region = Rect2( 160, 270, 160, 90 )
 
 [sub_resource type="SpriteFrames" id=28]
 animations = [ {
-"frames": [ SubResource( 29 ), SubResource( 30 ), SubResource( 31 ), SubResource( 32 ), SubResource( 33 ), SubResource( 34 ), SubResource( 35 ), SubResource( 36 ) ],
+"frames": [ SubResource( 20 ), SubResource( 21 ), SubResource( 22 ), SubResource( 23 ), SubResource( 24 ), SubResource( 25 ), SubResource( 26 ), SubResource( 27 ) ],
 "loop": true,
 "name": "default",
 "speed": 5.0
@@ -168,12 +168,13 @@ margin_bottom = 40.0
 script = ExtResource( 4 )
 
 [node name="Coin" type="AnimatedSprite" parent="HudLayer/Hud/Coins"]
-position = Vector2( 290.084, -0.172779 )
+position = Vector2( 235.594, -0.845496 )
 frames = SubResource( 6 )
+frame = 2
 playing = true
 
 [node name="Counter" type="Position2D" parent="HudLayer/Hud/Coins"]
-position = Vector2( 296.095, -4.5 )
+position = Vector2( 241.605, -5.17272 )
 scale = Vector2( 0.5, 0.5 )
 
 [node name="CoinText" type="RichTextLabel" parent="HudLayer/Hud/Coins/Counter"]
@@ -192,13 +193,13 @@ margin_bottom = 40.0
 script = ExtResource( 6 )
 
 [node name="Key" type="AnimatedSprite" parent="HudLayer/Hud/Keys"]
-position = Vector2( 232.765, -0.0212564 )
+position = Vector2( 178.275, -0.693974 )
 frames = SubResource( 18 )
 frame = 9
 playing = true
 
 [node name="Counter" type="Position2D" parent="HudLayer/Hud/Keys"]
-position = Vector2( 138.926, -0.0212574 )
+position = Vector2( 84.4359, -0.693975 )
 scale = Vector2( 0.5, 0.5 )
 
 [node name="KeyText" type="RichTextLabel" parent="HudLayer/Hud/Keys/Counter"]
@@ -223,7 +224,7 @@ position = Vector2( -9.15527e-05, 0 )
 scale = Vector2( 0.641908, 0.641907 )
 z_index = 4096
 frames = SubResource( 28 )
-frame = 1
+frame = 6
 playing = true
 script = ExtResource( 9 )
 
@@ -231,4 +232,5 @@ script = ExtResource( 9 )
 
 [node name="GameOverSFX" type="AudioStreamPlayer" parent="GameOver"]
 stream = ExtResource( 10 )
+
 [connection signal="timeout" from="GameOver/Timer" to="GameOver" method="_on_Timer_timeout"]
