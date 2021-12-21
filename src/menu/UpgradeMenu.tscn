@@ -240,6 +240,7 @@ text = "Continue"
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
 [connection signal="pressed" from="Control/Button" to="Control" method="_on_Button_pressed"]
 [connection signal="pressed" from="Control/Button2" to="Control" method="_on_Button2_pressed"]
 [connection signal="pressed" from="Control/Button3" to="Control" method="_on_Button3_pressed"]

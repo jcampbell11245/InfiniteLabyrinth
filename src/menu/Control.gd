@@ -71,6 +71,7 @@ func _on_Button_pressed():
 	
 	if(health_level != 9 && coins.coins >= upgrade_cost[health_level]):
 		coins.coins -= upgrade_cost[health_level]
+		coins.update_text()
 		health_level += 1
 		
 		$Description.text = "Health:  Level " + String(health_level + 1)
@@ -86,6 +87,7 @@ func _on_Button2_pressed():
 	
 	if(damage_level != 9 && coins.coins >= upgrade_cost[damage_level]):
 		coins.coins -= upgrade_cost[damage_level]
+		coins.update_text()
 		damage_level += 1
 		
 		$Description2.text = "Damage:  Level " + String(damage_level + 1)
@@ -101,6 +103,7 @@ func _on_Button3_pressed():
 	
 	if(time_level != 9 && coins.coins >= upgrade_cost[time_level]):
 		coins.coins -= upgrade_cost[time_level]
+		coins.update_text()
 		time_level += 1
 		
 		$Description3.text = "Time:  Level " + String(time_level + 1)
@@ -116,6 +119,7 @@ func _on_Button4_pressed():
 	
 	if(looting_level != 9 && coins.coins >= upgrade_cost[looting_level]):
 		coins.coins -= upgrade_cost[looting_level]
+		coins.update_text()
 		looting_level += 1
 		
 		$Description4.text = "Looting:  Level " + String(looting_level + 1)
