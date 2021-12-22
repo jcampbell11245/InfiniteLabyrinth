@@ -43,17 +43,13 @@ func _physics_process(_delta):
 #if the projectile hits anything it disappears
 func _on_Hitbox_area_shape_entered(area_id, area, area_shape, self_shape):
 	queue_free()
-	
-func _on_ProjectileHitbox_area_shape_entered(area_id, area, area_shape, self_shape):
-	queue_free()
 
 func _on_ExistenceTime_timeout():
 	queue_free()
 
-
 func _on_ProjectileHitbox_area_entered(area):
-	queue_free()
-
+	speed = 0
+	$AnimatedSprite.animation = "break"
 
 func _on_ProjectileHitbox_body_entered(body):
 	speed = 0

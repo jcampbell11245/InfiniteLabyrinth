@@ -39,7 +39,7 @@ tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0
 tile_data = PoolIntArray( 720908, 0, 0, 851980, 0, 0, 983052, 0, 0 )
 
 [node name="Stalagmites" parent="." instance=ExtResource( 12 )]
-tile_data = PoolIntArray( 720908, 7, 0, 720909, 2, 0, 786444, 9, 0, 851980, 9, 0, 917516, 14, 0, 917517, 3, 0, 983053, 9, 0, 1048588, 6, 0, 1048589, 10, 0 )
+tile_data = PoolIntArray( 720908, 16, 0, 720909, 2, 0, 786444, 9, 0, 851980, 9, 0, 917516, 14, 0, 917517, 3, 0, 983053, 9, 0, 1048588, 6, 0, 1048589, 10, 0 )
 
 [node name="Decorations" parent="." instance=ExtResource( 14 )]
 
