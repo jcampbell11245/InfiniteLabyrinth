@@ -45,7 +45,8 @@ func _physics_process(delta):
 		get_input()
 		animate()
 		collision()
-	velocity = move_and_slide(velocity)
+	if(visible):
+		velocity = move_and_slide(velocity)
 	
 	#Knockback
 	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
