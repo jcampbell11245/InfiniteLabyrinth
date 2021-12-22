@@ -227,8 +227,6 @@ func set_last_tile():
 	
 	if(tiles.get_cell(locked_x + 9, locked_y + 9) != -1):
 		last_tile = Vector2(respawn_x[locked_x] + x_shift, respawn_y[locked_y] + y_shift + 9)
-		print(str(locked_x) + " " + str(locked_y))
-		print(tiles.get_cell(locked_x + 9, locked_y + 9))
 
 #for timer of level running out causing death
 func _on_LevelCountdown_timeout():

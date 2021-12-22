@@ -1,26 +1,102 @@
-[gd_scene load_steps=13 format=2]
+[gd_scene load_steps=22 format=2]
 
 [ext_resource path="res://src/menu/Control.gd" type="Script" id=1]
-[ext_resource path="res://menu/upgrade_background_new.png" type="Texture" id=2]
+[ext_resource path="res://sprites/hud/upgrade_background.png" type="Texture" id=2]
 [ext_resource path="res://fonts/8-BIT WONDER.TTF" type="DynamicFontData" id=3]
-[ext_resource path="res://menu/hourglass.png" type="Texture" id=4]
-[ext_resource path="res://menu/heart.png" type="Texture" id=5]
-[ext_resource path="res://menu/sword.png" type="Texture" id=6]
-[ext_resource path="res://menu/coin.png" type="Texture" id=7]
-[ext_resource path="res://src/menu/Button.gd" type="Script" id=8]
+[ext_resource path="res://sprites/hud/plus_highlighted.png" type="Texture" id=4]
+[ext_resource path="res://sprites/hud/plus.png" type="Texture" id=5]
+[ext_resource path="res://sprites/hud/upgrade_meter_10.png" type="Texture" id=6]
+[ext_resource path="res://sprites/hud/upgrade_meter_9.png" type="Texture" id=7]
+[ext_resource path="res://sprites/hud/upgrade_meter_1.png" type="Texture" id=8]
+[ext_resource path="res://sprites/hud/upgrade_meter_2.png" type="Texture" id=9]
+[ext_resource path="res://sprites/hud/upgrade_meter_4.png" type="Texture" id=10]
+[ext_resource path="res://sprites/hud/upgrade_meter_0.png" type="Texture" id=11]
+[ext_resource path="res://sprites/hud/upgrade_meter_5.png" type="Texture" id=12]
+[ext_resource path="res://sprites/hud/upgrade_meter_6.png" type="Texture" id=13]
+[ext_resource path="res://sprites/hud/upgrade_meter_8.png" type="Texture" id=14]
+[ext_resource path="res://sprites/hud/upgrade_meter_3.png" type="Texture" id=15]
+[ext_resource path="res://sprites/hud/upgrade_meter_7.png" type="Texture" id=16]
 
-[sub_resource type="DynamicFont" id=1]
-size = 50
-font_data = ExtResource( 3 )
+[sub_resource type="SpriteFrames" id=5]
+animations = [ {
+"frames": [ ExtResource( 5 ) ],
+"loop": true,
+"name": "default",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 4 ) ],
+"loop": true,
+"name": "selected",
+"speed": 5.0
+} ]
 
 [sub_resource type="DynamicFont" id=2]
-size = 25
-font_data = ExtResource( 3 )
-
-[sub_resource type="DynamicFont" id=3]
+size = 13
 font_data = ExtResource( 3 )
 
 [sub_resource type="DynamicFont" id=4]
+size = 12
+font_data = ExtResource( 3 )
+
+[sub_resource type="SpriteFrames" id=6]
+animations = [ {
+"frames": [ ExtResource( 10 ) ],
+"loop": true,
+"name": "4",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 15 ) ],
+"loop": true,
+"name": "3",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 13 ) ],
+"loop": true,
+"name": "6",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 12 ) ],
+"loop": true,
+"name": "5",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 14 ) ],
+"loop": true,
+"name": "8",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 6 ) ],
+"loop": true,
+"name": "10",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 16 ) ],
+"loop": true,
+"name": "7",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 7 ) ],
+"loop": true,
+"name": "9",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 8 ) ],
+"loop": true,
+"name": "1",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 9 ) ],
+"loop": true,
+"name": "2",
+"speed": 5.0
+}, {
+"frames": [ ExtResource( 11 ) ],
+"loop": true,
+"name": "0",
+"speed": 5.0
+} ]
+
+[sub_resource type="DynamicFont" id=3]
 font_data = ExtResource( 3 )
 
 [node name="UpgradeMenu" type="CanvasLayer"]
@@ -32,208 +108,252 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-margin_right = 28.0
+margin_left = -344.0
+margin_top = -233.0
+margin_right = 136.0
+margin_bottom = -108.0
+mouse_filter = 2
 script = ExtResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Sprite" type="Sprite" parent="Control"]
+position = Vector2( 325.81, 192.426 )
 scale = Vector2( 4, 4 )
 texture = ExtResource( 2 )
 
-[node name="Label" type="Label" parent="Control"]
-margin_left = -346.0
-margin_top = -194.0
-margin_right = 351.0
-margin_bottom = -154.0
-custom_fonts/font = SubResource( 1 )
-text = "UPGRADES"
-align = 1
+[node name="Plus1Control" type="Control" parent="Control"]
+margin_left = 636.0
+margin_top = 109.0
+margin_right = 677.0
+margin_bottom = 146.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Icon" type="Sprite" parent="Control"]
-position = Vector2( -324.275, -104.749 )
-scale = Vector2( 5, 5 )
-texture = ExtResource( 5 )
-offset = Vector2( 7.138, 4.317 )
+[node name="Plus1" type="AnimatedSprite" parent="Control/Plus1Control"]
+position = Vector2( 22.3586, 18.5406 )
+scale = Vector2( 1.99905, 1.99905 )
+frames = SubResource( 5 )
+
+[node name="Button" type="Button" parent="Control/Plus1Control"]
+modulate = Color( 1, 1, 1, 0 )
+margin_left = 4.0
+margin_right = 41.0
+margin_bottom = 37.0
+mouse_filter = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Plus2Control" type="Control" parent="Control"]
+margin_left = 641.401
+margin_top = 151.332
+margin_right = 677.401
+margin_bottom = 188.332
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Plus2" type="AnimatedSprite" parent="Control/Plus2Control"]
+position = Vector2( 18.2758, 19.3352 )
+scale = Vector2( 1.99905, 1.99905 )
+frames = SubResource( 5 )
+
+[node name="Button2" type="Button" parent="Control/Plus2Control"]
+modulate = Color( 1, 1, 1, 0 )
+margin_left = -0.944946
+margin_top = 0.740082
+margin_right = 36.0551
+margin_bottom = 36.7401
+mouse_filter = 1
+
+[node name="Plus3Control" type="Control" parent="Control"]
+margin_left = 641.487
+margin_top = 192.468
+margin_right = 677.487
+margin_bottom = 229.468
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Plus3" type="AnimatedSprite" parent="Control/Plus3Control"]
+position = Vector2( 18.2758, 19.3352 )
+scale = Vector2( 1.99905, 1.99905 )
+frames = SubResource( 5 )
+
+[node name="Button3" type="Button" parent="Control/Plus3Control"]
+modulate = Color( 1, 1, 1, 0 )
+margin_left = -0.750671
+margin_top = 1.03931
+margin_right = 36.2493
+margin_bottom = 37.0393
+mouse_filter = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Plus4Control" type="Control" parent="Control"]
+margin_left = 641.0
+margin_top = 232.0
+margin_right = 678.0
+margin_bottom = 269.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Plus4" type="AnimatedSprite" parent="Control/Plus4Control"]
+position = Vector2( 18.2758, 19.3352 )
+scale = Vector2( 1.99905, 1.99905 )
+frames = SubResource( 5 )
+
+[node name="Button4" type="Button" parent="Control/Plus4Control"]
+modulate = Color( 1, 1, 1, 0 )
+margin_top = 1.33258
+margin_right = 36.0
+margin_bottom = 37.3326
+mouse_filter = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Description" type="Label" parent="Control"]
-margin_left = -239.908
-margin_top = -102.116
-margin_right = 457.092
-margin_bottom = -70.1161
+margin_left = -28.0
+margin_top = 121.933
+margin_right = 579.0
+margin_bottom = 153.933
 custom_fonts/font = SubResource( 2 )
-text = "Health:  Level 1"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Button" type="Button" parent="Control"]
-margin_left = 156.351
-margin_top = -98.7745
-margin_right = 280.351
-margin_bottom = -76.7745
-rect_scale = Vector2( 1.25, 1.25 )
-custom_fonts/font = SubResource( 3 )
-text = "Upgrade"
-script = ExtResource( 8 )
+text = "Health"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Coins" type="Label" parent="Control"]
-margin_left = 215.0
-margin_top = -62.0
-margin_right = 351.0
-margin_bottom = -46.0
+margin_left = -1.0
+margin_top = 122.0
+margin_right = 104.0
+margin_bottom = 142.0
 rect_pivot_offset = Vector2( 32.1923, 18.5501 )
 custom_fonts/font = SubResource( 4 )
-text = "Cost: 10"
+text = "10"
 align = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="Icon2" type="Sprite" parent="Control"]
-position = Vector2( -322.814, -37.0293 )
-scale = Vector2( 5, 5 )
-texture = ExtResource( 6 )
-offset = Vector2( 7.138, 4.317 )
 
 [node name="Description2" type="Label" parent="Control"]
-margin_left = -239.908
-margin_top = -40.4443
-margin_right = 457.092
-margin_bottom = -8.44427
+margin_left = -27.7018
+margin_top = 164.982
+margin_right = 86.2982
+margin_bottom = 196.982
 custom_fonts/font = SubResource( 2 )
-text = "Damage:  Level 1"
+text = "Luck"
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="Button2" type="Button" parent="Control"]
-margin_left = 156.351
-margin_top = -38.7067
-margin_right = 280.351
-margin_bottom = -16.7067
-rect_scale = Vector2( 1.25, 1.25 )
-custom_fonts/font = SubResource( 3 )
-text = "Upgrade"
-script = ExtResource( 8 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-id = 1
 
 [node name="Coins2" type="Label" parent="Control"]
-margin_left = 215.0
-margin_top = -4.0
-margin_right = 351.0
-margin_bottom = 12.0
+margin_left = 26.0
+margin_top = 164.0
+margin_right = 104.0
+margin_bottom = 184.0
 rect_pivot_offset = Vector2( 32.1923, 18.5501 )
 custom_fonts/font = SubResource( 4 )
-text = "Cost: 10"
+text = "10"
 align = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="Icon3" type="Sprite" parent="Control"]
-position = Vector2( -324.158, 21.2113 )
-scale = Vector2( 5, 5 )
-texture = ExtResource( 4 )
-offset = Vector2( 7.138, 4.317 )
 
 [node name="Description3" type="Label" parent="Control"]
-margin_left = -239.908
-margin_top = 24.9662
-margin_right = 457.092
-margin_bottom = 56.9662
+margin_left = -29.0
+margin_top = 201.0
+margin_right = 523.0
+margin_bottom = 233.0
 custom_fonts/font = SubResource( 2 )
-text = "Time:  Level 1"
+text = "Time"
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="Button3" type="Button" parent="Control"]
-margin_left = 156.351
-margin_top = 20.9662
-margin_right = 280.351
-margin_bottom = 42.9662
-rect_scale = Vector2( 1.25, 1.25 )
-custom_fonts/font = SubResource( 3 )
-text = "Upgrade"
-script = ExtResource( 8 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-id = 2
 
 [node name="Coins3" type="Label" parent="Control"]
-margin_left = 215.0
-margin_top = 53.0
-margin_right = 351.0
-margin_bottom = 69.0
+margin_left = -32.5166
+margin_top = 201.079
+margin_right = 103.483
+margin_bottom = 221.079
 rect_pivot_offset = Vector2( 32.1923, 18.5501 )
 custom_fonts/font = SubResource( 4 )
-text = "Cost: 10"
+text = "10"
 align = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="Icon4" type="Sprite" parent="Control"]
-position = Vector2( -322.687, 85.4987 )
-scale = Vector2( 5, 5 )
-texture = ExtResource( 7 )
-offset = Vector2( 7.138, 4.317 )
 
 [node name="Description4" type="Label" parent="Control"]
-margin_left = -239.908
-margin_top = 85.4987
-margin_right = 457.092
-margin_bottom = 117.499
+margin_left = -29.6332
+margin_top = 242.748
+margin_right = 83.3668
+margin_bottom = 274.748
 custom_fonts/font = SubResource( 2 )
-text = "Looting:  Level 1"
+text = "Looting"
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="Button4" type="Button" parent="Control"]
-margin_left = 156.351
-margin_top = 81.4987
-margin_right = 280.351
-margin_bottom = 103.499
-rect_scale = Vector2( 1.25, 1.25 )
-custom_fonts/font = SubResource( 3 )
-text = "Upgrade"
-script = ExtResource( 8 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-id = 3
 
 [node name="Coins4" type="Label" parent="Control"]
-margin_left = 215.0
-margin_top = 113.0
-margin_right = 351.0
-margin_bottom = 129.0
+margin_left = 38.0
+margin_top = 243.0
+margin_right = 104.0
+margin_bottom = 259.0
 rect_pivot_offset = Vector2( 32.1923, 18.5501 )
 custom_fonts/font = SubResource( 4 )
-text = "Cost: 10"
+text = "10"
 align = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Meter1" type="AnimatedSprite" parent="Control"]
+position = Vector2( 369.966, 130.456 )
+scale = Vector2( 3.99884, 3.99184 )
+frames = SubResource( 6 )
+animation = "1"
+
+[node name="Meter2" type="AnimatedSprite" parent="Control"]
+position = Vector2( 369.966, 170.413 )
+scale = Vector2( 3.99884, 3.99184 )
+frames = SubResource( 6 )
+animation = "1"
+
+[node name="Meter3" type="AnimatedSprite" parent="Control"]
+position = Vector2( 369.966, 210.42 )
+scale = Vector2( 3.99884, 3.99184 )
+frames = SubResource( 6 )
+animation = "1"
+
+[node name="Meter4" type="AnimatedSprite" parent="Control"]
+position = Vector2( 369.966, 250.272 )
+scale = Vector2( 3.99884, 3.99184 )
+frames = SubResource( 6 )
+animation = "1"
+
+[node name="ContinueOutline" type="ColorRect" parent="Control"]
+visible = false
+margin_left = 213.0
+margin_top = 309.0
+margin_right = 460.0
+margin_bottom = 354.0
+color = Color( 1, 0, 0, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="Continue" type="Button" parent="Control"]
-margin_left = -100.0
-margin_top = 143.696
-margin_right = 32.0
-margin_bottom = 165.696
+margin_left = 215.156
+margin_top = 311.167
+margin_right = 377.156
+margin_bottom = 338.167
 rect_scale = Vector2( 1.5, 1.5 )
 custom_fonts/font = SubResource( 3 )
 text = "Continue"
@@ -241,8 +361,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[connection signal="pressed" from="Control/Button" to="Control" method="_on_Button_pressed"]
-[connection signal="pressed" from="Control/Button2" to="Control" method="_on_Button2_pressed"]
-[connection signal="pressed" from="Control/Button3" to="Control" method="_on_Button3_pressed"]
-[connection signal="pressed" from="Control/Button4" to="Control" method="_on_Button4_pressed"]
+[connection signal="mouse_entered" from="Control/Plus1Control" to="Control" method="_on_Control_mouse_entered"]
+[connection signal="pressed" from="Control/Plus1Control/Button" to="Control" method="_on_Button_pressed"]
+[connection signal="mouse_entered" from="Control/Plus2Control" to="Control" method="_on_Plus2Control_mouse_entered"]
+[connection signal="pressed" from="Control/Plus2Control/Button2" to="Control" method="_on_Button2_pressed"]
+[connection signal="mouse_entered" from="Control/Plus3Control" to="Control" method="_on_Plus3Control_mouse_entered"]
+[connection signal="pressed" from="Control/Plus3Control/Button3" to="Control" method="_on_Button3_pressed"]
+[connection signal="mouse_entered" from="Control/Plus4Control" to="Control" method="_on_Plus4Control_mouse_entered"]
+[connection signal="pressed" from="Control/Plus4Control/Button4" to="Control" method="_on_Button4_pressed"]
+[connection signal="mouse_entered" from="Control/Continue" to="Control" method="_on_Continue_mouse_entered"]
 [connection signal="pressed" from="Control/Continue" to="Control" method="_on_Continue_pressed"]
