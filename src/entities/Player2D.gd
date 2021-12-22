@@ -23,6 +23,9 @@ var velocity = Vector2.ZERO #Player's velocity vector
 var knockback = Vector2.ZERO #Player's knockback vector
 var last_tile = Vector2.ZERO
 
+var transitioning = false
+var transitioned = false
+
 const Arrow = preload("res://src/entities/Arrow.tscn") #Arrow tscn file
 
 func _ready():
@@ -38,9 +41,10 @@ func _process(delta):
 	timer()
 
 func _physics_process(delta):
-	get_input()
-	animate()
-	collision()
+	if(!transitioning):
+		get_input()
+		animate()
+		collision()
 	velocity = move_and_slide(velocity)
 	
 	#Knockback
@@ -183,6 +187,8 @@ func timer():
 
 #Method called when the player dies
 func die():
+	speed = 0
+	
 	var floor_save = File.new()
 	floor_save.open("user://floor.save", File.WRITE)
 	floor_save.store_line("1")
@@ -246,21 +252,13 @@ func _on_InvincibilityCooldown_timeout():
 #When a player hits a collision box
 func _on_FeetBox_body_entered(body):
 	if(respawn_cooldown.time_left == 0):
-		#print($FeetBox.global_position)
-		#print(body.get_parent().global_position)
-		#if(abs($FeetBox.global_position - body.position) > 5):
-		#var body_extents = body.shape.extents
-		#var area_extents = $FeetBox.get_node('CollisionShape2D').shape.extents
-		#var body_rect = Rect2(body.global_position - body_extents, body_extents * 2)
-		#var area_rect = Rect2($FeetBox.global_position - area_extents, area_extents * 2)
-		#if area_rect.encloses(body_rect):
-			$Fall.play()
-			visible = false
-			if(current_room != 62):
-				get_parent().get_child(current_room + 3).player_active = false
-			else:
-				get_parent().get_child(4).player_active = false
-			respawn_cooldown.start(1.1)
+		$Fall.play()
+		visible = false
+		if(current_room != 62):
+			get_parent().get_child(current_room + 3).player_active = false
+		else:
+			get_parent().get_child(4).player_active = false
+		respawn_cooldown.start(1.1)
 
 func _on_RespawnCooldown_timeout():
 	visible = true
@@ -271,11 +269,32 @@ func _on_RespawnCooldown_timeout():
 	position = last_tile
 	take_damage(0.5,  "none", true)
 
-
 func _on_RoomDetector_area_entered(area):
 	current_room = area.get_parent().room_id
-
 
 func _on_BossMusic_finished():
 	if(!$BossMusicLoop.playing):
 		$BossMusicLoop.play()
+
+func _on_RoomDetectionBox_body_entered(body):
+	if(!transitioning):
+		transitioning = true
+		transitioned = true
+		animator.animation = "walk_" + direction
+		if(direction == "right" || direction == "left"):
+			$Transitioning.start(0.5)
+			$Transitioned.start(1)
+		elif(direction == "down"):
+			$Transitioning.start(0.7)
+			$Transitioned.start(1.2)
+		else:
+			$Transitioning.start(0.65)
+			$Transitioned.start(1.15)
+
+func _on_Transitioning_timeout():
+	transitioning = false
+	animator.animation = "idle_" + direction
+	get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
+
+func _on_Transitioned_timeout():
+	transitioned = false

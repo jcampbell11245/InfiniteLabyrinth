@@ -44,34 +44,38 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	animate()
+	if(player.transitioned == false):
+		animate()
+	elif(direction != null):
+		animator.animation = "idle_" + direction
 
 func _physics_process(delta):
-	if(get_parent().player_active == true && player.current_room == get_parent().room_id):
-		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
-			if(player.global_position.x - global_position.x < 0):
-				direction = "left"
+	if(player.transitioned == false):
+		if(get_parent().player_active == true && player.current_room == get_parent().room_id):
+			if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
+				if(player.global_position.x - global_position.x < 0):
+					direction = "left"
+				else:
+					direction = "right"
 			else:
-				direction = "right"
-		else:
-			if(player.global_position.y - global_position.y < 0):
-				direction = "up"
-				z_index = 10
-			else:
-				direction = "down"
-				z_index = 0
-		
-		if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-			if(direction == "left" && position.x < 424 || direction == "right" && position.x > 232 || direction == "up" && position.y > 214 || direction == "down" && position.y < 406):
-				var dir = -(player.global_position - global_position).normalized()
-				move_and_collide(dir * speed * delta)
-		elif(attack_cooldown.time_left == 0):
-			animate()
-			attack()
+				if(player.global_position.y - global_position.y < 0):
+					direction = "up"
+					z_index = 10
+				else:
+					direction = "down"
+					z_index = 0
 			
-		#Knockback
-		knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
-		knockback = move_and_slide(knockback)
+			if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+				if(direction == "left" && position.x < 424 || direction == "right" && position.x > 232 || direction == "up" && position.y > 214 || direction == "down" && position.y < 406):
+					var dir = -(player.global_position - global_position).normalized()
+					move_and_collide(dir * speed * delta)
+			elif(attack_cooldown.time_left == 0):
+				animate()
+				attack()
+				
+			#Knockback
+			knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
+			knockback = move_and_slide(knockback)
 
 #Animates the enemy
 func animate():

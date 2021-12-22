@@ -11,7 +11,7 @@
 flags = 4
 frames = 6
 oneshot = true
-fps = 15.0
+fps = 25.0
 frame_0/texture = ExtResource( 5 )
 frame_1/texture = ExtResource( 3 )
 frame_1/delay_sec = 0.0

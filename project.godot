@@ -149,6 +149,7 @@ select={
 2d_physics/layer_9="top_tiles"
 2d_physics/layer_10="room"
 2d_physics/layer_11="room_detector"
+2d_physics/layer_12="room_transition"
 
 [logging]
 

@@ -146,6 +146,20 @@ func _ready():
 						spikes.set_cell(x, y, 0)
 		
 		add_child(spikes)
+	
+	#Sets transition detection zones
+	var detectors = load("res://src/tilesets/TransitionDetector.tscn").instance()
+	
+	if($Tiles.get_cell(13, 8) == 1 || 20 || 21):
+		detectors.set_cell(13, 8, 0)
+	if($Top.get_cell(18, 13) == 9 || ($Locks != null && $Locks.get_cell(18, 13) == 2 || 3)):
+		detectors.set_cell(18, 13, 0)
+	if($Top.get_cell(13, 18) == 14):
+		detectors.set_cell(13, 18, 0)
+	if($Top.get_cell(8, 13) == 6 || ($Locks != null && $Locks.get_cell(18, 13) == 0 || 1)):
+		detectors.set_cell(8, 13, 0)
+	
+	add_child(detectors)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -229,7 +243,6 @@ func death_sound(enemy_type):
 		goblin_death.play()
 	elif(enemy_type == "Knight"):
 		knight_death.play()
-
 
 func _on_NextFloor_area_entered(area):
 	get_parent().get_node("CameraHolder/Camera2D/UpgradeMenu/Control").show_menu()
