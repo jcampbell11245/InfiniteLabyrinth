@@ -18,8 +18,10 @@ func _physics_process(_delta):
 		$SpritePivot/Sprite.set_flip_h(true)
 	elif(direction == "up"):
 		$SpritePivot.rotation_degrees = 90
+		$ProjectileHitbox.rotation_degrees = 90
 	elif(direction == "down"):
 		$SpritePivot.rotation_degrees = 270
+		$ProjectileHitbox.rotation_degrees = 270
 	
 	#Moves projectile
 	velocity = Vector2.ZERO
@@ -42,4 +44,7 @@ func _on_ProjectileHitbox_area_shape_entered(area_id, area, area_shape, self_sha
 	queue_free()
 
 func _on_ExistenceTime_timeout():
+	queue_free()
+
+func _on_ProjectileHitbox_body_entered(body):
 	queue_free()
