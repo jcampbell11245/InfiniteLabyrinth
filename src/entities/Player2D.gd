@@ -22,6 +22,7 @@ var direction = "right" #Direction the player is facing
 var velocity = Vector2.ZERO #Player's velocity vector
 var knockback = Vector2.ZERO #Player's knockback vector
 var last_tile = Vector2.ZERO
+var last_velocity = Vector2.ZERO
 
 var transitioning = false
 var transitioned = false
@@ -278,10 +279,27 @@ func _on_BossMusic_finished():
 		$BossMusicLoop.play()
 
 func _on_RoomDetectionBox_body_entered(body):
+	if(body.is_in_group("BossDetector")):
+		get_parent().get_node("StartRoom").get_node("BossDoor").animation = "opening"
+		transitioning = true
+		transitioned = true
+		animator.animation = "idle_" + direction
+		last_velocity = velocity
+		velocity = Vector2.ZERO
+		move_and_slide(velocity)
+	
 	if(!transitioning):
 		transitioning = true
 		transitioned = true
+		transition()
+
+func transition():
 		animator.animation = "walk_" + direction
+		
+		if(velocity == Vector2.ZERO):
+			velocity = last_velocity
+			move_and_slide(velocity)
+		
 		if(direction == "right" || direction == "left"):
 			$Transitioning.start(0.5)
 			$Transitioned.start(1)

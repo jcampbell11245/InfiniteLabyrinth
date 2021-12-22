@@ -246,3 +246,7 @@ func death_sound(enemy_type):
 
 func _on_NextFloor_area_entered(area):
 	get_parent().get_node("CameraHolder/Camera2D/UpgradeMenu/Control").show_menu()
+
+func _on_BossDoor_animation_finished():
+	if($BossDoor.animation == "opening"):
+		player.transition()
