@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/heart_full.png-164ace1ac7e9b314479bdf758d9aba7d.stex"
+path="res://.import/heart_full_3.png-07ae858eadfd51e6a37695b1899dc0b2.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/hud/heart_full.png"
-dest_files=[ "res://.import/heart_full.png-164ace1ac7e9b314479bdf758d9aba7d.stex" ]
+source_file="res://sprites/hud/heart_full_3.png"
+dest_files=[ "res://.import/heart_full_3.png-07ae858eadfd51e6a37695b1899dc0b2.stex" ]
 
 [params]
 
