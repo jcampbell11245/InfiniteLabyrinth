@@ -53,23 +53,24 @@ func _ready():
 	$Meter4.animation = String(looting_level + 1)
 
 func _process(delta):
-	if(Input.is_action_just_released("up") && selected != 0):
-		selected -= 1
-		update_selected()
-	if(Input.is_action_just_released("down") && selected != 4):
-		selected += 1
-		update_selected()
-	if(Input.is_action_just_released("select")):
-		if(selected == 0):
-			buy_health()
-		if(selected == 1):
-			buy_damage()
-		if(selected == 2):
-			buy_time()
-		if(selected == 3):
-			buy_looting()
-		if(selected == 4):
-			continue_button()
+	if(visible):
+		if(Input.is_action_just_released("up") && selected != 0):
+			selected -= 1
+			update_selected()
+		if(Input.is_action_just_released("down") && selected != 4):
+			selected += 1
+			update_selected()
+		if(Input.is_action_just_released("select")):
+			if(selected == 0):
+				buy_health()
+			if(selected == 1):
+				buy_damage()
+			if(selected == 2):
+				buy_time()
+			if(selected == 3):
+				buy_looting()
+			if(selected == 4):
+				continue_button()
 
 func show_menu():
 	var new_pause_state = !get_tree().paused
