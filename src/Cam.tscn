@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=2]
+[gd_scene load_steps=40 format=2]
 
 [ext_resource path="res://fonts/8-BIT WONDER.TTF" type="DynamicFontData" id=1]
 [ext_resource path="res://src/hud/Hearts.tscn" type="PackedScene" id=2]
@@ -10,6 +10,7 @@
 [ext_resource path="res://sprites/hud/Game_Over.png" type="Texture" id=8]
 [ext_resource path="res://src/GameOver.gd" type="Script" id=9]
 [ext_resource path="res://sfx proto1/game_over1.wav" type="AudioStream" id=10]
+[ext_resource path="res://src/Cam.gd" type="Script" id=11]
 
 [sub_resource type="DynamicFont" id=1]
 size = 8
@@ -136,6 +137,7 @@ animations = [ {
 [node name="Camera2D" type="Camera2D"]
 current = true
 zoom = Vector2( 0.25, 0.25 )
+script = ExtResource( 11 )
 
 [node name="HudLayer" type="CanvasLayer" parent="."]
 offset = Vector2( 40, 40 )
@@ -161,8 +163,6 @@ __meta__ = {
 }
 
 [node name="Hearts" parent="HudLayer/Hud" instance=ExtResource( 2 )]
-margin_right = 100.0
-margin_bottom = 100.0
 
 [node name="Coins" type="HBoxContainer" parent="HudLayer/Hud"]
 margin_right = 40.0
@@ -172,6 +172,7 @@ script = ExtResource( 4 )
 [node name="Coin" type="AnimatedSprite" parent="HudLayer/Hud/Coins"]
 position = Vector2( 235.594, -0.845496 )
 frames = SubResource( 6 )
+frame = 1
 playing = true
 
 [node name="Counter" type="Position2D" parent="HudLayer/Hud/Coins"]
@@ -196,7 +197,6 @@ script = ExtResource( 6 )
 [node name="Key" type="AnimatedSprite" parent="HudLayer/Hud/Keys"]
 position = Vector2( 178.275, -0.693974 )
 frames = SubResource( 18 )
-frame = 3
 playing = true
 
 [node name="Counter" type="Position2D" parent="HudLayer/Hud/Keys"]
@@ -225,6 +225,7 @@ position = Vector2( -9.15527e-05, 0 )
 scale = Vector2( 0.641908, 0.641907 )
 z_index = 4096
 frames = SubResource( 28 )
+frame = 2
 playing = true
 script = ExtResource( 9 )
 

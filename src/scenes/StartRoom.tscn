@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=2]
+[gd_scene load_steps=45 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -13,6 +13,8 @@
 [ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=11]
 [ext_resource path="res://src/tilesets/TransitionDetectorB.tscn" type="PackedScene" id=12]
 [ext_resource path="res://sprites/tileset/boss_door_opening.png" type="Texture" id=13]
+[ext_resource path="res://sprites/tileset/boss_door_closed_bottom.png" type="Texture" id=14]
+[ext_resource path="res://sprites/tileset/boss_door_closed_middle.png" type="Texture" id=15]
 
 [sub_resource type="AtlasTexture" id=1]
 atlas = ExtResource( 13 )
@@ -135,6 +137,36 @@ animations = [ {
 "speed": 7.0
 } ]
 
+[sub_resource type="TileSet" id=29]
+0/name = "boss_door_closed_bottom.png 0"
+0/texture = ExtResource( 14 )
+0/tex_offset = Vector2( 0, 0 )
+0/modulate = Color( 1, 1, 1, 1 )
+0/region = Rect2( 0, 0, 23, 24 )
+0/tile_mode = 0
+0/occluder_offset = Vector2( 0, 0 )
+0/navigation_offset = Vector2( 0, 0 )
+0/shape_offset = Vector2( 0, 0 )
+0/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+0/shape_one_way = false
+0/shape_one_way_margin = 0.0
+0/shapes = [  ]
+0/z_index = 0
+1/name = "boss_door_closed_middle.png 1"
+1/texture = ExtResource( 15 )
+1/tex_offset = Vector2( 0, 0 )
+1/modulate = Color( 1, 1, 1, 1 )
+1/region = Rect2( 0, 0, 24, 24 )
+1/tile_mode = 0
+1/occluder_offset = Vector2( 0, 0 )
+1/navigation_offset = Vector2( 0, 0 )
+1/shape_offset = Vector2( 0, 0 )
+1/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
+1/shape_one_way = false
+1/shape_one_way_margin = 0.0
+1/shapes = [  ]
+1/z_index = 0
+
 [node name="StartRoom" type="Node2D"]
 script = ExtResource( 1 )
 
@@ -148,7 +180,7 @@ tile_data = PoolIntArray( 458765, 2, 0, 786450, 1, 0 )
 tile_data = PoolIntArray(  )
 
 [node name="Top" parent="." instance=ExtResource( 5 )]
-tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 589832, 4, 0, 589842, 5, 0, 655368, 4, 0, 655378, 5, 0, 720914, 11, 0, 786450, 10, 0, 851986, 9, 0, 917512, 4, 0, 917522, 5, 0, 983048, 4, 0, 983058, 5, 0, 1048584, 4, 0, 1048594, 5, 0, 1114120, 4, 0, 1114130, 5, 0 )
+tile_data = PoolIntArray( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 589832, 4, 0, 589842, 5, 0, 655368, 4, 0, 655378, 5, 0, 720914, 11, 0, 786450, 10, 0, 851976, 26, 0, 851986, 9, 0, 917512, 4, 0, 917522, 5, 0, 983048, 4, 0, 983058, 5, 0, 1048584, 4, 0, 1048594, 5, 0, 1114120, 4, 0, 1114130, 5, 0 )
 
 [node name="TopWalls" parent="." instance=ExtResource( 9 )]
 tile_data = PoolIntArray( 589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0, 917512, 0, 0, 917522, 1, 0, 983048, 0, 0, 983058, 1, 0, 1048584, 0, 0, 1048594, 1, 0, 1114120, 0, 0, 1114130, 1, 0 )
@@ -173,5 +205,12 @@ tile_data = PoolIntArray( 851976, 0, 0 )
 position = Vector2( 204.001, 299.995 )
 frames = SubResource( 28 )
 playing = true
+
+[node name="BossDoorBottom" type="TileMap" parent="."]
+z_index = 20
+tile_set = SubResource( 29 )
+cell_size = Vector2( 24, 24 )
+format = 1
+tile_data = PoolIntArray( 786440, 1, 0, 851976, 0, 0 )
 
 [connection signal="animation_finished" from="BossDoor" to="." method="_on_BossDoor_animation_finished"]

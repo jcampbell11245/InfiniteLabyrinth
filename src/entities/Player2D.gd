@@ -280,6 +280,9 @@ func _on_BossMusic_finished():
 
 func _on_RoomDetectionBox_body_entered(body):
 	if(body.is_in_group("BossDetector")):
+		$DungeonMusic.stop()
+		$BossDoorOpen.play()
+		get_parent().get_node("CameraHolder").get_child(0).shake(3.7, 20, 1)
 		get_parent().get_node("StartRoom").get_node("BossDoor").animation = "opening"
 		transitioning = true
 		transitioned = true
