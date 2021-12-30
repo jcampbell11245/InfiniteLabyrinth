@@ -892,7 +892,7 @@ attack_cooldown_length = 1.0
 [node name="AnimatedSprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 193 )
 animation = "idle_right"
-frame = 1
+frame = 2
 playing = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

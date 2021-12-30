@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/boss_door_closing-Sheet.png-f9f3589c4489fdf30ee1dcaf3904f8bb.stex"
+path="res://.import/boss_door_bar_closed.png-dfd471b606d7fbcfed9c74657b34c4e7.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/tileset/boss_door_closing-Sheet.png"
-dest_files=[ "res://.import/boss_door_closing-Sheet.png-f9f3589c4489fdf30ee1dcaf3904f8bb.stex" ]
+source_file="res://sprites/tileset/boss_door_bar_closed.png"
+dest_files=[ "res://.import/boss_door_bar_closed.png-dfd471b606d7fbcfed9c74657b34c4e7.stex" ]
 
 [params]
 

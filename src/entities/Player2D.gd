@@ -34,9 +34,9 @@ func _ready():
 	z_index = 2
 
 func _process(delta):
-	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
-		$DungeonMusic.stop()
-		$BossMusic.play()
+	#if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
+	#	$DungeonMusic.stop()
+	#	$BossMusic.play()
 	
 	#print(current_room)
 	timer()
@@ -319,4 +319,13 @@ func _on_Transitioning_timeout():
 	get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
 
 func _on_Transitioned_timeout():
+	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
+		$BossDoorClose.play()
+		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("BossDoor").animation = "closing"
+		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("CollisionShape2D").disabled = false
+	else:
+		transitioned = false
+
+func _on_BossDoorClose_finished():
 	transitioned = false
+	$BossMusic.play()

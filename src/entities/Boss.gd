@@ -39,45 +39,46 @@ func _process(delta):
 		hitbox.disabled = true
 	
 func _physics_process(delta):
-	if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && player.current_room == 62):
-		if(player.global_position.x - global_position.x < 0):
-			direction = "left"
-		else:
-			direction = "right"
-	elif (player.current_room == 62):
-		if(player.global_position.y - global_position.y < 0):
-			direction = "up"
-			z_index = 10
-		else:
-			direction = "down"
-			z_index = 1
-	
-	if(animator.animation.substr(0, 5) != "slash"):
-		if(direction == "left"):
-			$HitboxPivot.rotation_degrees = 180
-		elif(direction == "right"):
-			$HitboxPivot.rotation_degrees = 0
-		elif(direction == "up"):
-			$HitboxPivot.rotation_degrees = 270
-		elif(direction == "down"):
-			$HitboxPivot.rotation_degrees = 90
-	
-	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
-		var dir
-		if(mode == 0):
-			dir = (player.global_position - global_position).normalized()
-		else:
-			dir = -(player.global_position - global_position).normalized()
-		move_and_collide(dir * speed * delta)
-	elif(player.current_room == 62):
-		animate()
-		attack()
+	if(!player.transitioned):
+		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && player.current_room == 62):
+			if(player.global_position.x - global_position.x < 0):
+				direction = "left"
+			else:
+				direction = "right"
+		elif (player.current_room == 62):
+			if(player.global_position.y - global_position.y < 0):
+				direction = "up"
+				z_index = 10
+			else:
+				direction = "down"
+				z_index = 1
 		
-	#Knockback
-	knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
-	knockback = move_and_slide(knockback)
-	
-	animate()
+		if(animator.animation.substr(0, 5) != "slash"):
+			if(direction == "left"):
+				$HitboxPivot.rotation_degrees = 180
+			elif(direction == "right"):
+				$HitboxPivot.rotation_degrees = 0
+			elif(direction == "up"):
+				$HitboxPivot.rotation_degrees = 270
+			elif(direction == "down"):
+				$HitboxPivot.rotation_degrees = 90
+		
+		if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+			var dir
+			if(mode == 0):
+				dir = (player.global_position - global_position).normalized()
+			else:
+				dir = -(player.global_position - global_position).normalized()
+			move_and_collide(dir * speed * delta)
+		elif(player.current_room == 62):
+			animate()
+			attack()
+			
+		#Knockback
+		knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
+		knockback = move_and_slide(knockback)
+		
+		animate()
 	
 
 #Animates the enemy
