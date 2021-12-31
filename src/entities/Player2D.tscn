@@ -654,7 +654,6 @@ position = Vector2( 0, -2.5034e-06 )
 scale = Vector2( 1.5, 1.5 )
 frames = SubResource( 118 )
 animation = "idle_down"
-frame = 1
 playing = true
 
 [node name="HitboxPivot" type="Position2D" parent="."]

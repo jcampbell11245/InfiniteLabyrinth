@@ -397,7 +397,7 @@ attack_cooldown_length = 1.0
 scale = Vector2( 1.5, 1.5 )
 frames = SubResource( 73 )
 animation = "walk_up"
-frame = 1
+frame = 2
 playing = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

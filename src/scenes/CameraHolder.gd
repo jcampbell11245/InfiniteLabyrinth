@@ -28,3 +28,5 @@ func _physics_process(delta):
 	if (position.distance_to(Vector2(x, y)) > 10):
 		var velocity = position.direction_to(Vector2(x, y)) * 700
 		velocity = move_and_slide(velocity)
+	elif(position.distance_to(Vector2(x, y)) != 0):
+		position = Vector2(x, y)
