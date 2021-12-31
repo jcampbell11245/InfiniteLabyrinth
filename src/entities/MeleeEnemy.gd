@@ -56,6 +56,9 @@ func _process(delta):
 		animator.animation = "idle_" + direction
 
 func _physics_process(delta):
+	#if(player.get_node("Rolling").time_left != 0):
+		#set_collision_layer_bit(
+	
 	if(player.transitioned == false):
 		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && (is_detected() || $InvincibilityCooldown.time_left != 0 || only_hit_during_attack && $Block.playing) && player.current_room == get_parent().room_id):
 			if(player.global_position.x - global_position.x < 0):

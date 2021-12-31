@@ -1,4 +1,4 @@
-[gd_scene load_steps=158 format=2]
+[gd_scene load_steps=182 format=2]
 
 [ext_resource path="res://src/entities/Player2D.gd" type="Script" id=1]
 [ext_resource path="res://sprites/player/jason_down_walk.png" type="Texture" id=2]
@@ -35,9 +35,73 @@
 [ext_resource path="res://sprites/player/jason_right_rungun.png" type="Texture" id=33]
 [ext_resource path="res://sfx proto1/boss_door_open.wav" type="AudioStream" id=34]
 [ext_resource path="res://sfx proto1/bossdoorclose.wav" type="AudioStream" id=35]
+[ext_resource path="res://sprites/player/jason_left_roll.png" type="Texture" id=36]
+[ext_resource path="res://sprites/player/jason_right_roll.png" type="Texture" id=37]
+[ext_resource path="res://sprites/player/jason_down_roll.png" type="Texture" id=38]
+[ext_resource path="res://sprites/player/jason_up_roll.png" type="Texture" id=39]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 10.4918, 2.60338 )
+
+[sub_resource type="AtlasTexture" id=123]
+atlas = ExtResource( 39 )
+region = Rect2( 0, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=124]
+atlas = ExtResource( 39 )
+region = Rect2( 40, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=125]
+atlas = ExtResource( 39 )
+region = Rect2( 80, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=126]
+atlas = ExtResource( 39 )
+region = Rect2( 120, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=127]
+atlas = ExtResource( 39 )
+region = Rect2( 160, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=128]
+atlas = ExtResource( 38 )
+region = Rect2( 0, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=129]
+atlas = ExtResource( 38 )
+region = Rect2( 40, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=130]
+atlas = ExtResource( 38 )
+region = Rect2( 80, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=131]
+atlas = ExtResource( 38 )
+region = Rect2( 120, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=132]
+atlas = ExtResource( 38 )
+region = Rect2( 160, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=133]
+atlas = ExtResource( 36 )
+region = Rect2( 0, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=134]
+atlas = ExtResource( 36 )
+region = Rect2( 40, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=135]
+atlas = ExtResource( 36 )
+region = Rect2( 80, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=136]
+atlas = ExtResource( 36 )
+region = Rect2( 120, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=137]
+atlas = ExtResource( 36 )
+region = Rect2( 160, 0, 40, 40 )
 
 [sub_resource type="AtlasTexture" id=2]
 atlas = ExtResource( 32 )
@@ -503,8 +567,43 @@ region = Rect2( 0, 40, 40, 40 )
 atlas = ExtResource( 30 )
 region = Rect2( 40, 40, 40, 40 )
 
+[sub_resource type="AtlasTexture" id=138]
+atlas = ExtResource( 37 )
+region = Rect2( 0, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=139]
+atlas = ExtResource( 37 )
+region = Rect2( 40, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=140]
+atlas = ExtResource( 37 )
+region = Rect2( 80, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=141]
+atlas = ExtResource( 37 )
+region = Rect2( 120, 0, 40, 40 )
+
+[sub_resource type="AtlasTexture" id=142]
+atlas = ExtResource( 37 )
+region = Rect2( 160, 0, 40, 40 )
+
 [sub_resource type="SpriteFrames" id=118]
 animations = [ {
+"frames": [ SubResource( 123 ), SubResource( 124 ), SubResource( 125 ), SubResource( 126 ), SubResource( 127 ) ],
+"loop": false,
+"name": "roll_up",
+"speed": 20.0
+}, {
+"frames": [ SubResource( 128 ), SubResource( 129 ), SubResource( 130 ), SubResource( 131 ), SubResource( 132 ) ],
+"loop": false,
+"name": "roll_down",
+"speed": 20.0
+}, {
+"frames": [ SubResource( 133 ), SubResource( 134 ), SubResource( 135 ), SubResource( 136 ), SubResource( 137 ) ],
+"loop": false,
+"name": "roll_left",
+"speed": 20.0
+}, {
 "frames": [ SubResource( 2 ), SubResource( 3 ), SubResource( 4 ), SubResource( 5 ), SubResource( 6 ), SubResource( 7 ), SubResource( 8 ), SubResource( 9 ) ],
 "loop": true,
 "name": "walkshoot_down",
@@ -624,6 +723,11 @@ animations = [ {
 "loop": true,
 "name": "walkshoot_left",
 "speed": 10.0
+}, {
+"frames": [ SubResource( 138 ), SubResource( 139 ), SubResource( 140 ), SubResource( 141 ), SubResource( 142 ) ],
+"loop": false,
+"name": "roll_right",
+"speed": 20.0
 } ]
 
 [sub_resource type="RectangleShape2D" id=119]
@@ -752,6 +856,16 @@ one_shot = true
 [node name="Transitioned" type="Timer" parent="."]
 one_shot = true
 
+[node name="Rolling" type="Timer" parent="."]
+one_shot = true
+
+[node name="RollCooldown" type="Timer" parent="."]
+one_shot = true
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="."]
+
+[node name="Tween" type="Tween" parent="."]
+
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="area_entered" from="FeetBox" to="." method="_on_FeetBox_area_entered"]
@@ -764,3 +878,4 @@ one_shot = true
 [connection signal="finished" from="BossDoorClose" to="." method="_on_BossDoorClose_finished"]
 [connection signal="timeout" from="Transitioning" to="." method="_on_Transitioning_timeout"]
 [connection signal="timeout" from="Transitioned" to="." method="_on_Transitioned_timeout"]
+[connection signal="timeout" from="Rolling" to="." method="_on_Rolling_timeout"]

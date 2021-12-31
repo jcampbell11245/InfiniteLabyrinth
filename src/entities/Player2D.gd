@@ -56,18 +56,36 @@ func _physics_process(delta):
 	set_last_tile()
 	
 func get_input():
-	#Movement
-	velocity = Vector2.ZERO
-	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && $RespawnCooldown.time_left == 0):
-		if Input.is_action_pressed('right'):
+	if($Rolling.time_left == 0):
+		velocity = Vector2.ZERO
+	
+	#Rolling
+	if(Input.is_action_just_released("roll") && $Rolling.time_left == 0 && $RollCooldown.time_left == 0):
+		if(direction == "right"):
 			velocity.x += 1
-		if Input.is_action_pressed('left'):
+		elif(direction == "left"):
 			velocity.x -= 1
-		if Input.is_action_pressed('down'):
+		elif(direction == "down"):
 			velocity.y += 1
-		if Input.is_action_pressed('up'):
+		else:
 			velocity.y -= 1
-		velocity = velocity.normalized() * speed
+		speed *= 2
+		$Rolling.start(0.25)
+		set_collision_mask_bit(1, false)
+		$HitboxPivot/Hitbox/CollisionShape2D.disabled = true
+		$Hurtbox/CollisionShape2D.disabled = true
+	elif($Rolling.time_left == 0):
+		#Movement
+		if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && $RespawnCooldown.time_left == 0):
+			if Input.is_action_pressed('right'):
+				velocity.x += 1
+			if Input.is_action_pressed('left'):
+				velocity.x -= 1
+			if Input.is_action_pressed('down'):
+				velocity.y += 1
+			if Input.is_action_pressed('up'):
+				velocity.y -= 1
+	velocity = velocity.normalized() * speed
 	
 	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 6) != "damage"):
@@ -109,20 +127,24 @@ func animate():
 	if animator.animation.substr(0, 6) == "damage" && animator.frame == 4:
 		animator.animation = "idle_" + direction
 	
-	#Movement
-	if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && animator.animation.substr(0, 9) != "walkshoot"):
-		if Input.is_action_pressed('right'):
-			animator.animation = "walk_right"
-			direction = "right"
-		elif Input.is_action_pressed('left'):
-			animator.animation = "walk_left"
-			direction = "left"
-		elif Input.is_action_pressed('down'):
-			animator.animation = "walk_down"
-			direction = "down"
-		elif Input.is_action_pressed('up'):
-			animator.animation = "walk_up"
-			direction = "up"
+	#Rolling
+	if(Input.is_action_just_released('roll') && $RollCooldown.time_left == 0):
+		animator.animation = "roll_" + direction
+	elif($Rolling.time_left == 0):
+		#Movement
+		if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && animator.animation.substr(0, 9) != "walkshoot"):
+			if Input.is_action_pressed('right'):
+				animator.animation = "walk_right"
+				direction = "right"
+			elif Input.is_action_pressed('left'):
+				animator.animation = "walk_left"
+				direction = "left"
+			elif Input.is_action_pressed('down'):
+				animator.animation = "walk_down"
+				direction = "down"
+			elif Input.is_action_pressed('up'):
+				animator.animation = "walk_up"
+				direction = "up"
 	
 	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 6) != "damage"):
@@ -333,11 +355,6 @@ func transition():
 			$Transitioning.start(0.65)
 			$Transitioned.start(1.15)
 
-#func _on_Transitioning_timeout():
-	#transitioning = false
-	#animator.animation = "idle_" + direction
-	#get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
-
 func _on_Transitioned_timeout():
 	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
 		$BossDoorClose.play()
@@ -349,3 +366,15 @@ func _on_Transitioned_timeout():
 func _on_BossDoorClose_finished():
 	transitioned = false
 	$BossMusic.play()
+
+func _on_Rolling_timeout():
+	$Tween.interpolate_property(self, "speed",
+		speed, speed / 2, 0.25,
+		Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
+	$Tween.start()
+	animator.animation = "idle_" + direction
+	set_collision_mask_bit(1, true)
+	$HitboxPivot/Hitbox/CollisionShape2D.disabled = false
+	$Hurtbox/CollisionShape2D.disabled = false
+	$RollCooldown.start(1)
+	

@@ -383,7 +383,7 @@ height = 151.276
 [node name="Goblin" type="KinematicBody2D"]
 scale = Vector2( 0.75, 0.75 )
 collision_layer = 2
-collision_mask = 2147483943
+collision_mask = 2147483939
 script = ExtResource( 1 )
 speed = 50.0
 attack_speed = 1.0
@@ -397,7 +397,7 @@ attack_cooldown_length = 1.0
 scale = Vector2( 1.5, 1.5 )
 frames = SubResource( 73 )
 animation = "walk_up"
-frame = 2
+frame = 6
 playing = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
