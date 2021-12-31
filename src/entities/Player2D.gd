@@ -273,6 +273,10 @@ func _on_RespawnCooldown_timeout():
 
 func _on_RoomDetector_area_entered(area):
 	current_room = area.get_parent().room_id
+	
+	transitioning = false
+	animator.animation = "idle_" + direction
+	get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
 
 func _on_BossMusic_finished():
 	if(!$BossMusicLoop.playing):
@@ -302,6 +306,22 @@ func transition():
 		if(velocity == Vector2.ZERO):
 			velocity = last_velocity
 			move_and_slide(velocity)
+		if(current_room == 60 || (abs(position.x - ((current_room % get_parent().columns) * 261 + 391.5)) > abs(position.y - ((current_room / get_parent().columns) * 288 + 144)))):
+			if(velocity.x > 0):
+				direction = "right"
+				velocity = Vector2(speed, 0)
+			else:
+				direction = "left"
+				velocity = Vector2(-speed, 0)
+		else:
+			if(velocity.y > 0):
+				direction = "down"
+				velocity = Vector2(0, speed)
+			else:
+				direction = "up"
+				velocity = Vector2(0, -speed)
+		animator.animation = "walk_" + direction
+		move_and_slide(velocity)
 		
 		if(direction == "right" || direction == "left"):
 			$Transitioning.start(0.5)
@@ -313,10 +333,10 @@ func transition():
 			$Transitioning.start(0.65)
 			$Transitioned.start(1.15)
 
-func _on_Transitioning_timeout():
-	transitioning = false
-	animator.animation = "idle_" + direction
-	get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
+#func _on_Transitioning_timeout():
+	#transitioning = false
+	#animator.animation = "idle_" + direction
+	#get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
 
 func _on_Transitioned_timeout():
 	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):

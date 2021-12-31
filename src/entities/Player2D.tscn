@@ -654,7 +654,7 @@ position = Vector2( 0, -2.5034e-06 )
 scale = Vector2( 1.5, 1.5 )
 frames = SubResource( 118 )
 animation = "idle_down"
-frame = 1
+frame = 2
 playing = true
 
 [node name="HitboxPivot" type="Position2D" parent="."]
@@ -690,7 +690,7 @@ shape = SubResource( 121 )
 
 [node name="RoomDetectionBox" type="Area2D" parent="."]
 position = Vector2( 0, 18 )
-collision_layer = 64
+collision_layer = 2048
 collision_mask = 2048
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RoomDetectionBox"]
