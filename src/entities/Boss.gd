@@ -40,13 +40,13 @@ func _process(delta):
 	
 func _physics_process(delta):
 	if(!player.transitioned):
-		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && player.current_room == 62):
-			if(player.global_position.x - global_position.x < 0):
+		if(abs(PlayerVariables.global_position.x - global_position.x) > abs(PlayerVariables.global_position.y - global_position.y) && PlayerVariables.current_room == 62):
+			if(PlayerVariables.global_position.x - global_position.x < 0):
 				direction = "left"
 			else:
 				direction = "right"
-		elif (player.current_room == 62):
-			if(player.global_position.y - global_position.y < 0):
+		elif (PlayerVariables.current_room == 62):
+			if(PlayerVariables.global_position.y - global_position.y < 0):
 				direction = "up"
 				z_index = 10
 			else:
@@ -63,14 +63,14 @@ func _physics_process(delta):
 			elif(direction == "down"):
 				$HitboxPivot.rotation_degrees = 90
 		
-		if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+		if((abs(PlayerVariables.global_position.x - global_position.x) > 25 || abs(PlayerVariables.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && PlayerVariables.current_room == 62):
 			var dir
 			if(mode == 0):
-				dir = (player.global_position - global_position).normalized()
+				dir = (PlayerVariables.global_position - global_position).normalized()
 			else:
-				dir = -(player.global_position - global_position).normalized()
+				dir = -(PlayerVariables.global_position - global_position).normalized()
 			move_and_collide(dir * speed * delta)
-		elif(player.current_room == 62):
+		elif(PlayerVariables.current_room == 62):
 			animate()
 			attack()
 			
@@ -87,11 +87,11 @@ func animate():
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == slash_length:
 		animator.animation = "idle_" + direction
 	
-	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+	if((abs(PlayerVariables.global_position.x - global_position.x) > 25 || abs(PlayerVariables.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && PlayerVariables.current_room == 62):
 		animator.animation = "walk_" + direction
-	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+	elif(animator.animation.substr(0, 5) != "slash" && PlayerVariables.current_room == 62):
 		animator.animation = "slash_" + direction
-	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+	elif(animator.animation.substr(0, 5) != "slash" && PlayerVariables.current_room == 62):
 		animator.animation = "idle_" + direction
 
 #Called when the enemy attacks
@@ -101,7 +101,7 @@ func attack():
 		
 #Spawns a fireball at the enemy
 func shoot_fireball():
-	if(player.current_room == get_parent().room_id):
+	if(PlayerVariables.current_room == get_parent().room_id):
 		var fireball = Fireball.instance()
 		get_parent().add_child(fireball)
 		fireball.position = position

@@ -15,7 +15,6 @@ var respawn_y = [46, 70, 94, 118, 142, 166, 190, 214, 238]
 
 var health = 10 #Player's health
 var speed = 125  #Speed in pixels/sec
-var current_room = 0
 
 var direction = "right" #Direction the player is facing
 
@@ -34,11 +33,6 @@ func _ready():
 	z_index = 2
 
 func _process(delta):
-	#if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
-	#	$DungeonMusic.stop()
-	#	$BossMusic.play()
-	
-	#print(current_room)
 	timer()
 
 func _physics_process(delta):
@@ -48,6 +42,8 @@ func _physics_process(delta):
 		collision()
 	if(visible):
 		velocity = move_and_slide(velocity)
+	
+	PlayerVariables.global_position = global_position
 	
 	#Knockback
 	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
@@ -223,16 +219,16 @@ func die():
 
 func set_last_tile():
 	var tiles
-	if(current_room == 60):
+	if(PlayerVariables.current_room == 60):
 		tiles = get_parent().get_child(3).get_child(0)
-	elif(current_room == 61):
+	elif(PlayerVariables.current_room == 61):
 		tiles = get_parent().get_node("EndRoom").get_child(0)
-	elif(current_room == 62):
+	elif(PlayerVariables.current_room == 62):
 		tiles = get_parent().get_node("BossRoom").get_child(0)
 	else:
-		tiles = get_parent().get_child(current_room + 6).get_child(0)
-	var y_shift = (current_room / get_parent().columns) * 288
-	var x_shift = (current_room % get_parent().columns) * 261
+		tiles = get_parent().get_child(PlayerVariables.current_room + 6).get_child(0)
+	var y_shift = (PlayerVariables.current_room / get_parent().columns) * 288
+	var x_shift = (PlayerVariables.current_room % get_parent().columns) * 261
 	
 	var locked_x
 	var locked_y
@@ -278,23 +274,23 @@ func _on_FeetBox_body_entered(body):
 	if(respawn_cooldown.time_left == 0):
 		$Fall.play()
 		visible = false
-		if(current_room != 62):
-			get_parent().get_child(current_room + 3).player_active = false
+		if(PlayerVariables.current_room != 62):
+			get_parent().get_child(PlayerVariables.current_room + 3).player_active = false
 		else:
 			get_parent().get_child(4).player_active = false
 		respawn_cooldown.start(1.1)
 
 func _on_RespawnCooldown_timeout():
 	visible = true
-	if(current_room != 62):
-		get_parent().get_child(current_room + 3).player_active = true
+	if(PlayerVariables.current_room != 62):
+		get_parent().get_child(PlayerVariables.current_room + 3).player_active = true
 	else:
 		get_parent().get_child(4).player_active = true
 	position = last_tile
 	take_damage(0.5,  "none", true)
 
 func _on_RoomDetector_area_entered(area):
-	current_room = area.get_parent().room_id
+	PlayerVariables.current_room = area.get_parent().room_id
 	
 	transitioning = false
 	animator.animation = "idle_" + direction
@@ -328,7 +324,7 @@ func transition():
 		if(velocity == Vector2.ZERO):
 			velocity = last_velocity
 			move_and_slide(velocity)
-		if(current_room == 60 || (abs(position.x - ((current_room % get_parent().columns) * 261 + 391.5)) > abs(position.y - ((current_room / get_parent().columns) * 288 + 144)))):
+		if(PlayerVariables.current_room == 60 || (abs(position.x - ((PlayerVariables.current_room % get_parent().columns) * 261 + 391.5)) > abs(position.y - ((PlayerVariables.current_room / get_parent().columns) * 288 + 144)))):
 			if(velocity.x > 0):
 				direction = "right"
 				velocity = Vector2(speed, 0)
@@ -356,7 +352,7 @@ func transition():
 			$Transitioned.start(1.15)
 
 func _on_Transitioned_timeout():
-	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
+	if(PlayerVariables.current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
 		$BossDoorClose.play()
 		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("BossDoor").animation = "closing"
 		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("CollisionShape2D").disabled = false

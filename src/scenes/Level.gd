@@ -191,14 +191,14 @@ func _process(delta):
 			$Tiles.set_cell(13, 8, 1)
 	
 	#Fade in/out
-	if(player.current_room != room_id && !faded_out):
+	if(PlayerVariables.current_room != room_id && !faded_out):
 		animator.play("FadeOut")
 		faded_out = true
-	elif(player.current_room == room_id && faded_out):
+	elif(PlayerVariables.current_room == room_id && faded_out):
 		animator.play("FadeIn")
 		faded_out = false
 	
-	if(!locked && player.current_room == room_id && $Locks != null):
+	if(!locked && PlayerVariables.current_room == room_id && $Locks != null):
 		locked = true
 		if(completion_criteria == "switches"):
 			$Tiles.set_cell(13, 8, 21)

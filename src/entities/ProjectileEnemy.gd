@@ -51,23 +51,23 @@ func _process(delta):
 
 func _physics_process(delta):
 	if(player.transitioned == false):
-		if(get_parent().player_active == true && player.current_room == get_parent().room_id):
-			if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
-				if(player.global_position.x - global_position.x < 0):
+		if(get_parent().player_active == true && PlayerVariables.current_room == get_parent().room_id):
+			if(abs(PlayerVariables.global_position.x - global_position.x) > abs(PlayerVariables.global_position.y - global_position.y)):
+				if(PlayerVariables.global_position.x - global_position.x < 0):
 					direction = "left"
 				else:
 					direction = "right"
 			else:
-				if(player.global_position.y - global_position.y < 0):
+				if(PlayerVariables.global_position.y - global_position.y < 0):
 					direction = "up"
 					z_index = 10
 				else:
 					direction = "down"
 					z_index = 0
 			
-			if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+			if((abs(PlayerVariables.global_position.x - global_position.x) < 25 || abs(PlayerVariables.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
 				if(direction == "left" && position.x < 424 || direction == "right" && position.x > 232 || direction == "up" && position.y > 214 || direction == "down" && position.y < 406):
-					var dir = -(player.global_position - global_position).normalized()
+					var dir = -(PlayerVariables.global_position - global_position).normalized()
 					move_and_collide(dir * speed * delta)
 			elif(attack_cooldown.time_left == 0):
 				animate()
@@ -79,13 +79,13 @@ func _physics_process(delta):
 
 #Animates the enemy
 func animate():
-	if(player.current_room == get_parent().room_id):
+	if(PlayerVariables.current_room == get_parent().room_id):
 		#Reset to idle
 		if animator.animation.substr(0, 5) == "shoot" && animator.frame == shoot_length:
 			animator.animation = "idle_" + direction
 		
 		if(direction != null):
-			if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
+			if((abs(PlayerVariables.global_position.x - global_position.x) < 25 || abs(PlayerVariables.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
 				animator.animation = "walk_" + direction
 			elif(animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
 				animator.animation = "shoot_" + direction
@@ -94,7 +94,7 @@ func animate():
 
 #Called when the enemy attacks
 func attack():
-	if(animator.visible == true && player.current_room == get_parent().room_id):
+	if(animator.visible == true && PlayerVariables.current_room == get_parent().room_id):
 		attack_cooldown.start(attack_cooldown_length)
 
 #Called when the enemy takes damage
@@ -134,7 +134,7 @@ func die():
 
 #Spawns a fireball at the enemy
 func shoot_fireball():
-	if(player.current_room == get_parent().room_id):
+	if(PlayerVariables.current_room == get_parent().room_id):
 		$Attack.play()
 		var fireball = Fireball.instance()
 		get_parent().add_child(fireball)
