@@ -53,5 +53,6 @@ position = Vector2( 323, 343.461 )
 starting_direction = "down"
 
 [node name="RoomDetection" parent="." instance=ExtResource( 6 )]
+visible = false
 
 [node name="Void" parent="." instance=ExtResource( 10 )]

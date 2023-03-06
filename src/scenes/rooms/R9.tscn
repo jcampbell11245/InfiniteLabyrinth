@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -15,6 +15,7 @@
 [ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=13]
 [ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=14]
 [ext_resource path="res://src/tilesets/PitfallTransitions.tscn" type="PackedScene" id=15]
+[ext_resource path="res://src/entities/Knight.tscn" type="PackedScene" id=16]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource( 1 )
@@ -59,9 +60,10 @@ position = Vector2( 251.349, 241.449 )
 [node name="Wizard2" parent="." instance=ExtResource( 10 )]
 position = Vector2( 396.495, 240.39 )
 
-[node name="Wizard3" parent="." instance=ExtResource( 10 )]
-position = Vector2( 323.392, 354.282 )
-
 [node name="RoomDetection" parent="." instance=ExtResource( 11 )]
+visible = false
 
 [node name="Void" parent="." instance=ExtResource( 12 )]
+
+[node name="Knight" parent="." instance=ExtResource( 16 )]
+position = Vector2( 322, 360 )

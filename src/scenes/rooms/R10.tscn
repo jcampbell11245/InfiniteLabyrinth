@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
 [ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
@@ -9,7 +9,6 @@
 [ext_resource path="res://src/Void.tscn" type="PackedScene" id=7]
 [ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
 [ext_resource path="res://src/tilesets/TopWalls.tscn" type="PackedScene" id=9]
-[ext_resource path="res://src/entities/Wizard.tscn" type="PackedScene" id=10]
 [ext_resource path="res://src/entities/Knight.tscn" type="PackedScene" id=11]
 [ext_resource path="res://src/tilesets/Spikes.tscn" type="PackedScene" id=12]
 [ext_resource path="res://src/tilesets/Stalagmites.tscn" type="PackedScene" id=13]
@@ -63,6 +62,7 @@ tile_data = PoolIntArray( 589833, 0, 0, 589841, 0, 0, 655371, 0, 0, 655372, 0, 0
 [node name="KnightDeath" parent="." instance=ExtResource( 3 )]
 
 [node name="RoomDetection" parent="." instance=ExtResource( 6 )]
+visible = false
 
 [node name="Void" parent="." instance=ExtResource( 7 )]
 
@@ -77,8 +77,5 @@ starting_direction = "left"
 [node name="Knight3" parent="." instance=ExtResource( 11 )]
 position = Vector2( 393.712, 383.739 )
 
-[node name="Wizard" parent="." instance=ExtResource( 10 )]
-position = Vector2( 396.89, 212.636 )
-
-[node name="Wizard2" parent="." instance=ExtResource( 10 )]
-position = Vector2( 419.668, 240.182 )
+[node name="Knight4" parent="." instance=ExtResource( 11 )]
+position = Vector2( 396, 240 )

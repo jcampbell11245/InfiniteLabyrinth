@@ -53,13 +53,14 @@ tile_data = PoolIntArray( 655369, 0, 0, 655377, 0, 0, 786442, 16, 0, 786443, 4, 
 [node name="KnightDeath" parent="." instance=ExtResource( 3 )]
 
 [node name="Knight" parent="." instance=ExtResource( 7 )]
-position = Vector2( 322.197, 265.37 )
+position = Vector2( 386, 255 )
 starting_direction = "up"
 
 [node name="Knight2" parent="." instance=ExtResource( 7 )]
-position = Vector2( 322.758, 377.055 )
+position = Vector2( 236, 407 )
 starting_direction = "down"
 
 [node name="RoomDetection" parent="." instance=ExtResource( 9 )]
+visible = false
 
 [node name="Void" parent="." instance=ExtResource( 10 )]

@@ -48,7 +48,7 @@ tile_data = PoolIntArray( 589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0
 [node name="Void" parent="." instance=ExtResource( 7 )]
 
 [node name="Wizard" parent="." instance=ExtResource( 11 )]
-position = Vector2( 251.996, 214.637 )
+position = Vector2( 252, 254 )
 
 [node name="Goblin" parent="." instance=ExtResource( 10 )]
 position = Vector2( 420.365, 216.882 )
@@ -62,4 +62,4 @@ starting_direction = "down"
 position = Vector2( 250.312, 389.741 )
 
 [node name="Wizard2" parent="." instance=ExtResource( 11 )]
-position = Vector2( 396.232, 408.261 )
+position = Vector2( 397, 382 )
