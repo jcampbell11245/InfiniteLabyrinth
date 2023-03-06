@@ -7,7 +7,7 @@ var looting_level
 
 var selected = 0
 
-var upgrade_cost = [10, 50, 100, 300, 500, 750, 1000, 1500, 3000, "MAX"]
+var upgrade_cost = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"]
 
 onready var coins = get_parent().get_parent().get_node("HudLayer/Hud/Coins")
 

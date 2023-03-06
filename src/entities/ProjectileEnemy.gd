@@ -127,7 +127,7 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
-	coins.add_coins(5 * overworld.floor_number * (looting + 1))
+	coins.add_coins(20 * overworld.floor_number * 1+((looting + 1)/10))
 	get_parent().enemy_count -= 1
 	get_parent().death_sound(get_name())
 	get_parent().remove_child(self)
@@ -141,7 +141,7 @@ func shoot_fireball():
 		fireball.position = position
 		fireball.direction = animator.animation.split("_")[1]
 		fireball.damage = damage
-		attack_cooldown.start(1)
+		attack_cooldown.start(2.5)
 
 func _on_InvincibilityCooldown_timeout():
 	animator.modulate.a = 1
@@ -157,7 +157,7 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "shoot" && animator.frame == attack_speed):
 		shoot_fireball()
-		$SecondShotCountdown.start(0.5)
+		$SecondShotCountdown.start(1)
 		$ThirdShotCountdown.start(1)
 
 func _on_SecondShotCountdown_timeout():
