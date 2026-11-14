@@ -33,6 +33,6 @@ shape = SubResource("1")
 [node name="ExistenceTime" type="Timer" parent="." unique_id=1087926334]
 one_shot = true
 
-[connection signal="area_shape_entered" from="ArrowHitbox" to="." method="_on_arrow_hitbox_area_shape_entered"]
-[connection signal="body_entered" from="ArrowHitbox" to="." method="_on_arrow_hitbox_body_entered"]
+[connection signal="area_entered" from="ArrowHitbox" to="." method="_on_hitbox_hit"]
+[connection signal="body_entered" from="ArrowHitbox" to="." method="_on_hitbox_hit"]
 [connection signal="timeout" from="ExistenceTime" to="." method="_on_existence_time_timeout"]

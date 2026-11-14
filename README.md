@@ -34,8 +34,8 @@ src/autoload/  SaveData (save file), Game (references to the player, camera, HUD
                and Music (dungeon and boss themes)
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script
-src/enemies/   enemy scenes and their shared AI scripts
-src/projectiles/  arrows, fireballs, the boss laser
+src/enemies/   enemy scenes; Enemy is the base class for MeleeEnemy, RangedEnemy and Boss
+src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
 src/world/     dungeon generation (Overworld), room script (Level), camera
   rooms/       random rooms (every .tscn here is picked up automatically)

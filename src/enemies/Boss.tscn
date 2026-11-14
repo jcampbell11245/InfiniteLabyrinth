@@ -1459,12 +1459,13 @@ z_index = 2
 motion_mode = 1
 script = ExtResource("17")
 speed = 70.0
-attack_speed = 5.0
+attack_frame = 5
 knockback_speed = 20.0
 damage = 3.0
 health = 30.0
-slash_length = 31
+attack_end_frame = 31
 attack_cooldown_length = 1.0
+invincibility_time = 1.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=603131880]
 autoplay = "idle_right"

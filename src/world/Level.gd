@@ -15,6 +15,10 @@ var faded_out = true
 var doors = [true, true, true, true]
 
 func _ready():
+	for child in get_children():
+		if(child is Enemy):
+			child.died.connect(_on_enemy_died)
+
 	if(get_node_or_null("Decorations") != null):
 		for x in range(9,17):
 			for y in range(9, 17):
@@ -237,11 +241,13 @@ func _process(delta):
 			$Locks.set_cell(0, Vector2i(18, 13), 8, Vector2i.ZERO)
 			$Locks.set_cell(0, Vector2i(18, 12), 8, Vector2i.ZERO)
 
-func death_sound(enemy_type):
-	if(enemy_type == "Goblin"):
-		goblin_death.play()
-	elif(enemy_type == "Knight"):
-		knight_death.play()
+# Death sounds live on the room because the enemy is freed as it dies. Keyed by the
+# enemy's scene file name; wizards have none.
+func _on_enemy_died(enemy):
+	enemy_count -= 1
+	match enemy.scene_file_path.get_file().get_basename():
+		"Goblin": goblin_death.play()
+		"Knight": knight_death.play()
 
 func _on_next_floor_area_entered(area):
 	Game.upgrade_menu.show_menu()

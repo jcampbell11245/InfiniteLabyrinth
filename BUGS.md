@@ -26,13 +26,17 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 - **Respawning plays a missing animation.** After a pitfall, `Player._on_respawn_cooldown_timeout`
   calls `take_damage(0.5, "none", true)`, which plays `damage_none`. That animation doesn't
   exist, so Godot logs an error and the sprite keeps its previous animation.
-- **Coin drop formula has precedence bugs.** `MeleeEnemy.die()` uses
-  `10 * floor * 1+((looting + 1 /10))`, which is `10 * floor + looting` (and `1 / 10` is 0).
-  `ProjectileEnemy.die()` uses `1+((looting + 1)/10)` instead, so the two enemy types scale differently.
-- **Wizard crits are not random per run.** `ProjectileEnemy.take_damage` creates a
+- **Coin drop formula has precedence bugs.** The original MeleeEnemy used
+  `10 * floor * 1+((looting + 1 /10))`, which is `10 * floor + looting` (`1 / 10` is 0), and the
+  wizard used `1+((looting + 1)/10)`, so the two scale differently. Kept as `Enemy._looting_bonus()`
+  and its `RangedEnemy` override.
+- **Wizard crits are not random per run.** `RangedEnemy._roll_critical` creates a
   `RandomNumberGenerator` without calling `randomize()`, so it always rolls the same first number.
-- **Boss uses a hard-coded room id.** `Boss.gd` checks `player.current_room == Constants.BOSS_ROOM`
-  everywhere instead of its parent's `room_id`.
+- **Wizards back away past the top and bottom walls.** In `RangedEnemy._can_retreat`, the
+  vertical limits look swapped: backing down is checked against the top bound and backing up
+  against the bottom one, so neither stops the wizard before the wall.
+- **The boss never idles in its room.** In `Boss.animate`, the idle branch had the same
+  condition as the slash branch before it, so it could never run. The dead branch was removed.
 - **Camera and respawn drift 3px per column.** Rooms are placed 264px apart
   (`Constants.ROOM_SIZE.x`), but `CameraRig`, `Player._update_respawn_point` and `Player.start_transition`
   step 261px (`Constants.LEGACY_ROOM_WIDTH`). By the last column the camera is 15px off-centre
@@ -59,6 +63,6 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 
 ## Engine / cleanup
 
-- **Dead enemies are never freed.** `MeleeEnemy.die()` and `ProjectileEnemy.die()` call
-  `get_parent().remove_child(self)` without `queue_free()`, so every killed enemy stays in memory
-  as an orphan node until the game quits.
+- **Physics state changed during collision callbacks.** Enemies set `hurtbox.disabled = true`
+  inside the hurtbox signal, which Godot reports as "Can't change this state while flushing
+  queries". It should use `set_deferred`.

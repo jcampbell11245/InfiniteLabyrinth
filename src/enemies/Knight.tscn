@@ -447,13 +447,14 @@ collision_mask = 258
 motion_mode = 1
 script = ExtResource("1")
 speed = 50.0
-attack_speed = 3.0
+attack_frame = 3
 knockback_speed = 100.0
 damage = 1.5
 health = 5.0
-slash_length = 7
+attack_end_frame = 7
 attack_cooldown_length = 1.0
 only_hit_during_attack = true
+coin_reward = 30
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=922099642]
 autoplay = "idle_right"

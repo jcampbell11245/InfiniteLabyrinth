@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c8uo03x1rllmx"]
 
-[ext_resource type="Script" uid="uid://by0o0giciwivu" path="res://src/enemies/ProjectileEnemy.gd" id="1"]
+[ext_resource type="Script" uid="uid://by0o0giciwivu" path="res://src/enemies/RangedEnemy.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://b0wsifuekyo5" path="res://assets/sprites/wizard/wizard_up_shoot.png" id="2"]
 [ext_resource type="Texture2D" uid="uid://dyj7c36gv57m" path="res://assets/sprites/wizard/wizard_left_stand.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://blekkwor51ndu" path="res://assets/sprites/wizard/wizard_right_stand.png" id="4"]
@@ -356,12 +356,13 @@ collision_mask = 289
 motion_mode = 1
 script = ExtResource("1")
 speed = 100.0
-attack_speed = 3.0
+attack_frame = 3
 knockback_speed = 150.0
 damage = 0.5
 health = 2.0
-shoot_length = 4
+attack_end_frame = 4
 attack_cooldown_length = 1.0
+coin_reward = 20
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1305928878]
 autoplay = "idle_right"
@@ -388,9 +389,6 @@ one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="." unique_id=1551740441]
 stream = ExtResource("14")
-
-[node name="MoveCooldown" type="Timer" parent="." unique_id=282629192]
-one_shot = true
 
 [node name="SecondShotCountdown" type="Timer" parent="." unique_id=2138599034]
 one_shot = true
