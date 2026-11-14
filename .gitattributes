@@ -1,0 +1,3 @@
+# Godot writes its files with LF line endings, so keep LF everywhere. Without this,
+# core.autocrlf=true makes every file Godot re-saves show up as modified on Windows.
+* text=auto eol=lf
