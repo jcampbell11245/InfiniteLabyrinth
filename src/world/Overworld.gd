@@ -24,9 +24,7 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	_build(WorldGenerator.generate(rng))
-	# BUG(see BUGS.md): the player starts with current_room 0, so room 0 acts as entered
-	# (fades in and locks its doors) until the start room's detector fires.
-	Game.room_entered.emit(Game.player.current_room)
+	Game.room_entered.emit(Game.player.current_room) # Fades the start room in
 	
 	Music.start_floor()
 	Game.player.boss_door_reached.connect(_on_player_boss_door_reached)

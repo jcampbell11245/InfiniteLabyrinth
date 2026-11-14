@@ -11,6 +11,9 @@ extends Node2D
 
 enum Door { TOP, RIGHT, BOTTOM, LEFT }
 
+const CENTRE := Vector2(324, 312) # Centre of the room's tiles (cells 8..18 by 7..18)
+const FLOOR_RECT := Rect2(216, 216, 216, 216) # The 9x9 walkable floor, cells 9..17
+
 const FLOOR := 0 # Plain floor source ids that get a random variant
 const FLOOR_ALT := 4
 
@@ -96,6 +99,13 @@ func add_key_gate() -> void:
 	_key_gate.position = tiles.map_to_local(Vector2i(13, 8))
 	_key_gate.add_child(collision)
 	add_child(_key_gate)
+
+# The point nearest `point` that is at least `margin` inside the floor. Enemies standing
+# against a wall overlap it (their origin is above their feet), so projectiles spawn here
+# instead of at the enemy, or they would hit the wall the moment they appear.
+func clamp_to_floor(point: Vector2, margin: float) -> Vector2:
+	var inset := Vector2(margin, margin)
+	return point.clamp(FLOOR_RECT.position + inset, FLOOR_RECT.end - inset)
 
 func is_cleared() -> bool:
 	match completion_criteria:

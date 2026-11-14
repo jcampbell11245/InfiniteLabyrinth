@@ -5,23 +5,7 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 
 ## Gameplay
 
-- **Wizard crits are not random per run.** `RangedEnemy._roll_critical` creates a
-  `RandomNumberGenerator` without calling `randomize()`, so it always rolls the same first number.
-- **Wizards back away past the top and bottom walls.** In `RangedEnemy._can_retreat`, the
-  vertical limits look swapped: backing down is checked against the top bound and backing up
-  against the bottom one, so neither stops the wizard before the wall.
-- **The boss never idles in its room.** In `Boss.animate`, the idle branch had the same
-  condition as the slash branch before it, so it could never run. The dead branch was removed.
-- **Room 0 is treated as entered at startup.** `Player.current_room` starts at 0, so before the
-  start room's detector fires, room 0 fades in and draws its lock tiles. They stay until room 0
-  is cleared. Kept by `Overworld._ready` emitting `room_entered` for room 0.
-- **The camera isn't centred the same way in every room.** Measured from each room's position,
-  `CameraRig` aims at (341, 302) in the start and end rooms, (325, 302) in the boss room and
-  (338, 301) in grid column 0, drifting further in later columns (next entry).
-- **Camera drifts 3px per column.** Rooms are placed 264px apart (`Constants.ROOM_SIZE.x`),
-  but `CameraRig` and `Player.start_transition` step 261px (`Constants.LEGACY_ROOM_WIDTH`). By the
-  last column the camera is 15px off-centre. `start_transition` also uses the grid formula for the
-  end and boss rooms, so the direction it picks there can be wrong.
+None open.
 
 ## Rooms (`Room.gd`)
 

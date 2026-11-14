@@ -6,6 +6,7 @@ extends CharacterBody2D
 # when a ProjectileHitbox touches it.
 
 const LIFETIME := 5.0
+const SPAWN_MARGIN := 5.0 # Distance from walls to keep the spawn point, covering the hitbox
 
 @export var speed: float # Pixels/sec
 @export var rotates: bool # Turn the sprite to face `direction` (art faces left)

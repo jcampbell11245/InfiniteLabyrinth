@@ -7,13 +7,14 @@ const Fireball := preload("res://src/projectiles/Fireball.tscn")
 const BURST_COOLDOWN := 2.5 # Replaces attack_cooldown_length once a fireball is out
 const BURST_SHOT_DELAY := 1.0
 
-# Room-local bounds on backing away, by facing direction.
-# BUG(see BUGS.md): the vertical pair looks swapped, so they never stop the wizard at the
-# wall it is backing towards.
+# Room-local bounds on backing away. The wizard faces the player and backs away from them,
+# so facing left it backs towards RETREAT_LIMIT_RIGHT, and so on.
 const RETREAT_LIMIT_LEFT := 232
 const RETREAT_LIMIT_RIGHT := 424
 const RETREAT_LIMIT_UP := 214
 const RETREAT_LIMIT_DOWN := 406
+
+var retreat_blocked := false # Backing away ran into something; shoot instead until the next burst
 
 func _process(_delta: float) -> void:
 	if !player.in_transition:
@@ -30,9 +31,11 @@ func _physics_process(delta: float) -> void:
 	else:
 		_face_player_vertically(0)
 	
-	if _is_player_lined_up() && !_animation_is("shoot") && attack_cooldown.time_left == 0:
-		if _can_retreat():
-			move_and_collide(-_to_player().normalized() * speed * delta)
+	if _is_retreating():
+		var motion := -_to_player().normalized() * speed * delta
+		var collision := move_and_collide(motion)
+		# Grazing something still counts as moving; only a near-stop means it's stuck.
+		retreat_blocked = collision != null && collision.get_travel().length() < motion.length() / 2
 	elif attack_cooldown.time_left == 0:
 		animate()
 		attack()
@@ -47,7 +50,7 @@ func animate() -> void:
 	
 	if direction == "":
 		return
-	if _is_player_lined_up() && !_animation_is("shoot") && attack_cooldown.time_left == 0:
+	if _is_retreating():
 		_play("walk")
 	elif !_animation_is("shoot") && attack_cooldown.time_left == 0:
 		_play("shoot")
@@ -55,6 +58,7 @@ func animate() -> void:
 		_play("idle")
 
 func attack() -> void:
+	retreat_blocked = false
 	if animator.visible && is_player_in_room():
 		attack_cooldown.start(attack_cooldown_length)
 
@@ -64,7 +68,7 @@ func shoot_fireball() -> void:
 	$Attack.play()
 	var fireball: Projectile = Fireball.instantiate()
 	room.add_child(fireball)
-	fireball.position = position
+	fireball.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)
 	fireball.direction = String(animator.animation).get_slice("_", 1)
 	fireball.damage = damage
 	attack_cooldown.start(BURST_COOLDOWN)
@@ -74,18 +78,18 @@ func _is_player_lined_up() -> bool:
 	var offset := _to_player()
 	return abs(offset.x) < CLOSE_RANGE || abs(offset.y) < CLOSE_RANGE
 
+# Backs away while the player is lined up, until it reaches a wall or bumps into something.
+# Pinned, it stands and shoots instead, then tries backing away again after the burst.
+func _is_retreating() -> bool:
+	return _is_player_lined_up() && _can_retreat() && !retreat_blocked && !_animation_is("shoot") && attack_cooldown.time_left == 0
+
 func _can_retreat() -> bool:
 	match direction:
 		Direction.LEFT: return position.x < RETREAT_LIMIT_RIGHT
 		Direction.RIGHT: return position.x > RETREAT_LIMIT_LEFT
-		Direction.UP: return position.y > RETREAT_LIMIT_UP
-		Direction.DOWN: return position.y < RETREAT_LIMIT_DOWN
+		Direction.UP: return position.y < RETREAT_LIMIT_DOWN
+		Direction.DOWN: return position.y > RETREAT_LIMIT_UP
 	return false
-
-# BUG(see BUGS.md): the generator is never randomized, so every roll returns the same
-# number.
-func _roll_critical() -> bool:
-	return RandomNumberGenerator.new().randi_range(0, CRIT_ROLL_MAX) < critical_chance
 
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("shoot") && animator.frame == attack_frame:

@@ -4,24 +4,14 @@ extends CharacterBody2D
 
 const SPEED := 700
 const SNAP_DISTANCE := 10
-const GRID_ROOM_CENTRE := Vector2(411, 133) # Room 0's centre; others step by legacy_room_offset
-const SPECIAL_ROOM_CENTRES := {
-	Constants.START_ROOM: Vector2(150, 710),
-	Constants.END_ROOM: Vector2(1998, 710),
-	Constants.BOSS_ROOM: Vector2(-130, 710),
-}
+# Where the camera aims, relative to a room's position. Sits right of and above the room's
+# centre, measured from where the original game aimed in the first grid column.
+const AIM := Vector2(338, 301)
 
 func _physics_process(_delta: float) -> void:
-	var target := _room_centre(Game.player.current_room)
+	var target := Game.room_by_id(Game.player.current_room).position + AIM
 	if position.distance_to(target) > SNAP_DISTANCE:
 		velocity = position.direction_to(target) * SPEED
 		move_and_slide()
 	elif position.distance_to(target) != 0:
 		position = target
-
-# BUG(see BUGS.md): these don't line up with Room.position (grid rooms drift 3px per
-# column, and the special rooms are a few pixels off each other).
-func _room_centre(room_id: int) -> Vector2:
-	if SPECIAL_ROOM_CENTRES.has(room_id):
-		return SPECIAL_ROOM_CENTRES[room_id]
-	return Constants.legacy_room_offset(room_id) + GRID_ROOM_CENTRE

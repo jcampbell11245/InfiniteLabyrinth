@@ -9,6 +9,7 @@ const Laser := preload("res://src/projectiles/Laser.tscn")
 const LASER_COOLDOWN := 1.0
 
 var mode := Mode.CHASE
+var swing_rest := 0.0 # Seconds left standing idle after a slash before the next one
 
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 
@@ -23,6 +24,7 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if player.in_transition:
 		return
+	swing_rest = max(swing_rest - delta, 0.0)
 	
 	if is_player_in_room():
 		if _is_player_mostly_horizontal():
@@ -45,16 +47,21 @@ func _physics_process(delta: float) -> void:
 	_apply_knockback(delta)
 	animate()
 
-# BUG(see BUGS.md): never returns to idle while the player is in the room, because the
-# slash branch catches every case the idle branch would.
+# Walks towards (or away from) a far player. Up close it slashes, then stands idle for
+# attack_cooldown_length before the next slash.
 func animate() -> void:
 	if _animation_is("slash") && animator.frame == attack_end_frame:
 		_play("idle")
+		swing_rest = attack_cooldown_length
 	
-	if _is_player_far() && !_animation_is("slash") && is_player_in_room():
+	if _animation_is("slash") || !is_player_in_room():
+		return
+	if _is_player_far():
 		_play("walk")
-	elif !_animation_is("slash") && is_player_in_room():
+	elif swing_rest == 0:
 		_play("slash")
+	else:
+		_play("idle")
 
 func attack() -> void:
 	if animator.visible:
@@ -65,7 +72,7 @@ func shoot_laser() -> void:
 		return
 	var laser: Projectile = Laser.instantiate()
 	room.add_child(laser)
-	laser.position = position
+	laser.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)
 	laser.direction = String(animator.animation).get_slice("_", 1)
 	laser.damage = damage
 	attack_cooldown.start(LASER_COOLDOWN)

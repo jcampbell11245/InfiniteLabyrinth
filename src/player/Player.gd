@@ -40,7 +40,7 @@ class FrameInput:
 
 var speed := 125 # Pixels/sec
 var health: float = Constants.BASE_HEALTH # In hearts; halves happen
-var current_room := 0
+var current_room := Constants.START_ROOM
 var direction := Direction.RIGHT # Direction the player is facing
 
 var knockback := Vector2.ZERO
@@ -275,7 +275,7 @@ func start_transition() -> void:
 	if velocity == Vector2.ZERO:
 		velocity = last_velocity
 		move_and_slide()
-	var room_center := Constants.legacy_room_offset(current_room) + Vector2(391.5, 144)
+	var room_center := Game.room_by_id(current_room).position + Room.CENTRE
 	if current_room == Constants.START_ROOM || abs(position.x - room_center.x) > abs(position.y - room_center.y):
 		direction = Direction.RIGHT if velocity.x > 0 else Direction.LEFT
 	else:
