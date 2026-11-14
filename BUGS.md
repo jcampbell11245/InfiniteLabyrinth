@@ -23,6 +23,17 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 - **Respawning plays a missing animation.** After a pitfall, `Player._on_respawn_cooldown_timeout`
   calls `take_damage(0.5, "none", true)`, which plays `damage_none`. That animation doesn't
   exist, so Godot logs an error and the sprite keeps its previous animation.
+- **Being knocked into a pit replays the hit on respawn (GitHub #26).** The issue reports the
+  damage animation and hit sound playing when the player respawns after an enemy knocks them into
+  a pit. The muted `take_damage` call above explains the animation but not the sound, so there may
+  be a second cause in the knocked-into-a-pit case. Not reproduced yet.
+- **The hit sound plays on after death (GitHub #24).** `Player.die()` pauses the tree, which
+  pauses the `Hit` AudioStreamPlayer mid-sound instead of stopping it. When `GameOver` unpauses
+  before the upgrade menu, the rest of the sound plays.
+- **The end-room key door doesn't block the player (GitHub #27).** With fewer than 3 keys, the
+  doorway's `Tiles` cell (13, 8) in `EndRoom.tscn` uses source 2, which has no collision shape. The
+  `Top` cell above it does collide, but on physics layer 9, which isn't in the player's collision
+  mask (layers 1, 2 and 8). Nothing else blocks the doorway, so the player walks straight through.
 - **Coin drop formula has precedence bugs.** The original MeleeEnemy used
   `10 * floor * 1+((looting + 1 /10))`, which is `10 * floor + looting` (`1 / 10` is 0), and the
   wizard used `1+((looting + 1)/10)`, so the two scale differently. Kept as `Enemy._looting_bonus()`
