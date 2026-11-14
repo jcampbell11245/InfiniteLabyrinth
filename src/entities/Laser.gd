@@ -1,6 +1,6 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-export var speed : float  #Speed in pixels/sec
+@export var speed : float  #Speed in pixels/sec
 var velocity #Projectile's velocity vector
 var direction #Direction the projectile is moving
 var damage #Amount of damage the projectile does
@@ -15,7 +15,7 @@ func _ready():
 
 func _physics_process(_delta):
 	if(direction == "right"):
-		$SpritePivot/Sprite.set_flip_h(true)
+		$SpritePivot/Sprite2D.set_flip_h(true)
 	elif(direction == "up"):
 		$SpritePivot.rotation_degrees = 90
 		$ProjectileHitbox.rotation_degrees = 90
@@ -34,7 +34,9 @@ func _physics_process(_delta):
 	elif(direction == "up"):
 		velocity = Vector2(0, -1)
 	velocity = velocity.normalized() * speed
-	velocity = move_and_slide(velocity)
+	set_velocity(velocity)
+	move_and_slide()
+	velocity = velocity
 
 #if the projectile hits anything it disappears
 func _on_Hitbox_area_shape_entered(area_id, area, area_shape, self_shape):

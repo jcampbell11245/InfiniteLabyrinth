@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/magic1.wav-f2651799e88298f0964d051ad36a7844.sample"
+type="AudioStreamWAV"
+uid="uid://c30lib1vloy0a"
+path="res://.godot/imported/magic1.wav-f2651799e88298f0964d051ad36a7844.sample"
 
 [deps]
 
 source_file="res://sfx proto1/magic1.wav"
-dest_files=[ "res://.import/magic1.wav-f2651799e88298f0964d051ad36a7844.sample" ]
+dest_files=["res://.godot/imported/magic1.wav-f2651799e88298f0964d051ad36a7844.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0

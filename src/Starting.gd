@@ -38,4 +38,4 @@ func _ready():
 	time_save.store_line("0")
 	time_save.close()
 	
-	get_tree().change_scene("res://src/scenes/Overworld.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/Overworld.tscn")

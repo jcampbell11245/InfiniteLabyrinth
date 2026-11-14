@@ -1,18 +1,18 @@
 [gd_scene load_steps=69 format=2]
 
 [ext_resource path="res://src/entities/MeleeEnemy.gd" type="Script" id=1]
-[ext_resource path="res://sprites/armored/armored_right_stand.png" type="Texture" id=2]
-[ext_resource path="res://sprites/armored/armored_right_walk.png" type="Texture" id=3]
-[ext_resource path="res://sprites/armored/armored_down_stand.png" type="Texture" id=4]
-[ext_resource path="res://sprites/armored/armored_down_walk.png" type="Texture" id=5]
-[ext_resource path="res://sprites/armored/armored_down_chop.png" type="Texture" id=6]
-[ext_resource path="res://sprites/armored/armored_left_stand.png" type="Texture" id=7]
-[ext_resource path="res://sprites/armored/armored_up_walk.png" type="Texture" id=8]
-[ext_resource path="res://sprites/armored/armored_up_chop.png" type="Texture" id=9]
-[ext_resource path="res://sprites/armored/armored_up_stand.png" type="Texture" id=10]
-[ext_resource path="res://sprites/armored/armored_right_chop.png" type="Texture" id=11]
-[ext_resource path="res://sprites/armored/armored_left_walk.png" type="Texture" id=12]
-[ext_resource path="res://sprites/armored/armored_left_chop.png" type="Texture" id=13]
+[ext_resource path="res://sprites/armored/armored_right_stand.png" type="Texture2D" id=2]
+[ext_resource path="res://sprites/armored/armored_right_walk.png" type="Texture2D" id=3]
+[ext_resource path="res://sprites/armored/armored_down_stand.png" type="Texture2D" id=4]
+[ext_resource path="res://sprites/armored/armored_down_walk.png" type="Texture2D" id=5]
+[ext_resource path="res://sprites/armored/armored_down_chop.png" type="Texture2D" id=6]
+[ext_resource path="res://sprites/armored/armored_left_stand.png" type="Texture2D" id=7]
+[ext_resource path="res://sprites/armored/armored_up_walk.png" type="Texture2D" id=8]
+[ext_resource path="res://sprites/armored/armored_up_chop.png" type="Texture2D" id=9]
+[ext_resource path="res://sprites/armored/armored_up_stand.png" type="Texture2D" id=10]
+[ext_resource path="res://sprites/armored/armored_right_chop.png" type="Texture2D" id=11]
+[ext_resource path="res://sprites/armored/armored_left_walk.png" type="Texture2D" id=12]
+[ext_resource path="res://sprites/armored/armored_left_chop.png" type="Texture2D" id=13]
 [ext_resource path="res://sfx proto1/clank1.wav" type="AudioStream" id=14]
 [ext_resource path="res://sfx proto1/rumble1.wav" type="AudioStream" id=15]
 
@@ -284,7 +284,7 @@ extents = Vector2( 11, 28 )
 radius = 39.3585
 height = 54.8088
 
-[node name="Knight" type="KinematicBody2D"]
+[node name="Knight" type="CharacterBody2D"]
 scale = Vector2( 0.75, 0.75 )
 collision_layer = 2
 collision_mask = 258
@@ -298,7 +298,7 @@ slash_length = 7
 attack_cooldown_length = 1.0
 only_hit_during_attack = true
 
-[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 frames = SubResource( 49 )
 animation = "idle_right"
 playing = true
@@ -310,7 +310,7 @@ shape = SubResource( 50 )
 [node name="AttackCooldown" type="Timer" parent="."]
 one_shot = true
 
-[node name="HitboxPivot" type="Position2D" parent="."]
+[node name="HitboxPivot" type="Marker2D" parent="."]
 
 [node name="Hitbox" type="Area2D" parent="HitboxPivot"]
 collision_layer = 2
@@ -329,7 +329,7 @@ collision_mask = 13
 position = Vector2( 2, 0 )
 shape = SubResource( 52 )
 
-[node name="DetectionZonePivot" type="Position2D" parent="."]
+[node name="DetectionZonePivot" type="Marker2D" parent="."]
 
 [node name="DetectionZone" type="Area2D" parent="DetectionZonePivot"]
 
@@ -352,6 +352,6 @@ stream = ExtResource( 14 )
 
 [node name="Crit" type="AudioStreamPlayer" parent="."]
 
-[connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
+[connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]

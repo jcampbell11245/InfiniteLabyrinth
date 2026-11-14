@@ -1,26 +1,26 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-export var speed : float
-export var attack_speed : float
-export var knockback_speed : float
-export var damage : float
-export var health : float
-export var slash_length : int
-export var attack_cooldown_length : float
+@export var speed : float
+@export var attack_speed : float
+@export var knockback_speed : float
+@export var damage : float
+@export var health : float
+@export var slash_length : int
+@export var attack_cooldown_length : float
 
 var direction = "right"
 var knockback = Vector2.ZERO
 var critical_chance = 0
 var mode = 0
 
-onready var player = get_parent().get_parent().get_node("Player2D")
-onready var animator = $AnimatedSprite
-onready var attack_cooldown = $AttackCooldown
-onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
-onready var hurtbox = $Hurtbox/CollisionShape2D
-onready var invincibility_cooldown = $InvincibilityCooldown
-onready var coins = get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Coins")
-onready var overworld = get_parent().get_parent()
+@onready var player = get_parent().get_parent().get_node("Player2D")
+@onready var animator = $AnimatedSprite2D
+@onready var attack_cooldown = $AttackCooldown
+@onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
+@onready var hurtbox = $Hurtbox/CollisionShape2D
+@onready var invincibility_cooldown = $InvincibilityCooldown
+@onready var coins = get_parent().get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Coins")
+@onready var overworld = get_parent().get_parent()
 const Fireball = preload("res://src/entities/Laser.tscn")
 
 # Called when the node enters the scene tree for the first time.
@@ -76,7 +76,9 @@ func _physics_process(delta):
 			
 		#Knockback
 		knockback = knockback.move_toward(Vector2.ZERO, 200 * delta)
-		knockback = move_and_slide(knockback)
+		set_velocity(knockback)
+		move_and_slide()
+		knockback = velocity
 		
 		animate()
 	
@@ -102,7 +104,7 @@ func attack():
 #Spawns a fireball at the enemy
 func shoot_fireball():
 	if(player.current_room == get_parent().room_id):
-		var fireball = Fireball.instance()
+		var fireball = Fireball.instantiate()
 		get_parent().add_child(fireball)
 		fireball.position = position
 		fireball.direction = animator.animation.split("_")[1]

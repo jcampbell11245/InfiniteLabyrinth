@@ -1,88 +1,88 @@
 [gd_scene load_steps=57 format=2]
 
-[ext_resource path="res://sprites/tileset/into_the_voooiid.png" type="Texture" id=1]
-[ext_resource path="res://sprites/tileset/cave_wall_top_top.png" type="Texture" id=2]
-[ext_resource path="res://sprites/tileset/cave_wall_left_corner_top.png" type="Texture" id=3]
-[ext_resource path="res://sprites/tileset/cave_wall_left_corner_bottom.png" type="Texture" id=4]
-[ext_resource path="res://sprites/tileset/cave_wall_right_corner_bottom.png" type="Texture" id=5]
-[ext_resource path="res://sprites/tileset/cave_wall_bottom_top.png" type="Texture" id=6]
-[ext_resource path="res://sprites/tileset/cave_wall_right.png" type="Texture" id=7]
-[ext_resource path="res://sprites/tileset/cave_wall_left.png" type="Texture" id=8]
-[ext_resource path="res://sprites/tileset/cave_wall_right_corner_top.png" type="Texture" id=9]
-[ext_resource path="res://sprites/tileset/cave_floor_2.png" type="Texture" id=10]
-[ext_resource path="res://sprites/tileset/cave_door_bottom_locked.png" type="Texture" id=11]
-[ext_resource path="res://sprites/tileset/cave_outside_border.png" type="Texture" id=12]
-[ext_resource path="res://sprites/tileset/pitfall.png" type="Texture" id=13]
-[ext_resource path="res://sprites/tileset/lever_left.png" type="Texture" id=14]
-[ext_resource path="res://sprites/tileset/cave_door_bottom.png" type="Texture" id=15]
-[ext_resource path="res://sprites/tileset/cave_floor.png" type="Texture" id=16]
-[ext_resource path="res://sprites/tileset/lever_right.png" type="Texture" id=17]
-[ext_resource path="res://sprites/tileset/cave_door_top.png" type="Texture" id=18]
-[ext_resource path="res://sprites/tileset/enemy_lock.png" type="Texture" id=19]
-[ext_resource path="res://sprites/tileset/switch_lock.png" type="Texture" id=20]
-[ext_resource path="res://sprites/tileset/cave_door_bottom_l.png" type="Texture" id=21]
-[ext_resource path="res://sprites/tileset/cave_door_bottom_e.png" type="Texture" id=22]
-[ext_resource path="res://sprites/tileset/cave_door_right_lock_e.png" type="Texture" id=23]
-[ext_resource path="res://sprites/tileset/cave_door_left_lock_l.png" type="Texture" id=24]
-[ext_resource path="res://sprites/tileset/cave_door_left_lock_e.png" type="Texture" id=25]
-[ext_resource path="res://sprites/tileset/cave_door_right_lock_l.png" type="Texture" id=26]
-[ext_resource path="res://sprites/tileset/cave_floor_tside1.png" type="Texture" id=27]
-[ext_resource path="res://sprites/tileset/cave_floor_lside1.png" type="Texture" id=28]
-[ext_resource path="res://sprites/tileset/cave_floor_bside1.png" type="Texture" id=29]
-[ext_resource path="res://sprites/tileset/cave_floor_bl.png" type="Texture" id=30]
-[ext_resource path="res://sprites/tileset/cave_floor_bside2.png" type="Texture" id=31]
-[ext_resource path="res://sprites/tileset/cave_floor_mid1.png" type="Texture" id=32]
-[ext_resource path="res://sprites/tileset/cave_floor_mid3.png" type="Texture" id=33]
-[ext_resource path="res://sprites/tileset/cave_floor_tl.png" type="Texture" id=34]
-[ext_resource path="res://sprites/tileset/cave_floor_lside2.png" type="Texture" id=35]
-[ext_resource path="res://sprites/tileset/cave_floor_mid2.png" type="Texture" id=36]
-[ext_resource path="res://sprites/tileset/cave_floor_tr.png" type="Texture" id=37]
-[ext_resource path="res://sprites/tileset/cave_floor_tside2.png" type="Texture" id=38]
-[ext_resource path="res://sprites/tileset/cave_floor_br.png" type="Texture" id=39]
-[ext_resource path="res://sprites/tileset/cave_floor_rside1.png" type="Texture" id=40]
-[ext_resource path="res://sprites/tileset/cave_floor_rside2.png" type="Texture" id=41]
+[ext_resource path="res://sprites/tileset/into_the_voooiid.png" type="Texture2D" id=1]
+[ext_resource path="res://sprites/tileset/cave_wall_top_top.png" type="Texture2D" id=2]
+[ext_resource path="res://sprites/tileset/cave_wall_left_corner_top.png" type="Texture2D" id=3]
+[ext_resource path="res://sprites/tileset/cave_wall_left_corner_bottom.png" type="Texture2D" id=4]
+[ext_resource path="res://sprites/tileset/cave_wall_right_corner_bottom.png" type="Texture2D" id=5]
+[ext_resource path="res://sprites/tileset/cave_wall_bottom_top.png" type="Texture2D" id=6]
+[ext_resource path="res://sprites/tileset/cave_wall_right.png" type="Texture2D" id=7]
+[ext_resource path="res://sprites/tileset/cave_wall_left.png" type="Texture2D" id=8]
+[ext_resource path="res://sprites/tileset/cave_wall_right_corner_top.png" type="Texture2D" id=9]
+[ext_resource path="res://sprites/tileset/cave_floor_2.png" type="Texture2D" id=10]
+[ext_resource path="res://sprites/tileset/cave_door_bottom_locked.png" type="Texture2D" id=11]
+[ext_resource path="res://sprites/tileset/cave_outside_border.png" type="Texture2D" id=12]
+[ext_resource path="res://sprites/tileset/pitfall.png" type="Texture2D" id=13]
+[ext_resource path="res://sprites/tileset/lever_left.png" type="Texture2D" id=14]
+[ext_resource path="res://sprites/tileset/cave_door_bottom.png" type="Texture2D" id=15]
+[ext_resource path="res://sprites/tileset/cave_floor.png" type="Texture2D" id=16]
+[ext_resource path="res://sprites/tileset/lever_right.png" type="Texture2D" id=17]
+[ext_resource path="res://sprites/tileset/cave_door_top.png" type="Texture2D" id=18]
+[ext_resource path="res://sprites/tileset/enemy_lock.png" type="Texture2D" id=19]
+[ext_resource path="res://sprites/tileset/switch_lock.png" type="Texture2D" id=20]
+[ext_resource path="res://sprites/tileset/cave_door_bottom_l.png" type="Texture2D" id=21]
+[ext_resource path="res://sprites/tileset/cave_door_bottom_e.png" type="Texture2D" id=22]
+[ext_resource path="res://sprites/tileset/cave_door_right_lock_e.png" type="Texture2D" id=23]
+[ext_resource path="res://sprites/tileset/cave_door_left_lock_l.png" type="Texture2D" id=24]
+[ext_resource path="res://sprites/tileset/cave_door_left_lock_e.png" type="Texture2D" id=25]
+[ext_resource path="res://sprites/tileset/cave_door_right_lock_l.png" type="Texture2D" id=26]
+[ext_resource path="res://sprites/tileset/cave_floor_tside1.png" type="Texture2D" id=27]
+[ext_resource path="res://sprites/tileset/cave_floor_lside1.png" type="Texture2D" id=28]
+[ext_resource path="res://sprites/tileset/cave_floor_bside1.png" type="Texture2D" id=29]
+[ext_resource path="res://sprites/tileset/cave_floor_bl.png" type="Texture2D" id=30]
+[ext_resource path="res://sprites/tileset/cave_floor_bside2.png" type="Texture2D" id=31]
+[ext_resource path="res://sprites/tileset/cave_floor_mid1.png" type="Texture2D" id=32]
+[ext_resource path="res://sprites/tileset/cave_floor_mid3.png" type="Texture2D" id=33]
+[ext_resource path="res://sprites/tileset/cave_floor_tl.png" type="Texture2D" id=34]
+[ext_resource path="res://sprites/tileset/cave_floor_lside2.png" type="Texture2D" id=35]
+[ext_resource path="res://sprites/tileset/cave_floor_mid2.png" type="Texture2D" id=36]
+[ext_resource path="res://sprites/tileset/cave_floor_tr.png" type="Texture2D" id=37]
+[ext_resource path="res://sprites/tileset/cave_floor_tside2.png" type="Texture2D" id=38]
+[ext_resource path="res://sprites/tileset/cave_floor_br.png" type="Texture2D" id=39]
+[ext_resource path="res://sprites/tileset/cave_floor_rside1.png" type="Texture2D" id=40]
+[ext_resource path="res://sprites/tileset/cave_floor_rside2.png" type="Texture2D" id=41]
 
 [sub_resource type="ConvexPolygonShape2D" id=1]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0.0779495, 24, 0.0779495 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0.0779495, 24, 0.0779495 )
 
 [sub_resource type="ConvexPolygonShape2D" id=2]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=3]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=4]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=5]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=6]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=7]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=8]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=9]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=10]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=11]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=12]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0.046936 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0.046936 )
 
 [sub_resource type="ConvexPolygonShape2D" id=13]
-points = PoolVector2Array( 24, 24, 0.0779419, 24, 0, 0.0779495, 23.9162, 0 )
+points = PackedVector2Array( 24, 24, 0.0779419, 24, 0, 0.0779495, 23.9162, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=14]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="TileSet" id=15]
 0/name = "cave_floor.png 0"
@@ -764,4 +764,4 @@ cell_size = Vector2( 24, 24 )
 collision_layer = 257
 collision_mask = 17
 format = 1
-tile_data = PoolIntArray( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8, 0, 524297, 6, 0, 524298, 6, 0, 524299, 6, 0, 524300, 6, 0, 524301, 1, 0, 524302, 6, 0, 524303, 6, 0, 524304, 6, 0, 524305, 6, 0, 524306, 11, 0, 589832, 7, 0, 589835, 0, 0, 589836, 0, 0, 589837, 0, 0, 589838, 0, 0, 589839, 0, 0, 589842, 10, 0, 655368, 7, 0, 655371, 17, 0, 655372, 0, 0, 655373, 0, 0, 655374, 0, 0, 655378, 10, 0, 720904, 7, 0, 720905, 0, 0, 720909, 0, 0, 720913, 0, 0, 720914, 10, 0, 786440, 7, 0, 786441, 0, 0, 786442, 0, 0, 786445, 0, 0, 786448, 0, 0, 786449, 0, 0, 786450, 10, 0, 851976, 16, 0, 851977, 0, 0, 851978, 0, 0, 851979, 0, 0, 851980, 0, 0, 851981, 0, 0, 851982, 0, 0, 851983, 0, 0, 851984, 0, 0, 851985, 0, 0, 851986, 16, 0, 917512, 7, 0, 917513, 0, 0, 917514, 0, 0, 917517, 0, 0, 917520, 0, 0, 917521, 0, 0, 917522, 10, 0, 983048, 7, 0, 983049, 0, 0, 983053, 0, 0, 983057, 0, 0, 983058, 10, 0, 1048584, 7, 0, 1048588, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048594, 10, 0, 1114120, 7, 0, 1114123, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0, 1114130, 10, 0, 1179656, 5, 0, 1179657, 5, 0, 1179658, 5, 0, 1179659, 5, 0, 1179660, 5, 0, 1179661, 5, 0, 1179662, 5, 0, 1179663, 5, 0, 1179664, 5, 0, 1179665, 5, 0, 1179666, 5, 0 )
+tile_data = PackedInt32Array( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8, 0, 524297, 6, 0, 524298, 6, 0, 524299, 6, 0, 524300, 6, 0, 524301, 1, 0, 524302, 6, 0, 524303, 6, 0, 524304, 6, 0, 524305, 6, 0, 524306, 11, 0, 589832, 7, 0, 589835, 0, 0, 589836, 0, 0, 589837, 0, 0, 589838, 0, 0, 589839, 0, 0, 589842, 10, 0, 655368, 7, 0, 655371, 17, 0, 655372, 0, 0, 655373, 0, 0, 655374, 0, 0, 655378, 10, 0, 720904, 7, 0, 720905, 0, 0, 720909, 0, 0, 720913, 0, 0, 720914, 10, 0, 786440, 7, 0, 786441, 0, 0, 786442, 0, 0, 786445, 0, 0, 786448, 0, 0, 786449, 0, 0, 786450, 10, 0, 851976, 16, 0, 851977, 0, 0, 851978, 0, 0, 851979, 0, 0, 851980, 0, 0, 851981, 0, 0, 851982, 0, 0, 851983, 0, 0, 851984, 0, 0, 851985, 0, 0, 851986, 16, 0, 917512, 7, 0, 917513, 0, 0, 917514, 0, 0, 917517, 0, 0, 917520, 0, 0, 917521, 0, 0, 917522, 10, 0, 983048, 7, 0, 983049, 0, 0, 983053, 0, 0, 983057, 0, 0, 983058, 10, 0, 1048584, 7, 0, 1048588, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048594, 10, 0, 1114120, 7, 0, 1114123, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0, 1114130, 10, 0, 1179656, 5, 0, 1179657, 5, 0, 1179658, 5, 0, 1179659, 5, 0, 1179660, 5, 0, 1179661, 5, 0, 1179662, 5, 0, 1179663, 5, 0, 1179664, 5, 0, 1179665, 5, 0, 1179666, 5, 0 )

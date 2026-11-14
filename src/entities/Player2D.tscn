@@ -1,22 +1,22 @@
 [gd_scene load_steps=182 format=2]
 
 [ext_resource path="res://src/entities/Player2D.gd" type="Script" id=1]
-[ext_resource path="res://sprites/player/jason_down_walk.png" type="Texture" id=2]
-[ext_resource path="res://sprites/player/jason_up_walk.png" type="Texture" id=3]
-[ext_resource path="res://sprites/player/jason_left_walk.png" type="Texture" id=4]
-[ext_resource path="res://sprites/player/jason_right_slash.png" type="Texture" id=5]
-[ext_resource path="res://sprites/player/jason_right_walk.png" type="Texture" id=6]
-[ext_resource path="res://sprites/player/jason_up_slash.png" type="Texture" id=7]
-[ext_resource path="res://sprites/player/jason_up_shoot.png" type="Texture" id=8]
-[ext_resource path="res://sprites/player/jason_down_slash.png" type="Texture" id=9]
-[ext_resource path="res://sprites/player/jason_left_slash.png" type="Texture" id=10]
-[ext_resource path="res://sprites/player/jason_left_shoot.png" type="Texture" id=11]
-[ext_resource path="res://sprites/player/jason_right_shoot.png" type="Texture" id=12]
-[ext_resource path="res://sprites/player/jason_down_shoot.png" type="Texture" id=13]
-[ext_resource path="res://sprites/player/jason_up_stand.png" type="Texture" id=14]
-[ext_resource path="res://sprites/player/jason_right_stand.png" type="Texture" id=15]
-[ext_resource path="res://sprites/player/jason_left_stand.png" type="Texture" id=16]
-[ext_resource path="res://sprites/player/jason_down_stand.png" type="Texture" id=17]
+[ext_resource path="res://sprites/player/jason_down_walk.png" type="Texture2D" id=2]
+[ext_resource path="res://sprites/player/jason_up_walk.png" type="Texture2D" id=3]
+[ext_resource path="res://sprites/player/jason_left_walk.png" type="Texture2D" id=4]
+[ext_resource path="res://sprites/player/jason_right_slash.png" type="Texture2D" id=5]
+[ext_resource path="res://sprites/player/jason_right_walk.png" type="Texture2D" id=6]
+[ext_resource path="res://sprites/player/jason_up_slash.png" type="Texture2D" id=7]
+[ext_resource path="res://sprites/player/jason_up_shoot.png" type="Texture2D" id=8]
+[ext_resource path="res://sprites/player/jason_down_slash.png" type="Texture2D" id=9]
+[ext_resource path="res://sprites/player/jason_left_slash.png" type="Texture2D" id=10]
+[ext_resource path="res://sprites/player/jason_left_shoot.png" type="Texture2D" id=11]
+[ext_resource path="res://sprites/player/jason_right_shoot.png" type="Texture2D" id=12]
+[ext_resource path="res://sprites/player/jason_down_shoot.png" type="Texture2D" id=13]
+[ext_resource path="res://sprites/player/jason_up_stand.png" type="Texture2D" id=14]
+[ext_resource path="res://sprites/player/jason_right_stand.png" type="Texture2D" id=15]
+[ext_resource path="res://sprites/player/jason_left_stand.png" type="Texture2D" id=16]
+[ext_resource path="res://sprites/player/jason_down_stand.png" type="Texture2D" id=17]
 [ext_resource path="res://src/entities/LevelCountdown.gd" type="Script" id=18]
 [ext_resource path="res://tsamusic/dungeon.wav" type="AudioStream" id=19]
 [ext_resource path="res://sfx proto1/slash1.wav" type="AudioStream" id=20]
@@ -25,20 +25,20 @@
 [ext_resource path="res://sfx proto1/fall.wav" type="AudioStream" id=23]
 [ext_resource path="res://tsamusic/boss_theme_intro.wav" type="AudioStream" id=24]
 [ext_resource path="res://tsamusic/boss_theme_loop.wav" type="AudioStream" id=25]
-[ext_resource path="res://sprites/player/jason_up_damage.png" type="Texture" id=26]
-[ext_resource path="res://sprites/player/jason_down_damage.png" type="Texture" id=27]
-[ext_resource path="res://sprites/player/jason_left_damage.png" type="Texture" id=28]
-[ext_resource path="res://sprites/player/jason_right_damage.png" type="Texture" id=29]
-[ext_resource path="res://sprites/player/jason_left_rungun.png" type="Texture" id=30]
-[ext_resource path="res://sprites/player/jason_up_rungun.png" type="Texture" id=31]
-[ext_resource path="res://sprites/player/jason_down_rungun.png" type="Texture" id=32]
-[ext_resource path="res://sprites/player/jason_right_rungun.png" type="Texture" id=33]
+[ext_resource path="res://sprites/player/jason_up_damage.png" type="Texture2D" id=26]
+[ext_resource path="res://sprites/player/jason_down_damage.png" type="Texture2D" id=27]
+[ext_resource path="res://sprites/player/jason_left_damage.png" type="Texture2D" id=28]
+[ext_resource path="res://sprites/player/jason_right_damage.png" type="Texture2D" id=29]
+[ext_resource path="res://sprites/player/jason_left_rungun.png" type="Texture2D" id=30]
+[ext_resource path="res://sprites/player/jason_up_rungun.png" type="Texture2D" id=31]
+[ext_resource path="res://sprites/player/jason_down_rungun.png" type="Texture2D" id=32]
+[ext_resource path="res://sprites/player/jason_right_rungun.png" type="Texture2D" id=33]
 [ext_resource path="res://sfx proto1/boss_door_open.wav" type="AudioStream" id=34]
 [ext_resource path="res://sfx proto1/bossdoorclose.wav" type="AudioStream" id=35]
-[ext_resource path="res://sprites/player/jason_left_roll.png" type="Texture" id=36]
-[ext_resource path="res://sprites/player/jason_right_roll.png" type="Texture" id=37]
-[ext_resource path="res://sprites/player/jason_down_roll.png" type="Texture" id=38]
-[ext_resource path="res://sprites/player/jason_up_roll.png" type="Texture" id=39]
+[ext_resource path="res://sprites/player/jason_left_roll.png" type="Texture2D" id=36]
+[ext_resource path="res://sprites/player/jason_right_roll.png" type="Texture2D" id=37]
+[ext_resource path="res://sprites/player/jason_down_roll.png" type="Texture2D" id=38]
+[ext_resource path="res://sprites/player/jason_up_roll.png" type="Texture2D" id=39]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 10.4918, 2.60338 )
@@ -742,7 +742,7 @@ extents = Vector2( 5, 5 )
 [sub_resource type="RectangleShape2D" id=122]
 extents = Vector2( 10.0954, 2.01827 )
 
-[node name="Player2D" type="KinematicBody2D"]
+[node name="Player2D" type="CharacterBody2D"]
 position = Vector2( 0, -1 )
 scale = Vector2( 0.75, 0.75 )
 collision_layer = 4
@@ -753,7 +753,7 @@ script = ExtResource( 1 )
 position = Vector2( 0, 12.3385 )
 shape = SubResource( 1 )
 
-[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2( 0, -2.5034e-06 )
 scale = Vector2( 1.5, 1.5 )
 frames = SubResource( 118 )
@@ -761,7 +761,7 @@ animation = "idle_down"
 frame = 2
 playing = true
 
-[node name="HitboxPivot" type="Position2D" parent="."]
+[node name="HitboxPivot" type="Marker2D" parent="."]
 
 [node name="Hitbox" type="Area2D" parent="HitboxPivot"]
 collision_layer = 4

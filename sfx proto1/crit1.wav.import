@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/crit1.wav-7d3e126ee4b6d30f0afbd39c9468055f.sample"
+type="AudioStreamWAV"
+uid="uid://bm4jqi1pnydb4"
+path="res://.godot/imported/crit1.wav-7d3e126ee4b6d30f0afbd39c9468055f.sample"
 
 [deps]
 
 source_file="res://sfx proto1/crit1.wav"
-dest_files=[ "res://.import/crit1.wav-7d3e126ee4b6d30f0afbd39c9468055f.sample" ]
+dest_files=["res://.godot/imported/crit1.wav-7d3e126ee4b6d30f0afbd39c9468055f.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0

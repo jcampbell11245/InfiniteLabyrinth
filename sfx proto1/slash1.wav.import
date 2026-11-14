@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/slash1.wav-57a38b363dcf8c9b894d90a8f87e154c.sample"
+type="AudioStreamWAV"
+uid="uid://dgybqrdt4yy0b"
+path="res://.godot/imported/slash1.wav-57a38b363dcf8c9b894d90a8f87e154c.sample"
 
 [deps]
 
 source_file="res://sfx proto1/slash1.wav"
-dest_files=[ "res://.import/slash1.wav-57a38b363dcf8c9b894d90a8f87e154c.sample" ]
+dest_files=["res://.godot/imported/slash1.wav-57a38b363dcf8c9b894d90a8f87e154c.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0

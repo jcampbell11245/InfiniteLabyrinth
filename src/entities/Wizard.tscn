@@ -1,18 +1,18 @@
 [gd_scene load_steps=54 format=2]
 
 [ext_resource path="res://src/entities/ProjectileEnemy.gd" type="Script" id=1]
-[ext_resource path="res://sprites/wizard/wizard_up_shoot.png" type="Texture" id=2]
-[ext_resource path="res://sprites/wizard/wizard_left_stand.png" type="Texture" id=3]
-[ext_resource path="res://sprites/wizard/wizard_right_stand.png" type="Texture" id=4]
-[ext_resource path="res://sprites/wizard/wizard_up_stand.png" type="Texture" id=5]
-[ext_resource path="res://sprites/wizard/wizard_down_stand.png" type="Texture" id=6]
-[ext_resource path="res://sprites/wizard/wizard_right_walk.png" type="Texture" id=7]
-[ext_resource path="res://sprites/wizard/wizard_right_shoot.png" type="Texture" id=8]
-[ext_resource path="res://sprites/wizard/wizard_down_walk.png" type="Texture" id=9]
-[ext_resource path="res://sprites/wizard/wizard_up_walk.png" type="Texture" id=10]
-[ext_resource path="res://sprites/wizard/wizard_down_shoot.png" type="Texture" id=11]
-[ext_resource path="res://sprites/wizard/wizard_left_shoot.png" type="Texture" id=12]
-[ext_resource path="res://sprites/wizard/wizard_left_walk.png" type="Texture" id=13]
+[ext_resource path="res://sprites/wizard/wizard_up_shoot.png" type="Texture2D" id=2]
+[ext_resource path="res://sprites/wizard/wizard_left_stand.png" type="Texture2D" id=3]
+[ext_resource path="res://sprites/wizard/wizard_right_stand.png" type="Texture2D" id=4]
+[ext_resource path="res://sprites/wizard/wizard_up_stand.png" type="Texture2D" id=5]
+[ext_resource path="res://sprites/wizard/wizard_down_stand.png" type="Texture2D" id=6]
+[ext_resource path="res://sprites/wizard/wizard_right_walk.png" type="Texture2D" id=7]
+[ext_resource path="res://sprites/wizard/wizard_right_shoot.png" type="Texture2D" id=8]
+[ext_resource path="res://sprites/wizard/wizard_down_walk.png" type="Texture2D" id=9]
+[ext_resource path="res://sprites/wizard/wizard_up_walk.png" type="Texture2D" id=10]
+[ext_resource path="res://sprites/wizard/wizard_down_shoot.png" type="Texture2D" id=11]
+[ext_resource path="res://sprites/wizard/wizard_left_shoot.png" type="Texture2D" id=12]
+[ext_resource path="res://sprites/wizard/wizard_left_walk.png" type="Texture2D" id=13]
 [ext_resource path="res://sfx proto1/magic1.wav" type="AudioStream" id=14]
 
 [sub_resource type="AtlasTexture" id=1]
@@ -228,7 +228,7 @@ extents = Vector2( 10, 4.81229 )
 [sub_resource type="RectangleShape2D" id=39]
 extents = Vector2( 13, 26 )
 
-[node name="Wizard" type="KinematicBody2D"]
+[node name="Wizard" type="CharacterBody2D"]
 scale = Vector2( 0.75, 0.75 )
 z_index = 30
 collision_layer = 2
@@ -242,7 +242,7 @@ health = 2.0
 shoot_length = 4
 attack_cooldown_length = 1.0
 
-[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 z_index = 30
 frames = SubResource( 37 )
 animation = "idle_right"
@@ -277,7 +277,7 @@ one_shot = true
 [node name="ThirdShotCountdown" type="Timer" parent="."]
 one_shot = true
 
-[connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
+[connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]
 [connection signal="timeout" from="SecondShotCountdown" to="." method="_on_SecondShotCountdown_timeout"]

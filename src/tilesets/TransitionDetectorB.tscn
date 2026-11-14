@@ -1,9 +1,9 @@
 [gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://sprites/tileset/room_transition.png" type="Texture" id=1]
+[ext_resource path="res://sprites/tileset/room_transition.png" type="Texture2D" id=1]
 
 [sub_resource type="ConvexPolygonShape2D" id=1]
-points = PoolVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
 
 [sub_resource type="TileSet" id=2]
 0/name = "room_transition.png 0"

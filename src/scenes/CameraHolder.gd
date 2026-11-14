@@ -1,6 +1,6 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-onready var player = get_parent().get_node("Player2D")
+@onready var player = get_parent().get_node("Player2D")
 
 var last_room_number = 1
 
@@ -27,6 +27,8 @@ func _physics_process(delta):
 	
 	if (position.distance_to(Vector2(x, y)) > 10):
 		var velocity = position.direction_to(Vector2(x, y)) * 700
-		velocity = move_and_slide(velocity)
+		set_velocity(velocity)
+		move_and_slide()
+		velocity = velocity
 	elif(position.distance_to(Vector2(x, y)) != 0):
 		position = Vector2(x, y)

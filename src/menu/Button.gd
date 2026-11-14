@@ -1,6 +1,6 @@
 extends Button
 
-export var id : int
+@export var id : int
 
 # Declare member variables here. Examples:
 # var a = 2

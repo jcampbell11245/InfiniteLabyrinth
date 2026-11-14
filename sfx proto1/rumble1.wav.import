@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/rumble1.wav-5f6a9083bd65c6288e7f6f4889d43151.sample"
+type="AudioStreamWAV"
+uid="uid://cldbeefb4ptfi"
+path="res://.godot/imported/rumble1.wav-5f6a9083bd65c6288e7f6f4889d43151.sample"
 
 [deps]
 
 source_file="res://sfx proto1/rumble1.wav"
-dest_files=[ "res://.import/rumble1.wav-5f6a9083bd65c6288e7f6f4889d43151.sample" ]
+dest_files=["res://.godot/imported/rumble1.wav-5f6a9083bd65c6288e7f6f4889d43151.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0

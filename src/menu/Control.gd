@@ -9,7 +9,7 @@ var selected = 0
 
 var upgrade_cost = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"]
 
-onready var coins = get_parent().get_parent().get_node("HudLayer/Hud/Coins")
+@onready var coins = get_parent().get_parent().get_node("HudLayer/Hud/Coins")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

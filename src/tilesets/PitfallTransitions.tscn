@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=2]
 
-[ext_resource path="res://sprites/tileset/into_the_void_top.png" type="Texture" id=2]
+[ext_resource path="res://sprites/tileset/into_the_void_top.png" type="Texture2D" id=2]
 
 [sub_resource type="TileSet" id=1]
 0/name = "into_the_void_top.png 0"

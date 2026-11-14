@@ -1,13 +1,13 @@
 extends Node2D
 
-onready var goblin_death = $GoblinDeath
-onready var knight_death = $KnightDeath
-onready var player = get_parent().get_node("Player2D")
-onready var animator = get_node("Void").get_node("Fade")
+@onready var goblin_death = $GoblinDeath
+@onready var knight_death = $KnightDeath
+@onready var player = get_parent().get_node("Player2D")
+@onready var animator = get_node("Void").get_node("Fade")
 
-export var completion_criteria = "none"
-export var enemy_count = 0
-export var room_id : int
+@export var completion_criteria = "none"
+@export var enemy_count = 0
+@export var room_id : int
 
 var player_active = true
 var locked = false
@@ -95,45 +95,45 @@ func _ready():
 						$PitfallTransitions.set_cell(x, y, 0)
 						$PitfallTransitions.z_index = -1
 					if(right):
-						var tileset = load("res://src/tilesets/PitfallTransitionsR.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsR.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 					if(bottom):
-						var tileset = load("res://src/tilesets/PitfallTransitionsB.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsB.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 					if(left):
-						var tileset = load("res://src/tilesets/PitfallTransitionsL.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsL.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 					
 					if(top && right):
-						var tileset = load("res://src/tilesets/PitfallTransitionsTR.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsTR.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 					if(bottom && right):
-						var tileset = load("res://src/tilesets/PitfallTransitionsBR.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsBR.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 					if(bottom && left):
-						var tileset = load("res://src/tilesets/PitfallTransitionsBL.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsBL.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 					if(top && left):
-						var tileset = load("res://src/tilesets/PitfallTransitionsTL.tscn").instance()
+						var tileset = load("res://src/tilesets/PitfallTransitionsTL.tscn").instantiate()
 						tileset.set_cell(x, y, 0)
 						tileset.z_index = -1
 						add_child(tileset)
 	
 	#Sets pitfall spike decorations
 	if($Pitfalls != null):
-		var spikes = load("res://src/tilesets/PitfallSpikes.tscn").instance()
+		var spikes = load("res://src/tilesets/PitfallSpikes.tscn").instantiate()
 		var rng = RandomNumberGenerator.new()
 		
 		for x in range(9,17):
@@ -148,7 +148,7 @@ func _ready():
 		add_child(spikes)
 	
 	#Sets transition detection zones
-	var detectors = load("res://src/tilesets/TransitionDetector.tscn").instance()
+	var detectors = load("res://src/tilesets/TransitionDetector.tscn").instantiate()
 	
 	if($Tiles.get_cell(13, 8) == 1 || 20 || 21):
 		detectors.set_cell(13, 8, 0)

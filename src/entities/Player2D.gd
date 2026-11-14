@@ -1,14 +1,14 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-onready var animator = $AnimatedSprite #Player's animated sprite
-onready var hurtbox = $Hurtbox/CollisionShape2D #Player's hurtbox
-onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
-onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
-onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
-onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
-onready var respawn_cooldown = $RespawnCooldown #The cooldown until the player respawns from falling in a pitfall
-onready var hearts = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Hearts") #Player's hearts
-onready var level_countdown_text = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Timer/TimerText") #The visual level countdown
+@onready var animator = $AnimatedSprite2D #Player's animated sprite
+@onready var hurtbox = $Hurtbox/CollisionShape2D #Player's hurtbox
+@onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D #Player's hitbox
+@onready var shoot_cooldown = $ShootCooldown #Cooldown to when the player can shoot again
+@onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
+@onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
+@onready var respawn_cooldown = $RespawnCooldown #The cooldown until the player respawns from falling in a pitfall
+@onready var hearts = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Hearts") #Player's hearts
+@onready var level_countdown_text = get_parent().get_node("CameraHolder/Camera2D/HudLayer/Hud/Timer/TimerText") #The visual level countdown
 
 var respawn_x = [304, 328, 352, 376, 400, 424, 448, 472, 496]
 var respawn_y = [46, 70, 94, 118, 142, 166, 190, 214, 238]
@@ -47,11 +47,15 @@ func _physics_process(delta):
 		animate()
 		collision()
 	if(visible):
-		velocity = move_and_slide(velocity)
+		set_velocity(velocity)
+		move_and_slide()
+		velocity = velocity
 	
 	#Knockback
 	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
-	knockback = move_and_slide(knockback)
+	set_velocity(knockback)
+	move_and_slide()
+	knockback = velocity
 	
 	set_last_tile()
 	
@@ -71,7 +75,7 @@ func get_input():
 			velocity.y -= 1
 		speed *= 2
 		$Rolling.start(0.25)
-		set_collision_mask_bit(1, false)
+		set_collision_mask_value(1, false)
 		$HitboxPivot/Hitbox/CollisionShape2D.disabled = true
 		$Hurtbox/CollisionShape2D.disabled = true
 	elif($Rolling.time_left == 0):
@@ -94,7 +98,7 @@ func get_input():
 	
 	#Ranged Attacking
 	if(Input.is_action_just_pressed("ranged_attack") && animator.animation.substr(0, 6) != "damage" && shoot_cooldown.time_left == 0):
-		var arrow = Arrow.instance()
+		var arrow = Arrow.instantiate()
 		get_parent().add_child(arrow)
 		arrow.position = position
 		arrow.direction = direction
@@ -298,7 +302,9 @@ func _on_RoomDetector_area_entered(area):
 	
 	transitioning = false
 	animator.animation = "idle_" + direction
-	get_parent().get_node("CameraHolder").move_and_slide(Vector2(0, 0))
+	.set_velocity(Vector2(0, 0))
+	.move_and_slide()
+	get_parent().get_node("CameraHolder").velocity
 
 func _on_BossMusic_finished():
 	if(!$BossMusicLoop.playing):
@@ -315,7 +321,8 @@ func _on_RoomDetectionBox_body_entered(body):
 		animator.animation = "idle_" + direction
 		last_velocity = velocity
 		velocity = Vector2.ZERO
-		move_and_slide(velocity)
+		set_velocity(velocity)
+		move_and_slide()
 	
 	if(!transitioning):
 		transitioning = true
@@ -327,7 +334,8 @@ func transition():
 		
 		if(velocity == Vector2.ZERO):
 			velocity = last_velocity
-			move_and_slide(velocity)
+			set_velocity(velocity)
+			move_and_slide()
 		if(current_room == 60 || (abs(position.x - ((current_room % get_parent().columns) * 261 + 391.5)) > abs(position.y - ((current_room / get_parent().columns) * 288 + 144)))):
 			if(velocity.x > 0):
 				direction = "right"
@@ -343,7 +351,8 @@ func transition():
 				direction = "up"
 				velocity = Vector2(0, -speed)
 		animator.animation = "walk_" + direction
-		move_and_slide(velocity)
+		set_velocity(velocity)
+		move_and_slide()
 		
 		if(direction == "right" || direction == "left"):
 			$Transitioning.start(0.5)
@@ -373,7 +382,7 @@ func _on_Rolling_timeout():
 		Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
 	$Tween.start()
 	animator.animation = "idle_" + direction
-	set_collision_mask_bit(1, true)
+	set_collision_mask_value(1, true)
 	$HitboxPivot/Hitbox/CollisionShape2D.disabled = false
 	$Hurtbox/CollisionShape2D.disabled = false
 	$RollCooldown.start(1)

@@ -1,6 +1,6 @@
 extends AnimationPlayer
 
-onready var color = get_parent().get_child(0)
+@onready var color = get_parent().get_child(0)
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -14,6 +14,6 @@ func _ready():
 
 func _on_Fade_animation_finished(anim_name):
 	if(anim_name == "FadeOut"):
-		color.set_frame_color(Color(0, 0, 0, 255))
+		color.set_color(Color(0, 0, 0, 255))
 	else:
-		color.set_frame_color(Color(0, 0, 0, 0))
+		color.set_color(Color(0, 0, 0, 0))

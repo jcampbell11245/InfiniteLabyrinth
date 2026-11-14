@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/clank1.wav-559c465e87909d4aa4b35b02df75b366.sample"
+type="AudioStreamWAV"
+uid="uid://418fk8s6qoc"
+path="res://.godot/imported/clank1.wav-559c465e87909d4aa4b35b02df75b366.sample"
 
 [deps]
 
 source_file="res://sfx proto1/clank1.wav"
-dest_files=[ "res://.import/clank1.wav-559c465e87909d4aa4b35b02df75b366.sample" ]
+dest_files=["res://.godot/imported/clank1.wav-559c465e87909d4aa4b35b02df75b366.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0

@@ -1,18 +1,18 @@
 [gd_scene load_steps=93 format=2]
 
 [ext_resource path="res://src/entities/MeleeEnemy.gd" type="Script" id=1]
-[ext_resource path="res://sprites/goblin/goblin_left_stand.png" type="Texture" id=2]
-[ext_resource path="res://sprites/goblin/goblin_up_stand.png" type="Texture" id=3]
-[ext_resource path="res://sprites/goblin/goblin_down_stand.png" type="Texture" id=4]
-[ext_resource path="res://sprites/goblin/goblin_down_walk.png" type="Texture" id=5]
-[ext_resource path="res://sprites/goblin/goblin_right_stand.png" type="Texture" id=6]
-[ext_resource path="res://sprites/goblin/goblin_up_slash.png" type="Texture" id=7]
-[ext_resource path="res://sprites/goblin/goblin_down_slash.png" type="Texture" id=8]
-[ext_resource path="res://sprites/goblin/goblin_right_walk.png" type="Texture" id=9]
-[ext_resource path="res://sprites/goblin/goblin_right_slash.png" type="Texture" id=10]
-[ext_resource path="res://sprites/goblin/goblin_left_walk.png" type="Texture" id=11]
-[ext_resource path="res://sprites/goblin/goblin_left_slash.png" type="Texture" id=12]
-[ext_resource path="res://sprites/goblin/goblin_up_walk.png" type="Texture" id=13]
+[ext_resource path="res://sprites/goblin/goblin_left_stand.png" type="Texture2D" id=2]
+[ext_resource path="res://sprites/goblin/goblin_up_stand.png" type="Texture2D" id=3]
+[ext_resource path="res://sprites/goblin/goblin_down_stand.png" type="Texture2D" id=4]
+[ext_resource path="res://sprites/goblin/goblin_down_walk.png" type="Texture2D" id=5]
+[ext_resource path="res://sprites/goblin/goblin_right_stand.png" type="Texture2D" id=6]
+[ext_resource path="res://sprites/goblin/goblin_up_slash.png" type="Texture2D" id=7]
+[ext_resource path="res://sprites/goblin/goblin_down_slash.png" type="Texture2D" id=8]
+[ext_resource path="res://sprites/goblin/goblin_right_walk.png" type="Texture2D" id=9]
+[ext_resource path="res://sprites/goblin/goblin_right_slash.png" type="Texture2D" id=10]
+[ext_resource path="res://sprites/goblin/goblin_left_walk.png" type="Texture2D" id=11]
+[ext_resource path="res://sprites/goblin/goblin_left_slash.png" type="Texture2D" id=12]
+[ext_resource path="res://sprites/goblin/goblin_up_walk.png" type="Texture2D" id=13]
 [ext_resource path="res://sfx proto1/crit1.wav" type="AudioStream" id=14]
 [ext_resource path="res://sfx proto1/gobatk1.wav" type="AudioStream" id=15]
 
@@ -380,7 +380,7 @@ extents = Vector2( 11, 24 )
 radius = 49.5339
 height = 151.276
 
-[node name="Goblin" type="KinematicBody2D"]
+[node name="Goblin" type="CharacterBody2D"]
 scale = Vector2( 0.75, 0.75 )
 collision_layer = 2
 collision_mask = 2147483939
@@ -393,7 +393,7 @@ health = 3.0
 slash_length = 7
 attack_cooldown_length = 1.0
 
-[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2( 1.5, 1.5 )
 frames = SubResource( 73 )
 animation = "walk_up"
@@ -407,7 +407,7 @@ shape = SubResource( 74 )
 [node name="AttackCooldown" type="Timer" parent="."]
 one_shot = true
 
-[node name="HitboxPivot" type="Position2D" parent="."]
+[node name="HitboxPivot" type="Marker2D" parent="."]
 
 [node name="Hitbox" type="Area2D" parent="HitboxPivot"]
 collision_layer = 2
@@ -434,7 +434,7 @@ stream = ExtResource( 15 )
 [node name="Crit" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 14 )
 
-[node name="DetectionZonePivot" type="Position2D" parent="."]
+[node name="DetectionZonePivot" type="Marker2D" parent="."]
 
 [node name="DetectionZone" type="Area2D" parent="DetectionZonePivot"]
 collision_layer = 128
@@ -444,6 +444,6 @@ position = Vector2( 52.086, 1 )
 rotation = 1.5708
 shape = SubResource( 77 )
 
-[connection signal="frame_changed" from="AnimatedSprite" to="." method="_on_AnimatedSprite_frame_changed"]
+[connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_AnimatedSprite_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_Hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_InvincibilityCooldown_timeout"]

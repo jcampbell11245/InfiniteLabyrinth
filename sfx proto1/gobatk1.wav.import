@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/gobatk1.wav-18e338c4a5e0c7bcd2d7ca2763464bb6.sample"
+type="AudioStreamWAV"
+uid="uid://dn6qf0fmurp3q"
+path="res://.godot/imported/gobatk1.wav-18e338c4a5e0c7bcd2d7ca2763464bb6.sample"
 
 [deps]
 
 source_file="res://sfx proto1/gobatk1.wav"
-dest_files=[ "res://.import/gobatk1.wav-18e338c4a5e0c7bcd2d7ca2763464bb6.sample" ]
+dest_files=["res://.godot/imported/gobatk1.wav-18e338c4a5e0c7bcd2d7ca2763464bb6.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0

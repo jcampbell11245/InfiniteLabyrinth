@@ -1,10 +1,10 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-export var speed : float  #Speed in pixels/sec
+@export var speed : float  #Speed in pixels/sec
 var velocity #Projectile's velocity vector
 var direction #Direction the projectile is moving
 var damage #Amount of damage the projectile does
-export var rotates : bool #Whether or not the projectile rotates
+@export var rotates : bool #Whether or not the projectile rotates
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -21,7 +21,7 @@ func _physics_process(_delta):
 	#Sets projectile direction
 	if(rotates):
 		if(direction == "right"):
-			$SpritePivot/Sprite.set_flip_h(true)
+			$SpritePivot/Sprite2D.set_flip_h(true)
 		elif(direction == "up"):
 			$SpritePivot.rotation_degrees = 90
 		elif(direction == "down"):
@@ -38,7 +38,9 @@ func _physics_process(_delta):
 	elif(direction == "up"):
 		velocity = Vector2(0, -1)
 	velocity = velocity.normalized() * speed
-	velocity = move_and_slide(velocity)
+	set_velocity(velocity)
+	move_and_slide()
+	velocity = velocity
 
 #if the projectile hits anything it disappears
 func _on_Hitbox_area_shape_entered(area_id, area, area_shape, self_shape):
@@ -49,14 +51,14 @@ func _on_ExistenceTime_timeout():
 
 func _on_ProjectileHitbox_area_entered(area):
 	speed = 0
-	$AnimatedSprite.animation = "break"
+	$AnimatedSprite2D.animation = "break"
 
 func _on_ProjectileHitbox_body_entered(body):
 	speed = 0
-	$AnimatedSprite.animation = "break"
+	$AnimatedSprite2D.animation = "break"
 
 func _on_AnimatedSprite_animation_finished():
-	if($AnimatedSprite.animation == "break"):
+	if($AnimatedSprite2D.animation == "break"):
 		queue_free()
 
 func _on_ArrowHitbox_body_entered(body):

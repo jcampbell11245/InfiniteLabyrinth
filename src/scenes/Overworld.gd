@@ -2,7 +2,7 @@ extends Node2D
 
 #264x288
 
-onready var matrix = []
+@onready var matrix = []
 
 var rng = RandomNumberGenerator.new()
 var rooms = []
@@ -10,7 +10,7 @@ var keyrooms = []
 var start_room = "res://src/scenes/StartRoom.tscn"
 var end_room = "res://src/scenes/EndRoom.tscn"
 var floor_number
-export var columns = 6
+@export var columns = 6
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -34,9 +34,9 @@ func _ready():
 
 func rooms():
 	var _numScenes = 0
-	var dir = Directory.new()
+	var dir = DirAccess.new()
 	if dir.open("res://src/scenes/rooms/") == OK:
-		dir.list_dir_begin()
+		dir.list_dir_begin() # TODOConverter3To4 fill missing arguments https://github.com/godotengine/godot/pull/40547
 		var file_name = dir.get_next()
 		while (file_name != ""):
 #			print(file_name)
@@ -51,9 +51,9 @@ func rooms():
 
 func keyrooms():
 	var _numScenes = 0
-	var dir = Directory.new()
+	var dir = DirAccess.new()
 	if dir.open("res://src/scenes/keyrooms/") == OK:
-		dir.list_dir_begin()
+		dir.list_dir_begin() # TODOConverter3To4 fill missing arguments https://github.com/godotengine/godot/pull/40547
 		var file_name = dir.get_next()
 		while (file_name != ""):
 #			print(file_name)
@@ -106,21 +106,21 @@ func worldgen():
 				matrix[x].append(randomscene(rooms))
 	#print(matrix)
 
-func randomscene(var scenes):
+func randomscene(scenes):
 	var room = scenes[int(rng.randi_range(0, scenes.size()-1))]
 	scenes.erase(room)
 	return room
 
 func doors():
 #	print(matrix[2][0])
-	var start = load(matrix[2][0]).instance()
+	var start = load(matrix[2][0]).instantiate()
 	add_child(start)
 	start.position = Vector2(0-191, 288*2-168)
 	start.room_id = 60
 	start.doors[0] = false
 	start.doors[2] = false
 	
-	var broom = load("res://src/scenes/B1.tscn").instance()
+	var broom = load("res://src/scenes/B1.tscn").instantiate()
 	add_child(broom)
 	broom.position = Vector2(-264-191, 288*2-168)
 	broom.room_id = 62
@@ -128,7 +128,7 @@ func doors():
 	broom.doors[2] = false
 	broom.doors[3] = false
 
-	var end = load(matrix[2][7]).instance()
+	var end = load(matrix[2][7]).instantiate()
 	add_child(end)
 	end.position = Vector2(264*7-191, 288*2-168)
 	end.room_id = 61
@@ -138,7 +138,7 @@ func doors():
 	
 	for x in range(5):
 		for y in range(1, 7):
-			var room = load(matrix[x][y]).instance()
+			var room = load(matrix[x][y]).instantiate()
 			add_child(room)
 			room.position = Vector2(264*y-191, 288*x-168)
 			room.room_id = 6 * x + (y - 1)
@@ -159,7 +159,7 @@ func doors():
 
 func reset_world():
 	save_coins()
-	get_tree().change_scene("res://src/scenes/Overworld.tscn")
+	get_tree().change_scene_to_file("res://src/scenes/Overworld.tscn")
 
 func load_coins():
 	print("Loading...")
