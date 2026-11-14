@@ -22,6 +22,12 @@ Godot_v4.7.2-stable_win64_console.exe --headless --path . -s res://tools/smoke_t
 
 Run it after every change, then playtest.
 
+## Code style
+
+Scripts follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)
+and are statically typed. The `untyped_declaration` warning is on, so the editor flags any
+variable, parameter or return type left untyped.
+
 ## Known bugs
 
 See [BUGS.md](BUGS.md).

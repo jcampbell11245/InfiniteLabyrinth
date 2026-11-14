@@ -1,5 +1,6 @@
 extends Area2D
 
-# Called when the node enters the scene tree for the first time.
-func _ready():
+# The black cover over a room. Hidden in the editor so rooms can be edited.
+
+func _ready() -> void:
 	$ColorRect.visible = true

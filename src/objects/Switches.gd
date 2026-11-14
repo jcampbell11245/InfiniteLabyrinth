@@ -4,12 +4,12 @@ extends Node
 
 signal switch_hit
 
-func _ready():
+func _ready() -> void:
 	for switch in get_children():
 		switch.hit.connect(switch_hit.emit)
 
-func unlocked():
+func unlocked() -> bool:
 	for switch in get_children():
-		if (switch.activated == false):
+		if !switch.activated:
 			return false
 	return true

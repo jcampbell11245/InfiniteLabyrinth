@@ -21,6 +21,10 @@ SaveData="*res://src/autoload/SaveData.gd"
 Game="*res://src/autoload/Game.gd"
 Music="*res://src/autoload/Music.tscn"
 
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+
 [display]
 
 window/size/viewport_width=1024

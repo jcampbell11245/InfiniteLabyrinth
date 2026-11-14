@@ -3,19 +3,20 @@ extends HBoxContainer
 # Shows the player's health as a row of hearts, one per point of max health. Each child is
 # a heart sprite with "full", "half" and "empty" animations.
 
-var max_hearts = 0
+var max_hearts := 0
 
-func _ready():
+func _ready() -> void:
 	Game.health_changed.connect(_show)
 	max_hearts = SaveData.health_level + Constants.BASE_HEALTH
 	for heart in range(max_hearts):
 		get_child(heart).visible = true
 
-func _show(health):
+func _show(health: float) -> void:
 	for n in range(max_hearts):
-		if(health >= n + 1):
-			get_child(n).play("full")
-		elif(health == n + 0.5):
-			get_child(n).play("half")
+		var heart: AnimatedSprite2D = get_child(n)
+		if health >= n + 1:
+			heart.play("full")
+		elif health == n + 0.5:
+			heart.play("half")
 		else:
-			get_child(n).play("empty")
+			heart.play("empty")

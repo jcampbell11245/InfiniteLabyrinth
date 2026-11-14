@@ -3,20 +3,20 @@ extends Node
 # Persistent progress, stored in one ConfigFile. Read the fields directly and call
 # save() after changing them.
 
-const PATH = "user://save.cfg"
+const PATH := "user://save.cfg"
 
-var floor_number = 1
-var coins = 0
-var health_level = 0 # Extra hearts
-var damage_level = 0 # Critical hit chance
-var time_level = 0 # Extra seconds on the level timer
-var looting_level = 0 # Extra coins per kill
+var floor_number := 1
+var coins := 0
+var health_level := 0 # Extra hearts
+var damage_level := 0 # Critical hit chance
+var time_level := 0 # Extra seconds on the level timer
+var looting_level := 0 # Extra coins per kill
 
-func _ready():
+func _ready() -> void:
 	load_from_disk()
 
-func load_from_disk():
-	var file = ConfigFile.new()
+func load_from_disk() -> void:
+	var file := ConfigFile.new()
 	if file.load(PATH) != OK:
 		return
 	floor_number = file.get_value("progress", "floor", floor_number)
@@ -26,8 +26,8 @@ func load_from_disk():
 	time_level = file.get_value("upgrades", "time", time_level)
 	looting_level = file.get_value("upgrades", "looting", looting_level)
 
-func save():
-	var file = ConfigFile.new()
+func save() -> void:
+	var file := ConfigFile.new()
 	file.set_value("progress", "floor", floor_number)
 	file.set_value("progress", "coins", coins)
 	file.set_value("upgrades", "health", health_level)
@@ -36,7 +36,7 @@ func save():
 	file.set_value("upgrades", "looting", looting_level)
 	file.save(PATH)
 
-func reset():
+func reset() -> void:
 	floor_number = 1
 	coins = 0
 	health_level = 0
