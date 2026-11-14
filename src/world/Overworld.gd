@@ -12,6 +12,7 @@ var keyrooms = []
 var start_room = "res://src/world/special/StartRoom.tscn"
 var end_room = "res://src/world/special/EndRoom.tscn"
 var floor_number
+var rooms_by_id = {}
 
 func _enter_tree():
 	Game.register(self)
@@ -28,6 +29,11 @@ func _ready():
 	load_keyrooms()
 	worldgen()
 	doors()
+	
+	Music.start_floor()
+	Game.player.boss_door_reached.connect(_on_player_boss_door_reached)
+	Game.player.transition_pause_finished.connect(_on_player_transition_pause_finished)
+	rooms_by_id[Constants.BOSS_ROOM].get_node("BossDoorBody/BossDoorClose").finished.connect(_on_boss_door_closed)
 
 func load_rooms():
 	for file_name in ResourceLoader.list_directory("res://src/world/rooms/"):
@@ -88,6 +94,7 @@ func doors():
 	add_child(start)
 	start.position = grid_position(2, 0)
 	start.room_id = Constants.START_ROOM
+	rooms_by_id[start.room_id] = start
 	start.doors[0] = false
 	start.doors[2] = false
 	
@@ -95,6 +102,7 @@ func doors():
 	add_child(broom)
 	broom.position = grid_position(2, -1)
 	broom.room_id = Constants.BOSS_ROOM
+	rooms_by_id[broom.room_id] = broom
 	broom.doors[0] = false
 	broom.doors[2] = false
 	broom.doors[3] = false
@@ -103,6 +111,7 @@ func doors():
 	add_child(end)
 	end.position = grid_position(2, 7)
 	end.room_id = Constants.END_ROOM
+	rooms_by_id[end.room_id] = end
 	end.doors[0] = false
 	end.doors[1] = false
 	end.doors[2] = false
@@ -113,6 +122,7 @@ func doors():
 			add_child(room)
 			room.position = grid_position(x, y)
 			room.room_id = Constants.COLUMNS * x + (y - 1)
+			rooms_by_id[room.room_id] = room
 			
 			if(x == 2):
 				continue
@@ -129,6 +139,29 @@ func doors():
 
 func grid_position(row, col):
 	return GRID_ORIGIN + Constants.ROOM_SIZE * Vector2(col, row)
+
+# Boss door sequence: the player steps on the start room's trigger, the door opens and the
+# player walks through (StartRoom calls player.start_transition() once it's open). When the
+# transition pause ends in the boss room, the door slams shut and the boss music starts.
+func _on_player_boss_door_reached():
+	var start = rooms_by_id[Constants.START_ROOM]
+	Music.stop_dungeon()
+	start.get_node("BossDoor/BossDoorOpen").play()
+	Game.camera.shake(3.7, 20, 1)
+	start.get_node("BossDoor").play("opening")
+
+func _on_player_transition_pause_finished():
+	if(Game.player.current_room == Constants.BOSS_ROOM && !Music.is_boss_playing()):
+		var door = rooms_by_id[Constants.BOSS_ROOM].get_node("BossDoorBody")
+		door.get_node("BossDoorClose").play()
+		door.get_node("BossDoor").play("closing")
+		door.get_node("CollisionShape2D").disabled = false
+	else:
+		Game.player.end_transition()
+
+func _on_boss_door_closed():
+	Game.player.end_transition()
+	Music.play_boss()
 
 func reset_world():
 	SaveData.coins = Game.coins.coins

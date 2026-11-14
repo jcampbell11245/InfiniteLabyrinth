@@ -30,7 +30,7 @@ func _process(delta):
 		hitbox.disabled = true
 	
 func _physics_process(delta):
-	if(!player.transitioned):
+	if(!player.in_transition):
 		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && player.current_room == Constants.BOSS_ROOM):
 			if(player.global_position.x - global_position.x < 0):
 				direction = "left"

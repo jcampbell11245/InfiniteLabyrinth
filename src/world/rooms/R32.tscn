@@ -39,6 +39,7 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 [node name="Locks" parent="." unique_id=1081226006 instance=ExtResource("14")]
 
 [node name="TopWalls" parent="." unique_id=466300545 instance=ExtResource("9")]
+layer_0/tile_data = PackedInt32Array()
 format = 2
 
 [node name="Decorations" parent="." unique_id=1843828420 instance=ExtResource("12")]

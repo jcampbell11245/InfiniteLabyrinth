@@ -27,6 +27,9 @@ func register(world):
 	game_over = camera.get_node("GameOver")
 	upgrade_menu = camera.get_node("UpgradeMenu/Control")
 
+func room_by_id(id):
+	return overworld.rooms_by_id.get(id)
+
 func unregister(world):
 	if overworld == world:
 		overworld = null

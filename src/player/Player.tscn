@@ -18,13 +18,10 @@
 [ext_resource type="Texture2D" uid="uid://cq0fol1ensy75" path="res://assets/sprites/player/jason_left_stand.png" id="16"]
 [ext_resource type="Texture2D" uid="uid://khb4xx30g415" path="res://assets/sprites/player/jason_down_stand.png" id="17"]
 [ext_resource type="Script" uid="uid://d2teyrtbnvk36" path="res://src/player/LevelCountdown.gd" id="18"]
-[ext_resource type="AudioStream" uid="uid://y2fva3lgqsu0" path="res://assets/music/dungeon.wav" id="19"]
 [ext_resource type="AudioStream" uid="uid://dgybqrdt4yy0b" path="res://assets/sfx/slash1.wav" id="20"]
 [ext_resource type="AudioStream" uid="uid://ufubad486fjp" path="res://assets/sfx/shoot1.wav" id="21"]
 [ext_resource type="AudioStream" uid="uid://de0h8rgu2cs3b" path="res://assets/sfx/hit1.wav" id="22"]
 [ext_resource type="AudioStream" uid="uid://c858q7sv4howm" path="res://assets/sfx/fall.wav" id="23"]
-[ext_resource type="AudioStream" uid="uid://jo4jjek5b4nk" path="res://assets/music/boss_theme_intro.wav" id="24"]
-[ext_resource type="AudioStream" uid="uid://48b61lvwj3jc" path="res://assets/music/boss_theme_loop.wav" id="25"]
 [ext_resource type="Texture2D" uid="uid://cngw4wc1od8ey" path="res://assets/sprites/player/jason_up_damage.png" id="26"]
 [ext_resource type="Texture2D" uid="uid://bclehsepoh5l1" path="res://assets/sprites/player/jason_down_damage.png" id="27"]
 [ext_resource type="Texture2D" uid="uid://fcuxf6i7ss3o" path="res://assets/sprites/player/jason_left_damage.png" id="28"]
@@ -33,8 +30,6 @@
 [ext_resource type="Texture2D" uid="uid://0xjm3kjiy3x5" path="res://assets/sprites/player/jason_up_rungun.png" id="31"]
 [ext_resource type="Texture2D" uid="uid://enc8j07e222g" path="res://assets/sprites/player/jason_down_rungun.png" id="32"]
 [ext_resource type="Texture2D" uid="uid://cpytbkbgrco83" path="res://assets/sprites/player/jason_right_rungun.png" id="33"]
-[ext_resource type="AudioStream" uid="uid://b2oiyna6skb2" path="res://assets/sfx/boss_door_open.wav" id="34"]
-[ext_resource type="AudioStream" uid="uid://rgwefo4k0ruh" path="res://assets/sfx/bossdoorclose.wav" id="35"]
 [ext_resource type="Texture2D" uid="uid://bkn7u5pqd40kt" path="res://assets/sprites/player/jason_left_roll.png" id="36"]
 [ext_resource type="Texture2D" uid="uid://cy3ccfmg4kmdp" path="res://assets/sprites/player/jason_right_roll.png" id="37"]
 [ext_resource type="Texture2D" uid="uid://f27eqlk2a8qf" path="res://assets/sprites/player/jason_down_roll.png" id="38"]
@@ -1266,26 +1261,7 @@ stream = ExtResource("22")
 [node name="Fall" type="AudioStreamPlayer" parent="." unique_id=1819808098]
 stream = ExtResource("23")
 
-[node name="DungeonMusic" type="AudioStreamPlayer" parent="." unique_id=658358600]
-stream = ExtResource("19")
-volume_db = -10.0
-
-[node name="BossMusicLoop" type="AudioStreamPlayer" parent="." unique_id=649350125]
-stream = ExtResource("25")
-
-[node name="BossMusic" type="AudioStreamPlayer" parent="." unique_id=639745183]
-stream = ExtResource("24")
-
-[node name="BossDoorOpen" type="AudioStreamPlayer" parent="." unique_id=636558751]
-stream = ExtResource("34")
-
-[node name="BossDoorClose" type="AudioStreamPlayer" parent="." unique_id=567607531]
-stream = ExtResource("35")
-
-[node name="Transitioning" type="Timer" parent="." unique_id=1308394302]
-one_shot = true
-
-[node name="Transitioned" type="Timer" parent="." unique_id=1552564137]
+[node name="TransitionPause" type="Timer" parent="." unique_id=1552564137]
 one_shot = true
 
 [node name="Rolling" type="Timer" parent="." unique_id=336689804]
@@ -1303,7 +1279,5 @@ one_shot = true
 [connection signal="area_entered" from="RoomDetector" to="." method="_on_room_detector_area_entered"]
 [connection signal="timeout" from="LevelCountdown" to="." method="_on_level_countdown_timeout"]
 [connection signal="timeout" from="RespawnCooldown" to="." method="_on_respawn_cooldown_timeout"]
-[connection signal="finished" from="BossMusic" to="." method="_on_boss_music_finished"]
-[connection signal="finished" from="BossDoorClose" to="." method="_on_boss_door_close_finished"]
-[connection signal="timeout" from="Transitioned" to="." method="_on_transitioned_timeout"]
+[connection signal="timeout" from="TransitionPause" to="." method="_on_transition_pause_timeout"]
 [connection signal="timeout" from="Rolling" to="." method="_on_rolling_timeout"]

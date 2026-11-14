@@ -31,7 +31,7 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if(player.transitioned == false):
+	if(player.in_transition == false):
 		if animator.animation.substr(0, 5) != "slash":
 			hitbox.disabled = true
 		
@@ -40,7 +40,7 @@ func _process(delta):
 		animator.play("idle_" + direction)
 
 func _physics_process(delta):
-	if(player.transitioned == false):
+	if(player.in_transition == false):
 		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && (is_detected() || $InvincibilityCooldown.time_left != 0 || only_hit_during_attack && $Block.playing) && player.current_room == get_parent().room_id):
 			if(player.global_position.x - global_position.x < 0):
 				direction = "left"

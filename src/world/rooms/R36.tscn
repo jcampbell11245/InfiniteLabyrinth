@@ -29,6 +29,7 @@ layer_0/tile_data = PackedInt32Array(458760, 9, 0, 458765, 16, 0, 458770, 12, 0,
 [node name="DoorBottoms" parent="." unique_id=1665956125 instance=ExtResource("14")]
 
 [node name="Pitfalls" parent="." unique_id=2108361493 instance=ExtResource("2")]
+layer_0/tile_data = PackedInt32Array()
 format = 2
 
 [node name="PitfallTransitions" parent="." unique_id=373591790 instance=ExtResource("16")]
@@ -41,6 +42,7 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 [node name="Locks" parent="." unique_id=1808476518 instance=ExtResource("15")]
 
 [node name="TopWalls" parent="." unique_id=1342688218 instance=ExtResource("9")]
+layer_0/tile_data = PackedInt32Array()
 format = 2
 
 [node name="Stalagmites" parent="." unique_id=2048835148 instance=ExtResource("12")]

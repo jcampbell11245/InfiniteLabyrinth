@@ -28,13 +28,13 @@ func _ready():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if(player.transitioned == false):
+	if(player.in_transition == false):
 		animate()
 	elif(direction != null):
 		animator.play("idle_" + direction)
 
 func _physics_process(delta):
-	if(player.transitioned == false):
+	if(player.in_transition == false):
 		if(get_parent().player_active == true && player.current_room == get_parent().room_id):
 			if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y)):
 				if(player.global_position.x - global_position.x < 0):

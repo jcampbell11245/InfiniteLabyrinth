@@ -248,4 +248,4 @@ func _on_next_floor_area_entered(area):
 
 func _on_boss_door_animation_finished():
 	if($BossDoor.animation == "opening"):
-		player.transition()
+		player.start_transition()

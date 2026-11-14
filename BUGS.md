@@ -5,10 +5,16 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 
 ## Gameplay
 
-- **Pitfalls deactivate the wrong room.** `Player._on_feet_box_body_entered` and
-  `_on_respawn_cooldown_timeout` toggle `player_active` on `get_parent().get_child(current_room + 3)`,
-  but generated rooms start at child index 6 (`set_last_tile` uses `+ 6`). Enemies in the room
-  you fell in keep attacking while you're invisible; an unrelated room gets paused instead.
+- **Pitfalls deactivate the wrong room.** `Player._pitfall_room()` returns Overworld's child
+  `current_room + 3`, but generated rooms start at child index 6. Enemies in the room you fell in
+  keep attacking while you're invisible; a room three ids earlier gets paused instead. In the start
+  and end rooms (ids 60/61) the index is out of range, so the fall handler errors out before it
+  starts the respawn timer and the player stays invisible. Neither room has pits today.
+- **Respawn points are wrong in the start, end and boss rooms.** `Player._update_respawn_point`
+  works out the room's position with the grid formula, which gives nonsense for ids 60–62.
+  None of those rooms has pits today, so it never shows.
+- **Player knockback does nothing.** `Player.knockback` is never set (the line in `take_damage`
+  was commented out in Godot 3), so the knockback step in `_physics_process` is inert.
 - **Upgrades never persist between launches.** `Boot.gd` calls `SaveData.reset()` every time
   the game starts, wiping floor, coins and all four upgrades.
 - **The floor number never goes up.** Nothing increments `SaveData.floor_number`, so every
@@ -28,7 +34,7 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 - **Boss uses a hard-coded room id.** `Boss.gd` checks `player.current_room == Constants.BOSS_ROOM`
   everywhere instead of its parent's `room_id`.
 - **Camera and respawn drift 3px per column.** Rooms are placed 264px apart
-  (`Constants.ROOM_SIZE.x`), but `CameraRig`, `Player.set_last_tile` and `Player.transition`
+  (`Constants.ROOM_SIZE.x`), but `CameraRig`, `Player._update_respawn_point` and `Player.start_transition`
   step 261px (`Constants.LEGACY_ROOM_WIDTH`). By the last column the camera is 15px off-centre
   and respawn points are 15px off their tiles.
 

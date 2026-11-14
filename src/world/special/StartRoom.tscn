@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://cx2dgwqgb60hu" path="res://assets/sprites/tileset/boss_door_opening.png" id="13"]
 [ext_resource type="Texture2D" uid="uid://ct3myhfbu110i" path="res://assets/sprites/tileset/boss_door_closed_bottom.png" id="14"]
 [ext_resource type="Texture2D" uid="uid://bpwjs1p4x4hss" path="res://assets/sprites/tileset/boss_door_closed_middle.png" id="15"]
+[ext_resource type="AudioStream" uid="uid://b2oiyna6skb2" path="res://assets/sfx/boss_door_open.wav" id="16"]
 
 [sub_resource type="AtlasTexture" id="1"]
 atlas = ExtResource("13")
@@ -296,6 +297,7 @@ format = 2
 layer_0/tile_data = PackedInt32Array(458765, 2, 0, 786450, 1, 0)
 
 [node name="Pitfalls" parent="." unique_id=1110843871 instance=ExtResource("2")]
+layer_0/tile_data = PackedInt32Array()
 format = 2
 
 [node name="Top" parent="." unique_id=1410042655 instance=ExtResource("5")]
@@ -312,6 +314,7 @@ layer_0/tile_data = PackedInt32Array(851986, 0, 0)
 
 [node name="TransitionDetectorB" parent="." unique_id=291186529 groups=["BossDetector"] instance=ExtResource("12")]
 format = 2
+layer_0/tile_data = PackedInt32Array(851976, 0, 0)
 
 [node name="GoblinDeath" parent="." unique_id=1344820774 instance=ExtResource("8")]
 
@@ -331,5 +334,8 @@ z_index = 20
 tile_set = SubResource("30")
 format = 2
 layer_0/tile_data = PackedInt32Array(786440, 1, 0, 851976, 0, 0)
+
+[node name="BossDoorOpen" type="AudioStreamPlayer" parent="BossDoor"]
+stream = ExtResource("16")
 
 [connection signal="animation_finished" from="BossDoor" to="." method="_on_boss_door_animation_finished"]
