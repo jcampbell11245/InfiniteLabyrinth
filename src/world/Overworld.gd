@@ -4,13 +4,8 @@ extends Node2D
 # Column 0 holds the start room, columns 1..COLUMNS the generated rooms, then the end room.
 const GRID_ORIGIN = Vector2(-191, -168)
 
-@onready var matrix = []
+const BossRoom = preload("res://src/world/special/BossRoom.tscn")
 
-var rng = RandomNumberGenerator.new()
-var rooms = []
-var keyrooms = []
-var start_room = "res://src/world/special/StartRoom.tscn"
-var end_room = "res://src/world/special/EndRoom.tscn"
 var floor_number
 var rooms_by_id = {}
 
@@ -25,117 +20,61 @@ func _ready():
 	Game.coins.update_text()
 	floor_number = SaveData.floor_number
 	
-	load_rooms()
-	load_keyrooms()
-	worldgen()
-	doors()
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	_build(WorldGenerator.generate(rng))
+	# BUG(see BUGS.md): the player starts with current_room 0, so room 0 acts as entered
+	# (fades in and locks its doors) until the start room's detector fires.
+	Game.room_entered.emit(Game.player.current_room)
 	
 	Music.start_floor()
 	Game.player.boss_door_reached.connect(_on_player_boss_door_reached)
 	Game.player.transition_pause_finished.connect(_on_player_transition_pause_finished)
 	rooms_by_id[Constants.BOSS_ROOM].get_node("BossDoorBody/BossDoorClose").finished.connect(_on_boss_door_closed)
 
-func load_rooms():
-	for file_name in ResourceLoader.list_directory("res://src/world/rooms/"):
-		if file_name.ends_with(".tscn"):
-			rooms.push_back("res://src/world/rooms/"+file_name)
-
-func load_keyrooms():
-	for file_name in ResourceLoader.list_directory("res://src/world/keyrooms/"):
-		if file_name.ends_with(".tscn"):
-			keyrooms.push_back("res://src/world/keyrooms/"+file_name)
-
-func worldgen():
-	rng.randomize()
+# Instances the rooms of a WorldGenerator layout, plus the boss room left of the start
+# room, and closes every door that leads off the grid.
+# Rooms must be added in this order (start, boss, end, then the grid row by row):
+# BUG(see BUGS.md) Player._pitfall_room still looks rooms up by child index.
+func _build(layout):
+	var middle = WorldGenerator.MIDDLE_ROW
+	var last_col = WorldGenerator.LAYOUT_COLUMNS - 1
+	var start = _add_room(load(layout[middle][0]), Constants.START_ROOM, middle, 0)
+	start.close_door(Room.Door.TOP)
+	start.close_door(Room.Door.BOTTOM)
 	
-	var key_y = []
-	for _i in range(3):
-		var rand = int(rng.randi_range(1, 6))
-		while (rand in key_y):
-			rand = int(rng.randi_range(1, 6))
-		key_y.append(rand)
+	var boss = _add_room(BossRoom, Constants.BOSS_ROOM, middle, -1)
+	boss.close_door(Room.Door.TOP)
+	boss.close_door(Room.Door.BOTTOM)
+	boss.close_door(Room.Door.LEFT)
 	
-	var key_x = []
-	for _i in range(3):
-		var rand = int(rng.randi_range(0, 4))
-		while (rand in key_x):
-			rand = int(rng.randi_range(0, 4))
-		key_x.append(rand)
+	var end = _add_room(load(layout[middle][last_col]), Constants.END_ROOM, middle, last_col)
+	end.close_door(Room.Door.TOP)
+	end.close_door(Room.Door.RIGHT)
+	end.close_door(Room.Door.BOTTOM)
 	
-	for x in range(5):
-		matrix.append([])
-		for y in range(8):
-			if (y == 0):
-				if (x == 2):
-					matrix[x].append(start_room)
-				else:
-					matrix[x].append('Null')
-			elif(y == 7):
-				if (x == 2):
-					matrix[x].append(end_room)
-				else:
-					matrix[x].append('Null')
-			elif(x == key_x[0] and y == key_y[0]):
-				matrix[x].append(keyrooms[0])
-			elif(x == key_x[1] and y == key_y[1]):
-				matrix[x].append(keyrooms[1])
-			elif(x == key_x[2] and y == key_y[2]):
-				matrix[x].append(keyrooms[2])
-			else:
-				matrix[x].append(randomscene(rooms))
-
-func randomscene(scenes):
-	var room = scenes[int(rng.randi_range(0, scenes.size()-1))]
-	scenes.erase(room)
-	return room
-
-func doors():
-	var start = load(matrix[2][0]).instantiate()
-	add_child(start)
-	start.position = grid_position(2, 0)
-	start.room_id = Constants.START_ROOM
-	rooms_by_id[start.room_id] = start
-	start.doors[0] = false
-	start.doors[2] = false
-	
-	var broom = load("res://src/world/special/BossRoom.tscn").instantiate()
-	add_child(broom)
-	broom.position = grid_position(2, -1)
-	broom.room_id = Constants.BOSS_ROOM
-	rooms_by_id[broom.room_id] = broom
-	broom.doors[0] = false
-	broom.doors[2] = false
-	broom.doors[3] = false
-
-	var end = load(matrix[2][7]).instantiate()
-	add_child(end)
-	end.position = grid_position(2, 7)
-	end.room_id = Constants.END_ROOM
-	rooms_by_id[end.room_id] = end
-	end.doors[0] = false
-	end.doors[1] = false
-	end.doors[2] = false
-	
-	for x in range(5):
-		for y in range(1, 7):
-			var room = load(matrix[x][y]).instantiate()
-			add_child(room)
-			room.position = grid_position(x, y)
-			room.room_id = Constants.COLUMNS * x + (y - 1)
-			rooms_by_id[room.room_id] = room
-			
-			if(x == 2):
+	for row in range(WorldGenerator.LAYOUT_ROWS):
+		for col in range(1, last_col):
+			var room = _add_room(load(layout[row][col]), Constants.COLUMNS * row + (col - 1), row, col)
+			# The middle row's outer doors lead to the start and end rooms.
+			if(row == middle):
 				continue
-			
-			if(x == 0):
-				room.doors[0] = false
-			elif(x == 4):
-				room.doors[2] = false
-			
-			if(y == 1):
-				room.doors[3] = false
-			elif(y == 6):
-				room.doors[1] = false
+			if(row == 0):
+				room.close_door(Room.Door.TOP)
+			elif(row == WorldGenerator.LAYOUT_ROWS - 1):
+				room.close_door(Room.Door.BOTTOM)
+			if(col == 1):
+				room.close_door(Room.Door.LEFT)
+			elif(col == last_col - 1):
+				room.close_door(Room.Door.RIGHT)
+
+func _add_room(scene, id, row, col):
+	var room = scene.instantiate()
+	add_child(room)
+	room.position = grid_position(row, col)
+	room.room_id = id
+	rooms_by_id[id] = room
+	return room
 
 func grid_position(row, col):
 	return GRID_ORIGIN + Constants.ROOM_SIZE * Vector2(col, row)

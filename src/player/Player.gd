@@ -207,7 +207,7 @@ func die():
 func _update_respawn_point():
 	var tiles = Game.room_by_id(current_room).get_node("Tiles")
 	# BUG(see BUGS.md): grid formula, also used for the special rooms (ids 60-62).
-	var room_offset = Vector2((current_room % Constants.COLUMNS) * Constants.LEGACY_ROOM_WIDTH, (current_room / Constants.COLUMNS) * Constants.ROOM_SIZE.y)
+	var room_offset = Constants.legacy_room_offset(current_room)
 	var first_tile = FLOOR_ORIGIN + room_offset
 	var cell = Vector2i(_nearest_floor_index(first_tile.x, position.x), _nearest_floor_index(first_tile.y, position.y))
 
@@ -289,7 +289,7 @@ func start_transition():
 	if(velocity == Vector2.ZERO):
 		velocity = last_velocity
 		move_and_slide()
-	var room_center = Vector2((current_room % Constants.COLUMNS) * Constants.LEGACY_ROOM_WIDTH + 391.5, (current_room / Constants.COLUMNS) * Constants.ROOM_SIZE.y + 144)
+	var room_center = Constants.legacy_room_offset(current_room) + Vector2(391.5, 144)
 	if(current_room == Constants.START_ROOM || abs(position.x - room_center.x) > abs(position.y - room_center.y)):
 		direction = Direction.RIGHT if velocity.x > 0 else Direction.LEFT
 	else:
@@ -308,6 +308,7 @@ func _on_room_detector_area_entered(area):
 	current_room = area.get_parent().room_id
 	auto_walking = false
 	_play(Action.IDLE)
+	Game.room_entered.emit(current_room)
 
 func _on_transition_pause_timeout():
 	transition_pause_finished.emit()

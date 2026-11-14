@@ -7,6 +7,11 @@ const ROOM_SIZE = Vector2(264, 288) # Distance between neighbouring rooms, in pi
 # BUG(see BUGS.md): Player and CameraRig step rooms by 261px instead of ROOM_SIZE.x.
 const LEGACY_ROOM_WIDTH = 261
 
+# A grid room's offset from room 0, stepping columns by LEGACY_ROOM_WIDTH. Only meaningful
+# for grid rooms (ids 0..COLUMNS*ROWS-1).
+static func legacy_room_offset(room_id):
+	return Vector2((room_id % COLUMNS) * LEGACY_ROOM_WIDTH, (room_id / COLUMNS) * ROOM_SIZE.y)
+
 # Ids of the rooms that sit outside the grid (grid rooms are 0..COLUMNS*ROWS-1).
 const START_ROOM = 60
 const END_ROOM = 61

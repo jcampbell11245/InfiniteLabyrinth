@@ -1,5 +1,7 @@
 extends Node2D
 
+signal hit
+
 var activated = false
 
 func _on_area_2d_area_exited(area):
@@ -7,3 +9,4 @@ func _on_area_2d_area_exited(area):
 		$Hit.play()
 		activated = true
 		$AnimatedSprite2D.animation = "right"
+		hit.emit()

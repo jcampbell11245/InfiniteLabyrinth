@@ -37,7 +37,7 @@ src/player/    player scene and script
 src/enemies/   enemy scenes; Enemy is the base class for MeleeEnemy, RangedEnemy and Boss
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
-src/world/     dungeon generation (Overworld), room script (Level), camera
+src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room), camera
   rooms/       random rooms (every .tscn here is picked up automatically)
   keyrooms/    rooms holding the three keys
   special/     start, end and boss rooms

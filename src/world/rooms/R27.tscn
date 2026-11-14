@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://da0qyn5u6l0dl" path="res://src/objects/Void.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Tiles.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/TopWalls.tscn" id="8"]
-[ext_resource type="Script" uid="uid://dsj75mxtyft3a" path="res://src/world/Level.gd" id="9"]
+[ext_resource type="Script" uid="uid://dsj75mxtyft3a" path="res://src/world/Room.gd" id="9"]
 [ext_resource type="PackedScene" uid="uid://c8uo03x1rllmx" path="res://src/enemies/Wizard.tscn" id="10"]
 [ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="11"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Spikes.tscn" id="12"]

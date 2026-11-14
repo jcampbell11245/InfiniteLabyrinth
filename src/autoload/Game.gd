@@ -2,6 +2,10 @@ extends Node
 
 # References to the long-lived nodes of the running Overworld, so other scripts don't
 # have to walk the scene tree to find them. Set by Overworld when it enters the tree.
+# Also carries game-wide signals.
+
+signal room_entered(room_id) # The player walked into a room
+signal keys_changed(keys)
 
 var overworld
 var player

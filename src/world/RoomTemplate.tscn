@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d1xihhh6h6quu"]
 
-[ext_resource type="Script" uid="uid://dsj75mxtyft3a" path="res://src/world/Level.gd" id="1"]
+[ext_resource type="Script" uid="uid://dsj75mxtyft3a" path="res://src/world/Room.gd" id="1"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Pitfalls.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://src/audio/KnightDeath.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Tiles.tscn" id="4"]

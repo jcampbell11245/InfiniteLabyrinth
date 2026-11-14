@@ -9,6 +9,7 @@ func _ready():
 func add_keys(add):
 	keys += add
 	$Counter/KeyText.set_text(str(keys))
+	Game.keys_changed.emit(keys)
 
 func get_keys():
 	return keys
