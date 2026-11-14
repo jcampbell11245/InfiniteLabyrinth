@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://dkhdriyue8ry4"]
+
+[ext_resource type="Script" uid="uid://dsj75mxtyft3a" path="res://src/world/Room.gd" id="1"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/Pitfalls.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://src/audio/KnightDeath.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/Tiles.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/Top.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="6"]
+[ext_resource type="PackedScene" uid="uid://bb226ffelhus6" path="res://src/enemies/Knight.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://src/audio/GoblinDeath.tscn" id="8"]
+[ext_resource type="PackedScene" uid="uid://cv0qynawsd0nn" path="res://src/objects/RoomDetection.tscn" id="9"]
+[ext_resource type="PackedScene" uid="uid://bn5u0u8tom4eu" path="res://src/objects/Switch.tscn" id="10"]
+[ext_resource type="Script" uid="uid://c40bvpxrvhjxo" path="res://src/objects/Switches.gd" id="11"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/TopWalls.tscn" id="12"]
+[ext_resource type="PackedScene" uid="uid://da0qyn5u6l0dl" path="res://src/objects/Void.tscn" id="13"]
+[ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="14"]
+[ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="15"]
+[ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="16"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/PitfallTransitions.tscn" id="17"]
+
+[node name="R3" type="Node2D" unique_id=1068675777]
+script = ExtResource("1")
+completion_criteria = "switches"
+
+[node name="Tiles" parent="." unique_id=2097786154 instance=ExtResource("4")]
+format = 2
+layer_0/tile_data = PackedInt32Array(458760, 9, 0, 458761, 4, 0, 458762, 4, 0, 458763, 4, 0, 458764, 4, 0, 458766, 4, 0, 458767, 4, 0, 458768, 4, 0, 458769, 4, 0, 458770, 12, 0, 524296, 8, 0, 524297, 6, 0, 524298, 6, 0, 524299, 6, 0, 524300, 6, 0, 524302, 6, 0, 524303, 6, 0, 524304, 6, 0, 524305, 6, 0, 524306, 11, 0, 589832, 7, 0, 589833, 0, 0, 589834, 0, 0, 589835, 0, 0, 589836, 0, 0, 589837, 0, 0, 589838, 0, 0, 589839, 0, 0, 589840, 0, 0, 589841, 0, 0, 589842, 10, 0, 655368, 7, 0, 655369, 0, 0, 655370, 0, 0, 655373, 0, 0, 655376, 0, 0, 655377, 0, 0, 655378, 10, 0, 720904, 7, 0, 720905, 0, 0, 720909, 0, 0, 720913, 0, 0, 720914, 10, 0, 786441, 0, 0, 786442, 0, 0, 786445, 0, 0, 786449, 0, 0, 851977, 0, 0, 851978, 0, 0, 851979, 0, 0, 851980, 0, 0, 851981, 0, 0, 851982, 0, 0, 851983, 0, 0, 851984, 0, 0, 851985, 0, 0, 917512, 7, 0, 917513, 0, 0, 917517, 0, 0, 917521, 0, 0, 917522, 10, 0, 983048, 7, 0, 983049, 0, 0, 983053, 0, 0, 983057, 0, 0, 983058, 10, 0, 1048584, 7, 0, 1048585, 0, 0, 1048586, 0, 0, 1048589, 0, 0, 1048592, 0, 0, 1048593, 0, 0, 1048594, 10, 0, 1114120, 7, 0, 1114121, 0, 0, 1114122, 0, 0, 1114123, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0, 1114128, 0, 0, 1114129, 0, 0, 1114130, 10, 0, 1179656, 5, 0, 1179657, 5, 0, 1179658, 5, 0, 1179659, 5, 0, 1179660, 5, 0, 1179662, 5, 0, 1179663, 5, 0, 1179664, 5, 0, 1179665, 5, 0, 1179666, 5, 0)
+
+[node name="DoorBottoms" parent="." unique_id=658619205 instance=ExtResource("15")]
+
+[node name="Pitfalls" parent="." unique_id=1943548275 instance=ExtResource("2")]
+format = 2
+layer_0/tile_data = PackedInt32Array(655371, 0, 0, 655372, 0, 0, 655374, 0, 0, 655375, 0, 0, 720906, 0, 0, 720907, 8, 0, 720908, 4, 0, 720910, 2, 0, 720911, 9, 0, 720912, 0, 0, 786442, 3, 0, 786444, 5, 0, 786446, 3, 0, 786448, 5, 0, 917514, 0, 0, 917515, 0, 0, 917516, 0, 0, 917518, 0, 0, 917519, 0, 0, 917520, 0, 0, 983050, 3, 0, 983051, 7, 0, 983052, 4, 0, 983054, 2, 0, 983055, 6, 0, 983056, 5, 0, 1048587, 3, 0, 1048588, 5, 0, 1048590, 3, 0, 1048591, 5, 0)
+
+[node name="PitfallTransitions" parent="." unique_id=285573346 instance=ExtResource("17")]
+format = 2
+
+[node name="TopWalls" parent="." unique_id=1876028450 instance=ExtResource("12")]
+format = 2
+layer_0/tile_data = PackedInt32Array(589842, 1, 0, 655378, 1, 0, 720914, 1, 0, 917512, 0, 0, 917522, 1, 0, 983048, 0, 0, 983058, 1, 0, 1048584, 0, 0, 1048594, 1, 0, 1114120, 0, 0, 1114130, 1, 0)
+
+[node name="Top" parent="." unique_id=1442456598 instance=ExtResource("5")]
+format = 2
+layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 524301, 11, 0, 720904, 7, 0, 720914, 10, 0, 786440, 6, 0, 786450, 9, 0, 851976, 5, 0, 851986, 8, 0, 1179661, 13, 0)
+
+[node name="Locks" parent="." unique_id=1722726862 instance=ExtResource("16")]
+
+[node name="Decorations" parent="." unique_id=1336340526 instance=ExtResource("14")]
+
+[node name="GoblinDeath" parent="." unique_id=1744556808 instance=ExtResource("8")]
+
+[node name="KnightDeath" parent="." unique_id=449344861 instance=ExtResource("3")]
+
+[node name="Goblin" parent="." unique_id=2138138280 instance=ExtResource("6")]
+position = Vector2(249.897, 242.77)
+starting_direction = "left"
+
+[node name="Goblin2" parent="." unique_id=1636925232 instance=ExtResource("6")]
+position = Vector2(394.598, 240.655)
+
+[node name="Goblin3" parent="." unique_id=1631004446 instance=ExtResource("6")]
+position = Vector2(394.152, 383.199)
+
+[node name="Goblin4" parent="." unique_id=1101076766 instance=ExtResource("6")]
+position = Vector2(248.936, 383.199)
+starting_direction = "left"
+
+[node name="Knight" parent="." unique_id=868929487 instance=ExtResource("7")]
+position = Vector2(321.099, 304.8)
+starting_direction = "down"
+
+[node name="Switches" type="Node2D" parent="." unique_id=1518176146]
+script = ExtResource("11")
+
+[node name="Switch" parent="Switches" unique_id=462539787 instance=ExtResource("10")]
+position = Vector2(-97.2283, -96.0378)
+
+[node name="Switch2" parent="Switches" unique_id=1469590655 instance=ExtResource("10")]
+position = Vector2(97.2283, -96.0378)
+
+[node name="Switch3" parent="Switches" unique_id=1482429323 instance=ExtResource("10")]
+position = Vector2(-97.2283, 98.4189)
+
+[node name="Switch4" parent="Switches" unique_id=744217728 instance=ExtResource("10")]
+position = Vector2(97.2283, 98.4189)
+
+[node name="RoomDetection" parent="." unique_id=437211286 instance=ExtResource("9")]
+
+[node name="Void" parent="." unique_id=1471691082 instance=ExtResource("13")]

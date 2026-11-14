@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://5hm3f525la1u"]
+
+[ext_resource type="Texture2D" uid="uid://vbe7y31vg3g8" path="res://assets/sprites/tileset/into void/edgeb.png" id="1"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0dv1n"]
+texture = ExtResource("1")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSet" id="1"]
+tile_size = Vector2i(24, 24)
+sources/0 = SubResource("TileSetAtlasSource_0dv1n")
+
+[node name="PitfallTransitions" type="TileMap" unique_id=1838343280]
+tile_set = SubResource("1")
+format = 2

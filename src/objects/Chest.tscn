@@ -1,0 +1,152 @@
+[gd_scene format=3 uid="uid://5b8y37k32nye"]
+
+[ext_resource type="PackedScene" path="res://src/objects/ChestSprite.tscn" id="1"]
+[ext_resource type="AudioStream" uid="uid://c133tnh3ghobi" path="res://assets/sfx/dooropen.wav" id="2"]
+[ext_resource type="Texture2D" uid="uid://65p0xthp4w8r" path="res://assets/sprites/chests/chest_closed_down.png" id="3_vs7qt"]
+[ext_resource type="Texture2D" uid="uid://utt51cewbf15" path="res://assets/sprites/chests/chest_closed_left.png" id="4_uuah2"]
+[ext_resource type="Texture2D" uid="uid://d2ohuy0rsr4qr" path="res://assets/sprites/chests/chest_closed_right.png" id="5_68y85"]
+[ext_resource type="Texture2D" uid="uid://cra3f5o42orui" path="res://assets/sprites/chests/chest_closed_up.png" id="6_rui6h"]
+[ext_resource type="Texture2D" uid="uid://bxej6qo6t17qt" path="res://assets/sprites/chests/chest_opening_down.png" id="7_f8d1m"]
+[ext_resource type="Texture2D" uid="uid://bpd536qswwrs7" path="res://assets/sprites/chests/chest_opening_left.png" id="8_ss783"]
+[ext_resource type="Script" uid="uid://da87o577sf2ep" path="res://src/objects/Chest.gd" id="9"]
+[ext_resource type="Texture2D" uid="uid://qnxkj86idsfv" path="res://assets/sprites/chests/chest_opening_right.png" id="9_55bh4"]
+[ext_resource type="Texture2D" uid="uid://cialhbt50wk0s" path="res://assets/sprites/chests/chest_opening_up.png" id="10_g0gci"]
+
+[sub_resource type="AtlasTexture" id="5"]
+atlas = ExtResource("7_f8d1m")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="6"]
+atlas = ExtResource("7_f8d1m")
+region = Rect2(0, 24, 24, 24)
+
+[sub_resource type="AtlasTexture" id="1"]
+atlas = ExtResource("8_ss783")
+region = Rect2(0, 0, 24, 36)
+
+[sub_resource type="AtlasTexture" id="2"]
+atlas = ExtResource("8_ss783")
+region = Rect2(24, 0, 24, 36)
+
+[sub_resource type="AtlasTexture" id="7"]
+atlas = ExtResource("9_55bh4")
+region = Rect2(0, 0, 24, 36)
+
+[sub_resource type="AtlasTexture" id="8"]
+atlas = ExtResource("9_55bh4")
+region = Rect2(24, 0, 24, 36)
+
+[sub_resource type="AtlasTexture" id="3"]
+atlas = ExtResource("10_g0gci")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="4"]
+atlas = ExtResource("10_g0gci")
+region = Rect2(0, 24, 24, 24)
+
+[sub_resource type="SpriteFrames" id="9"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_vs7qt")
+}],
+"loop": 1,
+"name": &"closed_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_uuah2")
+}],
+"loop": 1,
+"name": &"closed_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_68y85")
+}],
+"loop": 1,
+"name": &"closed_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_rui6h")
+}],
+"loop": 1,
+"name": &"closed_up",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("5")
+}, {
+"duration": 1.0,
+"texture": SubResource("6")
+}],
+"loop": 0,
+"name": &"open_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("1")
+}, {
+"duration": 1.0,
+"texture": SubResource("2")
+}],
+"loop": 0,
+"name": &"open_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("7")
+}, {
+"duration": 1.0,
+"texture": SubResource("8")
+}],
+"loop": 0,
+"name": &"open_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("3")
+}, {
+"duration": 1.0,
+"texture": SubResource("4")
+}],
+"loop": 0,
+"name": &"open_up",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b0bh7"]
+size = Vector2(24, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pr6oc"]
+size = Vector2(24, 24)
+
+[node name="Chest" type="Area2D" unique_id=1710620777]
+collision_mask = 5
+script = ExtResource("9")
+
+[node name="AnimatedSprite2D" parent="." unique_id=1412113485 instance=ExtResource("1")]
+sprite_frames = SubResource("9")
+animation = &"closed_down"
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1889211598]
+collision_mask = 5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=928092018]
+shape = SubResource("RectangleShape2D_b0bh7")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1546186875]
+shape = SubResource("RectangleShape2D_pr6oc")
+
+[node name="Open" type="AudioStreamPlayer" parent="." unique_id=307686708]
+stream = ExtResource("2")
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]

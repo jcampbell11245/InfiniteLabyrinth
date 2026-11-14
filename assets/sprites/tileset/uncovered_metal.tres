@@ -1,0 +1,16 @@
+[gd_resource type="AnimatedTexture" format=3 uid="uid://0us2ay1wk4qn"]
+
+[ext_resource type="Texture2D" uid="uid://clw0o6kqumvvw" path="res://assets/sprites/tileset/uncovered_metal_4.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://cwyo616el28o7" path="res://assets/sprites/tileset/uncovered_metal_1.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://b7han4fnuq57o" path="res://assets/sprites/tileset/uncovered_metal_2.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://btnv4wtp7q4yt" path="res://assets/sprites/tileset/uncovered_metal_3.png" id="4"]
+
+[resource]
+frames = 4
+frame_0/texture = ExtResource("2")
+frame_1/texture = ExtResource("3")
+frame_1/duration = 1.0
+frame_2/texture = ExtResource("4")
+frame_2/duration = 1.0
+frame_3/texture = ExtResource("1")
+frame_3/duration = 1.0

@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bq0cc0infqy6x"]
+
+[ext_resource type="Script" uid="uid://drbdu2erags4n" path="res://src/projectiles/Projectile.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://daebfgfvlyli6" path="res://assets/sprites/player/arrow_side.png" id="2"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(10.13926, 3.35032)
+
+[node name="Arrow" type="CharacterBody2D" unique_id=635053463]
+collision_layer = 8
+collision_mask = 0
+motion_mode = 1
+script = ExtResource("1")
+speed = 200.0
+rotates = true
+
+[node name="SpritePivot" type="Marker2D" parent="." unique_id=1252638579]
+
+[node name="Sprite2D" type="Sprite2D" parent="SpritePivot" unique_id=348375127]
+texture = ExtResource("2")
+
+[node name="ArrowHitbox" type="Area2D" parent="." unique_id=573090276]
+show_behind_parent = true
+collision_layer = 8
+collision_mask = 259
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ArrowHitbox" unique_id=407548537]
+shape = SubResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1912339195]
+shape = SubResource("1")
+
+[node name="ExistenceTime" type="Timer" parent="." unique_id=1087926334]
+one_shot = true
+
+[connection signal="area_entered" from="ArrowHitbox" to="." method="_on_hitbox_hit"]
+[connection signal="body_entered" from="ArrowHitbox" to="." method="_on_hitbox_hit"]
+[connection signal="timeout" from="ExistenceTime" to="." method="_on_existence_time_timeout"]

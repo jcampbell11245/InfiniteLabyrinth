@@ -1,2 +1,8 @@
+# Godot 4 cache
+.godot/
 
-src/entities/Player2D.gd
+# Godot 3 import cache (pre-upgrade)
+.import/
+
+# Export output (publish builds as releases instead)
+builds/

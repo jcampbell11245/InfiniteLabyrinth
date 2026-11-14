@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://dx3bwp1gkkqll"]
+
+[ext_resource type="Script" uid="uid://drbdu2erags4n" path="res://src/projectiles/Projectile.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://qr1lvspissmg" path="res://assets/sprites/skelly/laser_hori_vert.png" id="3"]
+
+[sub_resource type="AtlasTexture" id="1"]
+atlas = ExtResource("3")
+region = Rect2(0, 0, 10, 3)
+
+[sub_resource type="SpriteFrames" id="2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("1")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(8.93104, 3.0969)
+
+[sub_resource type="RectangleShape2D" id="4"]
+size = Vector2(9.04904, 3.27388)
+
+[node name="Laser" type="CharacterBody2D" unique_id=777191757]
+collision_layer = 16
+collision_mask = 0
+motion_mode = 1
+script = ExtResource("1")
+speed = 300.0
+rotates = true
+rotate_hitbox = true
+
+[node name="SpritePivot" type="Marker2D" parent="." unique_id=204883665]
+
+[node name="Sprite2D" type="AnimatedSprite2D" parent="SpritePivot" unique_id=620026699]
+autoplay = "default"
+sprite_frames = SubResource("2")
+
+[node name="ProjectileHitbox" type="Area2D" parent="." unique_id=1023554093]
+collision_layer = 16
+collision_mask = 260
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ProjectileHitbox" unique_id=2135574261]
+position = Vector2(0.5, 0.5)
+shape = SubResource("3")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1279200680]
+position = Vector2(0.5, 0.5)
+shape = SubResource("4")
+
+[node name="ExistenceTime" type="Timer" parent="." unique_id=255748721]
+
+[connection signal="area_entered" from="ProjectileHitbox" to="." method="_on_hitbox_hit"]
+[connection signal="body_entered" from="ProjectileHitbox" to="." method="_on_hitbox_hit"]
+[connection signal="timeout" from="ExistenceTime" to="." method="_on_existence_time_timeout"]
