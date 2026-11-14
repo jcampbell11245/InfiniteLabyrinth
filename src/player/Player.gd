@@ -178,14 +178,16 @@ func _action() -> Action:
 func _play(action: Action, dir := "") -> void:
 	animator.play(ACTION_NAMES[action] + "_" + (dir if dir != "" else direction))
 
-# from_direction is the direction the hit travels in, which picks the flinch animation.
+# from_direction is the direction the hit travels in, which picks the flinch animation and
+# the knockback. Pass "" for damage with no flinch or knockback (falling down a pitfall).
 func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 	if invincibility_cooldown.time_left == 0:
 		invincibility_cooldown.start(1)
 		animator.modulate.a = 0.5
 
-		_play(Action.DAMAGE, from_direction)
-		knockback = Direction.to_vector(from_direction) * KNOCKBACK_SPEED
+		if from_direction != "":
+			_play(Action.DAMAGE, from_direction)
+			knockback = Direction.to_vector(from_direction) * KNOCKBACK_SPEED
 
 		if !mute:
 			$Hit.play()
@@ -198,6 +200,8 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 # GameOver takes it from here.
 func die() -> void:
 	speed = 0
+	# Let the killing blow's sound finish now instead of resuming after the pause.
+	$Hit.process_mode = Node.PROCESS_MODE_ALWAYS
 	Game.player_died.emit()
 	get_tree().paused = true
 
@@ -214,6 +218,8 @@ func _on_level_countdown_timeout() -> void:
 	die()
 
 func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: int, _self_shape: int) -> void:
+	if respawn_cooldown.time_left > 0: # Down a pitfall
+		return
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
 	elif area.get_name() == "ProjectileHitbox":
@@ -227,6 +233,7 @@ func _on_feet_box_body_entered(_body: Node2D) -> void:
 	if respawn_cooldown.time_left == 0:
 		$Fall.play()
 		visible = false
+		knockback = Vector2.ZERO
 		Game.room_by_id(current_room).player_active = false
 		respawn_cooldown.start(1.1)
 
@@ -234,7 +241,7 @@ func _on_respawn_cooldown_timeout() -> void:
 	visible = true
 	Game.room_by_id(current_room).player_active = true
 	position = last_tile
-	take_damage(0.5, "none", true)
+	take_damage(0.5, "", true)
 
 func _on_rolling_timeout() -> void:
 	@warning_ignore("integer_division")

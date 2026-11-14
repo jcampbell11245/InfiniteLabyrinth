@@ -50,6 +50,7 @@ var player_active := true # False while the player is down a pitfall; enemies wa
 var locked := false # Lock tiles have been drawn (first time the player enters)
 var faded_out := true
 var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
+var _key_gate: StaticBody2D # End room only: blocks the top door until the player has 3 keys
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
 @onready var knight_death: AudioStreamPlayer = $KnightDeath
@@ -79,6 +80,22 @@ func _ready() -> void:
 func close_door(door: Door) -> void:
 	doors[door] = false
 	_refresh_doors()
+
+# Blocks the end room's top door. The gate tile has no collision of its own, so this
+# body stands in for it until _refresh_doors sees three keys.
+func add_key_gate() -> void:
+	var tile_layers: int = tiles.tile_set.get_physics_layer_collision_layer(0)
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(tiles.tile_set.tile_size)
+	var collision := CollisionShape2D.new()
+	collision.shape = shape
+	_key_gate = StaticBody2D.new()
+	_key_gate.name = "KeyGate"
+	_key_gate.collision_layer = tile_layers
+	_key_gate.collision_mask = 0
+	_key_gate.position = tiles.map_to_local(Vector2i(13, 8))
+	_key_gate.add_child(collision)
+	add_child(_key_gate)
 
 func is_cleared() -> bool:
 	match completion_criteria:
@@ -197,6 +214,9 @@ func _refresh_doors() -> void:
 	_draw_closed_doors()
 	if room_id == Constants.END_ROOM && Game.keys == 3:
 		tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
+		if _key_gate != null:
+			_key_gate.queue_free()
+			_key_gate = null
 	if is_cleared():
 		_draw_unlocked_doors()
 

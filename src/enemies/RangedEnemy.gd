@@ -87,10 +87,6 @@ func _can_retreat() -> bool:
 func _roll_critical() -> bool:
 	return RandomNumberGenerator.new().randi_range(0, CRIT_ROLL_MAX) < critical_chance
 
-@warning_ignore("integer_division")
-func _looting_bonus() -> int:
-	return (SaveData.looting_level + 1) / 10
-
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("shoot") && animator.frame == attack_frame:
 		shoot_fireball()

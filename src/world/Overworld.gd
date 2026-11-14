@@ -60,6 +60,7 @@ func _build(layout: Array[PackedStringArray]) -> void:
 	end.close_door(Room.Door.TOP)
 	end.close_door(Room.Door.RIGHT)
 	end.close_door(Room.Door.BOTTOM)
+	end.add_key_gate()
 	
 	for row in range(WorldGenerator.LAYOUT_ROWS):
 		for col in range(1, last_col):

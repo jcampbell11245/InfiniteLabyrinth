@@ -58,7 +58,7 @@ func take_damage(from_direction: String) -> void:
 	_after_hit()
 
 func die() -> void:
-	Game.add_coins(coin_reward * Game.overworld.floor_number + _looting_bonus())
+	Game.add_coins(roundi(coin_reward * _coin_multiplier()))
 	died.emit(self)
 	queue_free()
 
@@ -85,11 +85,10 @@ func _lose_health(critical: bool) -> void:
 func _after_hit() -> void:
 	pass
 
-# Extra coins on death from the looting upgrade.
-# BUG(see BUGS.md): meant as a multiplier; the original formula's precedence turned it
-# into a flat bonus that differs between enemy types.
-func _looting_bonus() -> int:
-	return SaveData.looting_level
+# Coins are coin_reward times "floor.looting": floor 1 with no looting is x1.0, floor 1 with
+# looting 1 is x1.1, floor 2 with looting 3 is x2.3. Looting tops out at 9, one decimal digit.
+func _coin_multiplier() -> float:
+	return Game.overworld.floor_number + SaveData.looting_level / 10.0
 
 # --- Helpers for subclasses ---
 
