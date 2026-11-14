@@ -41,7 +41,7 @@ func _ready():
 	looting_file.close()
 	
 	direction = starting_direction
-	animator.animation = "idle_" + direction
+	animator.play("idle_" + direction)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -51,7 +51,7 @@ func _process(delta):
 		
 		animate()
 	else:
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 
 func _physics_process(delta):
 	#if(player.get_node("Rolling").time_left != 0):
@@ -103,14 +103,14 @@ func _physics_process(delta):
 func animate():
 	#Reset to idle
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == slash_length:
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 	
 	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && is_detected()):
-		animator.animation = "walk_" + direction
+		animator.play("walk_" + direction)
 	elif(animator.animation.substr(0, 5) != "slash" && attack_cooldown.time_left == 0) && is_detected():
-		animator.animation = "slash_" + direction
+		animator.play("slash_" + direction)
 	elif(animator.animation.substr(0, 5) != "slash"):
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 
 #Called when the enemy attacks
 func attack():
@@ -136,7 +136,7 @@ func take_damage(direction):
 			$Block.play()
 		else:
 			if animator.animation.substr(0, 5) == "slash":
-				animator.animation = "idle_" + direction
+				animator.play("idle_" + direction)
 			
 			hurtbox.disabled = true
 			invincibility_cooldown.start(0.3)

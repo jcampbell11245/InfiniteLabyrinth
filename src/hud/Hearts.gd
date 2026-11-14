@@ -27,11 +27,11 @@ func update_health(change):
 	
 	for n in range (max_hearts):
 		if(hearts >= n + 1):
-			get_child(n).animation = "full"
+			get_child(n).play("full")
 		elif(hearts == n + 0.5):
-			get_child(n).animation = "half"
+			get_child(n).play("half")
 		else:
-			get_child(n).animation = "empty"
+			get_child(n).play("empty")
 	
 	return hearts
 

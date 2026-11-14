@@ -71,7 +71,7 @@ texture_region_size = Vector2i(24, 24)
 
 [sub_resource type="TileSet" id="3"]
 tile_size = Vector2i(24, 24)
-physics_layer_0/collision_layer = 1
+physics_layer_0/collision_layer = 256
 sources/0 = SubResource("TileSetAtlasSource_ornau")
 sources/1 = SubResource("TileSetAtlasSource_edmii")
 
@@ -79,3 +79,4 @@ sources/1 = SubResource("TileSetAtlasSource_edmii")
 z_index = 20
 tile_set = SubResource("3")
 format = 2
+layer_0/tile_data = PackedInt32Array(589832, 0, 0, 589842, 1, 0, 655368, 0, 0, 655378, 1, 0, 720904, 0, 0, 720914, 1, 0, 786440, 0, 0, 786450, 1, 0, 917512, 0, 0, 917522, 1, 0, 983048, 0, 0, 983058, 1, 0, 1048584, 0, 0, 1048594, 1, 0, 1114120, 0, 0, 1114130, 1, 0)

@@ -242,7 +242,7 @@ animations = [{
 }]
 
 [node name="Camera2D" type="Camera2D" unique_id=24448154]
-zoom = Vector2(0.25, 0.25)
+zoom = Vector2(4, 4)
 script = ExtResource("11")
 
 [node name="HudLayer" type="CanvasLayer" parent="." unique_id=540556515]
@@ -270,6 +270,7 @@ layout_mode = 2
 script = ExtResource("4")
 
 [node name="Coin" type="AnimatedSprite2D" parent="HudLayer/Hud/Coins" unique_id=447280007]
+autoplay = "default"
 position = Vector2(235.594, -0.845496)
 sprite_frames = SubResource("6")
 frame = 1
@@ -289,6 +290,7 @@ layout_mode = 2
 script = ExtResource("6")
 
 [node name="Key" type="AnimatedSprite2D" parent="HudLayer/Hud/Keys" unique_id=1490835463]
+autoplay = "default"
 position = Vector2(178.275, -0.693974)
 sprite_frames = SubResource("18")
 
@@ -308,6 +310,7 @@ text = "0"
 [node name="UpgradeMenu" parent="." unique_id=1264262268 instance=ExtResource("7")]
 
 [node name="GameOver" type="AnimatedSprite2D" parent="." unique_id=261418753]
+autoplay = "default"
 process_mode = 3
 visible = false
 z_index = 4096

@@ -45,7 +45,7 @@ func _process(delta):
 	if(player.transitioned == false):
 		animate()
 	elif(direction != null):
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 
 func _physics_process(delta):
 	if(player.transitioned == false):
@@ -82,15 +82,15 @@ func animate():
 	if(player.current_room == get_parent().room_id):
 		#Reset to idle
 		if animator.animation.substr(0, 5) == "shoot" && animator.frame == shoot_length:
-			animator.animation = "idle_" + direction
+			animator.play("idle_" + direction)
 		
 		if(direction != null):
 			if((abs(player.global_position.x - global_position.x) < 25 || abs(player.global_position.y - global_position.y) < 25) && animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-				animator.animation = "walk_" + direction
+				animator.play("walk_" + direction)
 			elif(animator.animation.substr(0, 5) != "shoot" && attack_cooldown.time_left == 0):
-				animator.animation = "shoot_" + direction
+				animator.play("shoot_" + direction)
 			elif(animator.animation.substr(0, 5) != "shoot"):
-				animator.animation = "idle_" + direction
+				animator.play("idle_" + direction)
 
 #Called when the enemy attacks
 func attack():

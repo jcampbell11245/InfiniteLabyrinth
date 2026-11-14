@@ -364,6 +364,7 @@ shoot_length = 4
 attack_cooldown_length = 1.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1305928878]
+autoplay = "idle_right"
 z_index = 30
 sprite_frames = SubResource("37")
 animation = &"idle_right"

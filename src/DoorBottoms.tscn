@@ -105,3 +105,4 @@ sources/2 = SubResource("TileSetAtlasSource_lja3o")
 [node name="DoorBottoms" type="TileMap" unique_id=665427372]
 tile_set = SubResource("2")
 format = 2
+layer_0/tile_data = PackedInt32Array(458765, 2, 0, 786440, 0, 0, 786450, 1, 0)

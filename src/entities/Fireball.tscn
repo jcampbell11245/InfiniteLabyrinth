@@ -80,6 +80,7 @@ script = ExtResource("2")
 speed = 150.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1583105955]
+autoplay = "default"
 sprite_frames = SubResource("4")
 frame = 1
 

@@ -23,47 +23,23 @@ func _ready():
 	floor_number = int(floor_save.get_line())
 	floor_save.close()
 	
-	rooms()
-	keyrooms()
+	load_rooms()
+	load_keyrooms()
 	worldgen()
 #	roomspawn()
 	doors()
 
 #	print(matrix)
 
-func rooms():
-	var _numScenes = 0
-	var dir = DirAccess.new()
-	if dir.open("res://src/scenes/rooms/") == OK:
-		dir.list_dir_begin() # TODOConverter3To4 fill missing arguments https://github.com/godotengine/godot/pull/40547
-		var file_name = dir.get_next()
-		while (file_name != ""):
-#			print(file_name)
-			if file_name == ".." or file_name == ".":
-				# Directories, Skip.
-				pass
-			else:
-				rooms.push_back("res://src/scenes/rooms/"+file_name)
-				_numScenes += 1
-			file_name = dir.get_next()
-#		print("Got a list of "+str(numScenes)+" files")
+func load_rooms():
+	for file_name in ResourceLoader.list_directory("res://src/scenes/rooms/"):
+		if file_name.ends_with(".tscn"):
+			rooms.push_back("res://src/scenes/rooms/"+file_name)
 
-func keyrooms():
-	var _numScenes = 0
-	var dir = DirAccess.new()
-	if dir.open("res://src/scenes/keyrooms/") == OK:
-		dir.list_dir_begin() # TODOConverter3To4 fill missing arguments https://github.com/godotengine/godot/pull/40547
-		var file_name = dir.get_next()
-		while (file_name != ""):
-#			print(file_name)
-			if file_name == ".." or file_name == ".":
-				# Directories, Skip.
-				pass
-			else:
-				keyrooms.push_back("res://src/scenes/keyrooms/"+file_name)
-				_numScenes += 1
-			file_name = dir.get_next()
-#		print("Got a list of "+str(numScenes)+" files")
+func load_keyrooms():
+	for file_name in ResourceLoader.list_directory("res://src/scenes/keyrooms/"):
+		if file_name.ends_with(".tscn"):
+			keyrooms.push_back("res://src/scenes/keyrooms/"+file_name)
 
 func worldgen():
 	rng.randomize()

@@ -86,14 +86,14 @@ func _physics_process(delta):
 func animate():
 	#Reset to idle
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == slash_length:
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 	
 	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
-		animator.animation = "walk_" + direction
+		animator.play("walk_" + direction)
 	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
-		animator.animation = "slash_" + direction
+		animator.play("slash_" + direction)
 	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 
 #Called when the enemy attacks
 func attack():
@@ -125,7 +125,7 @@ func take_damage(direction):
 		knockback = dir * knockback_speed
 		
 		if animator.animation.substr(0, 5) == "slash":
-			animator.animation = "idle_" + direction
+			animator.play("idle_" + direction)
 			
 		hurtbox.disabled = true
 		invincibility_cooldown.start(1)

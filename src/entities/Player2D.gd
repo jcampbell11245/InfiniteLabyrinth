@@ -112,53 +112,53 @@ func get_input():
 func animate():
 	#Reset to idle
 	if Input.is_action_just_released('right'):
-		animator.animation = "idle_right"
+		animator.play("idle_right")
 		direction = "right"
 	elif Input.is_action_just_released('left'):
-		animator.animation = "idle_left"
+		animator.play("idle_left")
 		direction = "left"
 	elif Input.is_action_just_released('down'):
-		animator.animation = "idle_down"
+		animator.play("idle_down")
 		direction = "down"
 	elif Input.is_action_just_released('up'):
-		animator.animation = "idle_up"
+		animator.play("idle_up")
 		direction = "up"
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == 7:
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 	if animator.animation.substr(0, 5) == "shoot" && animator.frame == 1:
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 	if animator.animation.substr(0, 6) == "damage" && animator.frame == 4:
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 	
 	#Rolling
 	if(Input.is_action_just_released('roll') && $RollCooldown.time_left == 0):
-		animator.animation = "roll_" + direction
+		animator.play("roll_" + direction)
 	elif($Rolling.time_left == 0):
 		#Movement
 		if(animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 5) != "shoot" && animator.animation.substr(0, 6) != "damage" && animator.animation.substr(0, 9) != "walkshoot"):
 			if Input.is_action_pressed('right'):
-				animator.animation = "walk_right"
+				animator.play("walk_right")
 				direction = "right"
 			elif Input.is_action_pressed('left'):
-				animator.animation = "walk_left"
+				animator.play("walk_left")
 				direction = "left"
 			elif Input.is_action_pressed('down'):
-				animator.animation = "walk_down"
+				animator.play("walk_down")
 				direction = "down"
 			elif Input.is_action_pressed('up'):
-				animator.animation = "walk_up"
+				animator.play("walk_up")
 				direction = "up"
 	
 	#Melee Attacking
 	if(Input.is_action_just_pressed("melee_attack") && animator.animation.substr(0, 5) != "slash" && animator.animation.substr(0, 6) != "damage"):
-		animator.animation = "slash_" + direction
+		animator.play("slash_" + direction)
 	
 	#Ranged Attacking
 	if(Input.is_action_just_pressed("ranged_attack") && animator.animation.substr(0, 6) != "damage"):
 		if(animator.animation.substr(0, 4) == "walk"):
-			animator.animation = "walkshoot_" + direction
+			animator.play("walkshoot_" + direction)
 		elif(animator.animation):
-			animator.animation = "shoot_" + direction
+			animator.play("shoot_" + direction)
 
 #Updates the collision boxes
 func collision():
@@ -188,7 +188,7 @@ func take_damage(damage, direction, mute):
 		invincibility_cooldown.start(1)
 		animator.modulate.a = 0.5
 		
-		animator.animation = "damage_" + direction
+		animator.play("damage_" + direction)
 		
 		var dir = Vector2.ZERO
 		if(direction == "right"):
@@ -257,7 +257,7 @@ func set_last_tile():
 	if(locked_y == null):
 		locked_y = 8
 	
-	if(tiles.get_cell(locked_x + 9, locked_y + 9) != -1):
+	if(tiles.get_cell_source_id(0, Vector2i(locked_x + 9, locked_y + 9)) != -1):
 		last_tile = Vector2(respawn_x[locked_x] + x_shift, respawn_y[locked_y] + y_shift + 9)
 
 #for timer of level running out causing death
@@ -299,7 +299,7 @@ func _on_RoomDetector_area_entered(area):
 	current_room = area.get_parent().room_id
 	
 	transitioning = false
-	animator.animation = "idle_" + direction
+	animator.play("idle_" + direction)
 	get_parent().get_node("CameraHolder").velocity = Vector2.ZERO
 
 func _on_BossMusic_finished():
@@ -311,10 +311,10 @@ func _on_RoomDetectionBox_body_entered(body):
 		$DungeonMusic.stop()
 		$BossDoorOpen.play()
 		get_parent().get_node("CameraHolder").get_child(0).shake(3.7, 20, 1)
-		get_parent().get_node("StartRoom").get_node("BossDoor").animation = "opening"
+		get_parent().get_node("StartRoom").get_node("BossDoor").play("opening")
 		transitioning = true
 		transitioned = true
-		animator.animation = "idle_" + direction
+		animator.play("idle_" + direction)
 		last_velocity = velocity
 		velocity = Vector2.ZERO
 		move_and_slide()
@@ -325,7 +325,7 @@ func _on_RoomDetectionBox_body_entered(body):
 		transition()
 
 func transition():
-		animator.animation = "walk_" + direction
+		animator.play("walk_" + direction)
 		
 		if(velocity == Vector2.ZERO):
 			velocity = last_velocity
@@ -344,7 +344,7 @@ func transition():
 			else:
 				direction = "up"
 				velocity = Vector2(0, -speed)
-		animator.animation = "walk_" + direction
+		animator.play("walk_" + direction)
 		move_and_slide()
 		
 		if(direction == "right" || direction == "left"):
@@ -360,7 +360,7 @@ func transition():
 func _on_Transitioned_timeout():
 	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
 		$BossDoorClose.play()
-		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("BossDoor").animation = "closing"
+		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("BossDoor").play("closing")
 		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("CollisionShape2D").disabled = false
 	else:
 		transitioned = false
@@ -372,7 +372,7 @@ func _on_BossDoorClose_finished():
 func _on_Rolling_timeout():
 	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
 		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
-	animator.animation = "idle_" + direction
+	animator.play("idle_" + direction)
 	set_collision_mask_value(1, true)
 	$HitboxPivot/Hitbox/CollisionShape2D.disabled = false
 	$Hurtbox/CollisionShape2D.disabled = false

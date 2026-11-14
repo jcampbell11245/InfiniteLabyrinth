@@ -48,11 +48,11 @@ func _on_ExistenceTime_timeout():
 
 func _on_ProjectileHitbox_area_entered(area):
 	speed = 0
-	$AnimatedSprite2D.animation = "break"
+	$AnimatedSprite2D.play("break")
 
 func _on_ProjectileHitbox_body_entered(body):
 	speed = 0
-	$AnimatedSprite2D.animation = "break"
+	$AnimatedSprite2D.play("break")
 
 func _on_AnimatedSprite_animation_finished():
 	if($AnimatedSprite2D.animation == "break"):

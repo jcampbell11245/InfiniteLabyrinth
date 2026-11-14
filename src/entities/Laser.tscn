@@ -34,6 +34,7 @@ speed = 300.0
 [node name="SpritePivot" type="Marker2D" parent="." unique_id=204883665]
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="SpritePivot" unique_id=620026699]
+autoplay = "default"
 sprite_frames = SubResource("2")
 
 [node name="ProjectileHitbox" type="Area2D" parent="." unique_id=1023554093]

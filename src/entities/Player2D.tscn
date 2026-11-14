@@ -1187,6 +1187,7 @@ position = Vector2(0, 12.3385)
 shape = SubResource("1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=684824518]
+autoplay = "idle_down"
 position = Vector2(0, -2.5034e-06)
 scale = Vector2(1.5, 1.5)
 sprite_frames = SubResource("118")
@@ -1268,7 +1269,6 @@ stream = ExtResource("23")
 [node name="DungeonMusic" type="AudioStreamPlayer" parent="." unique_id=658358600]
 stream = ExtResource("19")
 volume_db = -10.0
-autoplay = true
 
 [node name="BossMusicLoop" type="AudioStreamPlayer" parent="." unique_id=649350125]
 stream = ExtResource("25")

@@ -456,6 +456,7 @@ attack_cooldown_length = 1.0
 only_hit_during_attack = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=922099642]
+autoplay = "idle_right"
 sprite_frames = SubResource("49")
 animation = &"idle_right"
 
@@ -488,6 +489,7 @@ shape = SubResource("52")
 [node name="DetectionZonePivot" type="Marker2D" parent="." unique_id=2123908693]
 
 [node name="DetectionZone" type="Area2D" parent="DetectionZonePivot" unique_id=1540395594]
+collision_mask = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionZonePivot/DetectionZone" unique_id=1320497336]
 position = Vector2(32.2951, 0.890896)

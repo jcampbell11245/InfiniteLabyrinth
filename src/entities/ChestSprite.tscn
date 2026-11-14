@@ -121,5 +121,6 @@ animations = [{
 }]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=641948036]
+autoplay = "closed_down"
 sprite_frames = SubResource("9")
 animation = &"closed_down"
