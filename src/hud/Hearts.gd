@@ -17,10 +17,6 @@ func _ready():
 	for heart in range (0, max_hearts):
 		get_children()[heart].visible = true
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
 #Changes the health based on the variable passed and returns how many hearts are left
 func update_health(change):
 	hearts = hearts + change
@@ -34,7 +30,3 @@ func update_health(change):
 			get_child(n).play("empty")
 	
 	return hearts
-
-
-func _on_Timer_timeout():
-	pass # Replace with function body.

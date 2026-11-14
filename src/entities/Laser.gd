@@ -8,10 +8,6 @@ var damage #Amount of damage the projectile does
 func _ready():
 	$ExistenceTime.start(5)
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
 func _physics_process(_delta):
 	if(direction == "right"):
 		$SpritePivot/Sprite2D.set_flip_h(true)

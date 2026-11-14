@@ -26,10 +26,7 @@ func _ready():
 	load_rooms()
 	load_keyrooms()
 	worldgen()
-#	roomspawn()
 	doors()
-
-#	print(matrix)
 
 func load_rooms():
 	for file_name in ResourceLoader.list_directory("res://src/scenes/rooms/"):
@@ -79,7 +76,6 @@ func worldgen():
 				matrix[x].append(keyrooms[2])
 			else:
 				matrix[x].append(randomscene(rooms))
-	#print(matrix)
 
 func randomscene(scenes):
 	var room = scenes[int(rng.randi_range(0, scenes.size()-1))]
@@ -87,7 +83,6 @@ func randomscene(scenes):
 	return room
 
 func doors():
-#	print(matrix[2][0])
 	var start = load(matrix[2][0]).instantiate()
 	add_child(start)
 	start.position = Vector2(0-191, 288*2-168)
@@ -130,7 +125,6 @@ func doors():
 				room.doors[3] = false
 			elif(y == 6):
 				room.doors[1] = false
-#	print(matrix)
 
 func reset_world():
 	save_coins()
@@ -154,23 +148,3 @@ func save_coins():
 	var save_file = FileAccess.open("user://savefile.save", FileAccess.WRITE)
 	save_file.store_line(str(get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins))
 	save_file.close()
-
-#func roomspawn():
-#	print(matrix[2][0])
-#	var start = load(matrix[2][0]).instance()
-#	add_child(start)
-#	start.position = Vector2(0, 288*2)
-#
-#	var end = load(matrix[2][7]).instance()
-#	add_child(end)
-#	end.position = Vector2(264*7, 288*2)
-#
-#	for x in range(5):
-#		for y in range(1, 7):
-#			var room = load(matrix[x][y]).instance()
-#			add_child(room)
-#			room.position = Vector2(264*y, 288*x)
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass

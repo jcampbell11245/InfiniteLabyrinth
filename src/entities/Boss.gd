@@ -149,9 +149,7 @@ func take_damage(direction):
 
 #Called when the enemy dies
 func die():
-	#print(get_parent().get_node("Won").visible)
 	get_node("Won").visible = true
-	#print(get_parent().get_node("Won").visible)
 	get_tree().paused = true
 
 func _on_InvincibilityCooldown_timeout():

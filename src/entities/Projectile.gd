@@ -9,10 +9,6 @@ var damage #Amount of damage the projectile does
 func _ready():
 	$ExistenceTime.start(5)
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
 func _physics_process(_delta):
 	if(!rotates && get_parent().get_parent().get_node("Player2D").current_room == 61):
 		queue_free()

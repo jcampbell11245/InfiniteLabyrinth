@@ -6,10 +6,6 @@ var keys = 0
 func _ready():
 	$Counter/KeyText.set_text(str(keys))
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
 func add_keys(add):
 	keys += add
 	$Counter/KeyText.set_text(str(keys))

@@ -6,10 +6,6 @@ var coins = 0
 func _ready():
 	$Counter/CoinText.set_text(str(coins))
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
 func add_coins(add):
 	coins += add
 	$Counter/CoinText.set_text(str(coins))

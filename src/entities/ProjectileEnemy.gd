@@ -153,7 +153,6 @@ func _on_Hurtbox_area_shape_entered(area_id, area, area_shape, self_shape):
 	elif (area.get_name() == "ArrowHitbox"):
 		take_damage(area.get_parent().direction)
 
-
 func _on_AnimatedSprite_frame_changed():
 	if(animator.animation.substr(0, 5) == "shoot" && animator.frame == attack_speed):
 		shoot_fireball()
@@ -162,7 +161,6 @@ func _on_AnimatedSprite_frame_changed():
 
 func _on_SecondShotCountdown_timeout():
 	shoot_fireball()
-
 
 func _on_ThirdShotCountdown_timeout():
 	shoot_fireball()

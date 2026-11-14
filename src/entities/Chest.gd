@@ -8,12 +8,6 @@ var open = false
 func _ready():
 	$AnimatedSprite2D.animation = "closed_" + direction
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
-
 func _on_Area2D_area_entered(area):
 	if((area.get_name() == "Hitbox") && !open):
 		$Open.play()

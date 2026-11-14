@@ -73,11 +73,6 @@ func show_menu():
 	get_tree().paused = new_pause_state
 	visible = new_pause_state
 	
-	#$Description.text = "Health:  Level " + str(health_level + 1)
-	#$Description2.text = "Damage:  Level " + str(damage_level + 1)
-	#$Description3.text = "Time:  Level " + str(time_level + 1)
-	#$Description4.text = "Looting:  Level " + str(looting_level + 1)
-	
 	$Coins.text = str(upgrade_cost[health_level])
 	$Coins2.text = str(upgrade_cost[damage_level])
 	$Coins3.text = str(upgrade_cost[time_level])

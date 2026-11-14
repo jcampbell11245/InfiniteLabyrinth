@@ -16,10 +16,10 @@ var doors = [true, true, true, true]
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	if($Decorations != null):
+	if(get_node_or_null("Decorations") != null):
 		for x in range(9,17):
 			for y in range(9, 17):
-				if($Tiles.get_cell_source_id(0, Vector2i(x, y)) == 0 && $Pitfalls.get_cell_source_id(0, Vector2i(x, y)) == -1 && ($Stalagmites == null || $Stalagmites.get_cell_source_id(0, Vector2i(x, y)) == -1)):
+				if($Tiles.get_cell_source_id(0, Vector2i(x, y)) == 0 && $Pitfalls.get_cell_source_id(0, Vector2i(x, y)) == -1 && (get_node_or_null("Stalagmites") == null || $Stalagmites.get_cell_source_id(0, Vector2i(x, y)) == -1)):
 					var rng = RandomNumberGenerator.new()
 					rng.randomize()
 					var variant = rng.randi_range(0, 66)
@@ -82,7 +82,7 @@ func _ready():
 		$Tiles.set_cell(0, Vector2i(17, 17), 27, Vector2i.ZERO)
 	
 	#Sets pitfall transitions
-	if($PitfallTransitions != null):
+	if(get_node_or_null("PitfallTransitions") != null):
 		for x in range(9,18):
 			for y in range(9, 18):
 				if($Pitfalls.get_cell_source_id(0, Vector2i(x, y)) != -1):
@@ -132,7 +132,7 @@ func _ready():
 						add_child(tileset)
 	
 	#Sets pitfall spike decorations
-	if($Pitfalls != null):
+	if(get_node_or_null("Pitfalls") != null):
 		var spikes = load("res://src/tilesets/PitfallSpikes.tscn").instantiate()
 		var rng = RandomNumberGenerator.new()
 		
@@ -152,11 +152,11 @@ func _ready():
 	
 	if($Tiles.get_cell_source_id(0, Vector2i(13, 8)) == 1 || 20 || 21):
 		detectors.set_cell(0, Vector2i(13, 8), 0, Vector2i.ZERO)
-	if($Top.get_cell_source_id(0, Vector2i(18, 13)) == 8 || ($Locks != null && $Locks.get_cell_source_id(0, Vector2i(18, 13)) == 2 || 3)):
+	if($Top.get_cell_source_id(0, Vector2i(18, 13)) == 8 || (get_node_or_null("Locks") != null && $Locks.get_cell_source_id(0, Vector2i(18, 13)) == 2 || 3)):
 		detectors.set_cell(0, Vector2i(18, 13), 0, Vector2i.ZERO)
 	if($Top.get_cell_source_id(0, Vector2i(13, 18)) == 13):
 		detectors.set_cell(0, Vector2i(13, 18), 0, Vector2i.ZERO)
-	if($Top.get_cell_source_id(0, Vector2i(8, 13)) == 5 || ($Locks != null && $Locks.get_cell_source_id(0, Vector2i(18, 13)) == 0 || 1)):
+	if($Top.get_cell_source_id(0, Vector2i(8, 13)) == 5 || (get_node_or_null("Locks") != null && $Locks.get_cell_source_id(0, Vector2i(18, 13)) == 0 || 1)):
 		detectors.set_cell(0, Vector2i(8, 13), 0, Vector2i.ZERO)
 	
 	add_child(detectors)
@@ -198,7 +198,7 @@ func _process(delta):
 		animator.play("FadeIn")
 		faded_out = false
 	
-	if(!locked && player.current_room == room_id && $Locks != null):
+	if(!locked && player.current_room == room_id && get_node_or_null("Locks") != null):
 		locked = true
 		if(completion_criteria == "switches"):
 			$Tiles.set_cell(0, Vector2i(13, 8), 21, Vector2i.ZERO)

@@ -33,11 +33,6 @@ func _ready():
 	z_index = 2
 
 func _process(delta):
-	#if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
-	#	$DungeonMusic.stop()
-	#	$BossMusic.play()
-	
-	#print(current_room)
 	timer()
 
 func _physics_process(delta):
