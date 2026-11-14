@@ -13,6 +13,12 @@ enum Door { TOP, RIGHT, BOTTOM, LEFT }
 
 const CENTRE := Vector2(324, 312) # Centre of the room's tiles (cells 8..18 by 7..18)
 const FLOOR_RECT := Rect2(216, 216, 216, 216) # The 9x9 walkable floor, cells 9..17
+const DOOR_CELLS := { # Doorway cell on each side
+	Door.TOP: Vector2i(13, 8),
+	Door.RIGHT: Vector2i(18, 13),
+	Door.BOTTOM: Vector2i(13, 18),
+	Door.LEFT: Vector2i(8, 13),
+}
 
 const FLOOR := 0 # Plain floor source ids that get a random variant
 const FLOOR_ALT := 4
@@ -53,6 +59,7 @@ var player_active := true # False while the player is down a pitfall; enemies wa
 var locked := false # Lock tiles have been drawn (first time the player enters)
 var faded_out := true
 var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
+var _detectors: TileMap # Transition detector tiles, one per open doorway
 var _key_gate: StaticBody2D # End room only: blocks the top door until the player has 3 keys
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
@@ -82,6 +89,9 @@ func _ready() -> void:
 
 func close_door(door: Door) -> void:
 	doors[door] = false
+	# The end room's top door is the key gate, which opens later, so it keeps its detector.
+	if !(room_id == Constants.END_ROOM && door == Door.TOP):
+		_detectors.erase_cell(0, DOOR_CELLS[door])
 	_refresh_doors()
 
 # Blocks the end room's top door. The gate tile has no collision of its own, so this
@@ -134,11 +144,16 @@ func _add_decorations(rng: RandomNumberGenerator) -> void:
 				continue
 			if stalagmites != null && stalagmites.get_cell_source_id(0, cell) != -1:
 				continue
+			# 8 in 67 floor tiles get a decoration: 0 is the rarest, 1 the most common.
 			var roll := rng.randi_range(0, 66)
-			# BUG(see BUGS.md): meant to pick decorations 0-3, but the original if-chain let
-			# later branches overwrite earlier ones, so only 2 and 3 ever appear.
-			if roll > 58:
-				decorations.set_cell(0, cell, 2 if roll < 66 else 3, Vector2i.ZERO)
+			if roll == 59:
+				decorations.set_cell(0, cell, 0, Vector2i.ZERO)
+			elif roll >= 60 && roll < 64:
+				decorations.set_cell(0, cell, 1, Vector2i.ZERO)
+			elif roll >= 64 && roll < 66:
+				decorations.set_cell(0, cell, 2, Vector2i.ZERO)
+			elif roll == 66:
+				decorations.set_cell(0, cell, 3, Vector2i.ZERO)
 
 func _add_floor_variants(rng: RandomNumberGenerator) -> void:
 	for area: Array in FLOOR_VARIANTS:
@@ -199,23 +214,13 @@ func _add_pitfall_spikes(rng: RandomNumberGenerator) -> void:
 				spikes.set_cell(0, cell, 0, Vector2i.ZERO)
 	add_child(spikes)
 
-# Detector tiles in each doorway that start the walk into the next room.
+# Detector tiles in each doorway that start the walk into the next room. close_door()
+# removes the ones in doorways that get closed.
 func _add_transition_detectors() -> void:
-	var detectors: TileMap = TransitionDetector.instantiate()
-	var locks: TileMap = get_node_or_null("Locks")
-
-	# BUG(see BUGS.md): `x == a || b || c` is always true (bare numbers are truthy), so the
-	# top and left detectors are always placed, and the left one reads the right door's lock.
-	if tiles.get_cell_source_id(0, Vector2i(13, 8)) == 1 || 20 || 21:
-		detectors.set_cell(0, Vector2i(13, 8), 0, Vector2i.ZERO)
-	if top.get_cell_source_id(0, Vector2i(18, 13)) == 8 || (locks != null && locks.get_cell_source_id(0, Vector2i(18, 13)) == 2 || 3):
-		detectors.set_cell(0, Vector2i(18, 13), 0, Vector2i.ZERO)
-	if top.get_cell_source_id(0, Vector2i(13, 18)) == 13:
-		detectors.set_cell(0, Vector2i(13, 18), 0, Vector2i.ZERO)
-	if top.get_cell_source_id(0, Vector2i(8, 13)) == 5 || (locks != null && locks.get_cell_source_id(0, Vector2i(18, 13)) == 0 || 1):
-		detectors.set_cell(0, Vector2i(8, 13), 0, Vector2i.ZERO)
-
-	add_child(detectors)
+	_detectors = TransitionDetector.instantiate()
+	for door: Door in DOOR_CELLS:
+		_detectors.set_cell(0, DOOR_CELLS[door], 0, Vector2i.ZERO)
+	add_child(_detectors)
 
 # --- Doors ---
 

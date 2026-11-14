@@ -48,7 +48,7 @@ func take_damage(from_direction: String) -> void:
 	if _animation_is("slash"):
 		_play("idle", from_direction)
 	
-	hurtbox.disabled = true
+	hurtbox.set_deferred("disabled", true) # Called from a collision callback
 	invincibility_cooldown.start(invincibility_time)
 	animator.modulate.a = 0.5
 	
