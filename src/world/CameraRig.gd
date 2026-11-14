@@ -1,25 +1,21 @@
 extends CharacterBody2D
 
-@onready var player = get_parent().get_node("Player")
-
-var last_room_number = 1
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta):
+	var player = Game.player
 	var x
 	var y
-	if(player.current_room == 60):
+	if(player.current_room == Constants.START_ROOM):
 		x = 150
 		y = 710
-	elif(player.current_room == 61):
+	elif(player.current_room == Constants.END_ROOM):
 		x = 1998
 		y = 710
-	elif(player.current_room == 62):
+	elif(player.current_room == Constants.BOSS_ROOM):
 		x = -130
 		y = 710
 	else:
-		x = (player.current_room % get_parent().columns) * 261 + 411
-		y = (player.current_room / get_parent().columns) * 288 + 133
+		x = (player.current_room % Constants.COLUMNS) * Constants.LEGACY_ROOM_WIDTH + 411
+		y = (player.current_room / Constants.COLUMNS) * Constants.ROOM_SIZE.y + 133
 	
 	if (position.distance_to(Vector2(x, y)) > 10):
 		velocity = position.direction_to(Vector2(x, y)) * 700

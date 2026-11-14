@@ -13,24 +13,16 @@ var knockback = Vector2.ZERO
 var critical_chance = 0
 var mode = 0
 
-@onready var player = get_parent().get_parent().get_node("Player")
+@onready var player = Game.player
 @onready var animator = $AnimatedSprite2D
 @onready var attack_cooldown = $AttackCooldown
 @onready var hitbox = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var hurtbox = $Hurtbox/CollisionShape2D
 @onready var invincibility_cooldown = $InvincibilityCooldown
-@onready var coins = get_parent().get_parent().get_node("CameraRig/Camera2D/HudLayer/Hud/Coins")
-@onready var overworld = get_parent().get_parent()
 const Fireball = preload("res://src/projectiles/Laser.tscn")
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	if not FileAccess.file_exists("user://damage.save"):
-		print("Aborting, no savefile")
-		return
-	var crit_file = FileAccess.open("user://damage.save", FileAccess.READ)
-	critical_chance = int(crit_file.get_line())
-	crit_file.close()
+	critical_chance = SaveData.damage_level
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -39,12 +31,12 @@ func _process(delta):
 	
 func _physics_process(delta):
 	if(!player.transitioned):
-		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && player.current_room == 62):
+		if(abs(player.global_position.x - global_position.x) > abs(player.global_position.y - global_position.y) && player.current_room == Constants.BOSS_ROOM):
 			if(player.global_position.x - global_position.x < 0):
 				direction = "left"
 			else:
 				direction = "right"
-		elif (player.current_room == 62):
+		elif (player.current_room == Constants.BOSS_ROOM):
 			if(player.global_position.y - global_position.y < 0):
 				direction = "up"
 				z_index = 10
@@ -53,23 +45,16 @@ func _physics_process(delta):
 				z_index = 1
 		
 		if(animator.animation.substr(0, 5) != "slash"):
-			if(direction == "left"):
-				$HitboxPivot.rotation_degrees = 180
-			elif(direction == "right"):
-				$HitboxPivot.rotation_degrees = 0
-			elif(direction == "up"):
-				$HitboxPivot.rotation_degrees = 270
-			elif(direction == "down"):
-				$HitboxPivot.rotation_degrees = 90
+			$HitboxPivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 		
-		if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+		if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == Constants.BOSS_ROOM):
 			var dir
 			if(mode == 0):
 				dir = (player.global_position - global_position).normalized()
 			else:
 				dir = -(player.global_position - global_position).normalized()
 			move_and_collide(dir * speed * delta)
-		elif(player.current_room == 62):
+		elif(player.current_room == Constants.BOSS_ROOM):
 			animate()
 			attack()
 			
@@ -88,11 +73,11 @@ func animate():
 	if animator.animation.substr(0, 5) == "slash" && animator.frame == slash_length:
 		animator.play("idle_" + direction)
 	
-	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+	if((abs(player.global_position.x - global_position.x) > 25 || abs(player.global_position.y - global_position.y) > 25) && animator.animation.substr(0, 5) != "slash" && player.current_room == Constants.BOSS_ROOM):
 		animator.play("walk_" + direction)
-	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == Constants.BOSS_ROOM):
 		animator.play("slash_" + direction)
-	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == 62):
+	elif(animator.animation.substr(0, 5) != "slash" && player.current_room == Constants.BOSS_ROOM):
 		animator.play("idle_" + direction)
 
 #Called when the enemy attacks
@@ -113,16 +98,7 @@ func shoot_fireball():
 #Called when the enemy takes damage
 func take_damage(direction):
 	if(invincibility_cooldown.time_left == 0):
-		var dir = Vector2.ZERO
-		if(direction == "right"):
-			dir = Vector2.RIGHT
-		elif(direction == "left"):
-			dir = Vector2.LEFT
-		elif(direction == "up"):
-			dir = Vector2.UP
-		else:
-			dir = Vector2.DOWN
-		knockback = dir * knockback_speed
+		knockback = Direction.to_vector(direction) * knockback_speed
 		
 		if animator.animation.substr(0, 5) == "slash":
 			animator.play("idle_" + direction)

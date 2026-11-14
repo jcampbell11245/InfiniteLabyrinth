@@ -7,8 +7,6 @@ extends CharacterBody2D
 @onready var invincibility_cooldown = $InvincibilityCooldown #Cooldown to when the player can get hit again
 @onready var level_countdown = $LevelCountdown #Countdown for how long the player has to clear the level
 @onready var respawn_cooldown = $RespawnCooldown #The cooldown until the player respawns from falling in a pitfall
-@onready var hearts = get_parent().get_node("CameraRig/Camera2D/HudLayer/Hud/Hearts") #Player's hearts
-@onready var level_countdown_text = get_parent().get_node("CameraRig/Camera2D/HudLayer/Hud/Timer/TimerText") #The visual level countdown
 
 var respawn_x = [304, 328, 352, 376, 400, 424, 448, 472, 496]
 var respawn_y = [46, 70, 94, 118, 142, 166, 190, 214, 238]
@@ -17,7 +15,7 @@ var health = 10 #Player's health
 var speed = 125  #Speed in pixels/sec
 var current_room = 0
 
-var direction = "right" #Direction the player is facing
+var direction = Direction.RIGHT #Direction the player is facing
 
 var knockback = Vector2.ZERO #Player's knockback vector
 var last_tile = Vector2.ZERO
@@ -59,17 +57,10 @@ func get_input():
 	
 	#Rolling
 	if(Input.is_action_just_released("roll") && $Rolling.time_left == 0 && $RollCooldown.time_left == 0):
-		if(direction == "right"):
-			velocity.x += 1
-		elif(direction == "left"):
-			velocity.x -= 1
-		elif(direction == "down"):
-			velocity.y += 1
-		else:
-			velocity.y -= 1
+		velocity += Direction.to_vector(direction)
 		speed *= 2
 		$Rolling.start(0.25)
-		set_collision_mask_value(1, false)
+		set_collision_mask_value(Constants.Layer.GENERAL, false)
 		$HitboxPivot/Hitbox/CollisionShape2D.disabled = true
 		$Hurtbox/CollisionShape2D.disabled = true
 	elif($Rolling.time_left == 0):
@@ -157,22 +148,14 @@ func animate():
 
 #Updates the collision boxes
 func collision():
-	if(direction == "right"):
-		hurtbox.shape.set_size(Vector2(23, 48))
+	hurtbox.shape.set_size(Vector2(23, 48))
+	if(direction == Direction.RIGHT):
 		hurtbox.position = Vector2(-4.5, 0)
-		$HitboxPivot.rotation_degrees = 0
-	elif(direction == "left"):
-		hurtbox.shape.set_size(Vector2(23, 48))
+	elif(direction == Direction.LEFT):
 		hurtbox.position = Vector2(4.5, 0)
-		$HitboxPivot.rotation_degrees = 180
-	elif(direction == "down"):
-		hurtbox.shape.set_size(Vector2(23, 48))
+	else:
 		hurtbox.position = Vector2(0, 0)
-		$HitboxPivot.rotation_degrees = 90
-	elif(direction == "up"):
-		hurtbox.shape.set_size(Vector2(23, 48))
-		hurtbox.position = Vector2(0, 0)
-		$HitboxPivot.rotation_degrees = 270
+	$HitboxPivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 	
 	if(animator.animation.substr(0, 5) != "slash"):
 		hitbox.disabled = true;
@@ -185,51 +168,39 @@ func take_damage(damage, direction, mute):
 		
 		animator.play("damage_" + direction)
 		
-		var dir = Vector2.ZERO
-		if(direction == "right"):
-			dir = Vector2.RIGHT
-		elif(direction == "left"):
-			dir = Vector2.LEFT
-		elif(direction == "up"):
-			dir = Vector2.UP
-		elif(direction == "down"):
-			dir = Vector2.DOWN
-		#knockback = dir * 150
-		
 		if(!mute):
 			$Hit.play()
 		
-		hearts.update_health(-damage)
-		if(hearts.hearts <= 0):
+		Game.hearts.update_health(-damage)
+		if(Game.hearts.hearts <= 0):
 			die()
 
 #Method called every frame to update the visual timer
 func timer():
-	level_countdown_text.set_text(str(floor(level_countdown.get_time_left())))
+	Game.timer_text.set_text(str(floor(level_countdown.get_time_left())))
 
 #Method called when the player dies
 func die():
 	speed = 0
 	
-	var floor_save = FileAccess.open("user://floor.save", FileAccess.WRITE)
-	floor_save.store_line("1")
-	floor_save.close()
+	SaveData.floor_number = 1
+	SaveData.save()
 	
-	get_parent().get_node("CameraRig/Camera2D/GameOver").game_over()
+	Game.game_over.game_over()
 	get_tree().paused = true
 
 func set_last_tile():
 	var tiles
-	if(current_room == 60):
+	if(current_room == Constants.START_ROOM):
 		tiles = get_parent().get_child(3).get_child(0)
-	elif(current_room == 61):
+	elif(current_room == Constants.END_ROOM):
 		tiles = get_parent().get_node("EndRoom").get_child(0)
-	elif(current_room == 62):
+	elif(current_room == Constants.BOSS_ROOM):
 		tiles = get_parent().get_node("BossRoom").get_child(0)
 	else:
 		tiles = get_parent().get_child(current_room + 6).get_child(0)
-	var y_shift = (current_room / get_parent().columns) * 288
-	var x_shift = (current_room % get_parent().columns) * 261
+	var y_shift = (current_room / Constants.COLUMNS) * Constants.ROOM_SIZE.y
+	var x_shift = (current_room % Constants.COLUMNS) * Constants.LEGACY_ROOM_WIDTH
 	
 	var locked_x
 	var locked_y
@@ -275,7 +246,7 @@ func _on_feet_box_body_entered(body):
 	if(respawn_cooldown.time_left == 0):
 		$Fall.play()
 		visible = false
-		if(current_room != 62):
+		if(current_room != Constants.BOSS_ROOM):
 			get_parent().get_child(current_room + 3).player_active = false
 		else:
 			get_parent().get_child(4).player_active = false
@@ -283,7 +254,7 @@ func _on_feet_box_body_entered(body):
 
 func _on_respawn_cooldown_timeout():
 	visible = true
-	if(current_room != 62):
+	if(current_room != Constants.BOSS_ROOM):
 		get_parent().get_child(current_room + 3).player_active = true
 	else:
 		get_parent().get_child(4).player_active = true
@@ -295,7 +266,7 @@ func _on_room_detector_area_entered(area):
 	
 	transitioning = false
 	animator.play("idle_" + direction)
-	get_parent().get_node("CameraRig").velocity = Vector2.ZERO
+	Game.camera_rig.velocity = Vector2.ZERO
 
 func _on_boss_music_finished():
 	if(!$BossMusicLoop.playing):
@@ -305,7 +276,7 @@ func _on_room_detection_box_body_entered(body):
 	if(body.is_in_group("BossDetector")):
 		$DungeonMusic.stop()
 		$BossDoorOpen.play()
-		get_parent().get_node("CameraRig").get_child(0).shake(3.7, 20, 1)
+		Game.camera.shake(3.7, 20, 1)
 		get_parent().get_node("StartRoom").get_node("BossDoor").play("opening")
 		transitioning = true
 		transitioned = true
@@ -325,7 +296,8 @@ func transition():
 		if(velocity == Vector2.ZERO):
 			velocity = last_velocity
 			move_and_slide()
-		if(current_room == 60 || (abs(position.x - ((current_room % get_parent().columns) * 261 + 391.5)) > abs(position.y - ((current_room / get_parent().columns) * 288 + 144)))):
+		var room_center = Vector2((current_room % Constants.COLUMNS) * Constants.LEGACY_ROOM_WIDTH + 391.5, (current_room / Constants.COLUMNS) * Constants.ROOM_SIZE.y + 144)
+		if(current_room == Constants.START_ROOM || abs(position.x - room_center.x) > abs(position.y - room_center.y)):
 			if(velocity.x > 0):
 				direction = "right"
 				velocity = Vector2(speed, 0)
@@ -353,7 +325,7 @@ func transition():
 			$Transitioned.start(1.15)
 
 func _on_transitioned_timeout():
-	if(current_room == 62 && !$BossMusic.playing && !$BossMusicLoop.playing):
+	if(current_room == Constants.BOSS_ROOM && !$BossMusic.playing && !$BossMusicLoop.playing):
 		$BossDoorClose.play()
 		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("BossDoor").play("closing")
 		get_parent().get_node("BossRoom").get_node("BossDoorBody").get_node("CollisionShape2D").disabled = false
@@ -368,7 +340,7 @@ func _on_rolling_timeout():
 	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
 		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	animator.play("idle_" + direction)
-	set_collision_mask_value(1, true)
+	set_collision_mask_value(Constants.Layer.GENERAL, true)
 	$HitboxPivot/Hitbox/CollisionShape2D.disabled = false
 	$Hurtbox/CollisionShape2D.disabled = false
 	$RollCooldown.start(1)

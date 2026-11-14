@@ -9,18 +9,28 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
   `_on_respawn_cooldown_timeout` toggle `player_active` on `get_parent().get_child(current_room + 3)`,
   but generated rooms start at child index 6 (`set_last_tile` uses `+ 6`). Enemies in the room
   you fell in keep attacking while you're invisible; an unrelated room gets paused instead.
-- **Upgrades never persist between launches.** `Boot.gd` overwrites every save file
-  (floor, coins, all four upgrades) every time the game starts.
+- **Upgrades never persist between launches.** `Boot.gd` calls `SaveData.reset()` every time
+  the game starts, wiping floor, coins and all four upgrades.
+- **The floor number never goes up.** Nothing increments `SaveData.floor_number`, so every
+  floor is floor 1 and the coin multiplier never grows. Dying sets it to 1, then the upgrade
+  menu's Continue writes the Overworld's old `floor_number` back over it.
 - **Time and Looting upgrades save even when the purchase fails.** In `UpgradeMenu.gd`,
-  `buy_time()` / `buy_looting()` write their save file outside the `if` that checks coins
-  (`buy_health` / `buy_damage` don't). Harmless today since the value is unchanged, but inconsistent.
+  `buy_time()` / `buy_looting()` call `SaveData.save()` outside the `if` that checks coins
+  (`buy_health` / `buy_damage` don't). Harmless since nothing changed, but inconsistent.
+- **Respawning plays a missing animation.** After a pitfall, `Player._on_respawn_cooldown_timeout`
+  calls `take_damage(0.5, "none", true)`, which plays `damage_none`. That animation doesn't
+  exist, so Godot logs an error and the sprite keeps its previous animation.
 - **Coin drop formula has precedence bugs.** `MeleeEnemy.die()` uses
   `10 * floor * 1+((looting + 1 /10))`, which is `10 * floor + looting` (and `1 / 10` is 0).
   `ProjectileEnemy.die()` uses `1+((looting + 1)/10)` instead, so the two enemy types scale differently.
 - **Wizard crits are not random per run.** `ProjectileEnemy.take_damage` creates a
   `RandomNumberGenerator` without calling `randomize()`, so it always rolls the same first number.
-- **Boss uses a hard-coded room id.** `Boss.gd` checks `player.current_room == 62` everywhere
-  instead of its parent's `room_id`.
+- **Boss uses a hard-coded room id.** `Boss.gd` checks `player.current_room == Constants.BOSS_ROOM`
+  everywhere instead of its parent's `room_id`.
+- **Camera and respawn drift 3px per column.** Rooms are placed 264px apart
+  (`Constants.ROOM_SIZE.x`), but `CameraRig`, `Player.set_last_tile` and `Player.transition`
+  step 261px (`Constants.LEGACY_ROOM_WIDTH`). By the last column the camera is 15px off-centre
+  and respawn points are 15px off their tiles.
 
 ## Level generation (`Level.gd`)
 

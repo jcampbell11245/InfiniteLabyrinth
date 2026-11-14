@@ -2,7 +2,7 @@ extends Node2D
 
 @onready var goblin_death = $GoblinDeath
 @onready var knight_death = $KnightDeath
-@onready var player = get_parent().get_node("Player")
+@onready var player = Game.player
 @onready var animator = get_node("Void").get_node("Fade")
 
 @export var completion_criteria = "none"
@@ -14,7 +14,6 @@ var locked = false
 var faded_out = true
 var doors = [true, true, true, true]
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
 	if(get_node_or_null("Decorations") != null):
 		for x in range(9,17):
@@ -164,7 +163,7 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	#Set doors
-	if(!doors[0] && room_id != 61):
+	if(!doors[0] && room_id != Constants.END_ROOM):
 		$Tiles.set_cell(0, Vector2i(13, 8), 6, Vector2i.ZERO)
 		$Top.set_cell(0, Vector2i(13, 8), 3, Vector2i.ZERO)
 		$Top.set_cell(0, Vector2i(13, 7), 1, Vector2i.ZERO)
@@ -186,8 +185,8 @@ func _process(delta):
 		$Tiles.set_cell(0, Vector2i(8, 12), 7, Vector2i.ZERO)
 		$Tiles.set_cell(0, Vector2i(8, 11), 7, Vector2i.ZERO)
 		
-	if(room_id == 61):
-		if(get_parent().get_node("CameraRig/Camera2D/HudLayer/Hud/Keys").get_keys() == 3):
+	if(room_id == Constants.END_ROOM):
+		if(Game.keys.get_keys() == 3):
 			$Tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
 	
 	#Fade in/out
@@ -245,7 +244,7 @@ func death_sound(enemy_type):
 		knight_death.play()
 
 func _on_next_floor_area_entered(area):
-	get_parent().get_node("CameraRig/Camera2D/UpgradeMenu/Control").show_menu()
+	Game.upgrade_menu.show_menu()
 
 func _on_boss_door_animation_finished():
 	if($BossDoor.animation == "opening"):

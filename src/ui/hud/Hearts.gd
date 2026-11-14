@@ -3,15 +3,8 @@ extends HBoxContainer
 var hearts = 5
 var max_hearts = 5
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	if not FileAccess.file_exists("user://health.save"):
-		print("Aborting, no savefile")
-		return
-	var hearts_save = FileAccess.open("user://health.save", FileAccess.READ)
-	max_hearts = int(hearts_save.get_line()) + 5
-	hearts_save.close()
-	
+	max_hearts = SaveData.health_level + 5
 	hearts = max_hearts
 	
 	for heart in range (0, max_hearts):

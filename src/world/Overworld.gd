@@ -1,6 +1,8 @@
 extends Node2D
 
-#264x288
+# Top-left offset of the room grid; a room at (row, col) sits at GRID_ORIGIN + ROOM_SIZE * (col, row).
+# Column 0 holds the start room, columns 1..COLUMNS the generated rooms, then the end room.
+const GRID_ORIGIN = Vector2(-191, -168)
 
 @onready var matrix = []
 
@@ -10,18 +12,17 @@ var keyrooms = []
 var start_room = "res://src/world/special/StartRoom.tscn"
 var end_room = "res://src/world/special/EndRoom.tscn"
 var floor_number
-@export var columns = 6
 
-# Called when the node enters the scene tree for the first time.
+func _enter_tree():
+	Game.register(self)
+
+func _exit_tree():
+	Game.unregister(self)
+
 func _ready():
-	load_coins()
-	if not FileAccess.file_exists("user://floor.save"):
-		print("Aborting, no savefile")
-		return
-
-	var floor_save = FileAccess.open("user://floor.save", FileAccess.READ)
-	floor_number = int(floor_save.get_line())
-	floor_save.close()
+	Game.coins.coins = SaveData.coins
+	Game.coins.update_text()
+	floor_number = SaveData.floor_number
 	
 	load_rooms()
 	load_keyrooms()
@@ -85,23 +86,23 @@ func randomscene(scenes):
 func doors():
 	var start = load(matrix[2][0]).instantiate()
 	add_child(start)
-	start.position = Vector2(0-191, 288*2-168)
-	start.room_id = 60
+	start.position = grid_position(2, 0)
+	start.room_id = Constants.START_ROOM
 	start.doors[0] = false
 	start.doors[2] = false
 	
 	var broom = load("res://src/world/special/BossRoom.tscn").instantiate()
 	add_child(broom)
-	broom.position = Vector2(-264-191, 288*2-168)
-	broom.room_id = 62
+	broom.position = grid_position(2, -1)
+	broom.room_id = Constants.BOSS_ROOM
 	broom.doors[0] = false
 	broom.doors[2] = false
 	broom.doors[3] = false
 
 	var end = load(matrix[2][7]).instantiate()
 	add_child(end)
-	end.position = Vector2(264*7-191, 288*2-168)
-	end.room_id = 61
+	end.position = grid_position(2, 7)
+	end.room_id = Constants.END_ROOM
 	end.doors[0] = false
 	end.doors[1] = false
 	end.doors[2] = false
@@ -110,8 +111,8 @@ func doors():
 		for y in range(1, 7):
 			var room = load(matrix[x][y]).instantiate()
 			add_child(room)
-			room.position = Vector2(264*y-191, 288*x-168)
-			room.room_id = 6 * x + (y - 1)
+			room.position = grid_position(x, y)
+			room.room_id = Constants.COLUMNS * x + (y - 1)
 			
 			if(x == 2):
 				continue
@@ -126,25 +127,10 @@ func doors():
 			elif(y == 6):
 				room.doors[1] = false
 
+func grid_position(row, col):
+	return GRID_ORIGIN + Constants.ROOM_SIZE * Vector2(col, row)
+
 func reset_world():
-	save_coins()
+	SaveData.coins = Game.coins.coins
+	SaveData.save()
 	get_tree().change_scene_to_file("res://src/world/Overworld.tscn")
-
-func load_coins():
-	print("Loading...")
-
-	if not FileAccess.file_exists("user://savefile.save"):
-		print("Aborting, no savefile")
-		return
-
-	var save_file = FileAccess.open("user://savefile.save", FileAccess.READ)
-	get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins = int(save_file.get_line())
-	get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").update_text()
-	save_file.close()
-
-func save_coins():
-	print("Saving...")
-
-	var save_file = FileAccess.open("user://savefile.save", FileAccess.WRITE)
-	save_file.store_line(str(get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins))
-	save_file.close()

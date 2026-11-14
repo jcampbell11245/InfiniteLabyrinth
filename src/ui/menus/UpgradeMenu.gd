@@ -1,52 +1,16 @@
 extends Control
 
-var health_level
-var damage_level
-var time_level
-var looting_level
-
 var selected = 0
 
 var upgrade_cost = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"]
 
-@onready var coins = get_parent().get_parent().get_node("HudLayer/Hud/Coins")
-
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	if not FileAccess.file_exists("user://health.save"):
-		print("Aborting, no savefile")
-		return
-	var hearts_save = FileAccess.open("user://health.save", FileAccess.READ)
-	health_level = int(hearts_save.get_line())
-	hearts_save.close()
-	
-	if not FileAccess.file_exists("user://damage.save"):
-		print("Aborting, no savefile")
-		return
-	var crit_file = FileAccess.open("user://damage.save", FileAccess.READ)
-	damage_level = int(crit_file.get_line())
-	crit_file.close()
-	
-	if not FileAccess.file_exists("user://time.save"):
-		print("Aborting, no savefile")
-		return
-	var time_save = FileAccess.open("user://time.save", FileAccess.READ)
-	time_level = int(time_save.get_line())
-	time_save.close()
-	
-	if not FileAccess.file_exists("user://looting.save"):
-		print("Aborting, no savefile")
-		return
-	var looting_file = FileAccess.open("user://looting.save", FileAccess.READ)
-	looting_level = int(looting_file.get_line())
-	looting_file.close()
-	
 	update_selected()
 	
-	$Meter1.animation = str(health_level + 1)
-	$Meter2.animation = str(damage_level + 1)
-	$Meter3.animation = str(time_level + 1)
-	$Meter4.animation = str(looting_level + 1)
+	$Meter1.animation = str(SaveData.health_level + 1)
+	$Meter2.animation = str(SaveData.damage_level + 1)
+	$Meter3.animation = str(SaveData.time_level + 1)
+	$Meter4.animation = str(SaveData.looting_level + 1)
 
 func _process(delta):
 	if(visible):
@@ -73,73 +37,61 @@ func show_menu():
 	get_tree().paused = new_pause_state
 	visible = new_pause_state
 	
-	$Coins.text = str(upgrade_cost[health_level])
-	$Coins2.text = str(upgrade_cost[damage_level])
-	$Coins3.text = str(upgrade_cost[time_level])
-	$Coins4.text = str(upgrade_cost[looting_level])
+	$Coins.text = str(upgrade_cost[SaveData.health_level])
+	$Coins2.text = str(upgrade_cost[SaveData.damage_level])
+	$Coins3.text = str(upgrade_cost[SaveData.time_level])
+	$Coins4.text = str(upgrade_cost[SaveData.looting_level])
 	
 	selected = 0
 	update_selected()
 
 func buy_health():
-	print(coins.coins)
-	
-	if(health_level != 9 && coins.coins >= upgrade_cost[health_level]):
-		coins.coins -= upgrade_cost[health_level]
+	var coins = Game.coins
+	if(SaveData.health_level != 9 && coins.coins >= upgrade_cost[SaveData.health_level]):
+		coins.coins -= upgrade_cost[SaveData.health_level]
 		coins.update_text()
-		health_level += 1
-		$Meter1.animation = str(health_level + 1)
+		SaveData.health_level += 1
+		$Meter1.animation = str(SaveData.health_level + 1)
 
-		$Coins.text = str(upgrade_cost[health_level])
+		$Coins.text = str(upgrade_cost[SaveData.health_level])
 
-		var save = FileAccess.open("user://health.save", FileAccess.WRITE)
-		save.store_line(str(health_level))
-		save.close()
+		SaveData.save()
 
 func buy_damage():
-	print(coins.coins)
-	
-	if(damage_level != 9 && coins.coins >= upgrade_cost[damage_level]):
-		coins.coins -= upgrade_cost[damage_level]
+	var coins = Game.coins
+	if(SaveData.damage_level != 9 && coins.coins >= upgrade_cost[SaveData.damage_level]):
+		coins.coins -= upgrade_cost[SaveData.damage_level]
 		coins.update_text()
-		damage_level += 1
-		$Meter2.animation = str(damage_level + 1)
+		SaveData.damage_level += 1
+		$Meter2.animation = str(SaveData.damage_level + 1)
 		
-		$Coins2.text = str(upgrade_cost[damage_level])
+		$Coins2.text = str(upgrade_cost[SaveData.damage_level])
 		
-		var save = FileAccess.open("user://damage.save", FileAccess.WRITE)
-		save.store_line(str(damage_level))
-		save.close()
+		SaveData.save()
 
 func buy_time():
-	print(coins.coins)
-	
-	if(time_level != 9 && coins.coins >= upgrade_cost[time_level]):
-		coins.coins -= upgrade_cost[time_level]
+	var coins = Game.coins
+	if(SaveData.time_level != 9 && coins.coins >= upgrade_cost[SaveData.time_level]):
+		coins.coins -= upgrade_cost[SaveData.time_level]
 		coins.update_text()
-		time_level += 1
-		$Meter3.animation = str(time_level + 1)
+		SaveData.time_level += 1
+		$Meter3.animation = str(SaveData.time_level + 1)
 		
-		$Coins3.text = str(upgrade_cost[time_level])
+		$Coins3.text = str(upgrade_cost[SaveData.time_level])
 	
-	var save = FileAccess.open("user://time.save", FileAccess.WRITE)
-	save.store_line(str(time_level))
-	save.close()
+	SaveData.save()
 
 func buy_looting():
-	print(coins.coins)
-	
-	if(looting_level != 9 && coins.coins >= upgrade_cost[looting_level]):
-		coins.coins -= upgrade_cost[looting_level]
+	var coins = Game.coins
+	if(SaveData.looting_level != 9 && coins.coins >= upgrade_cost[SaveData.looting_level]):
+		coins.coins -= upgrade_cost[SaveData.looting_level]
 		coins.update_text()
-		looting_level += 1
-		$Meter4.animation = str(looting_level + 1)
+		SaveData.looting_level += 1
+		$Meter4.animation = str(SaveData.looting_level + 1)
 		
-		$Coins4.text = str(upgrade_cost[looting_level])
+		$Coins4.text = str(upgrade_cost[SaveData.looting_level])
 	
-	var save = FileAccess.open("user://looting.save", FileAccess.WRITE)
-	save.store_line(str(looting_level))
-	save.close()
+	SaveData.save()
 
 func update_selected():
 	if(selected == 0):
@@ -169,10 +121,9 @@ func update_selected():
 
 func continue_button():
 	show_menu()
-	var floor_save = FileAccess.open("user://floor.save", FileAccess.WRITE)
-	floor_save.store_line(str(get_parent().get_parent().get_parent().get_parent().floor_number))
-	floor_save.close()
-	get_parent().get_parent().get_parent().get_parent().reset_world()
+	SaveData.floor_number = Game.overworld.floor_number
+	SaveData.save()
+	Game.overworld.reset_world()
 
 func _on_continue_pressed():
 	continue_button()

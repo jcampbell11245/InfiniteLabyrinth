@@ -7,6 +7,9 @@ A top-down dungeon crawler built with Godot 4.7 (Compatibility renderer).
 Open `project.godot` in Godot 4.7 and press **Run**. The main scene is `src/ui/menus/Boot.tscn`,
 which resets the save data and loads the generated dungeon (`src/world/Overworld.tscn`).
 
+Progress (floor, coins, upgrade levels) lives in `user://save.cfg`, read and written through
+the `SaveData` autoload.
+
 ## Smoke test
 
 `tools/smoke_test.gd` loads every script and scene under `src/`, then boots the game headless
@@ -27,6 +30,8 @@ See [BUGS.md](BUGS.md).
 
 ```
 assets/        sprites, sfx, music, fonts (assets/sfx/unused holds unreferenced duplicates)
+src/autoload/  SaveData (save file) and Game (references to the player, camera and HUD)
+src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script
 src/enemies/   enemy scenes and their shared AI scripts
 src/projectiles/  arrows, fireballs, the boss laser
