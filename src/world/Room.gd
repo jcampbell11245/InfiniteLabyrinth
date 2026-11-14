@@ -187,7 +187,7 @@ func _add_transition_detectors():
 # Redraws the door tiles from the room's state. Safe to call any number of times.
 func _refresh_doors():
 	_draw_closed_doors()
-	if(room_id == Constants.END_ROOM && Game.keys.get_keys() == 3):
+	if(room_id == Constants.END_ROOM && Game.keys == 3):
 		$Tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
 	if(is_cleared()):
 		_draw_unlocked_doors()

@@ -2,8 +2,6 @@
 
 [ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="1"]
 [ext_resource type="Script" uid="uid://bnj0rj324h43v" path="res://src/ui/menus/PauseMenu.gd" id="2"]
-[ext_resource type="Script" uid="uid://crdggi002jxtv" path="res://src/ui/menus/ResumeButton.gd" id="3"]
-[ext_resource type="Script" uid="uid://bg0rlg7s61kns" path="res://src/ui/menus/QuitButton.gd" id="4"]
 
 [sub_resource type="FontFile" id="1"]
 fallbacks = Array[Font]([ExtResource("1")])
@@ -104,10 +102,8 @@ theme_override_constants/separation = 30
 layout_mode = 2
 theme_override_fonts/font = SubResource("2")
 text = "resume"
-script = ExtResource("3")
 
 [node name="Quit" type="Button" parent="Pause/PauseVBox/ButtonVBox" unique_id=1791081582]
 layout_mode = 2
 theme_override_fonts/font = SubResource("3")
 text = "quit"
-script = ExtResource("4")

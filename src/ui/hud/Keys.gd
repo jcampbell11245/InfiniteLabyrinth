@@ -1,15 +1,10 @@
 extends HBoxContainer
 
-var keys = 0
+# Shows Game.keys.
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	$Counter/KeyText.set_text(str(keys))
+	Game.keys_changed.connect(_show)
+	_show(Game.keys)
 
-func add_keys(add):
-	keys += add
+func _show(keys):
 	$Counter/KeyText.set_text(str(keys))
-	Game.keys_changed.emit(keys)
-
-func get_keys():
-	return keys

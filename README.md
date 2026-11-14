@@ -30,8 +30,8 @@ See [BUGS.md](BUGS.md).
 
 ```
 assets/        sprites, sfx, music, fonts (assets/sfx/unused holds unreferenced duplicates)
-src/autoload/  SaveData (save file), Game (references to the player, camera, HUD and rooms)
-               and Music (dungeon and boss themes)
+src/autoload/  SaveData (save file), Game (coins, keys, game-wide signals and references to
+               the player, camera and rooms) and Music (dungeon and boss themes)
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script
 src/enemies/   enemy scenes; Enemy is the base class for MeleeEnemy, RangedEnemy and Boss

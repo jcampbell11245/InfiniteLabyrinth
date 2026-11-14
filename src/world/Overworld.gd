@@ -16,8 +16,6 @@ func _exit_tree():
 	Game.unregister(self)
 
 func _ready():
-	Game.coins.coins = SaveData.coins
-	Game.coins.update_text()
 	floor_number = SaveData.floor_number
 	
 	var rng = RandomNumberGenerator.new()
@@ -103,6 +101,6 @@ func _on_boss_door_closed():
 	Music.play_boss()
 
 func reset_world():
-	SaveData.coins = Game.coins.coins
+	SaveData.coins = Game.coins
 	SaveData.save()
 	get_tree().change_scene_to_file("res://src/world/Overworld.tscn")

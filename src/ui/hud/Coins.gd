@@ -1,14 +1,10 @@
 extends HBoxContainer
 
-var coins = 0
+# Shows Game.coins.
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	$Counter/CoinText.set_text(str(coins))
+	Game.coins_changed.connect(_show)
+	_show(Game.coins)
 
-func add_coins(add):
-	coins += add
-	$Counter/CoinText.set_text(str(coins))
-
-func update_text():
+func _show(coins):
 	$Counter/CoinText.set_text(str(coins))

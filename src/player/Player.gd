@@ -34,7 +34,6 @@ class FrameInput:
 	var roll = false # Rolls trigger on release
 	var melee = false
 	var ranged = false
-	var quit = false
 
 @onready var animator = $AnimatedSprite2D
 @onready var hurtbox = $Hurtbox/CollisionShape2D
@@ -47,6 +46,7 @@ class FrameInput:
 @onready var roll_cooldown = $RollCooldown
 
 var speed = 125 # Pixels/sec
+var health = Constants.BASE_HEALTH # In hearts; halves happen
 var current_room = 0
 var direction = Direction.RIGHT # Direction the player is facing
 
@@ -62,9 +62,7 @@ var in_transition = false
 
 func _ready():
 	z_index = 2
-
-func _process(_delta):
-	Game.timer_text.set_text(str(floor(level_countdown.get_time_left())))
+	health = SaveData.health_level + Constants.BASE_HEALTH
 
 func _physics_process(delta):
 	if(!auto_walking):
@@ -97,7 +95,6 @@ func _read_input():
 	input.roll = Input.is_action_just_released("roll")
 	input.melee = Input.is_action_just_pressed("melee_attack")
 	input.ranged = Input.is_action_just_pressed("ranged_attack")
-	input.quit = Input.is_action_just_released("quit")
 	return input
 
 # Movement, rolling, attacks and arrows. Runs before _update_animation, so the checks
@@ -129,9 +126,6 @@ func _handle_input(input):
 		arrow.direction = direction
 		shoot_cooldown.start(0.5)
 		$Shoot.play()
-
-	if(input.quit):
-		get_tree().quit()
 
 # Each check reads the action again, since earlier lines may have changed the animation.
 func _update_animation(input):
@@ -190,17 +184,15 @@ func take_damage(damage, from_direction, mute):
 		if(!mute):
 			$Hit.play()
 
-		Game.hearts.update_health(-damage)
-		if(Game.hearts.hearts <= 0):
+		health -= damage
+		Game.health_changed.emit(health)
+		if(health <= 0):
 			die()
 
+# GameOver takes it from here.
 func die():
 	speed = 0
-
-	SaveData.floor_number = 1
-	SaveData.save()
-
-	Game.game_over.game_over()
+	Game.player_died.emit()
 	get_tree().paused = true
 
 # Remembers the floor tile nearest the player, if there is one, as the pitfall respawn point.

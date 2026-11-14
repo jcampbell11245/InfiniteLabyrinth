@@ -11,4 +11,4 @@ func _on_area_2d_area_entered(area):
 		$Open.play()
 		open = true
 		$AnimatedSprite2D.animation = "open_" + direction
-		Game.keys.add_keys(1)
+		Game.add_keys(1)

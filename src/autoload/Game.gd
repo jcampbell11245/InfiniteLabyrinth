@@ -1,21 +1,22 @@
 extends Node
 
-# References to the long-lived nodes of the running Overworld, so other scripts don't
-# have to walk the scene tree to find them. Set by Overworld when it enters the tree.
-# Also carries game-wide signals.
+# Game-wide state and signals for the running floor, plus references to the long-lived
+# nodes of the Overworld so other scripts don't have to walk the scene tree to find them.
+# Overworld registers itself when it enters the tree.
 
 signal room_entered(room_id) # The player walked into a room
+signal coins_changed(coins)
 signal keys_changed(keys)
+signal health_changed(health)
+signal player_died
+
+var coins = 0 # Banked into SaveData when the floor ends
+var keys = 0 # Collected this floor; three open the end room
 
 var overworld
 var player
 var camera_rig
 var camera
-var coins
-var keys
-var hearts
-var timer_text
-var game_over
 var upgrade_menu
 
 func register(world):
@@ -23,16 +24,9 @@ func register(world):
 	player = world.get_node("Player")
 	camera_rig = world.get_node("CameraRig")
 	camera = camera_rig.get_node("Camera2D")
-	var hud = camera.get_node("HudLayer/Hud")
-	coins = hud.get_node("Coins")
-	keys = hud.get_node("Keys")
-	hearts = hud.get_node("Hearts")
-	timer_text = hud.get_node("Timer/TimerText")
-	game_over = camera.get_node("GameOver")
 	upgrade_menu = camera.get_node("UpgradeMenu/Control")
-
-func room_by_id(id):
-	return overworld.rooms_by_id.get(id)
+	coins = SaveData.coins
+	keys = 0
 
 func unregister(world):
 	if overworld == world:
@@ -40,9 +34,15 @@ func unregister(world):
 		player = null
 		camera_rig = null
 		camera = null
-		coins = null
-		keys = null
-		hearts = null
-		timer_text = null
-		game_over = null
 		upgrade_menu = null
+
+func room_by_id(id):
+	return overworld.rooms_by_id.get(id)
+
+func add_coins(amount):
+	coins += amount
+	coins_changed.emit(coins)
+
+func add_keys(amount):
+	keys += amount
+	keys_changed.emit(keys)

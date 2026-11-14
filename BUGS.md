@@ -20,9 +20,6 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 - **The floor number never goes up.** Nothing increments `SaveData.floor_number`, so every
   floor is floor 1 and the coin multiplier never grows. Dying sets it to 1, then the upgrade
   menu's Continue writes the Overworld's old `floor_number` back over it.
-- **Time and Looting upgrades save even when the purchase fails.** In `UpgradeMenu.gd`,
-  `buy_time()` / `buy_looting()` call `SaveData.save()` outside the `if` that checks coins
-  (`buy_health` / `buy_damage` don't). Harmless since nothing changed, but inconsistent.
 - **Respawning plays a missing animation.** After a pitfall, `Player._on_respawn_cooldown_timeout`
   calls `take_damage(0.5, "none", true)`, which plays `damage_none`. That animation doesn't
   exist, so Godot logs an error and the sprite keeps its previous animation.

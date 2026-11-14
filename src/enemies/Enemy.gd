@@ -58,7 +58,7 @@ func take_damage(from_direction):
 	_after_hit()
 
 func die():
-	Game.coins.add_coins(coin_reward * Game.overworld.floor_number + _looting_bonus())
+	Game.add_coins(coin_reward * Game.overworld.floor_number + _looting_bonus())
 	died.emit(self)
 	queue_free()
 

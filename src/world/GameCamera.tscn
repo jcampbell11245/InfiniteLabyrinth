@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://src/ui/menus/UpgradeMenu.tscn" id="7"]
 [ext_resource type="Texture2D" uid="uid://da7k6f763hgna" path="res://assets/sprites/hud/game_over.png" id="8"]
 [ext_resource type="Script" uid="uid://lby1gnmktu23" path="res://src/ui/menus/GameOver.gd" id="9"]
+[ext_resource type="Script" path="res://src/ui/hud/LevelTimer.gd" id="level_timer"]
 [ext_resource type="AudioStream" uid="uid://egis46cfyppe" path="res://assets/sfx/game_over1.wav" id="10"]
 [ext_resource type="Script" uid="uid://n3igqi2urmex" path="res://src/world/ShakeCamera.gd" id="11"]
 
@@ -261,6 +262,7 @@ position = Vector2(350, -4.8)
 offset_right = 40.0
 offset_bottom = 40.0
 theme_override_fonts/normal_font = SubResource("1")
+script = ExtResource("level_timer")
 
 [node name="Hearts" parent="HudLayer/Hud" unique_id=434210798 instance=ExtResource("2")]
 layout_mode = 2
@@ -320,9 +322,6 @@ sprite_frames = SubResource("28")
 frame = 2
 script = ExtResource("9")
 
-[node name="Timer" type="Timer" parent="GameOver" unique_id=114403501]
-
 [node name="GameOverSFX" type="AudioStreamPlayer" parent="GameOver" unique_id=236099973]
 stream = ExtResource("10")
 
-[connection signal="timeout" from="GameOver/Timer" to="GameOver" method="_on_timer_timeout"]

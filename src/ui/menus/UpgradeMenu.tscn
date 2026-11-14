@@ -405,14 +405,3 @@ offset_bottom = 338.167
 scale = Vector2(1.5, 1.5)
 theme_override_fonts/font = SubResource("3")
 text = "Continue"
-
-[connection signal="mouse_entered" from="Control/Plus1Control" to="Control" method="_on_plus_1_control_mouse_entered"]
-[connection signal="pressed" from="Control/Plus1Control/Button" to="Control" method="_on_button_pressed"]
-[connection signal="mouse_entered" from="Control/Plus2Control" to="Control" method="_on_plus_2_control_mouse_entered"]
-[connection signal="pressed" from="Control/Plus2Control/Button2" to="Control" method="_on_button_2_pressed"]
-[connection signal="mouse_entered" from="Control/Plus3Control" to="Control" method="_on_plus_3_control_mouse_entered"]
-[connection signal="pressed" from="Control/Plus3Control/Button3" to="Control" method="_on_button_3_pressed"]
-[connection signal="mouse_entered" from="Control/Plus4Control" to="Control" method="_on_plus_4_control_mouse_entered"]
-[connection signal="pressed" from="Control/Plus4Control/Button4" to="Control" method="_on_button_4_pressed"]
-[connection signal="mouse_entered" from="Control/Continue" to="Control" method="_on_continue_mouse_entered"]
-[connection signal="pressed" from="Control/Continue" to="Control" method="_on_continue_pressed"]

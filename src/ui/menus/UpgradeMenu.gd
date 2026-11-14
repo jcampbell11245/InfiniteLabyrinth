@@ -1,161 +1,77 @@
 extends Control
 
+# Between floors (and after dying) the player spends coins on four upgrades, each with
+# MAX_LEVEL levels, then continues to a new floor. Rows are picked with up/down or the
+# mouse; the row after the upgrades is Continue.
+
+const MAX_LEVEL = 9
+const COSTS = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"] # By current level
+
+# One row per upgrade: its SaveData field and the nodes that show it.
+const UPGRADES = [
+	{level = "health_level", meter = "Meter1", cost = "Coins", option = "Plus1Control", plus = "Plus1Control/Plus1", button = "Plus1Control/Button"},
+	{level = "damage_level", meter = "Meter2", cost = "Coins2", option = "Plus2Control", plus = "Plus2Control/Plus2", button = "Plus2Control/Button2"},
+	{level = "time_level", meter = "Meter3", cost = "Coins3", option = "Plus3Control", plus = "Plus3Control/Plus3", button = "Plus3Control/Button3"},
+	{level = "looting_level", meter = "Meter4", cost = "Coins4", option = "Plus4Control", plus = "Plus4Control/Plus4", button = "Plus4Control/Button4"},
+]
+const CONTINUE = 4 # Row index of the Continue button
+
 var selected = 0
 
-var upgrade_cost = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"]
-
 func _ready():
-	update_selected()
-	
-	$Meter1.animation = str(SaveData.health_level + 1)
-	$Meter2.animation = str(SaveData.damage_level + 1)
-	$Meter3.animation = str(SaveData.time_level + 1)
-	$Meter4.animation = str(SaveData.looting_level + 1)
+	for i in range(UPGRADES.size()):
+		var upgrade = UPGRADES[i]
+		get_node(upgrade.option).mouse_entered.connect(_select.bind(i))
+		get_node(upgrade.button).pressed.connect(buy.bind(i))
+		get_node(upgrade.meter).animation = str(_level(i) + 1)
+	$Continue.mouse_entered.connect(_select.bind(CONTINUE))
+	$Continue.pressed.connect(continue_to_next_floor)
+	_select(0)
 
-func _process(delta):
-	if(visible):
-		if(Input.is_action_just_released("up") && selected != 0):
-			selected -= 1
-			update_selected()
-		if(Input.is_action_just_released("down") && selected != 4):
-			selected += 1
-			update_selected()
-		if(Input.is_action_just_released("select")):
-			if(selected == 0):
-				buy_health()
-			if(selected == 1):
-				buy_damage()
-			if(selected == 2):
-				buy_time()
-			if(selected == 3):
-				buy_looting()
-			if(selected == 4):
-				continue_button()
+func _process(_delta):
+	if(!visible):
+		return
+	if(Input.is_action_just_released("up") && selected != 0):
+		_select(selected - 1)
+	if(Input.is_action_just_released("down") && selected != CONTINUE):
+		_select(selected + 1)
+	if(Input.is_action_just_released("select")):
+		if(selected == CONTINUE):
+			continue_to_next_floor()
+		else:
+			buy(selected)
 
+# Toggles the menu along with the pause state.
 func show_menu():
 	var new_pause_state = !get_tree().paused
 	get_tree().paused = new_pause_state
 	visible = new_pause_state
-	
-	$Coins.text = str(upgrade_cost[SaveData.health_level])
-	$Coins2.text = str(upgrade_cost[SaveData.damage_level])
-	$Coins3.text = str(upgrade_cost[SaveData.time_level])
-	$Coins4.text = str(upgrade_cost[SaveData.looting_level])
-	
-	selected = 0
-	update_selected()
+	for i in range(UPGRADES.size()):
+		get_node(UPGRADES[i].cost).text = str(COSTS[_level(i)])
+	_select(0)
 
-func buy_health():
-	var coins = Game.coins
-	if(SaveData.health_level != 9 && coins.coins >= upgrade_cost[SaveData.health_level]):
-		coins.coins -= upgrade_cost[SaveData.health_level]
-		coins.update_text()
-		SaveData.health_level += 1
-		$Meter1.animation = str(SaveData.health_level + 1)
-
-		$Coins.text = str(upgrade_cost[SaveData.health_level])
-
-		SaveData.save()
-
-func buy_damage():
-	var coins = Game.coins
-	if(SaveData.damage_level != 9 && coins.coins >= upgrade_cost[SaveData.damage_level]):
-		coins.coins -= upgrade_cost[SaveData.damage_level]
-		coins.update_text()
-		SaveData.damage_level += 1
-		$Meter2.animation = str(SaveData.damage_level + 1)
-		
-		$Coins2.text = str(upgrade_cost[SaveData.damage_level])
-		
-		SaveData.save()
-
-func buy_time():
-	var coins = Game.coins
-	if(SaveData.time_level != 9 && coins.coins >= upgrade_cost[SaveData.time_level]):
-		coins.coins -= upgrade_cost[SaveData.time_level]
-		coins.update_text()
-		SaveData.time_level += 1
-		$Meter3.animation = str(SaveData.time_level + 1)
-		
-		$Coins3.text = str(upgrade_cost[SaveData.time_level])
-	
+func buy(index):
+	var level = _level(index)
+	if(level == MAX_LEVEL || Game.coins < COSTS[level]):
+		return
+	Game.add_coins(-COSTS[level])
+	SaveData.set(UPGRADES[index].level, level + 1)
+	get_node(UPGRADES[index].meter).animation = str(level + 2)
+	get_node(UPGRADES[index].cost).text = str(COSTS[level + 1])
 	SaveData.save()
 
-func buy_looting():
-	var coins = Game.coins
-	if(SaveData.looting_level != 9 && coins.coins >= upgrade_cost[SaveData.looting_level]):
-		coins.coins -= upgrade_cost[SaveData.looting_level]
-		coins.update_text()
-		SaveData.looting_level += 1
-		$Meter4.animation = str(SaveData.looting_level + 1)
-		
-		$Coins4.text = str(upgrade_cost[SaveData.looting_level])
-	
-	SaveData.save()
-
-func update_selected():
-	if(selected == 0):
-		$Plus1Control/Plus1.animation = "selected"
-	else:
-		$Plus1Control/Plus1.animation = "default"
-	
-	if(selected == 1):
-		$Plus2Control/Plus2.animation = "selected"
-	else:
-		$Plus2Control/Plus2.animation = "default"
-	
-	if(selected == 2):
-		$Plus3Control/Plus3.animation = "selected"
-	else:
-		$Plus3Control/Plus3.animation = "default"
-	
-	if(selected == 3):
-		$Plus4Control/Plus4.animation = "selected"
-	else:
-		$Plus4Control/Plus4.animation = "default"
-	
-	if(selected == 4):
-		$ContinueOutline.show()
-	else:
-		$ContinueOutline.hide()
-
-func continue_button():
+func continue_to_next_floor():
 	show_menu()
 	SaveData.floor_number = Game.overworld.floor_number
 	SaveData.save()
 	Game.overworld.reset_world()
 
-func _on_continue_pressed():
-	continue_button()
+func _level(index):
+	return SaveData.get(UPGRADES[index].level)
 
-func _on_button_pressed():
-	buy_health()
-
-func _on_button_2_pressed():
-	buy_damage()
-
-func _on_button_3_pressed():
-	buy_time()
-
-func _on_button_4_pressed():
-	buy_looting()
-
-func _on_plus_1_control_mouse_entered():
-	selected = 0
-	update_selected()
-
-func _on_plus_2_control_mouse_entered():
-	selected = 1
-	update_selected()
-
-func _on_plus_3_control_mouse_entered():
-	selected = 2
-	update_selected()
-
-func _on_plus_4_control_mouse_entered():
-	selected = 3
-	update_selected()
-
-func _on_continue_mouse_entered():
-	selected = 4
-	update_selected()
+func _select(index):
+	selected = index
+	for i in range(UPGRADES.size()):
+		var plus = get_node(UPGRADES[i].plus)
+		plus.animation = "selected" if i == selected else "default"
+	$ContinueOutline.visible = selected == CONTINUE
