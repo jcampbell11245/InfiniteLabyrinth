@@ -5,7 +5,7 @@ A top-down dungeon crawler built with Godot 4.7 (Compatibility renderer).
 ## Running
 
 Open `project.godot` in Godot 4.7 and press **Run**. The main scene is `src/ui/menus/Boot.tscn`,
-which resets the save data and loads the generated dungeon (`src/world/Overworld.tscn`).
+which starts a new run on floor 1 (coins and upgrades carry over) and loads the generated dungeon (`src/world/Overworld.tscn`).
 
 Progress (floor, coins, upgrade levels) lives in `user://save.cfg`, read and written through
 the `SaveData` autoload.

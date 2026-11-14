@@ -5,28 +5,14 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 
 ## Gameplay
 
-- **Pitfalls deactivate the wrong room.** `Player._pitfall_room()` returns Overworld's child
-  `current_room + 3`, but generated rooms start at child index 6. Enemies in the room you fell in
-  keep attacking while you're invisible; a room three ids earlier gets paused instead. In the start
-  and end rooms (ids 60/61) the index is out of range, so the fall handler errors out before it
-  starts the respawn timer and the player stays invisible. Neither room has pits today.
-- **Respawn points are wrong in the start, end and boss rooms.** `Player._update_respawn_point`
-  works out the room's position with the grid formula, which gives nonsense for ids 60–62.
-  None of those rooms has pits today, so it never shows.
-- **Player knockback does nothing.** `Player.knockback` is never set (the line in `take_damage`
-  was commented out in Godot 3), so the knockback step in `_physics_process` is inert.
-- **Upgrades never persist between launches.** `Boot.gd` calls `SaveData.reset()` every time
-  the game starts, wiping floor, coins and all four upgrades.
-- **The floor number never goes up.** Nothing increments `SaveData.floor_number`, so every
-  floor is floor 1 and the coin multiplier never grows. Dying sets it to 1, then the upgrade
-  menu's Continue writes the Overworld's old `floor_number` back over it.
 - **Respawning plays a missing animation.** After a pitfall, `Player._on_respawn_cooldown_timeout`
   calls `take_damage(0.5, "none", true)`, which plays `damage_none`. That animation doesn't
   exist, so Godot logs an error and the sprite keeps its previous animation.
 - **Being knocked into a pit replays the hit on respawn (GitHub #26).** The issue reports the
   damage animation and hit sound playing when the player respawns after an enemy knocks them into
   a pit. The muted `take_damage` call above explains the animation but not the sound, so there may
-  be a second cause in the knocked-into-a-pit case. Not reproduced yet.
+  be a second cause in the knocked-into-a-pit case. Not reproduced yet. Knockback works again
+  now, so hits can push the player into pits; worth checking this one next.
 - **The hit sound plays on after death (GitHub #24).** `Player.die()` pauses the tree, which
   pauses the `Hit` AudioStreamPlayer mid-sound instead of stopping it. When `GameOver` unpauses
   before the upgrade menu, the rest of the sound plays.
@@ -51,10 +37,10 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 - **The camera isn't centred the same way in every room.** Measured from each room's position,
   `CameraRig` aims at (341, 302) in the start and end rooms, (325, 302) in the boss room and
   (338, 301) in grid column 0, drifting further in later columns (next entry).
-- **Camera and respawn drift 3px per column.** Rooms are placed 264px apart
-  (`Constants.ROOM_SIZE.x`), but `CameraRig`, `Player._update_respawn_point` and `Player.start_transition`
-  step 261px (`Constants.LEGACY_ROOM_WIDTH`). By the last column the camera is 15px off-centre
-  and respawn points are 15px off their tiles.
+- **Camera drifts 3px per column.** Rooms are placed 264px apart (`Constants.ROOM_SIZE.x`),
+  but `CameraRig` and `Player.start_transition` step 261px (`Constants.LEGACY_ROOM_WIDTH`). By the
+  last column the camera is 15px off-centre. `start_transition` also uses the grid formula for the
+  end and boss rooms, so the direction it picks there can be wrong.
 
 ## Rooms (`Room.gd`)
 

@@ -15,13 +15,15 @@ const ACTION_NAMES: Array[String] = ["idle", "walk", "roll", "slash", "shoot", "
 # Frame on which a one-shot action hands back to idle.
 const ACTION_END_FRAME := {Action.SLASH: 7, Action.SHOOT: 1, Action.DAMAGE: 4}
 
-# Respawn points are the centres of a room's 9x9 floor tiles, which start at cell (9, 9).
-const FLOOR_ORIGIN := Vector2(304, 46) # Centre of room 0's top-left floor tile
-const FLOOR_TILES := 9
+# Respawn points sit on a room's 9x9 floor, cells (9, 9) to (17, 17) of its Tiles map.
 const FLOOR_FIRST_CELL := Vector2i(9, 9)
-const TILE_SIZE := 24
+const FLOOR_LAST_CELL := Vector2i(17, 17)
+const RESPAWN_PROBE := Vector2(0, 14) # Point below the player's origin that picks the tile
+const RESPAWN_OFFSET := Vector2(0, -5) # Player's origin relative to the respawn tile's centre
 
 # How long enemies stay frozen after the player starts walking through a door, by direction.
+const KNOCKBACK_SPEED := 150.0 # Pixels/sec the player is pushed when hit; decays at 300/sec
+
 const TRANSITION_PAUSE := {Direction.RIGHT: 1.0, Direction.LEFT: 1.0, Direction.DOWN: 1.2, Direction.UP: 1.15}
 
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
@@ -183,6 +185,7 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 		animator.modulate.a = 0.5
 
 		_play(Action.DAMAGE, from_direction)
+		knockback = Direction.to_vector(from_direction) * KNOCKBACK_SPEED
 
 		if !mute:
 			$Hit.play()
@@ -200,32 +203,12 @@ func die() -> void:
 
 # Remembers the floor tile nearest the player, if there is one, as the pitfall respawn point.
 func _update_respawn_point() -> void:
-	var tiles: TileMap = Game.room_by_id(current_room).get_node("Tiles")
-	# BUG(see BUGS.md): grid formula, also used for the special rooms (ids 60-62).
-	var room_offset := Constants.legacy_room_offset(current_room)
-	var first_tile := FLOOR_ORIGIN + room_offset
-	var cell := Vector2i(_nearest_floor_index(first_tile.x, position.x), _nearest_floor_index(first_tile.y, position.y))
-
-	if tiles.get_cell_source_id(0, FLOOR_FIRST_CELL + cell) != -1:
-		last_tile = first_tile + Vector2(cell) * TILE_SIZE + Vector2(0, 9)
-
-# Index (0..FLOOR_TILES-1) of the floor tile centre nearest `value` along one axis.
-func _nearest_floor_index(first_centre: float, value: float) -> int:
-	for i in FLOOR_TILES:
-		var centre := first_centre + i * TILE_SIZE
-		if centre > value:
-			if i == 0 || value - (centre - TILE_SIZE) > centre - value:
-				return i
-			return i - 1
-	return FLOOR_TILES - 1
-
-# The room whose enemies pause while the player is down a pitfall.
-# BUG(see BUGS.md): meant to be the current room, but keeps the old lookup by Overworld
-# child index (current_room + 3), which lands three rooms early.
-func _pitfall_room() -> Room:
-	if current_room == Constants.BOSS_ROOM:
-		return Game.room_by_id(Constants.BOSS_ROOM)
-	return get_parent().get_child(current_room + 3)
+	var room := Game.room_by_id(current_room)
+	var tiles: TileMap = room.get_node("Tiles")
+	var local := position - room.position + RESPAWN_PROBE
+	var cell := tiles.local_to_map(local).clamp(FLOOR_FIRST_CELL, FLOOR_LAST_CELL)
+	if tiles.get_cell_source_id(0, cell) != -1:
+		last_tile = room.position + tiles.map_to_local(cell) + RESPAWN_OFFSET
 
 func _on_level_countdown_timeout() -> void:
 	die()
@@ -244,12 +227,12 @@ func _on_feet_box_body_entered(_body: Node2D) -> void:
 	if respawn_cooldown.time_left == 0:
 		$Fall.play()
 		visible = false
-		_pitfall_room().player_active = false
+		Game.room_by_id(current_room).player_active = false
 		respawn_cooldown.start(1.1)
 
 func _on_respawn_cooldown_timeout() -> void:
 	visible = true
-	_pitfall_room().player_active = true
+	Game.room_by_id(current_room).player_active = true
 	position = last_tile
 	take_damage(0.5, "none", true)
 

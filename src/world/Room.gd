@@ -274,6 +274,7 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	_refresh_doors()
 
 func _on_next_floor_area_entered(_area: Area2D) -> void:
+	SaveData.floor_number = Game.overworld.floor_number + 1
 	Game.upgrade_menu.show_menu()
 
 func _on_boss_door_animation_finished() -> void:

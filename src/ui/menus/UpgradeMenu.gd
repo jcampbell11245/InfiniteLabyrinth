@@ -63,7 +63,6 @@ func buy(index: int) -> void:
 
 func continue_to_next_floor() -> void:
 	show_menu()
-	SaveData.floor_number = Game.overworld.floor_number
 	SaveData.save()
 	Game.overworld.reset_world()
 

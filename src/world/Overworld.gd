@@ -44,8 +44,6 @@ func reset_world() -> void:
 
 # Instances the rooms of a WorldGenerator layout, plus the boss room left of the start
 # room, and closes every door that leads off the grid.
-# Rooms must be added in this order (start, boss, end, then the grid row by row):
-# BUG(see BUGS.md) Player._pitfall_room still looks rooms up by child index.
 func _build(layout: Array[PackedStringArray]) -> void:
 	var middle := WorldGenerator.MIDDLE_ROW
 	var last_col := WorldGenerator.LAYOUT_COLUMNS - 1
