@@ -4,8 +4,8 @@ A top-down dungeon crawler built with Godot 4.7 (Compatibility renderer).
 
 ## Running
 
-Open `project.godot` in Godot 4.7 and press **Run**. The main scene is `src/Starting.tscn`,
-which resets the save data and loads the generated dungeon (`src/scenes/Overworld.tscn`).
+Open `project.godot` in Godot 4.7 and press **Run**. The main scene is `src/ui/menus/Boot.tscn`,
+which resets the save data and loads the generated dungeon (`src/world/Overworld.tscn`).
 
 ## Smoke test
 
@@ -22,3 +22,21 @@ Run it after every change, then playtest.
 ## Known bugs
 
 See [BUGS.md](BUGS.md).
+
+## Layout
+
+```
+assets/        sprites, sfx, music, fonts (assets/sfx/unused holds unreferenced duplicates)
+src/player/    player scene and script
+src/enemies/   enemy scenes and their shared AI scripts
+src/projectiles/  arrows, fireballs, the boss laser
+src/objects/   chests, switches, room detection and the fade-out void
+src/world/     dungeon generation (Overworld), room script (Level), camera
+  rooms/       random rooms (every .tscn here is picked up automatically)
+  keyrooms/    rooms holding the three keys
+  special/     start, end and boss rooms
+  tiles/       TileMap scenes used by rooms
+src/ui/        HUD widgets and menus (Boot is the main scene)
+src/audio/     enemy death sound players
+tools/         headless smoke test
+```

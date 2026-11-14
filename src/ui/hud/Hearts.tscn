@@ -1,0 +1,154 @@
+[gd_scene format=3 uid="uid://qgv1void0sts"]
+
+[ext_resource type="Texture2D" uid="uid://cl6yvpx7h818x" path="res://assets/sprites/hud/heart_full_1.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://bcdw2e3gh3kr8" path="res://assets/sprites/hud/heart_empty.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://xyku48nr8ojj" path="res://assets/sprites/hud/heart_half.png" id="3"]
+[ext_resource type="Script" uid="uid://clqv57okk5pk2" path="res://src/ui/hud/Hearts.gd" id="4"]
+[ext_resource type="Texture2D" uid="uid://dkjicj3idosj5" path="res://assets/sprites/hud/heart_full_2.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://s7awcmaf7qvu" path="res://assets/sprites/hud/heart_full_4.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://cgps46fggqjk2" path="res://assets/sprites/hud/heart_full_3.png" id="7"]
+
+[sub_resource type="SpriteFrames" id="5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2")
+}],
+"loop": 1,
+"name": &"empty",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6")
+}],
+"loop": 1,
+"name": &"full",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3")
+}],
+"loop": 1,
+"name": &"half",
+"speed": 5.0
+}]
+
+[node name="Hearts" type="HBoxContainer" unique_id=998739481]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("4")
+
+[node name="Heart1" type="AnimatedSprite2D" parent="." unique_id=1182794964]
+autoplay = "full"
+visible = false
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart2" type="AnimatedSprite2D" parent="." unique_id=28976117]
+autoplay = "full"
+visible = false
+position = Vector2(12, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart3" type="AnimatedSprite2D" parent="." unique_id=997559926]
+autoplay = "full"
+visible = false
+position = Vector2(24, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart4" type="AnimatedSprite2D" parent="." unique_id=803136938]
+autoplay = "full"
+visible = false
+position = Vector2(36, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart5" type="AnimatedSprite2D" parent="." unique_id=990739134]
+autoplay = "full"
+visible = false
+position = Vector2(48, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart6" type="AnimatedSprite2D" parent="." unique_id=795595382]
+autoplay = "full"
+visible = false
+position = Vector2(60, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart7" type="AnimatedSprite2D" parent="." unique_id=1083106915]
+autoplay = "full"
+visible = false
+position = Vector2(72, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart8" type="AnimatedSprite2D" parent="." unique_id=398216306]
+autoplay = "full"
+visible = false
+position = Vector2(84, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart9" type="AnimatedSprite2D" parent="." unique_id=1750466635]
+autoplay = "full"
+visible = false
+position = Vector2(96, 0.027)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart10" type="AnimatedSprite2D" parent="." unique_id=5064596]
+autoplay = "full"
+visible = false
+position = Vector2(108, 0.027)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart11" type="AnimatedSprite2D" parent="." unique_id=1523647799]
+autoplay = "full"
+visible = false
+position = Vector2(118, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart12" type="AnimatedSprite2D" parent="." unique_id=1100372046]
+autoplay = "full"
+visible = false
+position = Vector2(130, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart13" type="AnimatedSprite2D" parent="." unique_id=57947302]
+autoplay = "full"
+visible = false
+position = Vector2(142, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart14" type="AnimatedSprite2D" parent="." unique_id=1470673470]
+autoplay = "full"
+visible = false
+position = Vector2(154, 0)
+sprite_frames = SubResource("5")
+animation = &"full"
+
+[node name="Heart15" type="AnimatedSprite2D" parent="." unique_id=597942633]
+autoplay = "full"
+visible = false
+position = Vector2(166, 0)
+sprite_frames = SubResource("5")
+animation = &"full"

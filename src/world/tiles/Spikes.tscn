@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://bmrmlg50fui2o"]
+
+[ext_resource type="Texture2D" uid="uid://bmg266jwo05kq" path="res://assets/sprites/tileset/stalagmites/single_stalagmite.png" id="1"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ypuvp"]
+texture = ExtResource("1")
+texture_region_size = Vector2i(24, 24)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="1"]
+tile_size = Vector2i(24, 24)
+sources/0 = SubResource("TileSetAtlasSource_ypuvp")
+
+[node name="Spikes" type="TileMap" unique_id=1023770909]
+z_index = 1
+position = Vector2(12.5, 11)
+tile_set = SubResource("1")
+format = 2

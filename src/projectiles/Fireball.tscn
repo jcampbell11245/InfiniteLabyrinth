@@ -1,0 +1,105 @@
+[gd_scene format=3 uid="uid://bofcray5ghji7"]
+
+[ext_resource type="Texture2D" uid="uid://dgogjjpy2oh48" path="res://assets/sprites/projectiles/big_fireball.png" id="1"]
+[ext_resource type="Script" uid="uid://drbdu2erags4n" path="res://src/projectiles/Projectile.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://cka16mgpxp3xr" path="res://assets/sprites/projectiles/wizard_fireball_hit.png" id="3"]
+
+[sub_resource type="AtlasTexture" id="7"]
+atlas = ExtResource("3")
+region = Rect2(0, 0, 14, 14)
+
+[sub_resource type="AtlasTexture" id="8"]
+atlas = ExtResource("3")
+region = Rect2(14, 0, 14, 14)
+
+[sub_resource type="AtlasTexture" id="9"]
+atlas = ExtResource("3")
+region = Rect2(0, 14, 14, 14)
+
+[sub_resource type="AtlasTexture" id="10"]
+atlas = ExtResource("3")
+region = Rect2(14, 14, 14, 14)
+
+[sub_resource type="AtlasTexture" id="1"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 7, 7)
+
+[sub_resource type="AtlasTexture" id="2"]
+atlas = ExtResource("1")
+region = Rect2(7, 0, 7, 7)
+
+[sub_resource type="AtlasTexture" id="3"]
+atlas = ExtResource("1")
+region = Rect2(0, 7, 7, 7)
+
+[sub_resource type="SpriteFrames" id="4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("7")
+}, {
+"duration": 1.0,
+"texture": SubResource("8")
+}, {
+"duration": 1.0,
+"texture": SubResource("9")
+}, {
+"duration": 1.0,
+"texture": SubResource("10")
+}],
+"loop": 0,
+"name": &"break",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("1")
+}, {
+"duration": 1.0,
+"texture": SubResource("2")
+}, {
+"duration": 1.0,
+"texture": SubResource("3")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 12.0
+}]
+
+[sub_resource type="RectangleShape2D" id="5"]
+size = Vector2(7, 7)
+
+[sub_resource type="RectangleShape2D" id="6"]
+size = Vector2(7, 7)
+
+[node name="Fireball" type="CharacterBody2D" unique_id=1377795173]
+collision_layer = 16
+collision_mask = 256
+motion_mode = 1
+script = ExtResource("2")
+speed = 150.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1583105955]
+autoplay = "default"
+sprite_frames = SubResource("4")
+frame = 1
+
+[node name="ProjectileHitbox" type="Area2D" parent="." unique_id=942260687]
+collision_layer = 16
+collision_mask = 260
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ProjectileHitbox" unique_id=896603710]
+position = Vector2(0.5, 0.5)
+shape = SubResource("5")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1520919193]
+position = Vector2(0.5, 0.5)
+shape = SubResource("6")
+disabled = true
+
+[node name="ExistenceTime" type="Timer" parent="." unique_id=1072858582]
+
+[connection signal="animation_finished" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_animation_finished"]
+[connection signal="area_entered" from="ProjectileHitbox" to="." method="_on_projectile_hitbox_area_entered"]
+[connection signal="body_entered" from="ProjectileHitbox" to="." method="_on_projectile_hitbox_body_entered"]
+[connection signal="timeout" from="ExistenceTime" to="." method="_on_existence_time_timeout"]

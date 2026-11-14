@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://dlo67tfori3s4"]
-
-[ext_resource type="AudioStream" uid="uid://cxn641adholgt" path="res://sfx proto1/gobdeath1.wav" id="1"]
-
-[node name="GoblinDeath" type="AudioStreamPlayer" unique_id=1404293692]
-stream = ExtResource("1")

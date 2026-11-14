@@ -5,13 +5,13 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
 
 ## Gameplay
 
-- **Pitfalls deactivate the wrong room.** `Player2D._on_FeetBox_body_entered` and
-  `_on_RespawnCooldown_timeout` toggle `player_active` on `get_parent().get_child(current_room + 3)`,
+- **Pitfalls deactivate the wrong room.** `Player._on_feet_box_body_entered` and
+  `_on_respawn_cooldown_timeout` toggle `player_active` on `get_parent().get_child(current_room + 3)`,
   but generated rooms start at child index 6 (`set_last_tile` uses `+ 6`). Enemies in the room
   you fell in keep attacking while you're invisible; an unrelated room gets paused instead.
-- **Upgrades never persist between launches.** `Starting.gd` overwrites every save file
+- **Upgrades never persist between launches.** `Boot.gd` overwrites every save file
   (floor, coins, all four upgrades) every time the game starts.
-- **Time and Looting upgrades save even when the purchase fails.** In `Control.gd`,
+- **Time and Looting upgrades save even when the purchase fails.** In `UpgradeMenu.gd`,
   `buy_time()` / `buy_looting()` write their save file outside the `if` that checks coins
   (`buy_health` / `buy_damage` don't). Harmless today since the value is unchanged, but inconsistent.
 - **Coin drop formula has precedence bugs.** `MeleeEnemy.die()` uses
@@ -37,7 +37,7 @@ so these are left as-is and fixed in a separate bugfix pass afterwards.
   their Godot 3 tilesets were dropped during the tile-data restore (mostly `Top` id 5,
   `Pitfalls` ids 1–2, `Tiles` ids 41–43). Godot 3 drew nothing for these either, but it's worth
   checking that no room relied on them for collision.
-- **Per-room collision overrides were lost.** In Godot 3, B1's `TopWalls` used collision layer 257
+- **Per-room collision overrides were lost.** In Godot 3, BossRoom's (formerly B1) `TopWalls` used collision layer 257
   and R1/R32 changed `Top`'s mask on the node. Godot 4 keeps collision on the shared TileSet, so
   those rooms now use the default tileset layers.
 
