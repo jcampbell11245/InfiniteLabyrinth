@@ -5,11 +5,10 @@ var max_hearts = 5
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	var hearts_save = File.new()
-	if not hearts_save.file_exists("user://health.save"):
+	if not FileAccess.file_exists("user://health.save"):
 		print("Aborting, no savefile")
 		return
-	hearts_save.open("user://health.save", File.READ)
+	var hearts_save = FileAccess.open("user://health.save", FileAccess.READ)
 	max_hearts = int(hearts_save.get_line()) + 5
 	hearts_save.close()
 	

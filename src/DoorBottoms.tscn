@@ -1,75 +1,107 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene format=3 uid="uid://dlo73keb1n3lu"]
 
-[ext_resource path="res://sprites/tileset/cave_door_left_middle_below.png" type="Texture2D" id=1]
-[ext_resource path="res://sprites/tileset/cave_door_right_middle_below.png" type="Texture2D" id=2]
-[ext_resource path="res://sprites/tileset/cave_door_top_below.png" type="Texture2D" id=3]
+[ext_resource type="Texture2D" uid="uid://eoyt0qvfieu0" path="res://sprites/tileset/cave_door_left_middle_below.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://b7f388fa6c86x" path="res://sprites/tileset/cave_door_right_middle_below.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://bp5fuo441mo4c" path="res://sprites/tileset/cave_door_top_below.png" id="3"]
 
-[sub_resource type="ConvexPolygonShape2D" id=1]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2tb5g"]
+texture = ExtResource("1")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[sub_resource type="ConvexPolygonShape2D" id=3]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_y783p"]
+texture = ExtResource("2")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[sub_resource type="TileSet" id=2]
-0/name = "cave_door_left_middle_below.png 0"
-0/texture = ExtResource( 1 )
-0/tex_offset = Vector2( 0, 0 )
-0/modulate = Color( 1, 1, 1, 1 )
-0/region = Rect2( 0, 0, 24, 24 )
-0/tile_mode = 0
-0/occluder_offset = Vector2( 0, 0 )
-0/navigation_offset = Vector2( 0, 0 )
-0/shape_offset = Vector2( 0, 0 )
-0/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-0/shape = SubResource( 1 )
-0/shape_one_way = false
-0/shape_one_way_margin = 1.0
-0/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 1 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-0/z_index = 0
-1/name = "cave_door_right_middle_below.png 1"
-1/texture = ExtResource( 2 )
-1/tex_offset = Vector2( 0, 0 )
-1/modulate = Color( 1, 1, 1, 1 )
-1/region = Rect2( 0, 0, 24, 24 )
-1/tile_mode = 0
-1/occluder_offset = Vector2( 0, 0 )
-1/navigation_offset = Vector2( 0, 0 )
-1/shape_offset = Vector2( 0, 0 )
-1/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-1/shape = SubResource( 3 )
-1/shape_one_way = false
-1/shape_one_way_margin = 1.0
-1/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 3 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-1/z_index = 0
-2/name = "cave_door_top_below.png 2"
-2/texture = ExtResource( 3 )
-2/tex_offset = Vector2( 0, 0 )
-2/modulate = Color( 1, 1, 1, 1 )
-2/region = Rect2( 0, 0, 24, 24 )
-2/tile_mode = 0
-2/occluder_offset = Vector2( 0, 0 )
-2/navigation_offset = Vector2( 0, 0 )
-2/shape_offset = Vector2( 0, 0 )
-2/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-2/shape_one_way = false
-2/shape_one_way_margin = 0.0
-2/shapes = [  ]
-2/z_index = 0
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_lja3o"]
+texture = ExtResource("3")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[node name="DoorBottoms" type="TileMap"]
-tile_set = SubResource( 2 )
-cell_size = Vector2( 24, 24 )
-format = 1
-tile_data = PackedInt32Array( 458765, 2, 0, 786440, 0, 0, 786450, 1, 0 )
+[sub_resource type="TileSet" id="2"]
+tile_size = Vector2i(24, 24)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_2tb5g")
+sources/1 = SubResource("TileSetAtlasSource_y783p")
+sources/2 = SubResource("TileSetAtlasSource_lja3o")
+
+[node name="DoorBottoms" type="TileMap" unique_id=665427372]
+tile_set = SubResource("2")
+format = 2

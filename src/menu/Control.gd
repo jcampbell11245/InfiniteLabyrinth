@@ -13,44 +13,40 @@ var upgrade_cost = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"]
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	var hearts_save = File.new()
-	if not hearts_save.file_exists("user://health.save"):
+	if not FileAccess.file_exists("user://health.save"):
 		print("Aborting, no savefile")
 		return
-	hearts_save.open("user://health.save", File.READ)
+	var hearts_save = FileAccess.open("user://health.save", FileAccess.READ)
 	health_level = int(hearts_save.get_line())
 	hearts_save.close()
 	
-	var crit_file = File.new()
-	if not crit_file.file_exists("user://damage.save"):
+	if not FileAccess.file_exists("user://damage.save"):
 		print("Aborting, no savefile")
 		return
-	crit_file.open("user://damage.save", File.READ)
+	var crit_file = FileAccess.open("user://damage.save", FileAccess.READ)
 	damage_level = int(crit_file.get_line())
 	crit_file.close()
 	
-	var time_save = File.new()
-	if not time_save.file_exists("user://time.save"):
+	if not FileAccess.file_exists("user://time.save"):
 		print("Aborting, no savefile")
 		return
-	time_save.open("user://time.save", File.READ)
+	var time_save = FileAccess.open("user://time.save", FileAccess.READ)
 	time_level = int(time_save.get_line())
 	time_save.close()
 	
-	var looting_file = File.new()
-	if not looting_file.file_exists("user://looting.save"):
+	if not FileAccess.file_exists("user://looting.save"):
 		print("Aborting, no savefile")
 		return
-	looting_file.open("user://looting.save", File.READ)
+	var looting_file = FileAccess.open("user://looting.save", FileAccess.READ)
 	looting_level = int(looting_file.get_line())
 	looting_file.close()
 	
 	update_selected()
 	
-	$Meter1.animation = String(health_level + 1)
-	$Meter2.animation = String(damage_level + 1)
-	$Meter3.animation = String(time_level + 1)
-	$Meter4.animation = String(looting_level + 1)
+	$Meter1.animation = str(health_level + 1)
+	$Meter2.animation = str(damage_level + 1)
+	$Meter3.animation = str(time_level + 1)
+	$Meter4.animation = str(looting_level + 1)
 
 func _process(delta):
 	if(visible):
@@ -77,15 +73,15 @@ func show_menu():
 	get_tree().paused = new_pause_state
 	visible = new_pause_state
 	
-	#$Description.text = "Health:  Level " + String(health_level + 1)
-	#$Description2.text = "Damage:  Level " + String(damage_level + 1)
-	#$Description3.text = "Time:  Level " + String(time_level + 1)
-	#$Description4.text = "Looting:  Level " + String(looting_level + 1)
+	#$Description.text = "Health:  Level " + str(health_level + 1)
+	#$Description2.text = "Damage:  Level " + str(damage_level + 1)
+	#$Description3.text = "Time:  Level " + str(time_level + 1)
+	#$Description4.text = "Looting:  Level " + str(looting_level + 1)
 	
-	$Coins.text = String(upgrade_cost[health_level])
-	$Coins2.text = String(upgrade_cost[damage_level])
-	$Coins3.text = String(upgrade_cost[time_level])
-	$Coins4.text = String(upgrade_cost[looting_level])
+	$Coins.text = str(upgrade_cost[health_level])
+	$Coins2.text = str(upgrade_cost[damage_level])
+	$Coins3.text = str(upgrade_cost[time_level])
+	$Coins4.text = str(upgrade_cost[looting_level])
 	
 	selected = 0
 	update_selected()
@@ -97,13 +93,12 @@ func buy_health():
 		coins.coins -= upgrade_cost[health_level]
 		coins.update_text()
 		health_level += 1
-		$Meter1.animation = String(health_level + 1)
+		$Meter1.animation = str(health_level + 1)
 
-		$Coins.text = String(upgrade_cost[health_level])
+		$Coins.text = str(upgrade_cost[health_level])
 
-		var save = File.new()
-		save.open("user://health.save", File.WRITE)
-		save.store_line(String(health_level))
+		var save = FileAccess.open("user://health.save", FileAccess.WRITE)
+		save.store_line(str(health_level))
 		save.close()
 
 func buy_damage():
@@ -113,13 +108,12 @@ func buy_damage():
 		coins.coins -= upgrade_cost[damage_level]
 		coins.update_text()
 		damage_level += 1
-		$Meter2.animation = String(damage_level + 1)
+		$Meter2.animation = str(damage_level + 1)
 		
-		$Coins2.text = String(upgrade_cost[damage_level])
+		$Coins2.text = str(upgrade_cost[damage_level])
 		
-		var save = File.new()
-		save.open("user://damage.save", File.WRITE)
-		save.store_line(String(damage_level))
+		var save = FileAccess.open("user://damage.save", FileAccess.WRITE)
+		save.store_line(str(damage_level))
 		save.close()
 
 func buy_time():
@@ -129,13 +123,12 @@ func buy_time():
 		coins.coins -= upgrade_cost[time_level]
 		coins.update_text()
 		time_level += 1
-		$Meter3.animation = String(time_level + 1)
+		$Meter3.animation = str(time_level + 1)
 		
-		$Coins3.text = String(upgrade_cost[time_level])
+		$Coins3.text = str(upgrade_cost[time_level])
 	
-	var save = File.new()
-	save.open("user://time.save", File.WRITE)
-	save.store_line(String(time_level))
+	var save = FileAccess.open("user://time.save", FileAccess.WRITE)
+	save.store_line(str(time_level))
 	save.close()
 
 func buy_looting():
@@ -145,13 +138,12 @@ func buy_looting():
 		coins.coins -= upgrade_cost[looting_level]
 		coins.update_text()
 		looting_level += 1
-		$Meter4.animation = String(looting_level + 1)
+		$Meter4.animation = str(looting_level + 1)
 		
-		$Coins4.text = String(upgrade_cost[looting_level])
+		$Coins4.text = str(upgrade_cost[looting_level])
 	
-	var save = File.new()
-	save.open("user://looting.save", File.WRITE)
-	save.store_line(String(looting_level))
+	var save = FileAccess.open("user://looting.save", FileAccess.WRITE)
+	save.store_line(str(looting_level))
 	save.close()
 
 func update_selected():
@@ -182,9 +174,8 @@ func update_selected():
 
 func continue_button():
 	show_menu()
-	var floor_save = File.new()
-	floor_save.open("user://floor.save", File.WRITE)
-	floor_save.store_line(String(get_parent().get_parent().get_parent().get_parent().floor_number))
+	var floor_save = FileAccess.open("user://floor.save", FileAccess.WRITE)
+	floor_save.store_line(str(get_parent().get_parent().get_parent().get_parent().floor_number))
 	floor_save.close()
 	get_parent().get_parent().get_parent().get_parent().reset_world()
 

@@ -15,8 +15,7 @@ func game_over():
 	visible = true
 	$Timer.start(6.5)
 	
-	var floor_save = File.new()
-	floor_save.open("user://floor.save", File.WRITE)
+	var floor_save = FileAccess.open("user://floor.save", FileAccess.WRITE)
 	floor_save.store_line("1")
 	floor_save.close()
 	

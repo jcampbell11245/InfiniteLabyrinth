@@ -26,9 +26,7 @@ func _physics_process(delta):
 		y = (player.current_room / get_parent().columns) * 288 + 133
 	
 	if (position.distance_to(Vector2(x, y)) > 10):
-		var velocity = position.direction_to(Vector2(x, y)) * 700
-		set_velocity(velocity)
+		velocity = position.direction_to(Vector2(x, y)) * 700
 		move_and_slide()
-		velocity = velocity
 	elif(position.distance_to(Vector2(x, y)) != 0):
 		position = Vector2(x, y)

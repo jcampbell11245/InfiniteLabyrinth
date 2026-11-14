@@ -25,11 +25,10 @@ const Fireball = preload("res://src/entities/Laser.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	var crit_file = File.new()
-	if not crit_file.file_exists("user://damage.save"):
+	if not FileAccess.file_exists("user://damage.save"):
 		print("Aborting, no savefile")
 		return
-	crit_file.open("user://damage.save", File.READ)
+	var crit_file = FileAccess.open("user://damage.save", FileAccess.READ)
 	critical_chance = int(crit_file.get_line())
 	crit_file.close()
 

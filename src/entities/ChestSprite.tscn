@@ -1,90 +1,125 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene format=3 uid="uid://cd2imt3b8f8k2"]
 
-[ext_resource path="res://sprites/chests/chest_opening_down.png" type="Texture2D" id=1]
-[ext_resource path="res://sprites/chests/chest_closed_up.png" type="Texture2D" id=2]
-[ext_resource path="res://sprites/chests/chest_closed_right.png" type="Texture2D" id=3]
-[ext_resource path="res://sprites/chests/chest_opening_right.png" type="Texture2D" id=4]
-[ext_resource path="res://sprites/chests/chest_opening_up.png" type="Texture2D" id=5]
-[ext_resource path="res://sprites/chests/chest_closed_down.png" type="Texture2D" id=6]
-[ext_resource path="res://sprites/chests/chest_closed_left.png" type="Texture2D" id=7]
-[ext_resource path="res://sprites/chests/chest_opening_left.png" type="Texture2D" id=8]
+[ext_resource type="Texture2D" uid="uid://bxej6qo6t17qt" path="res://sprites/chests/chest_opening_down.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://cra3f5o42orui" path="res://sprites/chests/chest_closed_up.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://d2ohuy0rsr4qr" path="res://sprites/chests/chest_closed_right.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://qnxkj86idsfv" path="res://sprites/chests/chest_opening_right.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://cialhbt50wk0s" path="res://sprites/chests/chest_opening_up.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://65p0xthp4w8r" path="res://sprites/chests/chest_closed_down.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://utt51cewbf15" path="res://sprites/chests/chest_closed_left.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://bpd536qswwrs7" path="res://sprites/chests/chest_opening_left.png" id="8"]
 
-[sub_resource type="AtlasTexture" id=1]
-atlas = ExtResource( 8 )
-region = Rect2( 0, 0, 24, 36 )
+[sub_resource type="AtlasTexture" id="5"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 24, 24)
 
-[sub_resource type="AtlasTexture" id=2]
-atlas = ExtResource( 8 )
-region = Rect2( 24, 0, 24, 36 )
+[sub_resource type="AtlasTexture" id="6"]
+atlas = ExtResource("1")
+region = Rect2(0, 24, 24, 24)
 
-[sub_resource type="AtlasTexture" id=3]
-atlas = ExtResource( 5 )
-region = Rect2( 0, 0, 24, 24 )
+[sub_resource type="AtlasTexture" id="1"]
+atlas = ExtResource("8")
+region = Rect2(0, 0, 24, 36)
 
-[sub_resource type="AtlasTexture" id=4]
-atlas = ExtResource( 5 )
-region = Rect2( 0, 24, 24, 24 )
+[sub_resource type="AtlasTexture" id="2"]
+atlas = ExtResource("8")
+region = Rect2(24, 0, 24, 36)
 
-[sub_resource type="AtlasTexture" id=5]
-atlas = ExtResource( 1 )
-region = Rect2( 0, 0, 24, 24 )
+[sub_resource type="AtlasTexture" id="7"]
+atlas = ExtResource("4")
+region = Rect2(0, 0, 24, 36)
 
-[sub_resource type="AtlasTexture" id=6]
-atlas = ExtResource( 1 )
-region = Rect2( 0, 24, 24, 24 )
+[sub_resource type="AtlasTexture" id="8"]
+atlas = ExtResource("4")
+region = Rect2(24, 0, 24, 36)
 
-[sub_resource type="AtlasTexture" id=7]
-atlas = ExtResource( 4 )
-region = Rect2( 0, 0, 24, 36 )
+[sub_resource type="AtlasTexture" id="3"]
+atlas = ExtResource("5")
+region = Rect2(0, 0, 24, 24)
 
-[sub_resource type="AtlasTexture" id=8]
-atlas = ExtResource( 4 )
-region = Rect2( 24, 0, 24, 36 )
+[sub_resource type="AtlasTexture" id="4"]
+atlas = ExtResource("5")
+region = Rect2(0, 24, 24, 24)
 
-[sub_resource type="SpriteFrames" id=9]
-animations = [ {
-"frames": [ ExtResource( 3 ) ],
-"loop": true,
-"name": "closed_right",
+[sub_resource type="SpriteFrames" id="9"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6")
+}],
+"loop": 1,
+"name": &"closed_down",
 "speed": 5.0
 }, {
-"frames": [ SubResource( 1 ), SubResource( 2 ) ],
-"loop": false,
-"name": "open_left",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7")
+}],
+"loop": 1,
+"name": &"closed_left",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 6 ) ],
-"loop": true,
-"name": "closed_down",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3")
+}],
+"loop": 1,
+"name": &"closed_right",
 "speed": 5.0
 }, {
-"frames": [ SubResource( 3 ), SubResource( 4 ) ],
-"loop": false,
-"name": "open_up",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2")
+}],
+"loop": 1,
+"name": &"closed_up",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 2 ) ],
-"loop": true,
-"name": "closed_up",
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("5")
+}, {
+"duration": 1.0,
+"texture": SubResource("6")
+}],
+"loop": 0,
+"name": &"open_down",
 "speed": 5.0
 }, {
-"frames": [ SubResource( 5 ), SubResource( 6 ) ],
-"loop": false,
-"name": "open_down",
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("1")
+}, {
+"duration": 1.0,
+"texture": SubResource("2")
+}],
+"loop": 0,
+"name": &"open_left",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 7 ) ],
-"loop": true,
-"name": "closed_left",
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("7")
+}, {
+"duration": 1.0,
+"texture": SubResource("8")
+}],
+"loop": 0,
+"name": &"open_right",
 "speed": 5.0
 }, {
-"frames": [ SubResource( 7 ), SubResource( 8 ) ],
-"loop": false,
-"name": "open_right",
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("3")
+}, {
+"duration": 1.0,
+"texture": SubResource("4")
+}],
+"loop": 0,
+"name": &"open_up",
 "speed": 5.0
-} ]
+}]
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D"]
-frames = SubResource( 9 )
-animation = "closed_down"
-playing = true
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=641948036]
+sprite_frames = SubResource("9")
+animation = &"closed_down"

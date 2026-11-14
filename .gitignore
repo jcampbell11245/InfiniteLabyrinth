@@ -1,2 +1,5 @@
 
 src/entities/Player2D.gd
+
+# Godot 4 cache
+.godot/

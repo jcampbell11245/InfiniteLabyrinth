@@ -8,33 +8,27 @@ extends Node2D
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	var floor_save = File.new()
-	floor_save.open("user://floor.save", File.WRITE)
+	var floor_save = FileAccess.open("user://floor.save", FileAccess.WRITE)
 	floor_save.store_line("1")
 	floor_save.close()
 	
-	var coins_save = File.new()
-	coins_save.open("user://savefile.save", File.WRITE)
+	var coins_save = FileAccess.open("user://savefile.save", FileAccess.WRITE)
 	coins_save.store_line("0")
 	coins_save.close()
 	
-	var damage_save = File.new()
-	damage_save.open("user://damage.save", File.WRITE)
+	var damage_save = FileAccess.open("user://damage.save", FileAccess.WRITE)
 	damage_save.store_line("0")
 	damage_save.close()
 	
-	var health_save = File.new()
-	health_save.open("user://health.save", File.WRITE)
+	var health_save = FileAccess.open("user://health.save", FileAccess.WRITE)
 	health_save.store_line("0")
 	health_save.close()
 	
-	var looting_save = File.new()
-	looting_save.open("user://looting.save", File.WRITE)
+	var looting_save = FileAccess.open("user://looting.save", FileAccess.WRITE)
 	looting_save.store_line("0")
 	looting_save.close()
 	
-	var time_save = File.new()
-	time_save.open("user://time.save", File.WRITE)
+	var time_save = FileAccess.open("user://time.save", FileAccess.WRITE)
 	time_save.store_line("0")
 	time_save.close()
 	

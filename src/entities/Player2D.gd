@@ -19,7 +19,6 @@ var current_room = 0
 
 var direction = "right" #Direction the player is facing
 
-var velocity = Vector2.ZERO #Player's velocity vector
 var knockback = Vector2.ZERO #Player's knockback vector
 var last_tile = Vector2.ZERO
 var last_velocity = Vector2.ZERO
@@ -47,15 +46,15 @@ func _physics_process(delta):
 		animate()
 		collision()
 	if(visible):
-		set_velocity(velocity)
 		move_and_slide()
-		velocity = velocity
-	
-	#Knockback
+
+	#Knockback (moved separately so it doesn't overwrite the movement velocity)
+	var move_velocity = velocity
 	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
-	set_velocity(knockback)
+	velocity = knockback
 	move_and_slide()
 	knockback = velocity
+	velocity = move_velocity
 	
 	set_last_tile()
 	
@@ -164,19 +163,19 @@ func animate():
 #Updates the collision boxes
 func collision():
 	if(direction == "right"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.shape.set_size(Vector2(23, 48))
 		hurtbox.position = Vector2(-4.5, 0)
 		$HitboxPivot.rotation_degrees = 0
 	elif(direction == "left"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.shape.set_size(Vector2(23, 48))
 		hurtbox.position = Vector2(4.5, 0)
 		$HitboxPivot.rotation_degrees = 180
 	elif(direction == "down"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.shape.set_size(Vector2(23, 48))
 		hurtbox.position = Vector2(0, 0)
 		$HitboxPivot.rotation_degrees = 90
 	elif(direction == "up"):
-		hurtbox.shape.set_extents(Vector2(11.5, 24))
+		hurtbox.shape.set_size(Vector2(23, 48))
 		hurtbox.position = Vector2(0, 0)
 		$HitboxPivot.rotation_degrees = 270
 	
@@ -211,14 +210,13 @@ func take_damage(damage, direction, mute):
 
 #Method called every frame to update the visual timer
 func timer():
-	level_countdown_text.set_bbcode(str(floor(level_countdown.get_time_left())))
+	level_countdown_text.set_text(str(floor(level_countdown.get_time_left())))
 
 #Method called when the player dies
 func die():
 	speed = 0
 	
-	var floor_save = File.new()
-	floor_save.open("user://floor.save", File.WRITE)
+	var floor_save = FileAccess.open("user://floor.save", FileAccess.WRITE)
 	floor_save.store_line("1")
 	floor_save.close()
 	
@@ -302,9 +300,7 @@ func _on_RoomDetector_area_entered(area):
 	
 	transitioning = false
 	animator.animation = "idle_" + direction
-	.set_velocity(Vector2(0, 0))
-	.move_and_slide()
-	get_parent().get_node("CameraHolder").velocity
+	get_parent().get_node("CameraHolder").velocity = Vector2.ZERO
 
 func _on_BossMusic_finished():
 	if(!$BossMusicLoop.playing):
@@ -321,7 +317,6 @@ func _on_RoomDetectionBox_body_entered(body):
 		animator.animation = "idle_" + direction
 		last_velocity = velocity
 		velocity = Vector2.ZERO
-		set_velocity(velocity)
 		move_and_slide()
 	
 	if(!transitioning):
@@ -334,7 +329,6 @@ func transition():
 		
 		if(velocity == Vector2.ZERO):
 			velocity = last_velocity
-			set_velocity(velocity)
 			move_and_slide()
 		if(current_room == 60 || (abs(position.x - ((current_room % get_parent().columns) * 261 + 391.5)) > abs(position.y - ((current_room / get_parent().columns) * 288 + 144)))):
 			if(velocity.x > 0):
@@ -351,7 +345,6 @@ func transition():
 				direction = "up"
 				velocity = Vector2(0, -speed)
 		animator.animation = "walk_" + direction
-		set_velocity(velocity)
 		move_and_slide()
 		
 		if(direction == "right" || direction == "left"):
@@ -377,10 +370,8 @@ func _on_BossDoorClose_finished():
 	$BossMusic.play()
 
 func _on_Rolling_timeout():
-	$Tween.interpolate_property(self, "speed",
-		speed, speed / 2, 0.25,
-		Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
-	$Tween.start()
+	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
+		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	animator.animation = "idle_" + direction
 	set_collision_mask_value(1, true)
 	$HitboxPivot/Hitbox/CollisionShape2D.disabled = false

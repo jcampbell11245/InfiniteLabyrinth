@@ -1,24 +1,36 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene format=3 uid="uid://c1qu2h864o75b"]
 
-[ext_resource path="res://sprites/tileset/into void/edgecornerbr.png" type="Texture2D" id=1]
+[ext_resource type="Texture2D" uid="uid://dx6qqf87esg1y" path="res://sprites/tileset/into void/edgecornerbr.png" id="1"]
 
-[sub_resource type="TileSet" id=1]
-0/name = "edgecornerbr.png 0"
-0/texture = ExtResource( 1 )
-0/tex_offset = Vector2( 0, 0 )
-0/modulate = Color( 1, 1, 1, 1 )
-0/region = Rect2( 0, 0, 24, 24 )
-0/tile_mode = 0
-0/occluder_offset = Vector2( 0, 0 )
-0/navigation_offset = Vector2( 0, 0 )
-0/shape_offset = Vector2( 0, 0 )
-0/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-0/shape_one_way = false
-0/shape_one_way_margin = 0.0
-0/shapes = [  ]
-0/z_index = 0
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_eqh5a"]
+texture = ExtResource("1")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[node name="PitfallTransitions" type="TileMap"]
-tile_set = SubResource( 1 )
-cell_size = Vector2( 24, 24 )
-format = 1
+[sub_resource type="TileSet" id="1"]
+tile_size = Vector2i(24, 24)
+sources/0 = SubResource("TileSetAtlasSource_eqh5a")
+
+[node name="PitfallTransitions" type="TileMap" unique_id=1190586521]
+tile_set = SubResource("1")
+format = 2

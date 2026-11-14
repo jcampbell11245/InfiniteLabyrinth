@@ -1,767 +1,1269 @@
-[gd_scene load_steps=57 format=2]
+[gd_scene format=3 uid="uid://dju8et87uc380"]
 
-[ext_resource path="res://sprites/tileset/into_the_voooiid.png" type="Texture2D" id=1]
-[ext_resource path="res://sprites/tileset/cave_wall_top_top.png" type="Texture2D" id=2]
-[ext_resource path="res://sprites/tileset/cave_wall_left_corner_top.png" type="Texture2D" id=3]
-[ext_resource path="res://sprites/tileset/cave_wall_left_corner_bottom.png" type="Texture2D" id=4]
-[ext_resource path="res://sprites/tileset/cave_wall_right_corner_bottom.png" type="Texture2D" id=5]
-[ext_resource path="res://sprites/tileset/cave_wall_bottom_top.png" type="Texture2D" id=6]
-[ext_resource path="res://sprites/tileset/cave_wall_right.png" type="Texture2D" id=7]
-[ext_resource path="res://sprites/tileset/cave_wall_left.png" type="Texture2D" id=8]
-[ext_resource path="res://sprites/tileset/cave_wall_right_corner_top.png" type="Texture2D" id=9]
-[ext_resource path="res://sprites/tileset/cave_floor_2.png" type="Texture2D" id=10]
-[ext_resource path="res://sprites/tileset/cave_door_bottom_locked.png" type="Texture2D" id=11]
-[ext_resource path="res://sprites/tileset/cave_outside_border.png" type="Texture2D" id=12]
-[ext_resource path="res://sprites/tileset/pitfall.png" type="Texture2D" id=13]
-[ext_resource path="res://sprites/tileset/lever_left.png" type="Texture2D" id=14]
-[ext_resource path="res://sprites/tileset/cave_door_bottom.png" type="Texture2D" id=15]
-[ext_resource path="res://sprites/tileset/cave_floor.png" type="Texture2D" id=16]
-[ext_resource path="res://sprites/tileset/lever_right.png" type="Texture2D" id=17]
-[ext_resource path="res://sprites/tileset/cave_door_top.png" type="Texture2D" id=18]
-[ext_resource path="res://sprites/tileset/enemy_lock.png" type="Texture2D" id=19]
-[ext_resource path="res://sprites/tileset/switch_lock.png" type="Texture2D" id=20]
-[ext_resource path="res://sprites/tileset/cave_door_bottom_l.png" type="Texture2D" id=21]
-[ext_resource path="res://sprites/tileset/cave_door_bottom_e.png" type="Texture2D" id=22]
-[ext_resource path="res://sprites/tileset/cave_door_right_lock_e.png" type="Texture2D" id=23]
-[ext_resource path="res://sprites/tileset/cave_door_left_lock_l.png" type="Texture2D" id=24]
-[ext_resource path="res://sprites/tileset/cave_door_left_lock_e.png" type="Texture2D" id=25]
-[ext_resource path="res://sprites/tileset/cave_door_right_lock_l.png" type="Texture2D" id=26]
-[ext_resource path="res://sprites/tileset/cave_floor_tside1.png" type="Texture2D" id=27]
-[ext_resource path="res://sprites/tileset/cave_floor_lside1.png" type="Texture2D" id=28]
-[ext_resource path="res://sprites/tileset/cave_floor_bside1.png" type="Texture2D" id=29]
-[ext_resource path="res://sprites/tileset/cave_floor_bl.png" type="Texture2D" id=30]
-[ext_resource path="res://sprites/tileset/cave_floor_bside2.png" type="Texture2D" id=31]
-[ext_resource path="res://sprites/tileset/cave_floor_mid1.png" type="Texture2D" id=32]
-[ext_resource path="res://sprites/tileset/cave_floor_mid3.png" type="Texture2D" id=33]
-[ext_resource path="res://sprites/tileset/cave_floor_tl.png" type="Texture2D" id=34]
-[ext_resource path="res://sprites/tileset/cave_floor_lside2.png" type="Texture2D" id=35]
-[ext_resource path="res://sprites/tileset/cave_floor_mid2.png" type="Texture2D" id=36]
-[ext_resource path="res://sprites/tileset/cave_floor_tr.png" type="Texture2D" id=37]
-[ext_resource path="res://sprites/tileset/cave_floor_tside2.png" type="Texture2D" id=38]
-[ext_resource path="res://sprites/tileset/cave_floor_br.png" type="Texture2D" id=39]
-[ext_resource path="res://sprites/tileset/cave_floor_rside1.png" type="Texture2D" id=40]
-[ext_resource path="res://sprites/tileset/cave_floor_rside2.png" type="Texture2D" id=41]
+[ext_resource type="Texture2D" uid="uid://b3ktlrcc1ag26" path="res://sprites/tileset/into_the_voooiid.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://r58368jtghay" path="res://sprites/tileset/cave_wall_top_top.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://icb0v3skkdac" path="res://sprites/tileset/cave_wall_left_corner_top.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://cv4amv668sdpc" path="res://sprites/tileset/cave_wall_left_corner_bottom.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://ca6uct0yl2sjt" path="res://sprites/tileset/cave_wall_right_corner_bottom.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://ks4kvmkd3062" path="res://sprites/tileset/cave_wall_bottom_top.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://hf4oi8pw8275" path="res://sprites/tileset/cave_wall_right.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://hf2bancunslh" path="res://sprites/tileset/cave_wall_left.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://3n1jijbqr3pe" path="res://sprites/tileset/cave_wall_right_corner_top.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://c2chw5y5lv616" path="res://sprites/tileset/cave_floor_2.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://bixibdtiyvse5" path="res://sprites/tileset/cave_door_bottom_locked.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://cfys057j4p2rr" path="res://sprites/tileset/cave_outside_border.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://ddtulqvo5ig4b" path="res://sprites/tileset/pitfall.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://bnl3bx6lf2863" path="res://sprites/tileset/lever_left.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://bp0xu4t2pamlh" path="res://sprites/tileset/cave_door_bottom.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://7dobx7qysvdt" path="res://sprites/tileset/cave_floor.png" id="16"]
+[ext_resource type="Texture2D" uid="uid://dggyajrcniwps" path="res://sprites/tileset/lever_right.png" id="17"]
+[ext_resource type="Texture2D" uid="uid://ct2yv4jvjbvwb" path="res://sprites/tileset/cave_door_top.png" id="18"]
+[ext_resource type="Texture2D" uid="uid://ycdnlhryx0xn" path="res://sprites/tileset/enemy_lock.png" id="19"]
+[ext_resource type="Texture2D" uid="uid://o5chtaxmgp63" path="res://sprites/tileset/switch_lock.png" id="20"]
+[ext_resource type="Texture2D" uid="uid://bprl8bgsqorn5" path="res://sprites/tileset/cave_door_bottom_l.png" id="21"]
+[ext_resource type="Texture2D" uid="uid://dkkbn08wb038c" path="res://sprites/tileset/cave_door_bottom_e.png" id="22"]
+[ext_resource type="Texture2D" uid="uid://c53jylsrghddg" path="res://sprites/tileset/cave_door_right_lock_e.png" id="23"]
+[ext_resource type="Texture2D" uid="uid://22djpdhr287o" path="res://sprites/tileset/cave_door_left_lock_l.png" id="24"]
+[ext_resource type="Texture2D" uid="uid://bdji0v3j4rkl2" path="res://sprites/tileset/cave_door_left_lock_e.png" id="25"]
+[ext_resource type="Texture2D" uid="uid://dd4b1wdq4211m" path="res://sprites/tileset/cave_door_right_lock_l.png" id="26"]
+[ext_resource type="Texture2D" uid="uid://x238gsb83hps" path="res://sprites/tileset/cave_floor_tside1.png" id="27"]
+[ext_resource type="Texture2D" uid="uid://n7isvrhwh3iy" path="res://sprites/tileset/cave_floor_lside1.png" id="28"]
+[ext_resource type="Texture2D" uid="uid://kwmljuig4dhw" path="res://sprites/tileset/cave_floor_bside1.png" id="29"]
+[ext_resource type="Texture2D" uid="uid://b142ycyxxepv1" path="res://sprites/tileset/cave_floor_bl.png" id="30"]
+[ext_resource type="Texture2D" uid="uid://cdghle3npj4j4" path="res://sprites/tileset/cave_floor_bside2.png" id="31"]
+[ext_resource type="Texture2D" uid="uid://b3p6uanvao85r" path="res://sprites/tileset/cave_floor_mid1.png" id="32"]
+[ext_resource type="Texture2D" uid="uid://dhf1b2w6kgl8f" path="res://sprites/tileset/cave_floor_mid3.png" id="33"]
+[ext_resource type="Texture2D" uid="uid://o1vk0mp2lx00" path="res://sprites/tileset/cave_floor_tl.png" id="34"]
+[ext_resource type="Texture2D" uid="uid://dxa15w4py58px" path="res://sprites/tileset/cave_floor_lside2.png" id="35"]
+[ext_resource type="Texture2D" uid="uid://bmur4e1moyry7" path="res://sprites/tileset/cave_floor_mid2.png" id="36"]
+[ext_resource type="Texture2D" uid="uid://cp11wvafhyjmm" path="res://sprites/tileset/cave_floor_tr.png" id="37"]
+[ext_resource type="Texture2D" uid="uid://cxcgrs7e80b5y" path="res://sprites/tileset/cave_floor_tside2.png" id="38"]
+[ext_resource type="Texture2D" uid="uid://bw5enifvh343o" path="res://sprites/tileset/cave_floor_br.png" id="39"]
+[ext_resource type="Texture2D" uid="uid://bcdbvjnldl4w7" path="res://sprites/tileset/cave_floor_rside1.png" id="40"]
+[ext_resource type="Texture2D" uid="uid://cs662oa25wyaa" path="res://sprites/tileset/cave_floor_rside2.png" id="41"]
 
-[sub_resource type="ConvexPolygonShape2D" id=1]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0.0779495, 24, 0.0779495 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_xsfcp"]
+texture = ExtResource("16")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=2]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_766d2"]
+texture = ExtResource("15")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/z_index = -20
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/z_index = -20
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/z_index = -20
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/z_index = -20
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/z_index = -20
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/z_index = -20
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/z_index = -20
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/z_index = -20
 
-[sub_resource type="ConvexPolygonShape2D" id=3]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vm6oc"]
+texture = ExtResource("7")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/z_index = 20
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -11.92205, 12, -11.92205)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/z_index = 20
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -11.92205, -12, -11.92205)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/z_index = 20
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 11.92205, 12, 11.92205)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/z_index = 20
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 11.92205, -12, 11.92205)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/z_index = 20
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -11.92205, -12, -11.92205, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/z_index = 20
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 11.92205, -12, 11.92205, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/z_index = 20
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -11.92205, 12, -11.92205, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/z_index = 20
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 11.92205, 12, 11.92205, -12)
 
-[sub_resource type="ConvexPolygonShape2D" id=4]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_v5nmf"]
+texture = ExtResource("5")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=5]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f7oul"]
+texture = ExtResource("9")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=6]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gswvt"]
+texture = ExtResource("2")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[sub_resource type="ConvexPolygonShape2D" id=7]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_mqfrb"]
+texture = ExtResource("14")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=8]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_t3qj4"]
+texture = ExtResource("17")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=9]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_lj261"]
+texture = ExtResource("13")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=10]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_l85l8"]
+texture = ExtResource("1")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=11]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ta58t"]
+texture = ExtResource("20")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[sub_resource type="ConvexPolygonShape2D" id=12]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0.046936 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_x8nqy"]
+texture = ExtResource("19")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[sub_resource type="ConvexPolygonShape2D" id=13]
-points = PackedVector2Array( 24, 24, 0.0779419, 24, 0, 0.0779495, 23.9162, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ltcch"]
+texture = ExtResource("11")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
 
-[sub_resource type="ConvexPolygonShape2D" id=14]
-points = PackedVector2Array( 24, 24, 0, 24, 0, 0, 24, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1vv74"]
+texture = ExtResource("22")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[sub_resource type="TileSet" id=15]
-0/name = "cave_floor.png 0"
-0/texture = ExtResource( 16 )
-0/tex_offset = Vector2( 0, 0 )
-0/modulate = Color( 1, 1, 1, 1 )
-0/region = Rect2( 0, 0, 24, 24 )
-0/tile_mode = 0
-0/occluder_offset = Vector2( 0, 0 )
-0/navigation_offset = Vector2( 0, 0 )
-0/shape_offset = Vector2( 0, 0 )
-0/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-0/shape_one_way = false
-0/shape_one_way_margin = 0.0
-0/shapes = [  ]
-0/z_index = 0
-1/name = "cave_door_bottom.png 1"
-1/texture = ExtResource( 15 )
-1/tex_offset = Vector2( 0, 0 )
-1/modulate = Color( 1, 1, 1, 1 )
-1/region = Rect2( 0, 0, 24, 24 )
-1/tile_mode = 0
-1/occluder_offset = Vector2( 0, 0 )
-1/navigation_offset = Vector2( 0, 0 )
-1/shape_offset = Vector2( 0, 0 )
-1/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-1/shape_one_way = false
-1/shape_one_way_margin = 0.0
-1/shapes = [  ]
-1/z_index = -20
-2/name = "cave_door_bottom_locked.png 2"
-2/texture = ExtResource( 11 )
-2/tex_offset = Vector2( 0, 0 )
-2/modulate = Color( 1, 1, 1, 1 )
-2/region = Rect2( 0, 0, 24, 24 )
-2/tile_mode = 0
-2/occluder_offset = Vector2( 0, 0 )
-2/navigation_offset = Vector2( 0, 0 )
-2/shape_offset = Vector2( 0, 0 )
-2/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-2/shape_one_way = false
-2/shape_one_way_margin = 0.0
-2/shapes = [  ]
-2/z_index = 0
-3/name = "cave_door_top.png 3"
-3/texture = ExtResource( 18 )
-3/tex_offset = Vector2( 0, 0 )
-3/modulate = Color( 1, 1, 1, 1 )
-3/region = Rect2( 0, 0, 24, 24 )
-3/tile_mode = 0
-3/occluder_offset = Vector2( 0, 0 )
-3/navigation_offset = Vector2( 0, 0 )
-3/shape_offset = Vector2( 0, 0 )
-3/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-3/shape_one_way = false
-3/shape_one_way_margin = 0.0
-3/shapes = [  ]
-3/z_index = 1
-4/name = "cave_floor_2.png 4"
-4/texture = ExtResource( 10 )
-4/tex_offset = Vector2( 0, 0 )
-4/modulate = Color( 1, 1, 1, 1 )
-4/region = Rect2( 0, 0, 24, 24 )
-4/tile_mode = 0
-4/occluder_offset = Vector2( 0, 0 )
-4/navigation_offset = Vector2( 0, 0 )
-4/shape_offset = Vector2( 0, 0 )
-4/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-4/shape = SubResource( 11 )
-4/shape_one_way = false
-4/shape_one_way_margin = 1.0
-4/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 11 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-4/z_index = 0
-5/name = "cave_outside_border.png 5"
-5/texture = ExtResource( 12 )
-5/tex_offset = Vector2( 0, 0 )
-5/modulate = Color( 1, 1, 1, 1 )
-5/region = Rect2( 0, 0, 24, 24 )
-5/tile_mode = 0
-5/occluder_offset = Vector2( 0, 0 )
-5/navigation_offset = Vector2( 0, 0 )
-5/shape_offset = Vector2( 0, 0 )
-5/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-5/shape = SubResource( 12 )
-5/shape_one_way = false
-5/shape_one_way_margin = 1.0
-5/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 12 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-5/z_index = 20
-6/name = "cave_wall_bottom_top.png 6"
-6/texture = ExtResource( 6 )
-6/tex_offset = Vector2( 0, 0 )
-6/modulate = Color( 1, 1, 1, 1 )
-6/region = Rect2( 0, 0, 24, 24 )
-6/tile_mode = 0
-6/occluder_offset = Vector2( 0, 0 )
-6/navigation_offset = Vector2( 0, 0 )
-6/shape_offset = Vector2( 0, 0 )
-6/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-6/shape = SubResource( 13 )
-6/shape_one_way = false
-6/shape_one_way_margin = 1.0
-6/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 13 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-6/z_index = 0
-7/name = "cave_wall_left.png 7"
-7/texture = ExtResource( 8 )
-7/tex_offset = Vector2( 0, 0 )
-7/modulate = Color( 1, 1, 1, 1 )
-7/region = Rect2( 0, 0, 24, 24 )
-7/tile_mode = 0
-7/occluder_offset = Vector2( 0, 0 )
-7/navigation_offset = Vector2( 0, 0 )
-7/shape_offset = Vector2( 0, 0 )
-7/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-7/shape = SubResource( 14 )
-7/shape_one_way = false
-7/shape_one_way_margin = 1.0
-7/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 14 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-7/z_index = 20
-8/name = "cave_wall_left_corner_bottom.png 8"
-8/texture = ExtResource( 4 )
-8/tex_offset = Vector2( 0, 0 )
-8/modulate = Color( 1, 1, 1, 1 )
-8/region = Rect2( 0, 0, 24, 24 )
-8/tile_mode = 0
-8/occluder_offset = Vector2( 0, 0 )
-8/navigation_offset = Vector2( 0, 0 )
-8/shape_offset = Vector2( 0, 0 )
-8/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-8/shape_one_way = false
-8/shape_one_way_margin = 0.0
-8/shapes = [  ]
-8/z_index = 0
-9/name = "cave_wall_left_corner_top.png 9"
-9/texture = ExtResource( 3 )
-9/tex_offset = Vector2( 0, 0 )
-9/modulate = Color( 1, 1, 1, 1 )
-9/region = Rect2( 0, 0, 24, 24 )
-9/tile_mode = 0
-9/occluder_offset = Vector2( 0, 0 )
-9/navigation_offset = Vector2( 0, 0 )
-9/shape_offset = Vector2( 0, 0 )
-9/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-9/shape_one_way = false
-9/shape_one_way_margin = 0.0
-9/shapes = [  ]
-9/z_index = 0
-10/name = "cave_wall_right.png 10"
-10/texture = ExtResource( 7 )
-10/tex_offset = Vector2( 0, 0 )
-10/modulate = Color( 1, 1, 1, 1 )
-10/region = Rect2( 0, 0, 24, 24 )
-10/tile_mode = 0
-10/occluder_offset = Vector2( 0, 0 )
-10/navigation_offset = Vector2( 0, 0 )
-10/shape_offset = Vector2( 0, 0 )
-10/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-10/shape = SubResource( 1 )
-10/shape_one_way = false
-10/shape_one_way_margin = 1.0
-10/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 1 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-10/z_index = 20
-11/name = "cave_wall_right_corner_bottom.png 11"
-11/texture = ExtResource( 5 )
-11/tex_offset = Vector2( 0, 0 )
-11/modulate = Color( 1, 1, 1, 1 )
-11/region = Rect2( 0, 0, 24, 24 )
-11/tile_mode = 0
-11/occluder_offset = Vector2( 0, 0 )
-11/navigation_offset = Vector2( 0, 0 )
-11/shape_offset = Vector2( 0, 0 )
-11/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-11/shape_one_way = false
-11/shape_one_way_margin = 0.0
-11/shapes = [  ]
-11/z_index = 0
-12/name = "cave_wall_right_corner_top.png 12"
-12/texture = ExtResource( 9 )
-12/tex_offset = Vector2( 0, 0 )
-12/modulate = Color( 1, 1, 1, 1 )
-12/region = Rect2( 0, 0, 24, 24 )
-12/tile_mode = 0
-12/occluder_offset = Vector2( 0, 0 )
-12/navigation_offset = Vector2( 0, 0 )
-12/shape_offset = Vector2( 0, 0 )
-12/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-12/shape_one_way = false
-12/shape_one_way_margin = 0.0
-12/shapes = [  ]
-12/z_index = 0
-13/name = "cave_wall_top_top.png 13"
-13/texture = ExtResource( 2 )
-13/tex_offset = Vector2( 0, 0 )
-13/modulate = Color( 1, 1, 1, 1 )
-13/region = Rect2( 0, 0, 24, 24 )
-13/tile_mode = 0
-13/occluder_offset = Vector2( 0, 0 )
-13/navigation_offset = Vector2( 0, 0 )
-13/shape_offset = Vector2( 0, 0 )
-13/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-13/shape = SubResource( 2 )
-13/shape_one_way = false
-13/shape_one_way_margin = 1.0
-13/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 2 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-13/z_index = 0
-14/name = "lever_left.png 14"
-14/texture = ExtResource( 14 )
-14/tex_offset = Vector2( 0, 0 )
-14/modulate = Color( 1, 1, 1, 1 )
-14/region = Rect2( 0, 0, 24, 24 )
-14/tile_mode = 0
-14/occluder_offset = Vector2( 0, 0 )
-14/navigation_offset = Vector2( 0, 0 )
-14/shape_offset = Vector2( 0, 0 )
-14/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-14/shape_one_way = false
-14/shape_one_way_margin = 0.0
-14/shapes = [  ]
-14/z_index = 0
-15/name = "lever_right.png 15"
-15/texture = ExtResource( 17 )
-15/tex_offset = Vector2( 0, 0 )
-15/modulate = Color( 1, 1, 1, 1 )
-15/region = Rect2( 0, 0, 24, 24 )
-15/tile_mode = 0
-15/occluder_offset = Vector2( 0, 0 )
-15/navigation_offset = Vector2( 0, 0 )
-15/shape_offset = Vector2( 0, 0 )
-15/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-15/shape_one_way = false
-15/shape_one_way_margin = 0.0
-15/shapes = [  ]
-15/z_index = 0
-16/name = "pitfall.png 16"
-16/texture = ExtResource( 13 )
-16/tex_offset = Vector2( 0, 0 )
-16/modulate = Color( 1, 1, 1, 1 )
-16/region = Rect2( 0, 0, 24, 24 )
-16/tile_mode = 0
-16/occluder_offset = Vector2( 0, 0 )
-16/navigation_offset = Vector2( 0, 0 )
-16/shape_offset = Vector2( 0, 0 )
-16/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-16/shape_one_way = false
-16/shape_one_way_margin = 0.0
-16/shapes = [  ]
-16/z_index = 0
-17/name = "into_the_voooiid.png 17"
-17/texture = ExtResource( 1 )
-17/tex_offset = Vector2( 0, 0 )
-17/modulate = Color( 1, 1, 1, 1 )
-17/region = Rect2( 0, 0, 24, 24 )
-17/tile_mode = 0
-17/occluder_offset = Vector2( 0, 0 )
-17/navigation_offset = Vector2( 0, 0 )
-17/shape_offset = Vector2( 0, 0 )
-17/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-17/shape_one_way = false
-17/shape_one_way_margin = 0.0
-17/shapes = [  ]
-17/z_index = 0
-18/name = "switch_lock.png 18"
-18/texture = ExtResource( 20 )
-18/tex_offset = Vector2( 0, 0 )
-18/modulate = Color( 1, 1, 1, 1 )
-18/region = Rect2( 0, 0, 24, 24 )
-18/tile_mode = 0
-18/occluder_offset = Vector2( 0, 0 )
-18/navigation_offset = Vector2( 0, 0 )
-18/shape_offset = Vector2( 0, 0 )
-18/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-18/shape = SubResource( 3 )
-18/shape_one_way = false
-18/shape_one_way_margin = 1.0
-18/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 3 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-18/z_index = 0
-19/name = "enemy_lock.png 19"
-19/texture = ExtResource( 19 )
-19/tex_offset = Vector2( 0, 0 )
-19/modulate = Color( 1, 1, 1, 1 )
-19/region = Rect2( 0, 0, 24, 24 )
-19/tile_mode = 0
-19/occluder_offset = Vector2( 0, 0 )
-19/navigation_offset = Vector2( 0, 0 )
-19/shape_offset = Vector2( 0, 0 )
-19/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-19/shape = SubResource( 4 )
-19/shape_one_way = false
-19/shape_one_way_margin = 1.0
-19/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 4 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-19/z_index = 0
-20/name = "cave_door_bottom_e.png 20"
-20/texture = ExtResource( 22 )
-20/tex_offset = Vector2( 0, 0 )
-20/modulate = Color( 1, 1, 1, 1 )
-20/region = Rect2( 0, 0, 24, 24 )
-20/tile_mode = 0
-20/occluder_offset = Vector2( 0, 0 )
-20/navigation_offset = Vector2( 0, 0 )
-20/shape_offset = Vector2( 0, 0 )
-20/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-20/shape = SubResource( 5 )
-20/shape_one_way = false
-20/shape_one_way_margin = 1.0
-20/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 5 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-20/z_index = 0
-21/name = "cave_door_bottom_l.png 21"
-21/texture = ExtResource( 21 )
-21/tex_offset = Vector2( 0, 0 )
-21/modulate = Color( 1, 1, 1, 1 )
-21/region = Rect2( 0, 0, 24, 24 )
-21/tile_mode = 0
-21/occluder_offset = Vector2( 0, 0 )
-21/navigation_offset = Vector2( 0, 0 )
-21/shape_offset = Vector2( 0, 0 )
-21/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-21/shape = SubResource( 6 )
-21/shape_one_way = false
-21/shape_one_way_margin = 1.0
-21/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 6 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-21/z_index = 0
-22/name = "cave_door_left_lock_e.png 22"
-22/texture = ExtResource( 25 )
-22/tex_offset = Vector2( 0, 0 )
-22/modulate = Color( 1, 1, 1, 1 )
-22/region = Rect2( 0, 0, 24, 24 )
-22/tile_mode = 0
-22/occluder_offset = Vector2( 0, 0 )
-22/navigation_offset = Vector2( 0, 0 )
-22/shape_offset = Vector2( 0, 0 )
-22/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-22/shape = SubResource( 7 )
-22/shape_one_way = false
-22/shape_one_way_margin = 1.0
-22/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 7 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-22/z_index = 0
-23/name = "cave_door_left_lock_l.png 23"
-23/texture = ExtResource( 24 )
-23/tex_offset = Vector2( 0, 0 )
-23/modulate = Color( 1, 1, 1, 1 )
-23/region = Rect2( 0, 0, 24, 24 )
-23/tile_mode = 0
-23/occluder_offset = Vector2( 0, 0 )
-23/navigation_offset = Vector2( 0, 0 )
-23/shape_offset = Vector2( 0, 0 )
-23/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-23/shape = SubResource( 8 )
-23/shape_one_way = false
-23/shape_one_way_margin = 1.0
-23/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 8 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-23/z_index = 0
-24/name = "cave_door_right_lock_e.png 24"
-24/texture = ExtResource( 23 )
-24/tex_offset = Vector2( 0, 0 )
-24/modulate = Color( 1, 1, 1, 1 )
-24/region = Rect2( 0, 0, 24, 24 )
-24/tile_mode = 0
-24/occluder_offset = Vector2( 0, 0 )
-24/navigation_offset = Vector2( 0, 0 )
-24/shape_offset = Vector2( 0, 0 )
-24/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-24/shape = SubResource( 9 )
-24/shape_one_way = false
-24/shape_one_way_margin = 1.0
-24/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 9 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-24/z_index = 0
-25/name = "cave_door_right_lock_l.png 25"
-25/texture = ExtResource( 26 )
-25/tex_offset = Vector2( 0, 0 )
-25/modulate = Color( 1, 1, 1, 1 )
-25/region = Rect2( 0, 0, 24, 24 )
-25/tile_mode = 0
-25/occluder_offset = Vector2( 0, 0 )
-25/navigation_offset = Vector2( 0, 0 )
-25/shape_offset = Vector2( 0, 0 )
-25/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-25/shape = SubResource( 10 )
-25/shape_one_way = false
-25/shape_one_way_margin = 1.0
-25/shapes = [ {
-"autotile_coord": Vector2( 0, 0 ),
-"one_way": false,
-"one_way_margin": 1.0,
-"shape": SubResource( 10 ),
-"shape_transform": Transform2D( 1, 0, 0, 1, 0, 0 )
-} ]
-25/z_index = 0
-26/name = "cave_floor_bl.png 26"
-26/texture = ExtResource( 30 )
-26/tex_offset = Vector2( 0, 0 )
-26/modulate = Color( 1, 1, 1, 1 )
-26/region = Rect2( 0, 0, 24, 24 )
-26/tile_mode = 0
-26/occluder_offset = Vector2( 0, 0 )
-26/navigation_offset = Vector2( 0, 0 )
-26/shape_offset = Vector2( 0, 0 )
-26/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-26/shape_one_way = false
-26/shape_one_way_margin = 0.0
-26/shapes = [  ]
-26/z_index = 0
-27/name = "cave_floor_br.png 27"
-27/texture = ExtResource( 39 )
-27/tex_offset = Vector2( 0, 0 )
-27/modulate = Color( 1, 1, 1, 1 )
-27/region = Rect2( 0, 0, 24, 24 )
-27/tile_mode = 0
-27/occluder_offset = Vector2( 0, 0 )
-27/navigation_offset = Vector2( 0, 0 )
-27/shape_offset = Vector2( 0, 0 )
-27/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-27/shape_one_way = false
-27/shape_one_way_margin = 0.0
-27/shapes = [  ]
-27/z_index = 0
-28/name = "cave_floor_bside1.png 28"
-28/texture = ExtResource( 29 )
-28/tex_offset = Vector2( 0, 0 )
-28/modulate = Color( 1, 1, 1, 1 )
-28/region = Rect2( 0, 0, 24, 24 )
-28/tile_mode = 0
-28/occluder_offset = Vector2( 0, 0 )
-28/navigation_offset = Vector2( 0, 0 )
-28/shape_offset = Vector2( 0, 0 )
-28/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-28/shape_one_way = false
-28/shape_one_way_margin = 0.0
-28/shapes = [  ]
-28/z_index = 0
-29/name = "cave_floor_bside2.png 29"
-29/texture = ExtResource( 31 )
-29/tex_offset = Vector2( 0, 0 )
-29/modulate = Color( 1, 1, 1, 1 )
-29/region = Rect2( 0, 0, 24, 24 )
-29/tile_mode = 0
-29/occluder_offset = Vector2( 0, 0 )
-29/navigation_offset = Vector2( 0, 0 )
-29/shape_offset = Vector2( 0, 0 )
-29/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-29/shape_one_way = false
-29/shape_one_way_margin = 0.0
-29/shapes = [  ]
-29/z_index = 0
-30/name = "cave_floor_lside1.png 30"
-30/texture = ExtResource( 28 )
-30/tex_offset = Vector2( 0, 0 )
-30/modulate = Color( 1, 1, 1, 1 )
-30/region = Rect2( 0, 0, 24, 24 )
-30/tile_mode = 0
-30/occluder_offset = Vector2( 0, 0 )
-30/navigation_offset = Vector2( 0, 0 )
-30/shape_offset = Vector2( 0, 0 )
-30/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-30/shape_one_way = false
-30/shape_one_way_margin = 0.0
-30/shapes = [  ]
-30/z_index = 0
-31/name = "cave_floor_lside2.png 31"
-31/texture = ExtResource( 35 )
-31/tex_offset = Vector2( 0, 0 )
-31/modulate = Color( 1, 1, 1, 1 )
-31/region = Rect2( 0, 0, 24, 24 )
-31/tile_mode = 0
-31/occluder_offset = Vector2( 0, 0 )
-31/navigation_offset = Vector2( 0, 0 )
-31/shape_offset = Vector2( 0, 0 )
-31/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-31/shape_one_way = false
-31/shape_one_way_margin = 0.0
-31/shapes = [  ]
-31/z_index = 0
-32/name = "cave_floor_mid1.png 32"
-32/texture = ExtResource( 32 )
-32/tex_offset = Vector2( 0, 0 )
-32/modulate = Color( 1, 1, 1, 1 )
-32/region = Rect2( 0, 0, 24, 24 )
-32/tile_mode = 0
-32/occluder_offset = Vector2( 0, 0 )
-32/navigation_offset = Vector2( 0, 0 )
-32/shape_offset = Vector2( 0, 0 )
-32/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-32/shape_one_way = false
-32/shape_one_way_margin = 0.0
-32/shapes = [  ]
-32/z_index = 0
-33/name = "cave_floor_mid2.png 33"
-33/texture = ExtResource( 36 )
-33/tex_offset = Vector2( 0, 0 )
-33/modulate = Color( 1, 1, 1, 1 )
-33/region = Rect2( 0, 0, 24, 24 )
-33/tile_mode = 0
-33/occluder_offset = Vector2( 0, 0 )
-33/navigation_offset = Vector2( 0, 0 )
-33/shape_offset = Vector2( 0, 0 )
-33/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-33/shape_one_way = false
-33/shape_one_way_margin = 0.0
-33/shapes = [  ]
-33/z_index = 0
-34/name = "cave_floor_mid3.png 34"
-34/texture = ExtResource( 33 )
-34/tex_offset = Vector2( 0, 0 )
-34/modulate = Color( 1, 1, 1, 1 )
-34/region = Rect2( 0, 0, 24, 24 )
-34/tile_mode = 0
-34/occluder_offset = Vector2( 0, 0 )
-34/navigation_offset = Vector2( 0, 0 )
-34/shape_offset = Vector2( 0, 0 )
-34/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-34/shape_one_way = false
-34/shape_one_way_margin = 0.0
-34/shapes = [  ]
-34/z_index = 0
-35/name = "cave_floor_tl.png 35"
-35/texture = ExtResource( 34 )
-35/tex_offset = Vector2( 0, 0 )
-35/modulate = Color( 1, 1, 1, 1 )
-35/region = Rect2( 0, 0, 24, 24 )
-35/tile_mode = 0
-35/occluder_offset = Vector2( 0, 0 )
-35/navigation_offset = Vector2( 0, 0 )
-35/shape_offset = Vector2( 0, 0 )
-35/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-35/shape_one_way = false
-35/shape_one_way_margin = 0.0
-35/shapes = [  ]
-35/z_index = 0
-36/name = "cave_floor_tr.png 36"
-36/texture = ExtResource( 37 )
-36/tex_offset = Vector2( 0, 0 )
-36/modulate = Color( 1, 1, 1, 1 )
-36/region = Rect2( 0, 0, 24, 24 )
-36/tile_mode = 0
-36/occluder_offset = Vector2( 0, 0 )
-36/navigation_offset = Vector2( 0, 0 )
-36/shape_offset = Vector2( 0, 0 )
-36/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-36/shape_one_way = false
-36/shape_one_way_margin = 0.0
-36/shapes = [  ]
-36/z_index = 0
-37/name = "cave_floor_rside1.png 37"
-37/texture = ExtResource( 40 )
-37/tex_offset = Vector2( 0, 0 )
-37/modulate = Color( 1, 1, 1, 1 )
-37/region = Rect2( 0, 0, 24, 24 )
-37/tile_mode = 0
-37/occluder_offset = Vector2( 0, 0 )
-37/navigation_offset = Vector2( 0, 0 )
-37/shape_offset = Vector2( 0, 0 )
-37/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-37/shape_one_way = false
-37/shape_one_way_margin = 0.0
-37/shapes = [  ]
-37/z_index = 0
-38/name = "cave_floor_rside2.png 38"
-38/texture = ExtResource( 41 )
-38/tex_offset = Vector2( 0, 0 )
-38/modulate = Color( 1, 1, 1, 1 )
-38/region = Rect2( 0, 0, 24, 24 )
-38/tile_mode = 0
-38/occluder_offset = Vector2( 0, 0 )
-38/navigation_offset = Vector2( 0, 0 )
-38/shape_offset = Vector2( 0, 0 )
-38/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-38/shape_one_way = false
-38/shape_one_way_margin = 0.0
-38/shapes = [  ]
-38/z_index = 0
-39/name = "cave_floor_tside1.png 39"
-39/texture = ExtResource( 27 )
-39/tex_offset = Vector2( 0, 0 )
-39/modulate = Color( 1, 1, 1, 1 )
-39/region = Rect2( 0, 0, 24, 24 )
-39/tile_mode = 0
-39/occluder_offset = Vector2( 0, 0 )
-39/navigation_offset = Vector2( 0, 0 )
-39/shape_offset = Vector2( 0, 0 )
-39/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-39/shape_one_way = false
-39/shape_one_way_margin = 0.0
-39/shapes = [  ]
-39/z_index = 0
-40/name = "cave_floor_tside2.png 40"
-40/texture = ExtResource( 38 )
-40/tex_offset = Vector2( 0, 0 )
-40/modulate = Color( 1, 1, 1, 1 )
-40/region = Rect2( 0, 0, 24, 24 )
-40/tile_mode = 0
-40/occluder_offset = Vector2( 0, 0 )
-40/navigation_offset = Vector2( 0, 0 )
-40/shape_offset = Vector2( 0, 0 )
-40/shape_transform = Transform2D( 1, 0, 0, 1, 0, 0 )
-40/shape_one_way = false
-40/shape_one_way_margin = 0.0
-40/shapes = [  ]
-40/z_index = 0
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vsjpr"]
+texture = ExtResource("21")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
 
-[node name="Tiles" type="TileMap"]
-tile_set = SubResource( 15 )
-cell_size = Vector2( 24, 24 )
-collision_layer = 257
-collision_mask = 17
-format = 1
-tile_data = PackedInt32Array( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8, 0, 524297, 6, 0, 524298, 6, 0, 524299, 6, 0, 524300, 6, 0, 524301, 1, 0, 524302, 6, 0, 524303, 6, 0, 524304, 6, 0, 524305, 6, 0, 524306, 11, 0, 589832, 7, 0, 589835, 0, 0, 589836, 0, 0, 589837, 0, 0, 589838, 0, 0, 589839, 0, 0, 589842, 10, 0, 655368, 7, 0, 655371, 17, 0, 655372, 0, 0, 655373, 0, 0, 655374, 0, 0, 655378, 10, 0, 720904, 7, 0, 720905, 0, 0, 720909, 0, 0, 720913, 0, 0, 720914, 10, 0, 786440, 7, 0, 786441, 0, 0, 786442, 0, 0, 786445, 0, 0, 786448, 0, 0, 786449, 0, 0, 786450, 10, 0, 851976, 16, 0, 851977, 0, 0, 851978, 0, 0, 851979, 0, 0, 851980, 0, 0, 851981, 0, 0, 851982, 0, 0, 851983, 0, 0, 851984, 0, 0, 851985, 0, 0, 851986, 16, 0, 917512, 7, 0, 917513, 0, 0, 917514, 0, 0, 917517, 0, 0, 917520, 0, 0, 917521, 0, 0, 917522, 10, 0, 983048, 7, 0, 983049, 0, 0, 983053, 0, 0, 983057, 0, 0, 983058, 10, 0, 1048584, 7, 0, 1048588, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048594, 10, 0, 1114120, 7, 0, 1114123, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0, 1114130, 10, 0, 1179656, 5, 0, 1179657, 5, 0, 1179658, 5, 0, 1179659, 5, 0, 1179660, 5, 0, 1179661, 5, 0, 1179662, 5, 0, 1179663, 5, 0, 1179664, 5, 0, 1179665, 5, 0, 1179666, 5, 0 )
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_o7pxi"]
+texture = ExtResource("25")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6ujg5"]
+texture = ExtResource("24")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sph8q"]
+texture = ExtResource("23")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_165ov"]
+texture = ExtResource("26")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fkanq"]
+texture = ExtResource("30")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bdcpi"]
+texture = ExtResource("39")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_snjui"]
+texture = ExtResource("29")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_am0wk"]
+texture = ExtResource("31")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4x0rl"]
+texture = ExtResource("18")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/z_index = 1
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/z_index = 1
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/z_index = 1
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/z_index = 1
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/z_index = 1
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/z_index = 1
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/z_index = 1
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/z_index = 1
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7un34"]
+texture = ExtResource("28")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gkb4v"]
+texture = ExtResource("35")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_w5ybw"]
+texture = ExtResource("32")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_l8353"]
+texture = ExtResource("36")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_11rwi"]
+texture = ExtResource("33")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_h0o1j"]
+texture = ExtResource("34")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ojr37"]
+texture = ExtResource("37")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3rjah"]
+texture = ExtResource("40")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_bcx3m"]
+texture = ExtResource("41")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_c0jva"]
+texture = ExtResource("27")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_spwyv"]
+texture = ExtResource("10")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_y5fob"]
+texture = ExtResource("38")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i8dht"]
+texture = ExtResource("12")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/z_index = 20
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -11.953064)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/z_index = 20
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -11.953064)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/z_index = 20
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 11.953064)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/z_index = 20
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 11.953064)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/z_index = 20
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -11.953064, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/z_index = 20
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 11.953064, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/z_index = 20
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -11.953064, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/z_index = 20
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 11.953064, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_snek1"]
+texture = ExtResource("6")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -11.922058, 12, -12, -11.92205, 11.916201, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 11.922058, 12, 12, -11.92205, -11.916201, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -11.922058, -12, -12, 11.92205, 11.916201, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 11.922058, -12, 12, 11.92205, -11.916201, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -11.922058, -11.92205, -12, -12, 11.916201)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -11.922058, 11.92205, -12, 12, 11.916201)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 11.922058, -11.92205, 12, -12, -11.916201)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 11.922058, 11.92205, 12, 12, -11.916201)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_at4ew"]
+texture = ExtResource("8")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/0/z_index = 20
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, -12, 12, -12, -12, 12, -12)
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/1/z_index = 20
+0:0/1/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, 12, 12, 12, -12, -12, -12)
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/2/z_index = 20
+0:0/2/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, -12, -12, -12, 12, 12, 12)
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/3/z_index = 20
+0:0/3/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, 12, -12, 12, 12, -12, 12)
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/4/z_index = 20
+0:0/4/physics_layer_0/polygon_0/points = PackedVector2Array(12, 12, 12, -12, -12, -12, -12, 12)
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/5/z_index = 20
+0:0/5/physics_layer_0/polygon_0/points = PackedVector2Array(-12, 12, -12, -12, 12, -12, 12, 12)
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/6/z_index = 20
+0:0/6/physics_layer_0/polygon_0/points = PackedVector2Array(12, -12, 12, 12, -12, 12, -12, -12)
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+0:0/7/z_index = 20
+0:0/7/physics_layer_0/polygon_0/points = PackedVector2Array(-12, -12, -12, 12, 12, 12, 12, -12)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_anwhm"]
+texture = ExtResource("4")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4allh"]
+texture = ExtResource("3")
+texture_region_size = Vector2i(24, 24)
+0:0/next_alternative_id = 8
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/flip_h = true
+0:0/2 = 2
+0:0/2/flip_v = true
+0:0/3 = 3
+0:0/3/flip_h = true
+0:0/3/flip_v = true
+0:0/4 = 4
+0:0/4/transpose = true
+0:0/5 = 5
+0:0/5/flip_h = true
+0:0/5/transpose = true
+0:0/6 = 6
+0:0/6/flip_v = true
+0:0/6/transpose = true
+0:0/7 = 7
+0:0/7/flip_h = true
+0:0/7/flip_v = true
+0:0/7/transpose = true
+
+[sub_resource type="TileSet" id="15"]
+tile_size = Vector2i(24, 24)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_xsfcp")
+sources/1 = SubResource("TileSetAtlasSource_766d2")
+sources/2 = SubResource("TileSetAtlasSource_ltcch")
+sources/3 = SubResource("TileSetAtlasSource_4x0rl")
+sources/4 = SubResource("TileSetAtlasSource_spwyv")
+sources/5 = SubResource("TileSetAtlasSource_i8dht")
+sources/6 = SubResource("TileSetAtlasSource_snek1")
+sources/7 = SubResource("TileSetAtlasSource_at4ew")
+sources/8 = SubResource("TileSetAtlasSource_anwhm")
+sources/9 = SubResource("TileSetAtlasSource_4allh")
+sources/10 = SubResource("TileSetAtlasSource_vm6oc")
+sources/11 = SubResource("TileSetAtlasSource_v5nmf")
+sources/12 = SubResource("TileSetAtlasSource_f7oul")
+sources/13 = SubResource("TileSetAtlasSource_gswvt")
+sources/14 = SubResource("TileSetAtlasSource_mqfrb")
+sources/15 = SubResource("TileSetAtlasSource_t3qj4")
+sources/16 = SubResource("TileSetAtlasSource_lj261")
+sources/17 = SubResource("TileSetAtlasSource_l85l8")
+sources/18 = SubResource("TileSetAtlasSource_ta58t")
+sources/19 = SubResource("TileSetAtlasSource_x8nqy")
+sources/20 = SubResource("TileSetAtlasSource_1vv74")
+sources/21 = SubResource("TileSetAtlasSource_vsjpr")
+sources/22 = SubResource("TileSetAtlasSource_o7pxi")
+sources/23 = SubResource("TileSetAtlasSource_6ujg5")
+sources/24 = SubResource("TileSetAtlasSource_sph8q")
+sources/25 = SubResource("TileSetAtlasSource_165ov")
+sources/26 = SubResource("TileSetAtlasSource_fkanq")
+sources/27 = SubResource("TileSetAtlasSource_bdcpi")
+sources/28 = SubResource("TileSetAtlasSource_snjui")
+sources/29 = SubResource("TileSetAtlasSource_am0wk")
+sources/30 = SubResource("TileSetAtlasSource_7un34")
+sources/31 = SubResource("TileSetAtlasSource_gkb4v")
+sources/32 = SubResource("TileSetAtlasSource_w5ybw")
+sources/33 = SubResource("TileSetAtlasSource_l8353")
+sources/34 = SubResource("TileSetAtlasSource_11rwi")
+sources/35 = SubResource("TileSetAtlasSource_h0o1j")
+sources/36 = SubResource("TileSetAtlasSource_ojr37")
+sources/37 = SubResource("TileSetAtlasSource_3rjah")
+sources/38 = SubResource("TileSetAtlasSource_bcx3m")
+sources/39 = SubResource("TileSetAtlasSource_c0jva")
+sources/40 = SubResource("TileSetAtlasSource_y5fob")
+
+[node name="Tiles" type="TileMap" unique_id=969159876]
+tile_set = SubResource("15")
+format = 2

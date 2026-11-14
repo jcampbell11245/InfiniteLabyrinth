@@ -1,109 +1,190 @@
-[gd_scene load_steps=22 format=2]
+[gd_scene format=3 uid="uid://c6ijtyxkslh27"]
 
-[ext_resource path="res://src/menu/Control.gd" type="Script" id=1]
-[ext_resource path="res://sprites/hud/upgrade_background.png" type="Texture2D" id=2]
-[ext_resource path="res://fonts/8-BIT WONDER.TTF" type="FontFile" id=3]
-[ext_resource path="res://sprites/hud/plus_highlighted.png" type="Texture2D" id=4]
-[ext_resource path="res://sprites/hud/plus.png" type="Texture2D" id=5]
-[ext_resource path="res://sprites/hud/upgrade_meter_10.png" type="Texture2D" id=6]
-[ext_resource path="res://sprites/hud/upgrade_meter_9.png" type="Texture2D" id=7]
-[ext_resource path="res://sprites/hud/upgrade_meter_1.png" type="Texture2D" id=8]
-[ext_resource path="res://sprites/hud/upgrade_meter_2.png" type="Texture2D" id=9]
-[ext_resource path="res://sprites/hud/upgrade_meter_4.png" type="Texture2D" id=10]
-[ext_resource path="res://sprites/hud/upgrade_meter_0.png" type="Texture2D" id=11]
-[ext_resource path="res://sprites/hud/upgrade_meter_5.png" type="Texture2D" id=12]
-[ext_resource path="res://sprites/hud/upgrade_meter_6.png" type="Texture2D" id=13]
-[ext_resource path="res://sprites/hud/upgrade_meter_8.png" type="Texture2D" id=14]
-[ext_resource path="res://sprites/hud/upgrade_meter_3.png" type="Texture2D" id=15]
-[ext_resource path="res://sprites/hud/upgrade_meter_7.png" type="Texture2D" id=16]
+[ext_resource type="Script" uid="uid://dldf5rryowogb" path="res://src/menu/Control.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cby1div3u032d" path="res://sprites/hud/upgrade_background.png" id="2"]
+[ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://fonts/8-BIT WONDER.TTF" id="3"]
+[ext_resource type="Texture2D" uid="uid://qmlbkdvpceir" path="res://sprites/hud/plus_highlighted.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://t41sory103co" path="res://sprites/hud/plus.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://ff8n2hadcwv" path="res://sprites/hud/upgrade_meter_10.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://b88b0gc6hxw2b" path="res://sprites/hud/upgrade_meter_9.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://d2ysdri5g1cs3" path="res://sprites/hud/upgrade_meter_1.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://magv2rt8cjuh" path="res://sprites/hud/upgrade_meter_2.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://cww45crlo24x5" path="res://sprites/hud/upgrade_meter_4.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://cegrvu61y6aod" path="res://sprites/hud/upgrade_meter_0.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://cr2fj10gpb3g1" path="res://sprites/hud/upgrade_meter_5.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://dqaknb25d8ysr" path="res://sprites/hud/upgrade_meter_6.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://bcvk6iwyqnqp4" path="res://sprites/hud/upgrade_meter_8.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://cgjvw0lgfj53g" path="res://sprites/hud/upgrade_meter_3.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://oitsfblnh8bw" path="res://sprites/hud/upgrade_meter_7.png" id="16"]
 
-[sub_resource type="SpriteFrames" id=5]
-animations = [ {
-"frames": [ ExtResource( 5 ) ],
-"loop": true,
-"name": "default",
+[sub_resource type="SpriteFrames" id="5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5")
+}],
+"loop": 1,
+"name": &"default",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 4 ) ],
-"loop": true,
-"name": "selected",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4")
+}],
+"loop": 1,
+"name": &"selected",
 "speed": 5.0
-} ]
+}]
 
-[sub_resource type="FontFile" id=2]
-size = 13
-font_data = ExtResource( 3 )
+[sub_resource type="FontFile" id="2"]
+fallbacks = Array[Font]([ExtResource("3")])
+cache/0/variation_coordinates = {}
+cache/0/face_index = 0
+cache/0/embolden = 0.0
+cache/0/transform = Transform2D(1, 0, 0, 1, 0, 0)
+cache/0/spacing_top = 0
+cache/0/spacing_bottom = 0
+cache/0/spacing_space = 0
+cache/0/spacing_glyph = 0
+cache/0/baseline_offset = 0.0
+cache/0/16/0/ascent = 0.0
+cache/0/16/0/descent = 0.0
+cache/0/16/0/underline_position = 0.0
+cache/0/16/0/underline_thickness = 0.0
+cache/0/16/0/scale = 1.0
 
-[sub_resource type="FontFile" id=4]
-size = 12
-font_data = ExtResource( 3 )
+[sub_resource type="FontFile" id="4"]
+fallbacks = Array[Font]([ExtResource("3")])
+cache/0/variation_coordinates = {}
+cache/0/face_index = 0
+cache/0/embolden = 0.0
+cache/0/transform = Transform2D(1, 0, 0, 1, 0, 0)
+cache/0/spacing_top = 0
+cache/0/spacing_bottom = 0
+cache/0/spacing_space = 0
+cache/0/spacing_glyph = 0
+cache/0/baseline_offset = 0.0
+cache/0/16/0/ascent = 0.0
+cache/0/16/0/descent = 0.0
+cache/0/16/0/underline_position = 0.0
+cache/0/16/0/underline_thickness = 0.0
+cache/0/16/0/scale = 1.0
 
-[sub_resource type="SpriteFrames" id=6]
-animations = [ {
-"frames": [ ExtResource( 11 ) ],
-"loop": true,
-"name": "0",
+[sub_resource type="SpriteFrames" id="6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("11")
+}],
+"loop": 1,
+"name": &"0",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 8 ) ],
-"loop": true,
-"name": "1",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8")
+}],
+"loop": 1,
+"name": &"1",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 6 ) ],
-"loop": true,
-"name": "10",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6")
+}],
+"loop": 1,
+"name": &"10",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 9 ) ],
-"loop": true,
-"name": "2",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9")
+}],
+"loop": 1,
+"name": &"2",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 15 ) ],
-"loop": true,
-"name": "3",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("15")
+}],
+"loop": 1,
+"name": &"3",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 10 ) ],
-"loop": true,
-"name": "4",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10")
+}],
+"loop": 1,
+"name": &"4",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 12 ) ],
-"loop": true,
-"name": "5",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12")
+}],
+"loop": 1,
+"name": &"5",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 13 ) ],
-"loop": true,
-"name": "6",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("13")
+}],
+"loop": 1,
+"name": &"6",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 16 ) ],
-"loop": true,
-"name": "7",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("16")
+}],
+"loop": 1,
+"name": &"7",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 14 ) ],
-"loop": true,
-"name": "8",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("14")
+}],
+"loop": 1,
+"name": &"8",
 "speed": 5.0
 }, {
-"frames": [ ExtResource( 7 ) ],
-"loop": true,
-"name": "9",
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7")
+}],
+"loop": 1,
+"name": &"9",
 "speed": 5.0
-} ]
+}]
 
-[sub_resource type="FontFile" id=3]
-font_data = ExtResource( 3 )
+[sub_resource type="FontFile" id="3"]
+fallbacks = Array[Font]([ExtResource("3")])
+cache/0/variation_coordinates = {}
+cache/0/face_index = 0
+cache/0/embolden = 0.0
+cache/0/transform = Transform2D(1, 0, 0, 1, 0, 0)
+cache/0/spacing_top = 0
+cache/0/spacing_bottom = 0
+cache/0/spacing_space = 0
+cache/0/spacing_glyph = 0
+cache/0/baseline_offset = 0.0
+cache/0/16/0/ascent = 0.0
+cache/0/16/0/descent = 0.0
+cache/0/16/0/underline_position = 0.0
+cache/0/16/0/underline_thickness = 0.0
+cache/0/16/0/scale = 1.0
 
-[node name="UpgradeMenu" type="CanvasLayer"]
+[node name="UpgradeMenu" type="CanvasLayer" unique_id=1720954417]
 
-[node name="Control" type="Control" parent="."]
+[node name="Control" type="Control" parent="." unique_id=478695146]
 process_mode = 3
 visible = false
+layout_mode = 3
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -113,253 +194,217 @@ offset_top = -233.0
 offset_right = 136.0
 offset_bottom = -108.0
 mouse_filter = 2
-script = ExtResource( 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
+script = ExtResource("1")
 
-[node name="Sprite2D" type="Sprite2D" parent="Control"]
-position = Vector2( 325.81, 192.426 )
-scale = Vector2( 4, 4 )
-texture = ExtResource( 2 )
+[node name="Sprite2D" type="Sprite2D" parent="Control" unique_id=1006723880]
+position = Vector2(325.81, 192.426)
+scale = Vector2(4, 4)
+texture = ExtResource("2")
 
-[node name="Plus1Control" type="Control" parent="Control"]
+[node name="Plus1Control" type="Control" parent="Control" unique_id=2017457984]
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 109.0
 offset_right = 677.0
 offset_bottom = 146.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Plus1" type="AnimatedSprite2D" parent="Control/Plus1Control"]
-position = Vector2( 22.3586, 18.5406 )
-scale = Vector2( 1.99905, 1.99905 )
-frames = SubResource( 5 )
+[node name="Plus1" type="AnimatedSprite2D" parent="Control/Plus1Control" unique_id=1734506303]
+position = Vector2(22.3586, 18.5406)
+scale = Vector2(1.99905, 1.99905)
+sprite_frames = SubResource("5")
 
-[node name="Button" type="Button" parent="Control/Plus1Control"]
-modulate = Color( 1, 1, 1, 0 )
+[node name="Button" type="Button" parent="Control/Plus1Control" unique_id=579722809]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
 offset_left = 4.0
 offset_right = 41.0
 offset_bottom = 37.0
 mouse_filter = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Plus2Control" type="Control" parent="Control"]
+[node name="Plus2Control" type="Control" parent="Control" unique_id=669702528]
+anchors_preset = 0
 offset_left = 641.401
 offset_top = 151.332
 offset_right = 677.401
 offset_bottom = 188.332
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Plus2" type="AnimatedSprite2D" parent="Control/Plus2Control"]
-position = Vector2( 18.2758, 19.3352 )
-scale = Vector2( 1.99905, 1.99905 )
-frames = SubResource( 5 )
+[node name="Plus2" type="AnimatedSprite2D" parent="Control/Plus2Control" unique_id=679830771]
+position = Vector2(18.2758, 19.3352)
+scale = Vector2(1.99905, 1.99905)
+sprite_frames = SubResource("5")
 
-[node name="Button2" type="Button" parent="Control/Plus2Control"]
-modulate = Color( 1, 1, 1, 0 )
+[node name="Button2" type="Button" parent="Control/Plus2Control" unique_id=1653908821]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
 offset_left = -0.944946
 offset_top = 0.740082
 offset_right = 36.0551
 offset_bottom = 36.7401
 mouse_filter = 1
 
-[node name="Plus3Control" type="Control" parent="Control"]
+[node name="Plus3Control" type="Control" parent="Control" unique_id=1419660622]
+anchors_preset = 0
 offset_left = 641.487
 offset_top = 192.468
 offset_right = 677.487
 offset_bottom = 229.468
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Plus3" type="AnimatedSprite2D" parent="Control/Plus3Control"]
-position = Vector2( 18.2758, 19.3352 )
-scale = Vector2( 1.99905, 1.99905 )
-frames = SubResource( 5 )
+[node name="Plus3" type="AnimatedSprite2D" parent="Control/Plus3Control" unique_id=1005962554]
+position = Vector2(18.2758, 19.3352)
+scale = Vector2(1.99905, 1.99905)
+sprite_frames = SubResource("5")
 
-[node name="Button3" type="Button" parent="Control/Plus3Control"]
-modulate = Color( 1, 1, 1, 0 )
+[node name="Button3" type="Button" parent="Control/Plus3Control" unique_id=1538515566]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
 offset_left = -0.750671
 offset_top = 1.03931
 offset_right = 36.2493
 offset_bottom = 37.0393
 mouse_filter = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Plus4Control" type="Control" parent="Control"]
+[node name="Plus4Control" type="Control" parent="Control" unique_id=1139840891]
+anchors_preset = 0
 offset_left = 641.0
 offset_top = 232.0
 offset_right = 678.0
 offset_bottom = 269.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Plus4" type="AnimatedSprite2D" parent="Control/Plus4Control"]
-position = Vector2( 18.2758, 19.3352 )
-scale = Vector2( 1.99905, 1.99905 )
-frames = SubResource( 5 )
+[node name="Plus4" type="AnimatedSprite2D" parent="Control/Plus4Control" unique_id=631545209]
+position = Vector2(18.2758, 19.3352)
+scale = Vector2(1.99905, 1.99905)
+sprite_frames = SubResource("5")
 
-[node name="Button4" type="Button" parent="Control/Plus4Control"]
-modulate = Color( 1, 1, 1, 0 )
+[node name="Button4" type="Button" parent="Control/Plus4Control" unique_id=1178649513]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
 offset_top = 1.33258
 offset_right = 36.0
 offset_bottom = 37.3326
 mouse_filter = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Description" type="Label" parent="Control"]
+[node name="Description" type="Label" parent="Control" unique_id=1533084820]
+layout_mode = 0
 offset_left = -28.0
 offset_top = 121.933
 offset_right = 579.0
 offset_bottom = 153.933
-theme_override_fonts/font = SubResource( 2 )
+theme_override_fonts/font = SubResource("2")
 text = "Health"
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Coins" type="Label" parent="Control"]
+[node name="Coins" type="Label" parent="Control" unique_id=709607130]
+layout_mode = 0
 offset_left = -1.0
 offset_top = 122.0
 offset_right = 104.0
 offset_bottom = 142.0
-pivot_offset = Vector2( 32.1923, 18.5501 )
-theme_override_fonts/font = SubResource( 4 )
+pivot_offset = Vector2(32.1923, 18.5501)
+theme_override_fonts/font = SubResource("4")
 text = "10"
-align = 2
-__meta__ = {
-"_edit_use_anchors_": false
-}
+horizontal_alignment = 2
 
-[node name="Description2" type="Label" parent="Control"]
+[node name="Description2" type="Label" parent="Control" unique_id=1644805765]
+layout_mode = 0
 offset_left = -27.7018
 offset_top = 164.982
 offset_right = 86.2982
 offset_bottom = 196.982
-theme_override_fonts/font = SubResource( 2 )
+theme_override_fonts/font = SubResource("2")
 text = "Luck"
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Coins2" type="Label" parent="Control"]
+[node name="Coins2" type="Label" parent="Control" unique_id=328347788]
+layout_mode = 0
 offset_left = 26.0
 offset_top = 164.0
 offset_right = 104.0
 offset_bottom = 184.0
-pivot_offset = Vector2( 32.1923, 18.5501 )
-theme_override_fonts/font = SubResource( 4 )
+pivot_offset = Vector2(32.1923, 18.5501)
+theme_override_fonts/font = SubResource("4")
 text = "10"
-align = 2
-__meta__ = {
-"_edit_use_anchors_": false
-}
+horizontal_alignment = 2
 
-[node name="Description3" type="Label" parent="Control"]
+[node name="Description3" type="Label" parent="Control" unique_id=996202922]
+layout_mode = 0
 offset_left = -29.0
 offset_top = 201.0
 offset_right = 523.0
 offset_bottom = 233.0
-theme_override_fonts/font = SubResource( 2 )
+theme_override_fonts/font = SubResource("2")
 text = "Time"
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Coins3" type="Label" parent="Control"]
+[node name="Coins3" type="Label" parent="Control" unique_id=1101393191]
+layout_mode = 0
 offset_left = -32.5166
 offset_top = 201.079
 offset_right = 103.483
 offset_bottom = 221.079
-pivot_offset = Vector2( 32.1923, 18.5501 )
-theme_override_fonts/font = SubResource( 4 )
+pivot_offset = Vector2(32.1923, 18.5501)
+theme_override_fonts/font = SubResource("4")
 text = "10"
-align = 2
-__meta__ = {
-"_edit_use_anchors_": false
-}
+horizontal_alignment = 2
 
-[node name="Description4" type="Label" parent="Control"]
+[node name="Description4" type="Label" parent="Control" unique_id=1376115968]
+layout_mode = 0
 offset_left = -29.6332
 offset_top = 242.748
 offset_right = 83.3668
 offset_bottom = 274.748
-theme_override_fonts/font = SubResource( 2 )
+theme_override_fonts/font = SubResource("2")
 text = "Looting"
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
-[node name="Coins4" type="Label" parent="Control"]
+[node name="Coins4" type="Label" parent="Control" unique_id=1518478272]
+layout_mode = 0
 offset_left = 38.0
 offset_top = 243.0
 offset_right = 104.0
 offset_bottom = 259.0
-pivot_offset = Vector2( 32.1923, 18.5501 )
-theme_override_fonts/font = SubResource( 4 )
+pivot_offset = Vector2(32.1923, 18.5501)
+theme_override_fonts/font = SubResource("4")
 text = "10"
-align = 2
-__meta__ = {
-"_edit_use_anchors_": false
-}
+horizontal_alignment = 2
 
-[node name="Meter1" type="AnimatedSprite2D" parent="Control"]
-position = Vector2( 369.966, 130.456 )
-scale = Vector2( 3.99884, 3.99184 )
-frames = SubResource( 6 )
-animation = "1"
+[node name="Meter1" type="AnimatedSprite2D" parent="Control" unique_id=704085953]
+position = Vector2(369.966, 130.456)
+scale = Vector2(3.99884, 3.99184)
+sprite_frames = SubResource("6")
+animation = &"1"
 
-[node name="Meter2" type="AnimatedSprite2D" parent="Control"]
-position = Vector2( 369.966, 170.413 )
-scale = Vector2( 3.99884, 3.99184 )
-frames = SubResource( 6 )
-animation = "1"
+[node name="Meter2" type="AnimatedSprite2D" parent="Control" unique_id=835222782]
+position = Vector2(369.966, 170.413)
+scale = Vector2(3.99884, 3.99184)
+sprite_frames = SubResource("6")
+animation = &"1"
 
-[node name="Meter3" type="AnimatedSprite2D" parent="Control"]
-position = Vector2( 369.966, 210.42 )
-scale = Vector2( 3.99884, 3.99184 )
-frames = SubResource( 6 )
-animation = "1"
+[node name="Meter3" type="AnimatedSprite2D" parent="Control" unique_id=62670811]
+position = Vector2(369.966, 210.42)
+scale = Vector2(3.99884, 3.99184)
+sprite_frames = SubResource("6")
+animation = &"1"
 
-[node name="Meter4" type="AnimatedSprite2D" parent="Control"]
-position = Vector2( 369.966, 250.272 )
-scale = Vector2( 3.99884, 3.99184 )
-frames = SubResource( 6 )
-animation = "1"
+[node name="Meter4" type="AnimatedSprite2D" parent="Control" unique_id=594160924]
+position = Vector2(369.966, 250.272)
+scale = Vector2(3.99884, 3.99184)
+sprite_frames = SubResource("6")
+animation = &"1"
 
-[node name="ContinueOutline" type="ColorRect" parent="Control"]
+[node name="ContinueOutline" type="ColorRect" parent="Control" unique_id=905973115]
 visible = false
+layout_mode = 0
 offset_left = 213.0
 offset_top = 309.0
 offset_right = 460.0
 offset_bottom = 354.0
-color = Color( 1, 0, 0, 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
+color = Color(1, 0, 0, 1)
 
-[node name="Continue" type="Button" parent="Control"]
+[node name="Continue" type="Button" parent="Control" unique_id=1355004853]
+layout_mode = 0
 offset_left = 215.156
 offset_top = 311.167
 offset_right = 377.156
 offset_bottom = 338.167
-scale = Vector2( 1.5, 1.5 )
-theme_override_fonts/font = SubResource( 3 )
+scale = Vector2(1.5, 1.5)
+theme_override_fonts/font = SubResource("3")
 text = "Continue"
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [connection signal="mouse_entered" from="Control/Plus1Control" to="Control" method="_on_Control_mouse_entered"]
 [connection signal="pressed" from="Control/Plus1Control/Button" to="Control" method="_on_Button_pressed"]

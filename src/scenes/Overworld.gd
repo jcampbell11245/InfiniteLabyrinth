@@ -15,12 +15,11 @@ var floor_number
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	load_coins()
-	var floor_save = File.new()
-	if not floor_save.file_exists("user://floor.save"):
+	if not FileAccess.file_exists("user://floor.save"):
 		print("Aborting, no savefile")
 		return
 
-	floor_save.open("user://floor.save", File.READ)
+	var floor_save = FileAccess.open("user://floor.save", FileAccess.READ)
 	floor_number = int(floor_save.get_line())
 	floor_save.close()
 	
@@ -164,12 +163,11 @@ func reset_world():
 func load_coins():
 	print("Loading...")
 
-	var save_file = File.new()
-	if not save_file.file_exists("user://savefile.save"):
+	if not FileAccess.file_exists("user://savefile.save"):
 		print("Aborting, no savefile")
 		return
 
-	save_file.open("user://savefile.save", File.READ)
+	var save_file = FileAccess.open("user://savefile.save", FileAccess.READ)
 	get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins = int(save_file.get_line())
 	get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").update_text()
 	save_file.close()
@@ -177,9 +175,8 @@ func load_coins():
 func save_coins():
 	print("Saving...")
 
-	var save_file = File.new()
-	save_file.open("user://savefile.save", File.WRITE)
-	save_file.store_line(String(get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins))
+	var save_file = FileAccess.open("user://savefile.save", FileAccess.WRITE)
+	save_file.store_line(str(get_child(1).get_node("Camera2D/HudLayer/Hud/Coins").coins))
 	save_file.close()
 
 #func roomspawn():

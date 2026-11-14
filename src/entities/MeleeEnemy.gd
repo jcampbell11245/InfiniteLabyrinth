@@ -26,19 +26,17 @@ var looting = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	var crit_file = File.new()
-	if not crit_file.file_exists("user://damage.save"):
+	if not FileAccess.file_exists("user://damage.save"):
 		print("Aborting, no savefile")
 		return
-	crit_file.open("user://damage.save", File.READ)
+	var crit_file = FileAccess.open("user://damage.save", FileAccess.READ)
 	critical_chance = int(crit_file.get_line())
 	crit_file.close()
 	
-	var looting_file = File.new()
-	if not looting_file.file_exists("user://looting.save"):
+	if not FileAccess.file_exists("user://looting.save"):
 		print("Aborting, no savefile")
 		return
-	looting_file.open("user://looting.save", File.READ)
+	var looting_file = FileAccess.open("user://looting.save", FileAccess.READ)
 	looting = int(looting_file.get_line())
 	looting_file.close()
 	

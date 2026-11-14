@@ -1,72 +1,73 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene format=3 uid="uid://5m1on7gbhi5w"]
 
-[ext_resource path="res://src/scenes/Level.gd" type="Script" id=1]
-[ext_resource path="res://src/tilesets/Pitfalls.tscn" type="PackedScene" id=2]
-[ext_resource path="res://src/sfx/KnightDeath.tscn" type="PackedScene" id=3]
-[ext_resource path="res://src/tilesets/Tiles.tscn" type="PackedScene" id=4]
-[ext_resource path="res://src/tilesets/Top.tscn" type="PackedScene" id=5]
-[ext_resource path="res://src/RoomDetection.tscn" type="PackedScene" id=6]
-[ext_resource path="res://src/Void.tscn" type="PackedScene" id=7]
-[ext_resource path="res://src/sfx/GoblinDeath.tscn" type="PackedScene" id=8]
-[ext_resource path="res://src/tilesets/TopWalls.tscn" type="PackedScene" id=9]
-[ext_resource path="res://src/entities/Goblin.tscn" type="PackedScene" id=10]
-[ext_resource path="res://src/Decorations.tscn" type="PackedScene" id=11]
-[ext_resource path="res://src/DoorBottoms.tscn" type="PackedScene" id=12]
-[ext_resource path="res://src/Locks.tscn" type="PackedScene" id=13]
-[ext_resource path="res://src/tilesets/PitfallTransitions.tscn" type="PackedScene" id=14]
+[ext_resource type="Script" uid="uid://dsj75mxtyft3a" path="res://src/scenes/Level.gd" id="1"]
+[ext_resource type="PackedScene" path="res://src/tilesets/Pitfalls.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://src/sfx/KnightDeath.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://src/tilesets/Tiles.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://src/tilesets/Top.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://cv0qynawsd0nn" path="res://src/RoomDetection.tscn" id="6"]
+[ext_resource type="PackedScene" uid="uid://da0qyn5u6l0dl" path="res://src/Void.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://src/sfx/GoblinDeath.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://src/tilesets/TopWalls.tscn" id="9"]
+[ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/entities/Goblin.tscn" id="10"]
+[ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/Decorations.tscn" id="11"]
+[ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/DoorBottoms.tscn" id="12"]
+[ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/Locks.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://src/tilesets/PitfallTransitions.tscn" id="14"]
 
-[node name="Node2D" type="Node2D"]
-script = ExtResource( 1 )
+[node name="Node2D" type="Node2D" unique_id=511350287]
+script = ExtResource("1")
 
-[node name="Tiles" parent="." instance=ExtResource( 4 )]
-tile_data = PackedInt32Array( 458760, 9, 0, 458765, 16, 0, 458770, 12, 0, 524296, 8, 0, 524297, 6, 0, 524298, 6, 0, 524299, 6, 0, 524300, 6, 0, 524301, 1, 0, 524302, 6, 0, 524303, 6, 0, 524304, 6, 0, 524305, 6, 0, 524306, 11, 0, 589832, 7, 0, 589835, 0, 0, 589836, 0, 0, 589837, 0, 0, 589838, 0, 0, 589842, 10, 0, 655368, 7, 0, 655371, 0, 0, 655374, 0, 0, 655375, 0, 0, 655378, 10, 0, 720904, 7, 0, 720907, 0, 0, 720908, 0, 0, 720911, 0, 0, 720914, 10, 0, 786444, 0, 0, 786447, 0, 0, 851976, 16, 0, 851977, 0, 0, 851978, 0, 0, 851980, 0, 0, 851983, 0, 0, 851984, 0, 0, 851985, 0, 0, 851986, 16, 0, 917512, 7, 0, 917514, 0, 0, 917516, 0, 0, 917522, 10, 0, 983048, 7, 0, 983050, 0, 0, 983052, 0, 0, 983053, 0, 0, 983054, 0, 0, 983055, 0, 0, 983058, 10, 0, 1048584, 7, 0, 1048586, 0, 0, 1048591, 0, 0, 1048594, 10, 0, 1114120, 7, 0, 1114122, 0, 0, 1114123, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0, 1114130, 10, 0, 1179656, 5, 0, 1179657, 5, 0, 1179658, 5, 0, 1179659, 5, 0, 1179660, 5, 0, 1179662, 5, 0, 1179663, 5, 0, 1179664, 5, 0, 1179665, 5, 0, 1179666, 5, 0 )
+[node name="Tiles" parent="." unique_id=1648451269 instance=ExtResource("4")]
+format = 2
 
-[node name="DoorBottoms" parent="." instance=ExtResource( 12 )]
+[node name="DoorBottoms" parent="." unique_id=1304890170 instance=ExtResource("12")]
 
-[node name="Pitfalls" parent="." instance=ExtResource( 2 )]
-tile_data = PackedInt32Array( 589833, 0, 0, 589834, 0, 0, 589839, 0, 0, 589840, 0, 0, 589841, 0, 0, 655369, 3, 0, 655370, 6, 0, 655372, 0, 0, 655373, 0, 0, 655376, 4, 0, 655377, 3, 0, 720905, 3, 0, 720906, 6, 0, 720909, 17, 0, 720910, 0, 0, 720912, 4, 0, 720913, 3, 0, 786441, 2, 0, 786442, 7, 0, 786443, 0, 0, 786445, 4, 0, 786446, 6, 0, 786448, 5, 0, 786449, 2, 0, 851979, 17, 0, 851981, 4, 0, 851982, 6, 0, 917513, 0, 0, 917515, 17, 0, 917517, 5, 0, 917518, 14, 0, 917519, 0, 0, 917520, 0, 0, 917521, 0, 0, 983049, 6, 0, 983051, 17, 0, 983056, 4, 0, 983057, 3, 0, 1048585, 6, 0, 1048587, 14, 0, 1048588, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048592, 4, 0, 1048593, 3, 0, 1114121, 6, 0, 1114128, 4, 0, 1114129, 3, 0 )
+[node name="Pitfalls" parent="." unique_id=534435706 instance=ExtResource("2")]
+format = 2
 
-[node name="PitfallTransitions" parent="." instance=ExtResource( 14 )]
+[node name="PitfallTransitions" parent="." unique_id=2091173801 instance=ExtResource("14")]
+format = 2
 
-[node name="Top" parent="." instance=ExtResource( 5 )]
-tile_data = PackedInt32Array( 458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 458764, 1, 0, 458765, 0, 0, 458766, 1, 0, 458767, 1, 0, 458768, 1, 0, 458769, 1, 0, 589832, 4, 0, 589842, 5, 0, 655368, 4, 0, 655378, 5, 0, 720904, 8, 0, 720914, 11, 0, 786440, 7, 0, 786450, 10, 0, 851976, 6, 0, 851986, 9, 0, 917512, 4, 0, 917522, 5, 0, 983048, 4, 0, 983058, 5, 0, 1048584, 4, 0, 1048594, 5, 0, 1114120, 4, 0, 1114130, 5, 0, 1179661, 14, 0 )
+[node name="Top" parent="." unique_id=2113870810 instance=ExtResource("5")]
+format = 2
 
-[node name="Locks" parent="." instance=ExtResource( 13 )]
+[node name="Locks" parent="." unique_id=279820340 instance=ExtResource("13")]
 
-[node name="TopWalls" parent="." instance=ExtResource( 9 )]
-tile_data = PackedInt32Array(  )
+[node name="TopWalls" parent="." unique_id=883575102 instance=ExtResource("9")]
+format = 2
 
-[node name="Decorations" parent="." instance=ExtResource( 11 )]
+[node name="Decorations" parent="." unique_id=942800692 instance=ExtResource("11")]
 
-[node name="GoblinDeath" parent="." instance=ExtResource( 8 )]
+[node name="GoblinDeath" parent="." unique_id=1988225272 instance=ExtResource("8")]
 
-[node name="KnightDeath" parent="." instance=ExtResource( 3 )]
+[node name="KnightDeath" parent="." unique_id=1948622593 instance=ExtResource("3")]
 
-[node name="Goblin" parent="." instance=ExtResource( 10 )]
-position = Vector2( 271.446, 226.205 )
+[node name="Goblin" parent="." unique_id=956945126 instance=ExtResource("10")]
+position = Vector2(271.446, 226.205)
 
-[node name="Goblin2" parent="." instance=ExtResource( 10 )]
-position = Vector2( 247.635, 388.913 )
+[node name="Goblin2" parent="." unique_id=2109132247 instance=ExtResource("10")]
+position = Vector2(247.635, 388.913)
 starting_direction = "up"
 
-[node name="Goblin3" parent="." instance=ExtResource( 10 )]
-position = Vector2( 248.428, 411.931 )
+[node name="Goblin3" parent="." unique_id=661363216 instance=ExtResource("10")]
+position = Vector2(248.428, 411.931)
 
-[node name="Goblin4" parent="." instance=ExtResource( 10 )]
-position = Vector2( 365.8, 365.431 )
+[node name="Goblin4" parent="." unique_id=1481520265 instance=ExtResource("10")]
+position = Vector2(365.8, 365.431)
 starting_direction = "down"
 
-[node name="Goblin5" parent="." instance=ExtResource( 10 )]
-position = Vector2( 369.071, 314.305 )
+[node name="Goblin5" parent="." unique_id=6098777 instance=ExtResource("10")]
+position = Vector2(369.071, 314.305)
 
-[node name="Goblin6" parent="." instance=ExtResource( 10 )]
-position = Vector2( 343.576, 245.35 )
+[node name="Goblin6" parent="." unique_id=918563916 instance=ExtResource("10")]
+position = Vector2(343.576, 245.35)
 starting_direction = "up"
 
-[node name="Goblin7" parent="." instance=ExtResource( 10 )]
-position = Vector2( 295.208, 268.83 )
+[node name="Goblin7" parent="." unique_id=164177890 instance=ExtResource("10")]
+position = Vector2(295.208, 268.83)
 starting_direction = "down"
 
-[node name="RoomDetection" parent="." instance=ExtResource( 6 )]
+[node name="RoomDetection" parent="." unique_id=1777062847 instance=ExtResource("6")]
 
-[node name="Void" parent="." instance=ExtResource( 7 )]
+[node name="Void" parent="." unique_id=1905024330 instance=ExtResource("7")]
