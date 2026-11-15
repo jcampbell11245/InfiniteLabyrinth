@@ -18,7 +18,7 @@ func _on_player_died() -> void:
 	$GameOverSFX.play()
 	visible = true
 	scale = Vector2.ONE * SHOW_SCALE
-	SaveData.floor_number = 1
+	SaveData.floor_number = Game.START_FLOOR
 	SaveData.save()
 	
 	await get_tree().create_timer(SHOW_TIME).timeout

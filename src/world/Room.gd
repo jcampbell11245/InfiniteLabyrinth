@@ -21,6 +21,8 @@ const DOOR_CELLS := { # Doorway cell on each side
 }
 
 const UnlockSound := preload("res://assets/sfx/dooropen.wav")
+const LaserUnlockSound := preload("res://assets/sfx/laser_unlock.wav") # Floor 2 on: the laser bars switch off
+const LASER_UNLOCK_VOLUME_DB := -6.0 # The laser is about 7 dB louder than the floor-1 door sound
 const KILL_PITCH_STEP := 0.06 # Each kill in a row raises the death sound's pitch this much
 const KILL_PITCH_MAX_STEPS := 6
 
@@ -58,6 +60,18 @@ const PITFALL_EDGES := {
 const PIT_INSET_TOP := 12.0
 const PIT_INSET_SIDE := 4.0
 const PIT_INSET_BOTTOM := 4.0
+# Floor 2 on, a locked door is drawn whole on the Locks layer, below the player and the
+# door frames on Top, instead of floor 1's inserts under the arch. These are its cells, in
+# the order of its Locks sources: red (enemies) pieces from source 9, blue (switches) from 18.
+const FLOOR2_LOCK_CELLS := {
+	Door.TOP: [Vector2i(13, 7), Vector2i(13, 8)],
+	Door.RIGHT: [Vector2i(18, 11), Vector2i(18, 12), Vector2i(18, 13)],
+	Door.BOTTOM: [Vector2i(13, 18)],
+	Door.LEFT: [Vector2i(8, 11), Vector2i(8, 12), Vector2i(8, 13)],
+}
+const FLOOR2_LOCK_FIRST_SOURCE := {"enemies": 9, "switches": 18}
+const SIDE_DOOR_X := {Door.RIGHT: 18, Door.LEFT: 8}
+const BLACK := 16 # Plain black tile, the dark beyond a doorway
 const PitfallSpikes := preload("res://src/world/tiles/PitfallSpikes.tscn")
 const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.tscn")
 
@@ -73,6 +87,7 @@ var _detectors: TileMap # Transition detector tiles, one per open doorway
 var _key_gate: StaticBody2D # End room only: blocks the top door until the player has 3 keys
 var _was_cleared := false # Doors were already unlocked last time they were drawn
 var _kill_streak := 0 # Enemies killed since the player last walked in; pitches death sounds up
+var _floor2_doors := false # Doors use the floor-2 art and lock drawing
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
 @onready var knight_death: AudioStreamPlayer = $KnightDeath
@@ -99,6 +114,11 @@ func _ready() -> void:
 	_trim_pitfall_collision()
 	_add_pitfall_spikes(rng)
 	_add_transition_detectors()
+	_floor2_doors = FloorTheme.uses_floor2_art(SaveData.floor_number)
+	if _floor2_doors:
+		_open_side_doorways()
+	# Last, so the layers added above get the floor's art too.
+	FloorTheme.apply(self, SaveData.floor_number)
 
 func close_door(door: Door) -> void:
 	doors[door] = false
@@ -279,7 +299,7 @@ func _add_transition_detectors() -> void:
 # Redraws the door tiles from the room's state. Safe to call any number of times.
 func _refresh_doors() -> void:
 	_draw_closed_doors()
-	if room_id == Constants.END_ROOM && Game.keys == 3:
+	if room_id == Constants.END_ROOM && Game.keys >= 3:
 		tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
 		if _key_gate != null:
 			_key_gate.queue_free()
@@ -293,9 +313,12 @@ func _refresh_doors() -> void:
 # The payoff for clearing a locked room: a heavy unlock sound, a thud and dust at each door.
 func _celebrate_unlock() -> void:
 	var sound := AudioStreamPlayer.new()
-	sound.stream = UnlockSound
+	sound.stream = LaserUnlockSound if _floor2_doors else UnlockSound
+	if _floor2_doors:
+		sound.volume_db = LASER_UNLOCK_VOLUME_DB
 	add_child(sound)
-	Juice.play(sound, 0.03, 0.8)
+	# The floor-1 door is pitched down for weight; the laser plays as recorded.
+	Juice.play(sound, 0.03, 1.0 if _floor2_doors else 0.8)
 	sound.finished.connect(sound.queue_free)
 	Juice.shake(Juice.SHAKE_MEDIUM)
 	for door: Door in DOOR_CELLS:
@@ -304,6 +327,13 @@ func _celebrate_unlock() -> void:
 			Juice.burst(self, at, Color(0.75, 0.7, 0.6), 12, 50.0, Vector2.ZERO, 2.5, 0.6)
 
 func _draw_closed_doors() -> void:
+	# A floor-2 lock would show over the walls drawn for a closed door.
+	var locks: TileMap = get_node_or_null("Locks")
+	if _floor2_doors && locks != null:
+		for door: Door in FLOOR2_LOCK_CELLS:
+			if !doors[door]:
+				for cell: Vector2i in FLOOR2_LOCK_CELLS[door]:
+					locks.erase_cell(0, cell)
 	# The end room's top door is the key gate, opened by the keys instead.
 	if !doors[Door.TOP] && room_id != Constants.END_ROOM:
 		tiles.set_cell(0, Vector2i(13, 8), 6, Vector2i.ZERO)
@@ -321,6 +351,24 @@ func _draw_closed_doors() -> void:
 			top.set_cell(0, Vector2i(8, y), 4, Vector2i.ZERO)
 			tiles.set_cell(0, Vector2i(8, y), 7, Vector2i.ZERO)
 
+# Floor 2's open side doors show the dark beyond the doorway through the frame, where
+# floor 1 has wall above the passage. The upper two cells keep their collision (FLOOR_ALT
+# is see-through but solid) and the wall overlay comes off. Closing a door redraws the wall.
+func _open_side_doorways() -> void:
+	var top_walls: TileMap = get_node_or_null("TopWalls")
+	var sides: Array[Door] = [Door.RIGHT, Door.LEFT]
+	# The boss door is a sprite drawn over the wall (start room left, boss room right).
+	if has_node("BossDoor"):
+		sides.erase(Door.LEFT)
+	if has_node("BossDoorBody"):
+		sides.erase(Door.RIGHT)
+	for door in sides:
+		for i in range(3):
+			var cell := Vector2i(SIDE_DOOR_X[door], 11 + i)
+			tiles.set_cell(0, cell, BLACK if i == 2 else FLOOR_ALT, Vector2i.ZERO)
+			if top_walls != null:
+				top_walls.erase_cell(0, cell)
+
 # Lock tiles differ by what clears the room: switches or enemies. Closed doors are
 # redrawn over them straight after, except on the Locks layer.
 func _draw_locks() -> void:
@@ -328,6 +376,15 @@ func _draw_locks() -> void:
 	if !switches && completion_criteria != "enemies":
 		return
 	var locks: TileMap = $Locks
+	if _floor2_doors:
+		# Only open doors get a lock, since the walls of a closed one don't cover it.
+		var source: int = FLOOR2_LOCK_FIRST_SOURCE[completion_criteria]
+		for door: Door in FLOOR2_LOCK_CELLS:
+			for cell: Vector2i in FLOOR2_LOCK_CELLS[door]:
+				if doors[door]:
+					locks.set_cell(0, cell, source, Vector2i.ZERO)
+				source += 1
+		return
 	tiles.set_cell(0, Vector2i(13, 8), 21 if switches else 20, Vector2i.ZERO)
 	locks.set_cell(0, Vector2i(8, 13), 1 if switches else 0, Vector2i.ZERO)
 	locks.set_cell(0, Vector2i(8, 12), 5 if switches else 4, Vector2i.ZERO)
@@ -337,6 +394,13 @@ func _draw_locks() -> void:
 
 func _draw_unlocked_doors() -> void:
 	var locks: TileMap = get_node_or_null("Locks")
+	if _floor2_doors:
+		if locks != null:
+			for door: Door in FLOOR2_LOCK_CELLS:
+				if doors[door]:
+					for cell: Vector2i in FLOOR2_LOCK_CELLS[door]:
+						locks.erase_cell(0, cell)
+		return
 	if doors[Door.TOP]:
 		tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
 	if doors[Door.LEFT]:
