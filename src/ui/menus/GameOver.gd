@@ -15,6 +15,8 @@ func _ready() -> void:
 
 func _on_player_died() -> void:
 	_move_to_screen_layer()
+	# Stopped, not left paused, or it plays for a moment when the tree unpauses below.
+	Music.stop_all()
 	$GameOverSFX.play()
 	visible = true
 	scale = Vector2.ONE * SHOW_SCALE

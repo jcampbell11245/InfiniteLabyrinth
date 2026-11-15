@@ -150,8 +150,11 @@ func splat(room: Node2D, at: Vector2, color: Color, radius := 9.0) -> void:
 	var s: Node2D = Splat.new()
 	s.color = color
 	s.radius = radius
+	if room.has_method("is_floor_at"):
+		s.is_floor = room.is_floor_at
+	# Placed before it enters the tree, since it lays out its pieces in _ready.
+	s.position = room.to_local(at)
 	room.add_child(s)
-	s.global_position = at
 
 # Throws `total` coins out of `at` as pickups that fly to the player and are credited when
 # they arrive. Splits the value over a handful of coins.

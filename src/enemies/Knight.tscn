@@ -1275,6 +1275,7 @@ attack_end_frame = 13
 attack_cooldown_length = 1.0
 only_hit_during_attack = true
 coin_reward = 30
+side_wall_margin = 22.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=922099642]
 autoplay = "idle_right"

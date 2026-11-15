@@ -7,6 +7,9 @@ const PIXEL := 1.0
 
 var color := Color(0.5, 0.05, 0.05)
 var radius := 9.0
+# Takes a global point and returns false where the stain mustn't show (pits, walls).
+# Pieces landing there are dropped. Empty keeps every piece.
+var is_floor := Callable()
 
 var _rects: Array[Rect2] = []
 var _shades: Array[Color] = []
@@ -21,7 +24,10 @@ func _ready() -> void:
 		var offset := Vector2.from_angle(randf() * TAU) * dist
 		offset.y *= 0.6 # Squashed, since the floor is seen at an angle
 		var size := PIXEL * randi_range(1, 3)
-		_rects.append(Rect2(offset.round(), Vector2(size, size)))
+		var rect := Rect2(offset.round(), Vector2(size, size))
+		if is_floor.is_valid() && !is_floor.call(to_global(rect.get_center())):
+			continue
+		_rects.append(rect)
 		_shades.append(color.darkened(randf_range(0.0, 0.25)))
 	queue_redraw()
 

@@ -15,6 +15,13 @@ func start_floor() -> void:
 func stop_dungeon() -> void:
 	dungeon.stop()
 
+# Silences every track. The players pause with the tree, so a track that is only paused
+# would pick up again the moment the game unpauses.
+func stop_all() -> void:
+	dungeon.stop()
+	boss_intro.stop()
+	boss_loop.stop()
+
 func play_boss() -> void:
 	boss_intro.play()
 

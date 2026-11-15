@@ -1456,6 +1456,7 @@ size = Vector2(36.7336, 114.9414)
 
 [node name="Boss" type="CharacterBody2D" unique_id=1660009040]
 z_index = 2
+collision_mask = 289
 motion_mode = 1
 script = ExtResource("17")
 speed = 70.0

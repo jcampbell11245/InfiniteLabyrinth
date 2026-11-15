@@ -71,6 +71,8 @@ const FLOOR2_LOCK_CELLS := {
 }
 const FLOOR2_LOCK_FIRST_SOURCE := {"enemies": 9, "switches": 18}
 const SIDE_DOOR_X := {Door.RIGHT: 18, Door.LEFT: 8}
+const FLOOR_FIRST_ROW := 9 # Top row of the walkable floor
+const TOP_BACK_Z := 0 # The top wall: over the floor, under everything standing on it (z 1 and up)
 const BLACK := 16 # Plain black tile, the dark beyond a doorway
 const PitfallSpikes := preload("res://src/world/tiles/PitfallSpikes.tscn")
 const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.tscn")
@@ -88,6 +90,8 @@ var _key_gate: StaticBody2D # End room only: blocks the top door until the playe
 var _was_cleared := false # Doors were already unlocked last time they were drawn
 var _kill_streak := 0 # Enemies killed since the player last walked in; pitches death sounds up
 var _floor2_doors := false # Doors use the floor-2 art and lock drawing
+var _top_back: TileMap # The top wall's cells from Top, drawn below everything on the floor
+var _top_arch: TileMap # The top door's column of them, raised while the player walks through
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
 @onready var knight_death: AudioStreamPlayer = $KnightDeath
@@ -114,6 +118,8 @@ func _ready() -> void:
 	_trim_pitfall_collision()
 	_add_pitfall_spikes(rng)
 	_add_transition_detectors()
+	_add_door_blockers()
+	_split_top_wall()
 	_floor2_doors = FloorTheme.uses_floor2_art(SaveData.floor_number)
 	if _floor2_doors:
 		_open_side_doorways()
@@ -149,6 +155,12 @@ func add_key_gate() -> void:
 func clamp_to_floor(point: Vector2, margin: float) -> Vector2:
 	var inset := Vector2(margin, margin)
 	return point.clamp(FLOOR_RECT.position + inset, FLOOR_RECT.end - inset)
+
+# True when `point` (global) is on the room's 9x9 floor and not over a pitfall.
+func is_floor_at(point: Vector2) -> bool:
+	var cell := tiles.local_to_map(tiles.to_local(point))
+	var on_floor := cell.x >= 9 && cell.x <= 17 && cell.y >= 9 && cell.y <= 17
+	return on_floor && !_is_pit(cell)
 
 func is_cleared() -> bool:
 	match completion_criteria:
@@ -294,6 +306,53 @@ func _add_transition_detectors() -> void:
 		_detectors.set_cell(0, DOOR_CELLS[door], 0, Vector2i.ZERO)
 	add_child(_detectors)
 
+# Fills every doorway with a block on the top-tiles layer, which enemies (and enemy
+# projectiles) collide with but the player doesn't. Without it, an enemy that outlives the
+# doors' locks (a knight in a switch room) can walk into a doorway and under its arch.
+func _add_door_blockers() -> void:
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(tiles.tile_set.tile_size)
+	for door: Door in DOOR_CELLS:
+		var collision := CollisionShape2D.new()
+		collision.shape = shape
+		var blocker := StaticBody2D.new()
+		blocker.name = "DoorBlocker%d" % door
+		blocker.collision_layer = 0
+		blocker.set_collision_layer_value(Constants.Layer.TOP_TILES, true)
+		blocker.collision_mask = 0
+		blocker.position = tiles.map_to_local(DOOR_CELLS[door])
+		blocker.add_child(collision)
+		add_child(blocker)
+
+# Moves the top wall (Top's rows above the floor) onto layers below everything standing on
+# the floor. Top draws over characters so they pass behind the side and bottom walls, but
+# the top wall is always behind them; on Top it cut off the heads of tall enemies standing
+# against it. The top door's column gets a layer of its own, which set_arch_in_front()
+# raises while the player walks through the door, so they still pass under the arch.
+func _split_top_wall() -> void:
+	_top_back = _new_top_layer("TopBack")
+	_top_arch = _new_top_layer("TopArch")
+	var arch_x: int = DOOR_CELLS[Door.TOP].x
+	for cell: Vector2i in top.get_used_cells(0):
+		if cell.y < FLOOR_FIRST_ROW:
+			var layer := _top_arch if cell.x == arch_x else _top_back
+			layer.set_cell(0, cell, top.get_cell_source_id(0, cell),
+				top.get_cell_atlas_coords(0, cell), top.get_cell_alternative_tile(0, cell))
+			top.erase_cell(0, cell)
+
+func _new_top_layer(layer_name: String) -> TileMap:
+	var layer := TileMap.new()
+	layer.name = layer_name
+	layer.tile_set = top.tile_set
+	layer.z_index = TOP_BACK_Z
+	add_child(layer)
+	return layer
+
+# Draws the top door's arch over the player (while they walk through it) or back behind
+# everything on the floor.
+func set_arch_in_front(in_front: bool) -> void:
+	_top_arch.z_index = top.z_index if in_front else TOP_BACK_Z
+
 # --- Doors ---
 
 # Redraws the door tiles from the room's state. Safe to call any number of times.
@@ -337,8 +396,8 @@ func _draw_closed_doors() -> void:
 	# The end room's top door is the key gate, opened by the keys instead.
 	if !doors[Door.TOP] && room_id != Constants.END_ROOM:
 		tiles.set_cell(0, Vector2i(13, 8), 6, Vector2i.ZERO)
-		top.set_cell(0, Vector2i(13, 8), 3, Vector2i.ZERO)
-		top.set_cell(0, Vector2i(13, 7), 1, Vector2i.ZERO)
+		_top_arch.set_cell(0, Vector2i(13, 8), 3, Vector2i.ZERO)
+		_top_arch.set_cell(0, Vector2i(13, 7), 1, Vector2i.ZERO)
 	if !doors[Door.RIGHT]:
 		for y in range(11, 14):
 			top.set_cell(0, Vector2i(18, y), 12, Vector2i.ZERO)

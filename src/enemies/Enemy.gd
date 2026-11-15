@@ -24,6 +24,10 @@ const SWORD_DAMAGE := 1.0 # Health a sword hit takes; arrows carry their own dam
 @export var invincibility_time := 0.3 # Seconds after a hit before the next one counts
 @export var coin_reward := 0 # Coins per floor number
 @export var blood_color := Color(0.55, 0.08, 0.08) # Hit particles and the stain left on death
+# Closest the enemy's origin gets to a side wall, in pixels. The side walls are drawn over
+# everything standing next to them, so a sprite much wider than its feet would vanish into
+# them; this keeps it clear. 0 lets the feet touch the wall.
+@export var side_wall_margin := 0.0
 
 var direction := "" # Direction facing; "" until first set
 var knockback := Vector2.ZERO
@@ -162,6 +166,15 @@ func _apply_knockback(delta: float) -> void:
 	velocity = knockback
 	move_and_slide()
 	knockback = velocity
+	_keep_off_side_walls()
+
+# Holds the enemy side_wall_margin away from the room's left and right walls.
+func _keep_off_side_walls() -> void:
+	if side_wall_margin <= 0:
+		return
+	# position is room-local, since enemies are direct children of their room.
+	position.x = clampf(position.x, Room.FLOOR_RECT.position.x + side_wall_margin,
+		Room.FLOOR_RECT.end.x - side_wall_margin)
 
 func _on_invincibility_cooldown_timeout() -> void:
 	animator.modulate.a = 1

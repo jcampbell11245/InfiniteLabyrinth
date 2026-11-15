@@ -24,6 +24,8 @@ const RESPAWN_OFFSET := Vector2(0, -5) # Player's origin relative to the respawn
 # How long enemies stay frozen after the player starts walking through a door, by direction.
 const KNOCKBACK_SPEED := 150.0 # Pixels/sec the player is pushed when hit; decays at 300/sec
 
+const DOOR_PULL := 10.0 # Per second: how hard the auto-walk centres the player in a doorway
+
 const TRANSITION_PAUSE := {Direction.RIGHT: 1.0, Direction.LEFT: 1.0, Direction.DOWN: 1.2, Direction.UP: 1.15}
 
 const HURTBOX_Y := -2.0 # Hurtbox centre; the sprite spans about -19.5..15
@@ -81,6 +83,9 @@ var _land_sound: AudioStreamPlayer
 # until the TransitionPause timer (and any boss-door cutscene) ends; enemies freeze meanwhile.
 var auto_walking := false
 var in_transition := false
+# Global centre of the doorway being walked through, or null outside a door transition.
+# The auto-walk steers the player's feet onto it so they can't catch on the door frame.
+var _door_lane: Variant = null
 
 @onready var animator: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hurtbox: CollisionShape2D = $Hurtbox/CollisionShape2D
@@ -105,6 +110,8 @@ func _physics_process(delta: float) -> void:
 		_handle_input(input)
 		_update_animation(input)
 		_update_hitboxes()
+	elif _door_lane != null:
+		_steer_through_door()
 	if visible:
 		move_and_slide()
 
@@ -358,6 +365,11 @@ func _on_room_detection_box_body_entered(body: Node2D) -> void:
 		auto_walking = true
 		in_transition = true
 		start_transition()
+		_door_lane = _doorway_centre()
+		# Going through a top door (leaving up, or arriving from above after a bottom door),
+		# pass under its arch, which otherwise sits behind everything on the floor.
+		if direction == Direction.UP || direction == Direction.DOWN:
+			_set_arches_in_front(true)
 
 # Walks the player out through the nearest door, along the axis it's furthest from the room centre.
 func start_transition() -> void:
@@ -365,10 +377,12 @@ func start_transition() -> void:
 		velocity = last_velocity
 		move_and_slide()
 	var room_center := Game.room_by_id(current_room).position + Room.CENTRE
+	# Which side of the centre the player is on picks the door, not which way they were
+	# moving: a knockback can carry a player who is walking the other way into a doorway.
 	if current_room == Constants.START_ROOM || abs(position.x - room_center.x) > abs(position.y - room_center.y):
-		direction = Direction.RIGHT if velocity.x > 0 else Direction.LEFT
+		direction = Direction.RIGHT if position.x > room_center.x else Direction.LEFT
 	else:
-		direction = Direction.DOWN if velocity.y > 0 else Direction.UP
+		direction = Direction.DOWN if position.y > room_center.y else Direction.UP
 	velocity = Direction.to_vector(direction) * speed
 	_play(Action.WALK)
 	move_and_slide()
@@ -378,10 +392,38 @@ func start_transition() -> void:
 func end_transition() -> void:
 	in_transition = false
 
+# Global centre of the doorway the player is walking out through, picked by direction.
+func _doorway_centre() -> Vector2:
+	var door: Room.Door
+	match direction:
+		Direction.RIGHT: door = Room.Door.RIGHT
+		Direction.LEFT: door = Room.Door.LEFT
+		Direction.UP: door = Room.Door.TOP
+		_: door = Room.Door.BOTTOM
+	var tiles: TileMap = Game.room_by_id(current_room).tiles
+	return tiles.to_global(tiles.map_to_local(Room.DOOR_CELLS[door]))
+
+# Keeps the auto-walk going through a doorway. Sliding into the frame zeroes the velocity,
+# which would leave the player stuck there, so it is set afresh every frame: full speed
+# out through the door, plus a sideways pull that centres the feet on the doorway.
+func _steer_through_door() -> void:
+	var ahead := Direction.to_vector(direction)
+	var feet: Vector2 = $CollisionShape2D.global_position
+	var off: Vector2 = _door_lane - feet
+	var across := off - ahead * off.dot(ahead) # The part of the offset across the doorway
+	velocity = ahead * speed + (across * DOOR_PULL).limit_length(speed)
+
+# Both rooms a top door joins draw their part of it, so every room's arch is moved.
+func _set_arches_in_front(in_front: bool) -> void:
+	for room: Room in Game.overworld.rooms_by_id.values():
+		room.set_arch_in_front(in_front)
+
 # Entered the next room
 func _on_room_detector_area_entered(area: Area2D) -> void:
 	current_room = area.get_parent().room_id
 	auto_walking = false
+	_door_lane = null
+	_set_arches_in_front(false)
 	_play(Action.IDLE)
 	Game.room_entered.emit(current_room)
 
