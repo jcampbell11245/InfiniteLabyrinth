@@ -214,6 +214,7 @@ scale = Vector2(1.99905, 1.99905)
 sprite_frames = SubResource("5")
 
 [node name="Button" type="Button" parent="Control/Plus1Control" unique_id=579722809]
+focus_mode = 0
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
 offset_left = 4.0
@@ -234,6 +235,7 @@ scale = Vector2(1.99905, 1.99905)
 sprite_frames = SubResource("5")
 
 [node name="Button2" type="Button" parent="Control/Plus2Control" unique_id=1653908821]
+focus_mode = 0
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
 offset_left = -0.944946
@@ -255,6 +257,7 @@ scale = Vector2(1.99905, 1.99905)
 sprite_frames = SubResource("5")
 
 [node name="Button3" type="Button" parent="Control/Plus3Control" unique_id=1538515566]
+focus_mode = 0
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
 offset_left = -0.750671
@@ -276,6 +279,7 @@ scale = Vector2(1.99905, 1.99905)
 sprite_frames = SubResource("5")
 
 [node name="Button4" type="Button" parent="Control/Plus4Control" unique_id=1178649513]
+focus_mode = 0
 modulate = Color(1, 1, 1, 0)
 layout_mode = 0
 offset_top = 1.33258
@@ -413,6 +417,7 @@ offset_bottom = 354.0
 color = Color(1, 0, 0, 1)
 
 [node name="Continue" type="Button" parent="Control" unique_id=1355004853]
+focus_mode = 0
 layout_mode = 0
 offset_left = 215.156
 offset_top = 311.167

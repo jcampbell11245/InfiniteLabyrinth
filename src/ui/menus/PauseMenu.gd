@@ -22,3 +22,6 @@ func pause() -> void:
 		get_tree().paused = new_pause_state
 		visible = new_pause_state
 		pause_state = new_pause_state
+		if new_pause_state:
+			# Give the menu focus so the stick/D-pad can move between Resume and Quit.
+			$PauseVBox/ButtonVBox/Resume.grab_focus()
