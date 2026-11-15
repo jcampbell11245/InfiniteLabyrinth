@@ -41,32 +41,29 @@ const GHOST_FADE := 0.2
 const FEET := Vector2(0, 13) # From the origin to the player's feet
 const DUST := Color(0.75, 0.7, 0.6)
 
-# Movement sounds, each picked at random per play.
+# 8-bit movement sounds, each picked at random per play.
 const FOOTSTEPS: Array[AudioStream] = [
-	preload("res://assets/sfx/movement/footstep0.ogg"), preload("res://assets/sfx/movement/footstep1.ogg"),
-	preload("res://assets/sfx/movement/footstep2.ogg"), preload("res://assets/sfx/movement/footstep3.ogg"),
-	preload("res://assets/sfx/movement/footstep4.ogg"), preload("res://assets/sfx/movement/footstep5.ogg"),
-	preload("res://assets/sfx/movement/footstep6.ogg"), preload("res://assets/sfx/movement/footstep7.ogg"),
-	preload("res://assets/sfx/movement/footstep8.ogg"), preload("res://assets/sfx/movement/footstep9.ogg"),
+	preload("res://assets/sfx/movement/footstep1.wav"), preload("res://assets/sfx/movement/footstep2.wav"),
+	preload("res://assets/sfx/movement/footstep3.wav"), preload("res://assets/sfx/movement/footstep4.wav"),
+	preload("res://assets/sfx/movement/footstep5.wav"), preload("res://assets/sfx/movement/footstep6.wav"),
+	preload("res://assets/sfx/movement/footstep7.wav"), preload("res://assets/sfx/movement/footstep8.wav"),
+	preload("res://assets/sfx/movement/footstep9.wav"),
 ]
-const ROLL_SWISHES: Array[AudioStream] = [
+const ROLL_BLIPS: Array[AudioStream] = [
 	preload("res://assets/sfx/movement/roll1.wav"), preload("res://assets/sfx/movement/roll2.wav"),
 	preload("res://assets/sfx/movement/roll3.wav"), preload("res://assets/sfx/movement/roll4.wav"),
-]
-const ROLL_CLOTH: Array[AudioStream] = [
-	preload("res://assets/sfx/movement/cloth1.ogg"), preload("res://assets/sfx/movement/cloth2.ogg"),
-	preload("res://assets/sfx/movement/cloth3.ogg"),
+	preload("res://assets/sfx/movement/roll5.wav"), preload("res://assets/sfx/movement/roll6.wav"),
 ]
 const LANDINGS: Array[AudioStream] = [
 	preload("res://assets/sfx/movement/land1.wav"), preload("res://assets/sfx/movement/land2.wav"),
-	preload("res://assets/sfx/movement/land3.wav"),
+	preload("res://assets/sfx/movement/land3.wav"), preload("res://assets/sfx/movement/land4.wav"),
+	preload("res://assets/sfx/movement/land5.wav"), preload("res://assets/sfx/movement/land6.wav"),
 ]
 const STEP_DISTANCE := 28.0 # Pixels walked between footsteps (about 4.5 a second)
-const FOOTSTEP_DB := -14.0
+const FOOTSTEP_DB := -4.0
 const ROLL_DB := -8.0
-const CLOTH_DB := -6.0
-const ROLL_LAND_DB := -16.0 # Soft thud as a roll ends
-const PIT_LAND_DB := -6.0 # Heavier thud dropping back in after a pitfall
+const ROLL_LAND_DB := -12.0 # Soft thud as a roll ends
+const PIT_LAND_DB := -4.0 # Heavier thud dropping back in after a pitfall
 
 # Everything the player pressed this frame. Movement actions share their names with
 # the Direction constants.
@@ -90,7 +87,6 @@ var _ghost_timer := 0.0
 var _step_travel := 0.0 # Pixels walked since the last footstep
 var _footstep_sound: AudioStreamPlayer
 var _roll_sound: AudioStreamPlayer
-var _cloth_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
@@ -115,7 +111,6 @@ func _ready() -> void:
 	Juice.add_flash(animator)
 	_footstep_sound = _add_sound(FOOTSTEP_DB)
 	_roll_sound = _add_sound(ROLL_DB)
-	_cloth_sound = _add_sound(CLOTH_DB)
 	_land_sound = _add_sound(PIT_LAND_DB)
 
 func _physics_process(delta: float) -> void:
@@ -168,8 +163,7 @@ func _handle_input(input: FrameInput) -> void:
 		hitbox.disabled = true
 		hurtbox.disabled = true
 		_ghost_timer = 0.0
-		_play_random(_roll_sound, ROLL_SWISHES, 0.08)
-		_play_random(_cloth_sound, ROLL_CLOTH, 0.08)
+		_play_random(_roll_sound, ROLL_BLIPS, 0.04)
 		Juice.burst(get_parent(), global_position + FEET, DUST, 8, 45.0,
 			-Direction.to_vector(direction), 2.0, 0.35)
 	elif rolling.time_left == 0:
