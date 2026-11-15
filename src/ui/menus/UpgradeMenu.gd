@@ -6,7 +6,8 @@ extends Control
 # mouse; the row after the upgrades is Continue.
 
 const MAX_LEVEL := 9
-const COSTS := [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, "MAX"] # By current level
+# By current level: cheap early levels, about 150 * 1.55^level rounded to 50.
+const COSTS := [150, 250, 350, 550, 850, 1350, 2100, 3200, 5000, "MAX"]
 
 # One row per upgrade: its SaveData field and the nodes that show it.
 const UPGRADES := [

@@ -26,7 +26,11 @@ const KNOCKBACK_SPEED := 150.0 # Pixels/sec the player is pushed when hit; decay
 
 const TRANSITION_PAUSE := {Direction.RIGHT: 1.0, Direction.LEFT: 1.0, Direction.DOWN: 1.2, Direction.UP: 1.15}
 
+const HURTBOX_Y := -2.0 # Hurtbox centre; the sprite spans about -19.5..15
+const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of centre
+
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
+const ARROW_DAMAGE := 0.5 # Enemy health per arrow; a sword hit takes 1
 
 # Everything the player pressed this frame. Movement actions share their names with
 # the Direction constants.
@@ -110,7 +114,8 @@ func _handle_input(input: FrameInput) -> void:
 		velocity += Direction.to_vector(direction)
 		speed *= 2
 		rolling.start(0.25)
-		set_collision_mask_value(Constants.Layer.GENERAL, false)
+		# Rolls pass through enemies (to get behind a knight mid-slash), never walls.
+		set_collision_mask_value(Constants.Layer.ENEMY, false)
 		hitbox.disabled = true
 		hurtbox.disabled = true
 	elif rolling.time_left == 0:
@@ -127,6 +132,7 @@ func _handle_input(input: FrameInput) -> void:
 		get_parent().add_child(arrow)
 		arrow.position = position
 		arrow.direction = direction
+		arrow.damage = ARROW_DAMAGE
 		shoot_cooldown.start(0.5)
 		$Shoot.play()
 
@@ -155,14 +161,15 @@ func _update_animation(input: FrameInput) -> void:
 		else:
 			_play(Action.SHOOT)
 
+# The hurtbox's size is set in the scene to cover the sprite; facing sideways the sprite
+# sits a little off-centre, so the hurtbox follows it.
 func _update_hitboxes() -> void:
-	hurtbox.shape.set_size(Vector2(23, 48))
 	if direction == Direction.RIGHT:
-		hurtbox.position = Vector2(-4.5, 0)
+		hurtbox.position = Vector2(-HURTBOX_SIDE_OFFSET, HURTBOX_Y)
 	elif direction == Direction.LEFT:
-		hurtbox.position = Vector2(4.5, 0)
+		hurtbox.position = Vector2(HURTBOX_SIDE_OFFSET, HURTBOX_Y)
 	else:
-		hurtbox.position = Vector2(0, 0)
+		hurtbox.position = Vector2(0, HURTBOX_Y)
 	$HitboxPivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 
 	if _action() != Action.SLASH:
@@ -248,7 +255,7 @@ func _on_rolling_timeout() -> void:
 	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
 		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	_play(Action.IDLE)
-	set_collision_mask_value(Constants.Layer.GENERAL, true)
+	set_collision_mask_value(Constants.Layer.ENEMY, true)
 	hitbox.disabled = false
 	hurtbox.disabled = false
 	roll_cooldown.start(1)

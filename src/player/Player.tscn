@@ -1158,10 +1158,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="119"]
-size = Vector2(21.4914, 40)
+size = Vector2(22, 48)
 
 [sub_resource type="RectangleShape2D" id="120"]
-size = Vector2(25.5372, 35.7424)
+size = Vector2(24, 34)
 
 [sub_resource type="RectangleShape2D" id="121"]
 size = Vector2(10, 10)
@@ -1208,7 +1208,7 @@ collision_layer = 4
 collision_mask = 19
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=408705773]
-position = Vector2(0, -1.96209)
+position = Vector2(0, -2)
 shape = SubResource("120")
 
 [node name="FeetBox" type="Area2D" parent="." unique_id=1405005177]
