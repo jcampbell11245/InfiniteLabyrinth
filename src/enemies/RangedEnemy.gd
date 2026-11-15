@@ -1,11 +1,11 @@
 extends Enemy
 
 # Wizard: backs away while the player is lined up with it on either axis, otherwise casts
-# a burst of three fireballs in the direction it faces.
+# a burst of three fireballs, half a second apart, in the direction it faces.
 
 const Fireball := preload("res://src/projectiles/Fireball.tscn")
 const BURST_COOLDOWN := 2.5 # Replaces attack_cooldown_length once a fireball is out
-const BURST_SHOT_DELAY := 1.0
+const BURST_SHOT_DELAY := 0.5 # Between each of the three shots
 
 # Room-local bounds on backing away. The wizard faces the player and backs away from them,
 # so facing left it backs towards RETREAT_LIMIT_RIGHT, and so on.
@@ -26,10 +26,11 @@ func _physics_process(delta: float) -> void:
 	if player.in_transition || !room.player_active || !is_player_in_room():
 		return
 	
-	if _is_player_mostly_horizontal():
-		_face_player_horizontally()
-	else:
-		_face_player_vertically(0)
+	if !_is_bursting():
+		if _is_player_mostly_horizontal():
+			_face_player_horizontally()
+		else:
+			_face_player_vertically(0)
 	
 	if _is_retreating():
 		var motion := -_to_player().normalized() * speed * delta
@@ -69,9 +70,14 @@ func shoot_fireball() -> void:
 	var fireball: Projectile = Fireball.instantiate()
 	room.add_child(fireball)
 	fireball.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)
-	fireball.direction = String(animator.animation).get_slice("_", 1)
+	fireball.direction = direction
 	fireball.damage = damage
 	attack_cooldown.start(BURST_COOLDOWN)
+
+# From the start of the shoot animation until the third shot is out. The wizard keeps
+# the facing it started the burst with, so all three shots fly the same way.
+func _is_bursting() -> bool:
+	return _animation_is("shoot") || !$ThirdShotCountdown.is_stopped()
 
 # Within CLOSE_RANGE of the player on at least one axis.
 func _is_player_lined_up() -> bool:
@@ -95,7 +101,7 @@ func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("shoot") && animator.frame == attack_frame:
 		shoot_fireball()
 		$SecondShotCountdown.start(BURST_SHOT_DELAY)
-		$ThirdShotCountdown.start(BURST_SHOT_DELAY)
+		$ThirdShotCountdown.start(BURST_SHOT_DELAY * 2)
 
 func _on_second_shot_countdown_timeout() -> void:
 	shoot_fireball()
