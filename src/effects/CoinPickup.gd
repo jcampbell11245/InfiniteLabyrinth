@@ -57,6 +57,7 @@ func _collect() -> void:
 	if !_credited:
 		_credited = true
 		Game.add_coins(value)
+		Juice.coin_sound()
 	queue_free()
 
 # Never lose coins: if the coin is removed before it arrives (scene change), bank it.

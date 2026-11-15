@@ -18,11 +18,36 @@ const SHAKE_LIGHT := [0.12, 30.0, 1.0]
 const SHAKE_MEDIUM := [0.2, 30.0, 2.0]
 const SHAKE_HEAVY := [0.3, 30.0, 3.0]
 
+# Coin pickup: a random one of the ten coin sounds per coin. Coins that land close
+# together climb in pitch, and ones landing within COIN_GAP of each other are merged.
+const COIN_SOUNDS: Array[AudioStream] = [
+	preload("res://assets/sfx/coin/coin1.wav"), preload("res://assets/sfx/coin/coin2.wav"),
+	preload("res://assets/sfx/coin/coin3.wav"), preload("res://assets/sfx/coin/coin4.wav"),
+	preload("res://assets/sfx/coin/coin5.wav"), preload("res://assets/sfx/coin/coin6.wav"),
+	preload("res://assets/sfx/coin/coin7.wav"), preload("res://assets/sfx/coin/coin8.wav"),
+	preload("res://assets/sfx/coin/coin9.wav"), preload("res://assets/sfx/coin/coin10.wav"),
+]
+const COIN_GAP := 40 # Ms; a coin arriving sooner than this after the last makes no sound
+const COIN_CHAIN := 400 # Ms; coins arriving within this of the last count as one chain
+const COIN_PITCH_STEP := 0.05
+const COIN_PITCH_MAX_STEPS := 6
+const COIN_VOLUME_DB := -4.0
+const COIN_VOICES := 4 # Players taken in turn, so a new coin doesn't cut off the last
+
 var _hitstop_until := 0 # Ticks (ms) when the current hit-stop ends; 0 when none
+var _coin_players: Array[AudioStreamPlayer] = []
+var _next_coin_player := 0
+var _last_coin := -100000 # Ticks (ms) of the last coin sound
+var _coin_chain := 0 # Coins in the current chain
 
 func _ready() -> void:
 	# Keeps checking the clock while the game is paused or slowed.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	for i in COIN_VOICES:
+		var voice := AudioStreamPlayer.new()
+		voice.volume_db = COIN_VOLUME_DB
+		add_child(voice)
+		_coin_players.append(voice)
 
 # Ends hit-stop by the real-time clock, since timers run slow while it's on.
 func _process(_delta: float) -> void:
@@ -51,6 +76,19 @@ func play(sound: Node, spread := 0.08, base := 1.0) -> void:
 		return
 	sound.pitch_scale = base * randf_range(1.0 - spread, 1.0 + spread)
 	sound.play()
+
+# Plays a coin pickup sound, pitched up the further into a quick chain of coins it is.
+func coin_sound() -> void:
+	var now := Time.get_ticks_msec()
+	var since := now - _last_coin
+	if since < COIN_GAP:
+		return
+	_coin_chain = _coin_chain + 1 if since < COIN_CHAIN else 0
+	_last_coin = now
+	var voice := _coin_players[_next_coin_player]
+	_next_coin_player = (_next_coin_player + 1) % COIN_VOICES
+	voice.stream = COIN_SOUNDS.pick_random()
+	play(voice, 0.03, 1.0 + COIN_PITCH_STEP * mini(_coin_chain, COIN_PITCH_MAX_STEPS))
 
 # Gives a sprite the flash shader. Call once, then flash() whenever it's hit.
 func add_flash(sprite: CanvasItem) -> void:

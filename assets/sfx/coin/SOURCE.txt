@@ -1,0 +1,3 @@
+coin1.wav - coin10.wav: "10 8bit coin sounds" by Luke.RUSTLTD, made in CFXR.
+https://opengameart.org/content/10-8bit-coin-sounds
+License: CC0 (public domain). No attribution required.
