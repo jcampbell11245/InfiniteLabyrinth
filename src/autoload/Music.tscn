@@ -5,6 +5,9 @@
 [ext_resource type="AudioStream" uid="uid://jo4jjek5b4nk" path="res://assets/music/boss_theme_intro.wav" id="3"]
 [ext_resource type="AudioStream" uid="uid://48b61lvwj3jc" path="res://assets/music/boss_theme_loop.wav" id="4"]
 
+[ext_resource type="AudioStream" uid="uid://bhfhd6d0e0pnu" path="res://assets/music/title_screen_intro.wav" id="5"]
+[ext_resource type="AudioStream" uid="uid://f3x33qgk1jji" path="res://assets/music/title_screen_loop.wav" id="6"]
+
 [node name="Music" type="Node"]
 script = ExtResource("1")
 
@@ -18,4 +21,11 @@ stream = ExtResource("3")
 [node name="BossLoop" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4")
 
+[node name="TitleIntro" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5")
+
+[node name="TitleLoop" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6")
+
 [connection signal="finished" from="BossIntro" to="." method="_on_boss_intro_finished"]
+[connection signal="finished" from="TitleIntro" to="." method="_on_title_intro_finished"]

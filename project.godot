@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="TSAGame2021"
-run/main_scene="res://src/ui/menus/Boot.tscn"
+run/main_scene="res://src/ui/menus/TitleScreen.tscn"
 config/features=PackedStringArray("4.7")
 config/icon="res://icon.png"
 
