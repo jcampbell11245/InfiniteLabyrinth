@@ -77,10 +77,10 @@ func _blocks_hit() -> bool:
 		return true
 	return false
 
-func _lose_health(critical: bool) -> void:
+func _lose_health(amount: float, critical: bool) -> void:
 	if critical:
 		$Crit.play()
-	super(critical)
+	super(amount, critical)
 
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("slash") && animator.frame == attack_frame:

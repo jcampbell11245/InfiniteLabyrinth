@@ -30,6 +30,7 @@ const HURTBOX_Y := -2.0 # Hurtbox centre; the sprite spans about -19.5..15
 const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of centre
 
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
+const ARROW_DAMAGE := 0.5 # Enemy health per arrow; a sword hit takes 1
 
 # Everything the player pressed this frame. Movement actions share their names with
 # the Direction constants.
@@ -130,6 +131,7 @@ func _handle_input(input: FrameInput) -> void:
 		get_parent().add_child(arrow)
 		arrow.position = position
 		arrow.direction = direction
+		arrow.damage = ARROW_DAMAGE
 		shoot_cooldown.start(0.5)
 		$Shoot.play()
 

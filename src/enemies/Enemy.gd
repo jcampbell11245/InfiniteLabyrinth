@@ -12,6 +12,7 @@ signal died(enemy: Enemy)
 const KNOCKBACK_FRICTION := 200 # Pixels/sec lost per second
 const CRIT_ROLL_MAX := 30 # A hit crits when randi_range(0, CRIT_ROLL_MAX) < damage upgrade level
 const CLOSE_RANGE := 25 # Pixels on either axis
+const SWORD_DAMAGE := 1.0 # Health a sword hit takes; arrows carry their own damage
 
 @export var speed: float
 @export var knockback_speed: float
@@ -37,7 +38,8 @@ var critical_chance := 0
 func _ready() -> void:
 	critical_chance = SaveData.damage_level
 
-func take_damage(from_direction: String) -> void:
+# amount is the health a normal hit takes; a critical hit decides its own.
+func take_damage(from_direction: String, amount: float) -> void:
 	if invincibility_cooldown.time_left != 0:
 		return
 	knockback = Direction.to_vector(from_direction) * knockback_speed
@@ -52,7 +54,7 @@ func take_damage(from_direction: String) -> void:
 	invincibility_cooldown.start(invincibility_time)
 	animator.modulate.a = 0.5
 	
-	_lose_health(_roll_critical())
+	_lose_health(amount, _roll_critical())
 	if health <= 0:
 		die()
 	_after_hit()
@@ -76,11 +78,11 @@ func _roll_critical() -> bool:
 	rng.randomize()
 	return rng.randi_range(0, CRIT_ROLL_MAX) < critical_chance
 
-func _lose_health(critical: bool) -> void:
+func _lose_health(amount: float, critical: bool) -> void:
 	if critical:
 		health = 0
 	else:
-		health -= 1
+		health -= amount
 
 func _after_hit() -> void:
 	pass
@@ -134,6 +136,7 @@ func _on_invincibility_cooldown_timeout() -> void:
 
 func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: int, _self_shape: int) -> void:
 	if area.get_name() == "Hitbox":
-		take_damage(area.get_parent().get_parent().direction)
+		take_damage(area.get_parent().get_parent().direction, SWORD_DAMAGE)
 	elif area.get_name() == "ArrowHitbox":
-		take_damage(area.get_parent().direction)
+		var arrow: Projectile = area.get_parent()
+		take_damage(arrow.direction, arrow.damage)
