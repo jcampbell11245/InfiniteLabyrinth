@@ -286,82 +286,98 @@ mouse_filter = 1
 [node name="Description" type="Label" parent="Control" unique_id=1533084820]
 layout_mode = 0
 offset_left = -28.0
-offset_top = 121.933
+offset_top = 120.456
 offset_right = 579.0
-offset_bottom = 153.933
+offset_bottom = 140.456
 theme_override_fonts/font = SubResource("2")
+theme_override_font_sizes/font_size = 11
 text = "Health"
+vertical_alignment = 1
 
 [node name="Coins" type="Label" parent="Control" unique_id=709607130]
 layout_mode = 0
 offset_left = -1.0
-offset_top = 122.0
+offset_top = 120.456
 offset_right = 104.0
-offset_bottom = 142.0
+offset_bottom = 140.456
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
+theme_override_font_sizes/font_size = 11
 text = "10"
 horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Description2" type="Label" parent="Control" unique_id=1644805765]
 layout_mode = 0
 offset_left = -27.7018
-offset_top = 164.982
+offset_top = 160.413
 offset_right = 86.2982
-offset_bottom = 196.982
+offset_bottom = 180.413
 theme_override_fonts/font = SubResource("2")
+theme_override_font_sizes/font_size = 11
 text = "Luck"
+vertical_alignment = 1
 
 [node name="Coins2" type="Label" parent="Control" unique_id=328347788]
 layout_mode = 0
 offset_left = 26.0
-offset_top = 164.0
+offset_top = 160.413
 offset_right = 104.0
-offset_bottom = 184.0
+offset_bottom = 180.413
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
+theme_override_font_sizes/font_size = 11
 text = "10"
 horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Description3" type="Label" parent="Control" unique_id=996202922]
 layout_mode = 0
 offset_left = -29.0
-offset_top = 201.0
+offset_top = 200.42
 offset_right = 523.0
-offset_bottom = 233.0
+offset_bottom = 220.42
 theme_override_fonts/font = SubResource("2")
+theme_override_font_sizes/font_size = 11
 text = "Time"
+vertical_alignment = 1
 
 [node name="Coins3" type="Label" parent="Control" unique_id=1101393191]
 layout_mode = 0
 offset_left = -32.5166
-offset_top = 201.079
+offset_top = 200.42
 offset_right = 103.483
-offset_bottom = 221.079
+offset_bottom = 220.42
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
+theme_override_font_sizes/font_size = 11
 text = "10"
 horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Description4" type="Label" parent="Control" unique_id=1376115968]
 layout_mode = 0
 offset_left = -29.6332
-offset_top = 242.748
+offset_top = 240.272
 offset_right = 83.3668
-offset_bottom = 274.748
+offset_bottom = 260.272
 theme_override_fonts/font = SubResource("2")
+theme_override_font_sizes/font_size = 11
 text = "Looting"
+vertical_alignment = 1
 
 [node name="Coins4" type="Label" parent="Control" unique_id=1518478272]
 layout_mode = 0
 offset_left = 38.0
-offset_top = 243.0
+offset_top = 240.272
 offset_right = 104.0
-offset_bottom = 259.0
+offset_bottom = 260.272
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
+theme_override_font_sizes/font_size = 11
 text = "10"
 horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Meter1" type="AnimatedSprite2D" parent="Control" unique_id=704085953]
 position = Vector2(369.966, 130.456)
