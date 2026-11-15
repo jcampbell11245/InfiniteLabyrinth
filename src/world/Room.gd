@@ -20,6 +20,10 @@ const DOOR_CELLS := { # Doorway cell on each side
 	Door.LEFT: Vector2i(8, 13),
 }
 
+const UnlockSound := preload("res://assets/sfx/dooropen.wav")
+const KILL_PITCH_STEP := 0.06 # Each kill in a row raises the death sound's pitch this much
+const KILL_PITCH_MAX_STEPS := 6
+
 const FLOOR := 0 # Plain floor source ids that get a random variant
 const FLOOR_ALT := 4
 
@@ -67,6 +71,8 @@ var faded_out := true
 var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
 var _detectors: TileMap # Transition detector tiles, one per open doorway
 var _key_gate: StaticBody2D # End room only: blocks the top door until the player has 3 keys
+var _was_cleared := false # Doors were already unlocked last time they were drawn
+var _kill_streak := 0 # Enemies killed since the player last walked in; pitches death sounds up
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
 @onready var knight_death: AudioStreamPlayer = $KnightDeath
@@ -280,6 +286,22 @@ func _refresh_doors() -> void:
 			_key_gate = null
 	if is_cleared():
 		_draw_unlocked_doors()
+		if locked && !_was_cleared:
+			_celebrate_unlock()
+	_was_cleared = is_cleared()
+
+# The payoff for clearing a locked room: a heavy unlock sound, a thud and dust at each door.
+func _celebrate_unlock() -> void:
+	var sound := AudioStreamPlayer.new()
+	sound.stream = UnlockSound
+	add_child(sound)
+	Juice.play(sound, 0.03, 0.8)
+	sound.finished.connect(sound.queue_free)
+	Juice.shake(Juice.SHAKE_MEDIUM)
+	for door: Door in DOOR_CELLS:
+		if doors[door]:
+			var at := tiles.to_global(tiles.map_to_local(DOOR_CELLS[door]))
+			Juice.burst(self, at, Color(0.75, 0.7, 0.6), 12, 50.0, Vector2.ZERO, 2.5, 0.6)
 
 func _draw_closed_doors() -> void:
 	# The end room's top door is the key gate, opened by the keys instead.
@@ -335,6 +357,8 @@ func _on_room_entered(id: int) -> void:
 	elif id == room_id && faded_out:
 		fade.play("FadeIn")
 		faded_out = false
+	if id == room_id:
+		_kill_streak = 0
 
 	# Lock the doors the first time the player comes in.
 	if id == room_id && !locked && get_node_or_null("Locks") != null:
@@ -346,12 +370,15 @@ func _on_keys_changed(_keys: int) -> void:
 	_refresh_doors()
 
 # Death sounds live on the room because the enemy is freed as it dies. Keyed by the
-# enemy's scene file name; wizards have none.
+# enemy's scene file name; wizards have none. Kills in a row since the player walked in
+# pitch the sound up, like a combo.
 func _on_enemy_died(enemy: Enemy) -> void:
 	enemy_count -= 1
+	var pitch := 1.0 + KILL_PITCH_STEP * mini(_kill_streak, KILL_PITCH_MAX_STEPS)
+	_kill_streak += 1
 	match enemy.scene_file_path.get_file().get_basename():
-		"Goblin": goblin_death.play()
-		"Knight": knight_death.play()
+		"Goblin": Juice.play(goblin_death, 0.04, pitch)
+		"Knight": Juice.play(knight_death, 0.04, pitch)
 	_refresh_doors()
 
 func _on_next_floor_area_entered(_area: Area2D) -> void:

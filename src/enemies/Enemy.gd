@@ -23,6 +23,7 @@ const SWORD_DAMAGE := 1.0 # Health a sword hit takes; arrows carry their own dam
 @export var attack_cooldown_length: float
 @export var invincibility_time := 0.3 # Seconds after a hit before the next one counts
 @export var coin_reward := 0 # Coins per floor number
+@export var blood_color := Color(0.55, 0.08, 0.08) # Hit particles and the stain left on death
 
 var direction := "" # Direction facing; "" until first set
 var knockback := Vector2.ZERO
@@ -35,15 +36,28 @@ var critical_chance := 0
 @onready var hurtbox: CollisionShape2D = $Hurtbox/CollisionShape2D
 @onready var invincibility_cooldown: Timer = $InvincibilityCooldown
 
+# Hit feedback, scaled up for kills and crits. Seconds of hit-stop.
+const HITSTOP_HIT := 0.05
+const HITSTOP_KILL := 0.09
+const HITSTOP_CRIT := 0.12
+const HITSTOP_BLOCK := 0.03
+const FEET_OFFSET := Vector2(0, 8) # From the origin down to where the enemy stands
+
 func _ready() -> void:
 	critical_chance = SaveData.damage_level
+	Juice.add_flash(animator)
 
 # amount is the health a normal hit takes; a critical hit decides its own.
 func take_damage(from_direction: String, amount: float) -> void:
 	if invincibility_cooldown.time_left != 0:
 		return
 	knockback = Direction.to_vector(from_direction) * knockback_speed
+	var hit_dir := Direction.to_vector(from_direction)
 	if _blocks_hit():
+		# Sparks fly back towards the attacker.
+		Juice.burst(room, global_position - hit_dir * 6, Color(1, 0.9, 0.5), 6, 70.0, -hit_dir, 1.5, 0.25)
+		Juice.hitstop(HITSTOP_BLOCK)
+		Juice.shake(Juice.SHAKE_LIGHT)
 		return
 	
 	# Interrupts an attack. Faces the direction the hit travels in, not the attacker.
@@ -54,13 +68,32 @@ func take_damage(from_direction: String, amount: float) -> void:
 	invincibility_cooldown.start(invincibility_time)
 	animator.modulate.a = 0.5
 	
-	_lose_health(amount, _roll_critical())
+	var critical := _roll_critical()
+	_lose_health(amount, critical)
+	_hit_feedback(hit_dir, critical, health <= 0)
 	if health <= 0:
 		die()
 	_after_hit()
 
+# Flash, spray, freeze and shake, harder for kills and crits.
+func _hit_feedback(hit_dir: Vector2, critical: bool, killed: bool) -> void:
+	Juice.flash(animator)
+	Juice.burst(room, global_position, blood_color, 8, 80.0, hit_dir)
+	if critical:
+		Juice.burst(room, global_position, Color.WHITE, 10, 110.0, Vector2.ZERO, 2.0, 0.3)
+		Juice.hitstop(HITSTOP_CRIT)
+		Juice.shake(Juice.SHAKE_HEAVY)
+	elif killed:
+		Juice.hitstop(HITSTOP_KILL)
+		Juice.shake(Juice.SHAKE_MEDIUM)
+	else:
+		Juice.hitstop(HITSTOP_HIT)
+		Juice.shake(Juice.SHAKE_LIGHT)
+
 func die() -> void:
-	Game.add_coins(roundi(coin_reward * _coin_multiplier()))
+	Juice.burst(room, global_position, blood_color, 18, 100.0, Vector2.ZERO, 3.0, 0.5)
+	Juice.splat(room, global_position + FEET_OFFSET, blood_color.darkened(0.1))
+	Juice.drop_coins(room, global_position, roundi(coin_reward * _coin_multiplier()))
 	died.emit(self)
 	queue_free()
 

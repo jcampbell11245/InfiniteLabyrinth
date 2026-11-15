@@ -45,6 +45,13 @@ func _process(delta: float) -> void:
 		_timer = 0
 		set_offset(get_offset() - _last_offset)
 
+# Like shake(), but ignored while a stronger shake is still running, so a small hit
+# doesn't cut a big one short.
+func shake_at_least(duration: float, frequency: float, amplitude: float) -> void:
+	if _timer > 0 && _amplitude * (_timer / _duration) > amplitude:
+		return
+	shake(duration, frequency, amplitude)
+
 # Kick off a new screenshake effect.
 func shake(duration: float, frequency: float, amplitude: float) -> void:
 	# Initialize variables.
