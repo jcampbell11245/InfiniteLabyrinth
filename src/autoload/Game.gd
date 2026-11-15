@@ -13,6 +13,9 @@ signal player_died
 var coins := 0 # Banked into SaveData when the floor ends
 var keys := 0 # Collected this floor; three open the end room
 
+const DEBUG_START_KEYS := 0 # Keys given at the start of each floor. Raise it to test the end room quickly.
+const START_FLOOR := 1 # Floor a new run starts on. Raise it to test a later floor's art.
+
 var overworld: Overworld
 var player: Player
 var camera_rig: CharacterBody2D
@@ -26,7 +29,7 @@ func register(world: Overworld) -> void:
 	camera = camera_rig.get_node("Camera2D")
 	upgrade_menu = camera.get_node("UpgradeMenu/Control")
 	coins = SaveData.coins
-	keys = 0
+	keys = DEBUG_START_KEYS
 
 func unregister(world: Overworld) -> void:
 	if overworld == world:

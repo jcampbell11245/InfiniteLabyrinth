@@ -1,6 +1,9 @@
-# Known bugs
+# Bugs
 
-Bugs found in the code that aren't fixed yet. Bugs reported by players live in the GitHub
-issues; add an entry here when you spot one in code and haven't fixed or filed it.
+## Open
 
-None open.
+- The boss can move through walls and clip out of bounds.
+- The knight's sprite can render underneath the top wall sprite.
+- Blood splatters can appear on pit tiles and wall tiles.
+- The player can get stuck while walking through a side door.
+## Fixed
