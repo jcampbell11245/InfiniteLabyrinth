@@ -3,6 +3,10 @@ extends Enemy
 # Goblin and Knight: walks at the player once they enter its detection zone, then slashes
 # when close. A knight (only_hit_during_attack) blocks any hit that lands outside its slash
 # and is stunned for a second afterwards.
+#
+# Enemies whose sprites have them also react to hits: "block" plays once when a hit is
+# shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
+# still until the reaction is over.
 
 const BLOCK_STUN_TIME := 1.0
 
@@ -21,7 +25,8 @@ func _process(_delta: float) -> void:
 	if !player.in_transition:
 		if !_animation_is("slash"):
 			hitbox.disabled = true
-		animate()
+		if !_is_reacting():
+			animate()
 	else:
 		_play("idle")
 
@@ -42,7 +47,9 @@ func _physics_process(delta: float) -> void:
 		$HitboxPivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 		$DetectionZonePivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 	
-	if _is_player_far() && !_animation_is("slash") && is_detected():
+	if _is_reacting():
+		pass
+	elif _is_player_far() && !_animation_is("slash") && is_detected():
 		move_and_collide(_to_player().normalized() * speed * delta)
 	elif attack_cooldown.time_left == 0 && is_detected():
 		if !only_hit_during_attack || $BlockStun.time_left == 0:
@@ -74,7 +81,26 @@ func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):
 		$BlockStun.start(BLOCK_STUN_TIME)
 		$Block.play()
+		_play_reaction("block")
 		return true
+	return false
+
+func _after_hit() -> void:
+	_play_reaction("vuln")
+
+# Plays a hit reaction if this enemy's sprites have one. It uses the enemy's own facing,
+# not the hit's direction that take_damage shows when it interrupts a slash, so the enemy
+# keeps looking at the player.
+func _play_reaction(action: String) -> void:
+	if animator.sprite_frames.has_animation(action + "_" + direction):
+		_play(action)
+
+# True while a block plays out, or while flashing after a hit.
+func _is_reacting() -> bool:
+	if _animation_is("block"):
+		return animator.is_playing()
+	if _animation_is("vuln"):
+		return invincibility_cooldown.time_left != 0
 	return false
 
 func _lose_health(amount: float, critical: bool) -> void:
