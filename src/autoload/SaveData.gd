@@ -11,6 +11,10 @@ var health_level := 0 # Extra hearts
 var damage_level := 0 # Critical hit chance
 var time_level := 0 # Extra seconds on the level timer
 var looting_level := 0 # Extra coins per kill
+# Testing aid, debug builds only: when above 0, the level timer starts at this many
+# seconds instead of the upgrade-based limit. Set it by hand in the save file under
+# [debug] time_limit; it survives saves and is ignored by exported release builds.
+var debug_time_limit := 0
 
 func _ready() -> void:
 	load_from_disk()
@@ -25,6 +29,7 @@ func load_from_disk() -> void:
 	damage_level = file.get_value("upgrades", "damage", damage_level)
 	time_level = file.get_value("upgrades", "time", time_level)
 	looting_level = file.get_value("upgrades", "looting", looting_level)
+	debug_time_limit = file.get_value("debug", "time_limit", debug_time_limit)
 
 func save() -> void:
 	var file := ConfigFile.new()
@@ -34,6 +39,8 @@ func save() -> void:
 	file.set_value("upgrades", "damage", damage_level)
 	file.set_value("upgrades", "time", time_level)
 	file.set_value("upgrades", "looting", looting_level)
+	if debug_time_limit > 0:
+		file.set_value("debug", "time_limit", debug_time_limit)
 	file.save(PATH)
 
 func reset() -> void:

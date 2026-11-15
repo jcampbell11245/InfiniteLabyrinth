@@ -32,6 +32,7 @@ script = ExtResource("1")
 speed = 300.0
 rotates = true
 rotate_hitbox = true
+impact_color = Color(0.95, 0.35, 0.35, 1)
 
 [node name="SpritePivot" type="Marker2D" parent="." unique_id=204883665]
 

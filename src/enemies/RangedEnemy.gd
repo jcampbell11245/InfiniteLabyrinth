@@ -66,7 +66,7 @@ func attack() -> void:
 func shoot_fireball() -> void:
 	if !is_player_in_room():
 		return
-	$Attack.play()
+	Juice.play($Attack)
 	var fireball: Projectile = Fireball.instantiate()
 	room.add_child(fireball)
 	fireball.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)

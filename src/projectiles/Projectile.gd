@@ -13,9 +13,11 @@ const SPAWN_MARGIN := 5.0 # Distance from walls to keep the spawn point, coverin
 @export var rotate_hitbox: bool # Turn the hitbox with the sprite
 @export var breaks_on_hit: bool # Stop and play "break" on impact instead of vanishing
 @export var free_in_end_room: bool # Vanish once the player reaches the end room
+@export var impact_color := Color(0.85, 0.75, 0.55) # Splinters or sparks sprayed on impact
 
 var direction := "": set = _set_direction
 var damage: float
+var _hit := false # Impact effects play once, though area and body signals can both fire
 
 func _ready() -> void:
 	$ExistenceTime.start(LIFETIME)
@@ -41,6 +43,10 @@ func _set_direction(value: String) -> void:
 		$ProjectileHitbox.rotation_degrees = degrees
 
 func _on_hitbox_hit(_area_or_body: Node2D) -> void:
+	if !_hit:
+		_hit = true
+		Juice.burst(get_parent(), global_position, impact_color, 6, 60.0,
+			-Direction.to_vector(direction), 1.5, 0.25)
 	if breaks_on_hit:
 		speed = 0
 		$AnimatedSprite2D.play("break")

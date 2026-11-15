@@ -1,0 +1,2 @@
+countdown_tick.wav: Menu__003 from "SFX: The Ultimate 2017 8 bit Mini pack" by phoenix1291,
+CC0 (public domain). https://opengameart.org/content/sfx-the-ultimate-2017-8-bit-mini-pack

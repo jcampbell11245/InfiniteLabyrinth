@@ -360,6 +360,7 @@ attack_frame = 3
 knockback_speed = 150.0
 damage = 0.5
 health = 2.0
+blood_color = Color(0.45, 0.2, 0.6, 1)
 attack_end_frame = 4
 attack_cooldown_length = 1.0
 coin_reward = 20

@@ -32,6 +32,28 @@ const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
 const ARROW_DAMAGE := 0.5 # Enemy health per arrow; a sword hit takes 1
 
+# Game feel
+const SHOOT_RECOIL := 45.0 # Knockback speed pushed back from each shot
+const HURT_HITSTOP := 0.08
+const HURT_FLASH := Color(1, 0.35, 0.35)
+const GHOST_INTERVAL := 0.04 # Seconds between afterimages while rolling
+const GHOST_FADE := 0.2
+const FEET := Vector2(0, 13) # From the origin to the player's feet
+const DUST := Color(0.75, 0.7, 0.6)
+
+# 8-bit roll and landing sounds, each picked at random per play.
+const ROLL_BLIPS: Array[AudioStream] = [
+	preload("res://assets/sfx/movement/roll3.wav"),
+]
+const LANDINGS: Array[AudioStream] = [
+	preload("res://assets/sfx/movement/land1.wav"), preload("res://assets/sfx/movement/land2.wav"),
+	preload("res://assets/sfx/movement/land3.wav"), preload("res://assets/sfx/movement/land4.wav"),
+	preload("res://assets/sfx/movement/land5.wav"), preload("res://assets/sfx/movement/land6.wav"),
+]
+const ROLL_DB := -8.0
+const ROLL_LAND_DB := -12.0 # Soft thud as a roll ends
+const PIT_LAND_DB := -4.0 # Heavier thud dropping back in after a pitfall
+
 # Everything the player pressed this frame. Movement actions share their names with
 # the Direction constants.
 class FrameInput:
@@ -50,6 +72,9 @@ var direction := Direction.RIGHT # Direction the player is facing
 var knockback := Vector2.ZERO
 var last_tile := Vector2.ZERO # Where the player respawns after falling down a pitfall
 var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene started
+var _ghost_timer := 0.0
+var _roll_sound: AudioStreamPlayer
+var _land_sound: AudioStreamPlayer
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -70,6 +95,9 @@ var in_transition := false
 func _ready() -> void:
 	z_index = 2
 	health = SaveData.health_level + Constants.BASE_HEALTH
+	Juice.add_flash(animator)
+	_roll_sound = _add_sound(ROLL_DB)
+	_land_sound = _add_sound(PIT_LAND_DB)
 
 func _physics_process(delta: float) -> void:
 	if !auto_walking:
@@ -89,6 +117,7 @@ func _physics_process(delta: float) -> void:
 	velocity = move_velocity
 
 	_update_respawn_point()
+	_update_roll_ghosts(delta)
 
 func _read_input() -> FrameInput:
 	var input := FrameInput.new()
@@ -118,6 +147,10 @@ func _handle_input(input: FrameInput) -> void:
 		set_collision_mask_value(Constants.Layer.ENEMY, false)
 		hitbox.disabled = true
 		hurtbox.disabled = true
+		_ghost_timer = 0.0
+		_play_random(_roll_sound, ROLL_BLIPS, 0.04)
+		Juice.burst(get_parent(), global_position + FEET, DUST, 8, 45.0,
+			-Direction.to_vector(direction), 2.0, 0.35)
 	elif rolling.time_left == 0:
 		if _action() not in [Action.SLASH, Action.SHOOT, Action.DAMAGE] && respawn_cooldown.time_left == 0:
 			velocity += input.move
@@ -125,7 +158,7 @@ func _handle_input(input: FrameInput) -> void:
 
 	if input.melee && _action() not in [Action.SLASH, Action.DAMAGE]:
 		hitbox.disabled = false
-		$Slash.play()
+		Juice.play($Slash)
 
 	if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
 		var arrow: Projectile = Arrow.instantiate()
@@ -134,7 +167,11 @@ func _handle_input(input: FrameInput) -> void:
 		arrow.direction = direction
 		arrow.damage = ARROW_DAMAGE
 		shoot_cooldown.start(0.5)
-		$Shoot.play()
+		Juice.play($Shoot)
+		var aim := Direction.to_vector(direction)
+		knockback = -aim * SHOOT_RECOIL
+		Juice.burst(get_parent(), global_position + aim * 10, Color(1, 0.95, 0.7), 5, 60.0,
+			aim, 1.5, 0.15)
 
 # Each check reads the action again, since earlier lines may have changed the animation.
 func _update_animation(input: FrameInput) -> void:
@@ -191,13 +228,18 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 	if invincibility_cooldown.time_left == 0:
 		invincibility_cooldown.start(1)
 		animator.modulate.a = 0.5
+		Juice.flash(animator, 0.15, HURT_FLASH)
 
 		if from_direction != "":
 			_play(Action.DAMAGE, from_direction)
 			knockback = Direction.to_vector(from_direction) * KNOCKBACK_SPEED
+			Juice.hitstop(HURT_HITSTOP)
+			Juice.shake(Juice.SHAKE_MEDIUM)
+			Juice.burst(get_parent(), global_position, Color(0.8, 0.1, 0.1), 8, 70.0,
+				Direction.to_vector(from_direction))
 
 		if !mute:
-			$Hit.play()
+			Juice.play($Hit, 0.05)
 
 		health -= damage
 		Game.health_changed.emit(health)
@@ -220,6 +262,40 @@ func _update_respawn_point() -> void:
 	var cell := tiles.local_to_map(local).clamp(FLOOR_FIRST_CELL, FLOOR_LAST_CELL)
 	if tiles.get_cell_source_id(0, cell) != -1:
 		last_tile = room.position + tiles.map_to_local(cell) + RESPAWN_OFFSET
+
+# A sound player made in code for the roll and landing sounds, which swap streams each play.
+func _add_sound(volume_db: float) -> AudioStreamPlayer:
+	var sound := AudioStreamPlayer.new()
+	sound.volume_db = volume_db
+	add_child(sound)
+	return sound
+
+func _play_random(sound: AudioStreamPlayer, streams: Array[AudioStream], spread: float,
+		base := 1.0) -> void:
+	sound.stream = streams.pick_random()
+	Juice.play(sound, spread, base)
+
+# Leaves fading copies of the current frame behind while rolling.
+func _update_roll_ghosts(delta: float) -> void:
+	if rolling.time_left == 0 || !visible:
+		return
+	_ghost_timer -= delta
+	if _ghost_timer > 0:
+		return
+	_ghost_timer = GHOST_INTERVAL
+	var ghost := Sprite2D.new()
+	ghost.texture = animator.sprite_frames.get_frame_texture(animator.animation, animator.frame)
+	ghost.centered = animator.centered
+	ghost.offset = animator.offset
+	ghost.flip_h = animator.flip_h
+	ghost.scale = animator.scale
+	ghost.modulate = Color(0.6, 0.8, 1.0, 0.45)
+	ghost.z_index = z_index - 1
+	get_parent().add_child(ghost)
+	ghost.global_position = animator.global_position
+	var tween := ghost.create_tween()
+	tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE)
+	tween.tween_callback(ghost.queue_free)
 
 func _on_level_countdown_timeout() -> void:
 	die()
@@ -249,12 +325,18 @@ func _on_respawn_cooldown_timeout() -> void:
 	Game.room_by_id(current_room).player_active = true
 	position = last_tile
 	take_damage(0.5, "", true)
+	_land_sound.volume_db = PIT_LAND_DB
+	_play_random(_land_sound, LANDINGS, 0.05)
+	Juice.burst(get_parent(), global_position + FEET, DUST, 10, 40.0, Vector2.ZERO, 2.0, 0.4)
 
 func _on_rolling_timeout() -> void:
 	@warning_ignore("integer_division")
 	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
 		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	_play(Action.IDLE)
+	Juice.burst(get_parent(), global_position + FEET, DUST, 5, 30.0, Vector2.ZERO, 1.5, 0.3)
+	_land_sound.volume_db = ROLL_LAND_DB
+	_play_random(_land_sound, LANDINGS, 0.08, 1.15)
 	set_collision_mask_value(Constants.Layer.ENEMY, true)
 	hitbox.disabled = false
 	hurtbox.disabled = false

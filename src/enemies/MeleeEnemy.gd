@@ -82,7 +82,7 @@ func is_detected() -> bool:
 func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):
 		$BlockStun.start(BLOCK_STUN_TIME)
-		$Block.play()
+		Juice.play($Block)
 		_play_reaction("block")
 		return true
 	return false
@@ -107,10 +107,10 @@ func _is_reacting() -> bool:
 
 func _lose_health(amount: float, critical: bool) -> void:
 	if critical:
-		$Crit.play()
+		Juice.play($Crit, 0.05)
 	super(amount, critical)
 
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("slash") && animator.frame == attack_frame:
-		$Attack.play()
+		Juice.play($Attack)
 		hitbox.disabled = false

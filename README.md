@@ -37,12 +37,14 @@ See [BUGS.md](BUGS.md).
 ```
 assets/        sprites, sfx, music, fonts (assets/sfx/unused holds unreferenced duplicates)
 src/autoload/  SaveData (save file), Game (coins, keys, game-wide signals and references to
-               the player, camera and rooms) and Music (dungeon and boss themes)
+               the player, camera and rooms), Music (dungeon and boss themes) and Juice
+               (hit-stop, screen shake, sound pitch variation, flashes and particle bursts)
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script
 src/enemies/   enemy scenes; Enemy is the base class for MeleeEnemy, RangedEnemy and Boss
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
+src/effects/   flash shader, floor stains and coin pickups used by Juice
 src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room), camera
   rooms/       random rooms (every .tscn here is picked up automatically)
   keyrooms/    rooms holding the three keys

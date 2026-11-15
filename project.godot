@@ -20,6 +20,7 @@ config/icon="res://icon.png"
 SaveData="*res://src/autoload/SaveData.gd"
 Game="*res://src/autoload/Game.gd"
 Music="*res://src/autoload/Music.tscn"
+Juice="*res://src/autoload/Juice.gd"
 
 [debug]
 
