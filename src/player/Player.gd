@@ -114,7 +114,8 @@ func _handle_input(input: FrameInput) -> void:
 		velocity += Direction.to_vector(direction)
 		speed *= 2
 		rolling.start(0.25)
-		set_collision_mask_value(Constants.Layer.GENERAL, false)
+		# Rolls pass through enemies (to get behind a knight mid-slash), never walls.
+		set_collision_mask_value(Constants.Layer.ENEMY, false)
 		hitbox.disabled = true
 		hurtbox.disabled = true
 	elif rolling.time_left == 0:
@@ -254,7 +255,7 @@ func _on_rolling_timeout() -> void:
 	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
 		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	_play(Action.IDLE)
-	set_collision_mask_value(Constants.Layer.GENERAL, true)
+	set_collision_mask_value(Constants.Layer.ENEMY, true)
 	hitbox.disabled = false
 	hurtbox.disabled = false
 	roll_cooldown.start(1)
