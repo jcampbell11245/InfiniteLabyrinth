@@ -30,7 +30,7 @@ layer_0/tile_data = PackedInt32Array(458760, 9, 0, 458761, 4, 0, 458762, 4, 0, 4
 
 [node name="Pitfalls" parent="." unique_id=382886247 instance=ExtResource("2")]
 format = 2
-layer_0/tile_data = PackedInt32Array(851979, 0, 0, 851980, 0, 0, 851982, 0, 0, 851983, 0, 0)
+layer_0/tile_data = PackedInt32Array(851979, 0, 0, 851980, 0, 0, 851982, 0, 0, 851983, 0, 0, 917515, 17, 0, 917516, 17, 0, 917518, 17, 0, 917519, 17, 0)
 
 [node name="PitfallTransitions" parent="." unique_id=1863555425 instance=ExtResource("16")]
 format = 2
