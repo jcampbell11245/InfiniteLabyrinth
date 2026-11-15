@@ -26,6 +26,9 @@ const KNOCKBACK_SPEED := 150.0 # Pixels/sec the player is pushed when hit; decay
 
 const TRANSITION_PAUSE := {Direction.RIGHT: 1.0, Direction.LEFT: 1.0, Direction.DOWN: 1.2, Direction.UP: 1.15}
 
+const HURTBOX_Y := -2.0 # Hurtbox centre; the sprite spans about -19.5..15
+const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of centre
+
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
 
 # Everything the player pressed this frame. Movement actions share their names with
@@ -155,14 +158,15 @@ func _update_animation(input: FrameInput) -> void:
 		else:
 			_play(Action.SHOOT)
 
+# The hurtbox's size is set in the scene to cover the sprite; facing sideways the sprite
+# sits a little off-centre, so the hurtbox follows it.
 func _update_hitboxes() -> void:
-	hurtbox.shape.set_size(Vector2(23, 48))
 	if direction == Direction.RIGHT:
-		hurtbox.position = Vector2(-4.5, 0)
+		hurtbox.position = Vector2(-HURTBOX_SIDE_OFFSET, HURTBOX_Y)
 	elif direction == Direction.LEFT:
-		hurtbox.position = Vector2(4.5, 0)
+		hurtbox.position = Vector2(HURTBOX_SIDE_OFFSET, HURTBOX_Y)
 	else:
-		hurtbox.position = Vector2(0, 0)
+		hurtbox.position = Vector2(0, HURTBOX_Y)
 	$HitboxPivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 
 	if _action() != Action.SLASH:

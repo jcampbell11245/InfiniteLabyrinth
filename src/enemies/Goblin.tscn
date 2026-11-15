@@ -584,13 +584,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="74"]
-size = Vector2(22, 16)
+size = Vector2(22, 8)
 
 [sub_resource type="RectangleShape2D" id="75"]
-size = Vector2(14, 44)
+size = Vector2(14, 36)
 
 [sub_resource type="RectangleShape2D" id="76"]
-size = Vector2(22, 48)
+size = Vector2(24, 36)
 
 [sub_resource type="CapsuleShape2D" id="77"]
 radius = 49.5339
@@ -619,7 +619,7 @@ animation = &"walk_up"
 frame = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1661074583]
-position = Vector2(0, 16)
+position = Vector2(0, 11)
 shape = SubResource("74")
 
 [node name="AttackCooldown" type="Timer" parent="." unique_id=1266937792]
@@ -632,7 +632,7 @@ collision_layer = 2
 collision_mask = 4
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HitboxPivot/Hitbox" unique_id=1151619876]
-position = Vector2(15, 1)
+position = Vector2(15, -3)
 shape = SubResource("75")
 disabled = true
 
@@ -641,6 +641,7 @@ collision_layer = 2
 collision_mask = 13
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=82476263]
+position = Vector2(0, -3)
 shape = SubResource("76")
 
 [node name="InvincibilityCooldown" type="Timer" parent="." unique_id=2073710931]
