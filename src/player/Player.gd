@@ -43,7 +43,7 @@ const DUST := Color(0.75, 0.7, 0.6)
 
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
-	preload("res://assets/sfx/movement/roll2.wav"), preload("res://assets/sfx/movement/roll3.wav"),
+	preload("res://assets/sfx/movement/roll3.wav"),
 ]
 const LANDINGS: Array[AudioStream] = [
 	preload("res://assets/sfx/movement/land1.wav"), preload("res://assets/sfx/movement/land2.wav"),

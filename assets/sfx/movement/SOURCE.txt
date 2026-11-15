@@ -1,5 +1,5 @@
 From "SFX: The Ultimate 2017 8 bit Mini pack" by phoenix1291, CC0 (public domain).
 https://opengameart.org/content/sfx-the-ultimate-2017-8-bit-mini-pack
 
-roll2-3.wav:     Jump__002, 006
+roll3.wav:       Jump__006
 land1-6.wav:     Bass Drum__001, 003, 005, 007, 008, 010
