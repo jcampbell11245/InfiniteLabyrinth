@@ -1166,6 +1166,9 @@ size = Vector2(24, 34)
 [sub_resource type="RectangleShape2D" id="121"]
 size = Vector2(10, 10)
 
+[sub_resource type="RectangleShape2D" id="feet_box_shape"]
+size = Vector2(4, 4)
+
 [sub_resource type="RectangleShape2D" id="122"]
 size = Vector2(20.1908, 4.03654)
 
@@ -1218,7 +1221,7 @@ collision_mask = 32
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FeetBox" unique_id=292081474]
 position = Vector2(0, -6.02898)
-shape = SubResource("121")
+shape = SubResource("feet_box_shape")
 
 [node name="RoomDetectionBox" type="Area2D" parent="." unique_id=768855810]
 position = Vector2(0, 18)

@@ -48,6 +48,12 @@ const PITFALL_EDGES := {
 	"BL": preload("res://src/world/tiles/PitfallTransitionsBL.tscn"),
 	"TL": preload("res://src/world/tiles/PitfallTransitionsTL.tscn"),
 }
+# How far a pit's collision is pulled in from each side that borders floor, in pixels, so
+# the ledge art drawn over the pit's edge counts as ground. The top is the deepest because
+# the cliff face fills most of the top of a pit cell.
+const PIT_INSET_TOP := 12.0
+const PIT_INSET_SIDE := 4.0
+const PIT_INSET_BOTTOM := 4.0
 const PitfallSpikes := preload("res://src/world/tiles/PitfallSpikes.tscn")
 const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.tscn")
 
@@ -84,6 +90,7 @@ func _ready() -> void:
 	_add_decorations(rng)
 	_add_floor_variants(rng)
 	_add_pitfall_edges()
+	_trim_pitfall_collision()
 	_add_pitfall_spikes(rng)
 	_add_transition_detectors()
 
@@ -202,6 +209,45 @@ func _add_pitfall_edges() -> void:
 			layer.free()
 		else:
 			add_child(layer)
+
+# Swaps every pit cell for a tile whose collision stops short of the sides that border
+# floor, by the PIT_INSET amounts. Pit tiles all look the same (plain black), so only the
+# collision changes.
+func _trim_pitfall_collision() -> void:
+	if get_node_or_null("Pitfalls") == null:
+		return
+	var masks := {}
+	for cell: Vector2i in pitfalls.get_used_cells(0):
+		var mask := 0
+		if !_is_pit(cell + Vector2i.UP): mask |= 1
+		if !_is_pit(cell + Vector2i.RIGHT): mask |= 2
+		if !_is_pit(cell + Vector2i.DOWN): mask |= 4
+		if !_is_pit(cell + Vector2i.LEFT): mask |= 8
+		masks[cell] = mask
+	for cell: Vector2i in masks:
+		pitfalls.set_cell(0, cell, 0, Vector2i.ZERO, _trimmed_pit_tile(masks[cell]))
+
+# The alternative of pit source 0 trimmed for `mask` (1 top, 2 right, 4 bottom, 8 left
+# open). Rooms share the pit TileSet, so each one is made once and remembered on it.
+func _trimmed_pit_tile(mask: int) -> int:
+	var tile_set := pitfalls.tile_set
+	var made: Dictionary = tile_set.get_meta("trimmed_pits", {})
+	if made.has(mask):
+		return made[mask]
+	var source: TileSetAtlasSource = tile_set.get_source(0)
+	var alt := source.create_alternative_tile(Vector2i.ZERO)
+	var data := source.get_tile_data(Vector2i.ZERO, alt)
+	var half := tile_set.tile_size.x / 2.0
+	var top := -half + (PIT_INSET_TOP if mask & 1 else 0.0)
+	var right := half - (PIT_INSET_SIDE if mask & 2 else 0.0)
+	var bottom := half - (PIT_INSET_BOTTOM if mask & 4 else 0.0)
+	var left := -half + (PIT_INSET_SIDE if mask & 8 else 0.0)
+	data.set_collision_polygons_count(0, 1)
+	data.set_collision_polygon_points(0, 0, PackedVector2Array([
+		Vector2(left, top), Vector2(right, top), Vector2(right, bottom), Vector2(left, bottom)]))
+	made[mask] = alt
+	tile_set.set_meta("trimmed_pits", made)
+	return alt
 
 func _add_pitfall_spikes(rng: RandomNumberGenerator) -> void:
 	if get_node_or_null("Pitfalls") == null:
