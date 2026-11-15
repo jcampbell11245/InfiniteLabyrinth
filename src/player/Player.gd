@@ -41,14 +41,7 @@ const GHOST_FADE := 0.2
 const FEET := Vector2(0, 13) # From the origin to the player's feet
 const DUST := Color(0.75, 0.7, 0.6)
 
-# 8-bit movement sounds, each picked at random per play.
-const FOOTSTEPS: Array[AudioStream] = [
-	preload("res://assets/sfx/movement/footstep1.wav"), preload("res://assets/sfx/movement/footstep2.wav"),
-	preload("res://assets/sfx/movement/footstep3.wav"), preload("res://assets/sfx/movement/footstep4.wav"),
-	preload("res://assets/sfx/movement/footstep5.wav"), preload("res://assets/sfx/movement/footstep6.wav"),
-	preload("res://assets/sfx/movement/footstep7.wav"), preload("res://assets/sfx/movement/footstep8.wav"),
-	preload("res://assets/sfx/movement/footstep9.wav"),
-]
+# 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
 	preload("res://assets/sfx/movement/roll1.wav"), preload("res://assets/sfx/movement/roll2.wav"),
 	preload("res://assets/sfx/movement/roll3.wav"), preload("res://assets/sfx/movement/roll4.wav"),
@@ -59,8 +52,6 @@ const LANDINGS: Array[AudioStream] = [
 	preload("res://assets/sfx/movement/land3.wav"), preload("res://assets/sfx/movement/land4.wav"),
 	preload("res://assets/sfx/movement/land5.wav"), preload("res://assets/sfx/movement/land6.wav"),
 ]
-const STEP_DISTANCE := 28.0 # Pixels walked between footsteps (about 4.5 a second)
-const FOOTSTEP_DB := -4.0
 const ROLL_DB := -8.0
 const ROLL_LAND_DB := -12.0 # Soft thud as a roll ends
 const PIT_LAND_DB := -4.0 # Heavier thud dropping back in after a pitfall
@@ -84,8 +75,6 @@ var knockback := Vector2.ZERO
 var last_tile := Vector2.ZERO # Where the player respawns after falling down a pitfall
 var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene started
 var _ghost_timer := 0.0
-var _step_travel := 0.0 # Pixels walked since the last footstep
-var _footstep_sound: AudioStreamPlayer
 var _roll_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
 
@@ -109,7 +98,6 @@ func _ready() -> void:
 	z_index = 2
 	health = SaveData.health_level + Constants.BASE_HEALTH
 	Juice.add_flash(animator)
-	_footstep_sound = _add_sound(FOOTSTEP_DB)
 	_roll_sound = _add_sound(ROLL_DB)
 	_land_sound = _add_sound(PIT_LAND_DB)
 
@@ -132,7 +120,6 @@ func _physics_process(delta: float) -> void:
 
 	_update_respawn_point()
 	_update_roll_ghosts(delta)
-	_update_footsteps(delta)
 
 func _read_input() -> FrameInput:
 	var input := FrameInput.new()
@@ -278,7 +265,7 @@ func _update_respawn_point() -> void:
 	if tiles.get_cell_source_id(0, cell) != -1:
 		last_tile = room.position + tiles.map_to_local(cell) + RESPAWN_OFFSET
 
-# A sound player made in code for the movement sounds, which swap streams each play.
+# A sound player made in code for the roll and landing sounds, which swap streams each play.
 func _add_sound(volume_db: float) -> AudioStreamPlayer:
 	var sound := AudioStreamPlayer.new()
 	sound.volume_db = volume_db
@@ -289,18 +276,6 @@ func _play_random(sound: AudioStreamPlayer, streams: Array[AudioStream], spread:
 		base := 1.0) -> void:
 	sound.stream = streams.pick_random()
 	Juice.play(sound, spread, base)
-
-# A footstep every STEP_DISTANCE pixels walked. The first one sounds straight away, so a
-# short tap of a direction still makes a step.
-func _update_footsteps(delta: float) -> void:
-	var walking := _action() in [Action.WALK, Action.WALKSHOOT] && rolling.time_left == 0 		&& visible && velocity != Vector2.ZERO
-	if !walking:
-		_step_travel = STEP_DISTANCE
-		return
-	_step_travel += velocity.length() * delta
-	if _step_travel >= STEP_DISTANCE:
-		_step_travel = 0.0
-		_play_random(_footstep_sound, FOOTSTEPS, 0.1)
 
 # Leaves fading copies of the current frame behind while rolling.
 func _update_roll_ghosts(delta: float) -> void:
@@ -364,7 +339,6 @@ func _on_rolling_timeout() -> void:
 	Juice.burst(get_parent(), global_position + FEET, DUST, 5, 30.0, Vector2.ZERO, 1.5, 0.3)
 	_land_sound.volume_db = ROLL_LAND_DB
 	_play_random(_land_sound, LANDINGS, 0.08, 1.15)
-	_step_travel = 0.0
 	set_collision_mask_value(Constants.Layer.ENEMY, true)
 	hitbox.disabled = false
 	hurtbox.disabled = false
