@@ -30,6 +30,7 @@ func _ready() -> void:
 	_tick = AudioStreamPlayer.new()
 	_tick.stream = TickSound
 	add_child(_tick)
+	Game.player_died.connect(_on_player_died)
 
 func _process(_delta: float) -> void:
 	if Game.player == null:
@@ -82,6 +83,12 @@ func _tick_second(seconds: int) -> void:
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	modulate = Color.WHITE
 	punch.parallel().tween_property(self, "modulate", FINAL_COLOR, PUNCH_TIME)
+
+# The game-over text takes over the screen, so the timer gets out of its way.
+func _on_player_died() -> void:
+	if _tween != null:
+		_tween.kill()
+	holder.visible = false
 
 func _restart_tween() -> void:
 	if _tween != null:
