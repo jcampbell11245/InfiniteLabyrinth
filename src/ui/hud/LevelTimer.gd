@@ -51,9 +51,12 @@ func _process(_delta: float) -> void:
 	if in_final:
 		_tick_second(seconds)
 
-# Slides to the middle of the screen, grows and turns red.
+# Slides to the middle of the screen, grows and turns red. The text switches to centre
+# alignment first (moving the holder so nothing jumps), so narrower times like 0:01
+# stay centred instead of drifting right.
 func _enter_final() -> void:
 	_final = true
+	_set_alignment(HORIZONTAL_ALIGNMENT_CENTER)
 	_restart_tween()
 	_tween.tween_property(holder, "position", _centre_position(), SLIDE_TIME) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -64,6 +67,7 @@ func _enter_final() -> void:
 # Back to normal, in case time is ever added back during the final seconds.
 func _leave_final() -> void:
 	_final = false
+	_set_alignment(HORIZONTAL_ALIGNMENT_RIGHT)
 	_restart_tween()
 	_tween.tween_property(holder, "position", corner_position, SLIDE_TIME)
 	_tween.tween_property(holder, "scale", corner_scale, SLIDE_TIME)
@@ -78,8 +82,7 @@ func _tick_second(seconds: int) -> void:
 	if step == 0:
 		return
 	var punch := create_tween()
-	holder.scale = corner_scale * FINAL_SCALE * PUNCH_SCALE
-	punch.tween_property(holder, "scale", corner_scale * FINAL_SCALE, PUNCH_TIME) \
+	punch.tween_method(_set_final_size, PUNCH_SCALE, 1.0, PUNCH_TIME) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	modulate = Color.WHITE
 	punch.parallel().tween_property(self, "modulate", FINAL_COLOR, PUNCH_TIME)
@@ -95,13 +98,32 @@ func _restart_tween() -> void:
 		_tween.kill()
 	_tween = create_tween().set_parallel()
 
-# Where the holder must sit, at FINAL_SCALE, for the text to be centred on screen. The
-# text is right-aligned inside the label, so its middle is half its width from the
-# label's right edge.
+# Changes the text alignment and moves the holder by the same amount the other way,
+# so the text stays exactly where it was on screen.
+func _set_alignment(alignment: HorizontalAlignment) -> void:
+	var before := _text_centre()
+	horizontal_alignment = alignment
+	holder.position += (before - _text_centre()) * holder.scale
+
+# Sets the final-seconds size, `factor` times FINAL_SCALE, growing around the middle of
+# the screen rather than the holder's corner.
+func _set_final_size(factor: float) -> void:
+	holder.scale = corner_scale * FINAL_SCALE * factor
+	holder.position = _screen_centre_in_parent() - _text_centre() * holder.scale
+
+# Where the holder must sit, at FINAL_SCALE, for the text to be centred on screen.
 func _centre_position() -> Vector2:
-	var screen_centre := get_viewport_rect().size / 2
+	return _screen_centre_in_parent() - _text_centre() * corner_scale * FINAL_SCALE
+
+func _screen_centre_in_parent() -> Vector2:
 	var parent := holder.get_parent() as CanvasItem
-	var centre_in_parent := parent.get_global_transform_with_canvas().affine_inverse() * screen_centre
-	var text_centre := Vector2(offset_right - get_content_width() / 2.0,
-		offset_top + get_content_height() / 2.0)
-	return centre_in_parent - text_centre * corner_scale * FINAL_SCALE
+	return parent.get_global_transform_with_canvas().affine_inverse() \
+		* (get_viewport_rect().size / 2)
+
+# Middle of the text in the holder's space, which depends on the alignment: right-
+# aligned text ends at the label's right edge, centred text sits mid-label.
+func _text_centre() -> Vector2:
+	var y := offset_top + get_content_height() / 2.0
+	if horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER:
+		return Vector2((offset_left + offset_right) / 2.0, y)
+	return Vector2(offset_right - get_content_width() / 2.0, y)
