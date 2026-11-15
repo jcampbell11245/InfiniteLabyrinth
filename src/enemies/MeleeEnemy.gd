@@ -73,9 +73,11 @@ func attack() -> void:
 	if animator.visible:
 		attack_cooldown.start(attack_cooldown_length)
 
-# True when the player is inside the detection zone and not down a pitfall.
+# True when the player is in this room, inside the detection zone and not down a pitfall.
+# The room check stops enemies next door chasing or slashing through the shared wall.
 func is_detected() -> bool:
-	return room.player_active && detection_zone.get_overlapping_bodies().has(player)
+	return room.player_active && is_player_in_room() \
+		&& detection_zone.get_overlapping_bodies().has(player)
 
 func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):

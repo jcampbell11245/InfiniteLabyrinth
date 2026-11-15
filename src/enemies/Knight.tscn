@@ -1263,7 +1263,7 @@ height = 54.8088
 [node name="Knight" type="CharacterBody2D" unique_id=1680489507]
 scale = Vector2(0.75, 0.75)
 collision_layer = 2
-collision_mask = 258
+collision_mask = 291
 motion_mode = 1
 script = ExtResource("1")
 speed = 50.0
