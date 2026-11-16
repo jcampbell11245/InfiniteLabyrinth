@@ -168,6 +168,8 @@ sources/1 = SubResource("TileSetAtlasSource_lxpgn")
 script = ExtResource("1")
 completion_criteria = "enemies"
 enemy_count = 1
+floor_size = 9
+camera_zoom = 2.857
 
 [node name="Tiles" parent="." unique_id=994169391 instance=ExtResource("4")]
 format = 2

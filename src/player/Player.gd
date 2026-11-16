@@ -15,9 +15,7 @@ const ACTION_NAMES: Array[String] = ["idle", "walk", "roll", "slash", "shoot", "
 # Frame on which a one-shot action hands back to idle.
 const ACTION_END_FRAME := {Action.SLASH: 7, Action.SHOOT: 1, Action.DAMAGE: 4}
 
-# Respawn points sit on a room's 9x9 floor, cells (9, 9) to (17, 17) of its Tiles map.
-const FLOOR_FIRST_CELL := Vector2i(9, 9)
-const FLOOR_LAST_CELL := Vector2i(17, 17)
+# Respawn points sit on the room's floor (Room.floor_rect, in cells of its Tiles map).
 const RESPAWN_PROBE := Vector2(0, 14) # Point below the player's origin that picks the tile
 const RESPAWN_OFFSET := Vector2(0, -5) # Player's origin relative to the respawn tile's centre
 
@@ -266,7 +264,8 @@ func _update_respawn_point() -> void:
 	var room := Game.room_by_id(current_room)
 	var tiles: TileMap = room.get_node("Tiles")
 	var local := position - room.position + RESPAWN_PROBE
-	var cell := tiles.local_to_map(local).clamp(FLOOR_FIRST_CELL, FLOOR_LAST_CELL)
+	var first := Vector2i.ONE * Room.FLOOR_FIRST
+	var cell := tiles.local_to_map(local).clamp(first, Vector2i.ONE * room.floor_last)
 	if tiles.get_cell_source_id(0, cell) != -1:
 		last_tile = room.position + tiles.map_to_local(cell) + RESPAWN_OFFSET
 
@@ -376,7 +375,8 @@ func start_transition() -> void:
 	if velocity == Vector2.ZERO:
 		velocity = last_velocity
 		move_and_slide()
-	var room_center := Game.room_by_id(current_room).position + Room.CENTRE
+	var room := Game.room_by_id(current_room)
+	var room_center := room.position + room.centre
 	# Which side of the centre the player is on picks the door, not which way they were
 	# moving: a knockback can carry a player who is walking the other way into a doorway.
 	if current_room == Constants.START_ROOM || abs(position.x - room_center.x) > abs(position.y - room_center.y):
@@ -400,8 +400,8 @@ func _doorway_centre() -> Vector2:
 		Direction.LEFT: door = Room.Door.LEFT
 		Direction.UP: door = Room.Door.TOP
 		_: door = Room.Door.BOTTOM
-	var tiles: TileMap = Game.room_by_id(current_room).tiles
-	return tiles.to_global(tiles.map_to_local(Room.DOOR_CELLS[door]))
+	var room := Game.room_by_id(current_room)
+	return room.tiles.to_global(room.tiles.map_to_local(room.door_cells[door]))
 
 # Keeps the auto-walk going through a doorway. Sliding into the frame zeroes the velocity,
 # which would leave the player stuck there, so it is set afresh every frame: full speed

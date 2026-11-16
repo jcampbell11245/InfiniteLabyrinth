@@ -6,19 +6,18 @@ extends Node2D
 # While playing it fades with the player's room changes and draws its doors: closed at the
 # dungeon edge, locked while the player clears it, opened once it's cleared.
 #
-# Cells are TileMap coordinates. The floor spans cells 9..17 on both axes and the doors
+# Cells are TileMap coordinates. The floor is floor_size cells square, starting at cell 9 on
+# both axes (9..21 for the usual 13x13 floor, 9..17 for the boss room's 9x9), and the doors
 # sit just outside it, at the middle of each side.
 
 enum Door { TOP, RIGHT, BOTTOM, LEFT }
 
-const CENTRE := Vector2(324, 312) # Centre of the room's tiles (cells 8..18 by 7..18)
-const FLOOR_RECT := Rect2(216, 216, 216, 216) # The 9x9 walkable floor, cells 9..17
-const DOOR_CELLS := { # Doorway cell on each side
-	Door.TOP: Vector2i(13, 8),
-	Door.RIGHT: Vector2i(18, 13),
-	Door.BOTTOM: Vector2i(13, 18),
-	Door.LEFT: Vector2i(8, 13),
-}
+const CELL_SIZE := 24 # Pixels per tile
+const FLOOR_FIRST := 9 # First floor cell on both axes
+const LEFT_WALL := 8 # Column of the left wall
+const TOP_WALL := 7 # Top row of the top wall (its face is the row below)
+const STANDARD_FLOOR_SIZE := 13
+const DETECTION_INSET := 13.0 # The player counts as inside once this far onto the floor
 
 const UnlockSound := preload("res://assets/sfx/dooropen.wav")
 const LaserUnlockSound := preload("res://assets/sfx/laser_unlock.wav") # Floor 2 on: the laser bars switch off
@@ -28,20 +27,6 @@ const KILL_PITCH_MAX_STEPS := 6
 
 const FLOOR := 0 # Plain floor source ids that get a random variant
 const FLOOR_ALT := 4
-
-# Floor dressing, as [first cell, last cell, first source id, number of variants].
-# A cell holding FLOOR or FLOOR_ALT becomes one of the variants at random.
-const FLOOR_VARIANTS := [
-	[Vector2i(10, 10), Vector2i(16, 16), 32, 3], # Middle
-	[Vector2i(10, 9), Vector2i(16, 9), 39, 2], # Top edge
-	[Vector2i(10, 17), Vector2i(16, 17), 28, 2], # Bottom edge
-	[Vector2i(9, 10), Vector2i(9, 16), 30, 2], # Left edge
-	[Vector2i(17, 10), Vector2i(17, 16), 37, 2], # Right edge
-	[Vector2i(9, 9), Vector2i(9, 9), 35, 1], # Corners
-	[Vector2i(17, 9), Vector2i(17, 9), 36, 1],
-	[Vector2i(9, 17), Vector2i(9, 17), 26, 1],
-	[Vector2i(17, 17), Vector2i(17, 17), 27, 1],
-]
 
 # Edge overlays drawn round each pitfall cell, by which neighbours are open floor. "T" is
 # drawn on the room's own PitfallTransitions layer; the rest are separate TileMap scenes.
@@ -61,17 +46,10 @@ const PIT_INSET_TOP := 12.0
 const PIT_INSET_SIDE := 4.0
 const PIT_INSET_BOTTOM := 4.0
 # Floor 2 on, a locked door is drawn whole on the Locks layer, below the player and the
-# door frames on Top, instead of floor 1's inserts under the arch. These are its cells, in
-# the order of its Locks sources: red (enemies) pieces from source 9, blue (switches) from 18.
-const FLOOR2_LOCK_CELLS := {
-	Door.TOP: [Vector2i(13, 7), Vector2i(13, 8)],
-	Door.RIGHT: [Vector2i(18, 11), Vector2i(18, 12), Vector2i(18, 13)],
-	Door.BOTTOM: [Vector2i(13, 18)],
-	Door.LEFT: [Vector2i(8, 11), Vector2i(8, 12), Vector2i(8, 13)],
-}
+# door frames on Top, instead of floor 1's inserts under the arch. floor2_lock_cells lists
+# its cells, in the order of its Locks sources: red (enemies) pieces from source 9, blue
+# (switches) from 18.
 const FLOOR2_LOCK_FIRST_SOURCE := {"enemies": 9, "switches": 18}
-const SIDE_DOOR_X := {Door.RIGHT: 18, Door.LEFT: 8}
-const FLOOR_FIRST_ROW := 9 # Top row of the walkable floor
 const TOP_BACK_Z := 0 # The top wall: over the floor, under everything standing on it (z 1 and up)
 const BLACK := 16 # Plain black tile, the dark beyond a doorway
 const PitfallSpikes := preload("res://src/world/tiles/PitfallSpikes.tscn")
@@ -80,6 +58,41 @@ const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.ts
 @export_enum("none", "enemies", "switches") var completion_criteria := "none"
 @export var enemy_count := 0
 @export var room_id: int
+## Width and height of the walkable floor, in cells. Odd, so each door has a middle cell.
+@export var floor_size := STANDARD_FLOOR_SIZE
+## Camera zoom while the player is in this room.
+@export var camera_zoom := 2.5
+
+# Room geometry, all worked out from floor_size. Points are room-local pixels.
+var floor_last: int: # Last floor cell on both axes
+	get: return FLOOR_FIRST + floor_size - 1
+var far_wall: int: # Column of the right wall, and row of the bottom wall
+	get: return FLOOR_FIRST + floor_size
+@warning_ignore("integer_division")
+var door_line: int: # Column of the top and bottom doors, and row of the side doorways
+	get: return FLOOR_FIRST + floor_size / 2
+var door_cells: Dictionary: # Door -> its doorway cell
+	get: return {
+		Door.TOP: Vector2i(door_line, TOP_WALL + 1),
+		Door.RIGHT: Vector2i(far_wall, door_line),
+		Door.BOTTOM: Vector2i(door_line, far_wall),
+		Door.LEFT: Vector2i(LEFT_WALL, door_line),
+	}
+var floor_rect: Rect2: # The walkable floor
+	get: return Rect2(Vector2.ONE * FLOOR_FIRST * CELL_SIZE, Vector2.ONE * floor_size * CELL_SIZE)
+var bounds: Rect2: # Every tile of the room, walls included
+	get:
+		var first := Vector2(LEFT_WALL, TOP_WALL) * CELL_SIZE
+		return Rect2(first, Vector2.ONE * (far_wall + 1) * CELL_SIZE - first)
+var centre: Vector2: # Centre of the room's tiles
+	get: return bounds.get_center()
+var floor2_lock_cells: Dictionary:
+	get: return {
+		Door.TOP: [Vector2i(door_line, TOP_WALL), Vector2i(door_line, TOP_WALL + 1)],
+		Door.RIGHT: _side_door_cells(far_wall),
+		Door.BOTTOM: [Vector2i(door_line, far_wall)],
+		Door.LEFT: _side_door_cells(LEFT_WALL),
+	}
 
 var player_active := true # False while the player is down a pitfall; enemies wait
 var locked := false # Lock tiles have been drawn (first time the player enters)
@@ -110,6 +123,7 @@ func _ready() -> void:
 	Game.room_entered.connect(_on_room_entered)
 	Game.keys_changed.connect(_on_keys_changed)
 
+	_fit_cover_and_detection()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	_add_decorations(rng)
@@ -130,7 +144,7 @@ func close_door(door: Door) -> void:
 	doors[door] = false
 	# The end room's top door is the key gate, which opens later, so it keeps its detector.
 	if !(room_id == Constants.END_ROOM && door == Door.TOP):
-		_detectors.erase_cell(0, DOOR_CELLS[door])
+		_detectors.erase_cell(0, door_cells[door])
 	_refresh_doors()
 
 # Blocks the end room's top door. The gate tile has no collision of its own, so this
@@ -145,7 +159,7 @@ func add_key_gate() -> void:
 	_key_gate.name = "KeyGate"
 	_key_gate.collision_layer = tile_layers
 	_key_gate.collision_mask = 0
-	_key_gate.position = tiles.map_to_local(Vector2i(13, 8))
+	_key_gate.position = tiles.map_to_local(door_cells[Door.TOP])
 	_key_gate.add_child(collision)
 	add_child(_key_gate)
 
@@ -154,19 +168,59 @@ func add_key_gate() -> void:
 # instead of at the enemy, or they would hit the wall the moment they appear.
 func clamp_to_floor(point: Vector2, margin: float) -> Vector2:
 	var inset := Vector2(margin, margin)
-	return point.clamp(FLOOR_RECT.position + inset, FLOOR_RECT.end - inset)
+	var rect := floor_rect
+	return point.clamp(rect.position + inset, rect.end - inset)
 
-# True when `point` (global) is on the room's 9x9 floor and not over a pitfall.
+# True when `point` (global) is on the room's floor and not over a pitfall.
 func is_floor_at(point: Vector2) -> bool:
 	var cell := tiles.local_to_map(tiles.to_local(point))
-	var on_floor := cell.x >= 9 && cell.x <= 17 && cell.y >= 9 && cell.y <= 17
-	return on_floor && !_is_pit(cell)
+	return _on_floor(cell) && !_is_pit(cell)
 
 func is_cleared() -> bool:
 	match completion_criteria:
 		"switches": return $Switches.unlocked()
 		"enemies": return enemy_count == 0
 	return false
+
+# --- Geometry ---
+
+func _on_floor(cell: Vector2i) -> bool:
+	return cell.x >= FLOOR_FIRST && cell.x <= floor_last && cell.y >= FLOOR_FIRST && cell.y <= floor_last
+
+# A side door's three cells in wall column `x`, top to bottom: two of arch, then the doorway.
+func _side_door_cells(x: int) -> Array[Vector2i]:
+	return [Vector2i(x, door_line - 2), Vector2i(x, door_line - 1), Vector2i(x, door_line)]
+
+# Floor dressing, as [first cell, last cell, first source id, number of variants]: the
+# middle, the top, bottom, left and right edges, then the four corners. A cell holding
+# FLOOR or FLOOR_ALT becomes one of the variants at random.
+func _floor_variant_areas() -> Array[Array]:
+	var a := FLOOR_FIRST
+	var b := floor_last
+	return [
+		[Vector2i(a + 1, a + 1), Vector2i(b - 1, b - 1), 32, 3],
+		[Vector2i(a + 1, a), Vector2i(b - 1, a), 39, 2],
+		[Vector2i(a + 1, b), Vector2i(b - 1, b), 28, 2],
+		[Vector2i(a, a + 1), Vector2i(a, b - 1), 30, 2],
+		[Vector2i(b, a + 1), Vector2i(b, b - 1), 37, 2],
+		[Vector2i(a, a), Vector2i(a, a), 35, 1],
+		[Vector2i(b, a), Vector2i(b, a), 36, 1],
+		[Vector2i(a, b), Vector2i(a, b), 26, 1],
+		[Vector2i(b, b), Vector2i(b, b), 27, 1],
+	]
+
+# The black cover and the player-detection area are shared scenes, so they're fitted to
+# this room's size here.
+func _fit_cover_and_detection() -> void:
+	var cover: ColorRect = $Void/ColorRect
+	var rect := bounds
+	cover.position = rect.position - Vector2(1, 0) # A pixel past the left wall, as before
+	cover.size = rect.size + Vector2(1, 0)
+	var detection: CollisionShape2D = $RoomDetection/CollisionShape2D
+	var shape := RectangleShape2D.new()
+	shape.size = floor_rect.size - Vector2.ONE * DETECTION_INSET * 2
+	detection.shape = shape
+	detection.position = floor_rect.get_center()
 
 # --- Floor dressing ---
 
@@ -182,8 +236,8 @@ func _add_decorations(rng: RandomNumberGenerator) -> void:
 	if decorations == null:
 		return
 	var stalagmites: TileMap = get_node_or_null("Stalagmites")
-	for x in range(9, 17):
-		for y in range(9, 17):
+	for x in range(FLOOR_FIRST, floor_last):
+		for y in range(FLOOR_FIRST, floor_last):
 			var cell := Vector2i(x, y)
 			if tiles.get_cell_source_id(0, cell) != FLOOR || _is_pit(cell):
 				continue
@@ -201,7 +255,7 @@ func _add_decorations(rng: RandomNumberGenerator) -> void:
 				decorations.set_cell(0, cell, 3, Vector2i.ZERO)
 
 func _add_floor_variants(rng: RandomNumberGenerator) -> void:
-	for area: Array in FLOOR_VARIANTS:
+	for area: Array in _floor_variant_areas():
 		var first: Vector2i = area[0]
 		var last: Vector2i = area[1]
 		var first_source: int = area[2]
@@ -222,8 +276,8 @@ func _add_pitfall_edges() -> void:
 		layer.z_index = -1
 		layers[key] = layer
 
-	for x in range(9, 18):
-		for y in range(9, 18):
+	for x in range(FLOOR_FIRST, floor_last + 1):
+		for y in range(FLOOR_FIRST, floor_last + 1):
 			var cell := Vector2i(x, y)
 			if !_is_pit(cell):
 				continue
@@ -291,8 +345,8 @@ func _add_pitfall_spikes(rng: RandomNumberGenerator) -> void:
 	if get_node_or_null("Pitfalls") == null:
 		return
 	var spikes: TileMap = PitfallSpikes.instantiate()
-	for x in range(9, 17):
-		for y in range(9, 17):
+	for x in range(FLOOR_FIRST, floor_last):
+		for y in range(FLOOR_FIRST, floor_last):
 			var cell := Vector2i(x, y)
 			if _is_pit(cell) && rng.randi_range(0, 3) == 0:
 				spikes.set_cell(0, cell, 0, Vector2i.ZERO)
@@ -302,8 +356,9 @@ func _add_pitfall_spikes(rng: RandomNumberGenerator) -> void:
 # removes the ones in doorways that get closed.
 func _add_transition_detectors() -> void:
 	_detectors = TransitionDetector.instantiate()
-	for door: Door in DOOR_CELLS:
-		_detectors.set_cell(0, DOOR_CELLS[door], 0, Vector2i.ZERO)
+	var cells := door_cells
+	for door: Door in cells:
+		_detectors.set_cell(0, cells[door], 0, Vector2i.ZERO)
 	add_child(_detectors)
 
 # Fills every doorway with a block on the top-tiles layer, which enemies (and enemy
@@ -312,7 +367,8 @@ func _add_transition_detectors() -> void:
 func _add_door_blockers() -> void:
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(tiles.tile_set.tile_size)
-	for door: Door in DOOR_CELLS:
+	var cells := door_cells
+	for door: Door in cells:
 		var collision := CollisionShape2D.new()
 		collision.shape = shape
 		var blocker := StaticBody2D.new()
@@ -320,7 +376,7 @@ func _add_door_blockers() -> void:
 		blocker.collision_layer = 0
 		blocker.set_collision_layer_value(Constants.Layer.TOP_TILES, true)
 		blocker.collision_mask = 0
-		blocker.position = tiles.map_to_local(DOOR_CELLS[door])
+		blocker.position = tiles.map_to_local(cells[door])
 		blocker.add_child(collision)
 		add_child(blocker)
 
@@ -332,9 +388,9 @@ func _add_door_blockers() -> void:
 func _split_top_wall() -> void:
 	_top_back = _new_top_layer("TopBack")
 	_top_arch = _new_top_layer("TopArch")
-	var arch_x: int = DOOR_CELLS[Door.TOP].x
+	var arch_x := door_line
 	for cell: Vector2i in top.get_used_cells(0):
-		if cell.y < FLOOR_FIRST_ROW:
+		if cell.y < FLOOR_FIRST:
 			var layer := _top_arch if cell.x == arch_x else _top_back
 			layer.set_cell(0, cell, top.get_cell_source_id(0, cell),
 				top.get_cell_atlas_coords(0, cell), top.get_cell_alternative_tile(0, cell))
@@ -359,7 +415,7 @@ func set_arch_in_front(in_front: bool) -> void:
 func _refresh_doors() -> void:
 	_draw_closed_doors()
 	if room_id == Constants.END_ROOM && Game.keys >= 3:
-		tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
+		tiles.set_cell(0, door_cells[Door.TOP], 1, Vector2i.ZERO)
 		if _key_gate != null:
 			_key_gate.queue_free()
 			_key_gate = null
@@ -380,35 +436,38 @@ func _celebrate_unlock() -> void:
 	Juice.play(sound, 0.03, 1.0 if _floor2_doors else 0.8)
 	sound.finished.connect(sound.queue_free)
 	Juice.shake(Juice.SHAKE_MEDIUM)
-	for door: Door in DOOR_CELLS:
+	var cells := door_cells
+	for door: Door in cells:
 		if doors[door]:
-			var at := tiles.to_global(tiles.map_to_local(DOOR_CELLS[door]))
+			var at := tiles.to_global(tiles.map_to_local(cells[door]))
 			Juice.burst(self, at, Color(0.75, 0.7, 0.6), 12, 50.0, Vector2.ZERO, 2.5, 0.6)
 
 func _draw_closed_doors() -> void:
 	# A floor-2 lock would show over the walls drawn for a closed door.
 	var locks: TileMap = get_node_or_null("Locks")
 	if _floor2_doors && locks != null:
-		for door: Door in FLOOR2_LOCK_CELLS:
+		var lock_cells := floor2_lock_cells
+		for door: Door in lock_cells:
 			if !doors[door]:
-				for cell: Vector2i in FLOOR2_LOCK_CELLS[door]:
+				for cell: Vector2i in lock_cells[door]:
 					locks.erase_cell(0, cell)
+	var cells := door_cells
 	# The end room's top door is the key gate, opened by the keys instead.
 	if !doors[Door.TOP] && room_id != Constants.END_ROOM:
-		tiles.set_cell(0, Vector2i(13, 8), 6, Vector2i.ZERO)
-		_top_arch.set_cell(0, Vector2i(13, 8), 3, Vector2i.ZERO)
-		_top_arch.set_cell(0, Vector2i(13, 7), 1, Vector2i.ZERO)
+		tiles.set_cell(0, cells[Door.TOP], 6, Vector2i.ZERO)
+		_top_arch.set_cell(0, cells[Door.TOP], 3, Vector2i.ZERO)
+		_top_arch.set_cell(0, cells[Door.TOP] + Vector2i.UP, 1, Vector2i.ZERO)
 	if !doors[Door.RIGHT]:
-		for y in range(11, 14):
-			top.set_cell(0, Vector2i(18, y), 12, Vector2i.ZERO)
-			tiles.set_cell(0, Vector2i(18, y), 10, Vector2i.ZERO)
+		for cell in _side_door_cells(far_wall):
+			top.set_cell(0, cell, 12, Vector2i.ZERO)
+			tiles.set_cell(0, cell, 10, Vector2i.ZERO)
 	if !doors[Door.BOTTOM]:
-		tiles.set_cell(0, Vector2i(13, 18), 5, Vector2i.ZERO)
-		top.set_cell(0, Vector2i(13, 18), 3, Vector2i.ZERO)
+		tiles.set_cell(0, cells[Door.BOTTOM], 5, Vector2i.ZERO)
+		top.set_cell(0, cells[Door.BOTTOM], 3, Vector2i.ZERO)
 	if !doors[Door.LEFT]:
-		for y in range(11, 14):
-			top.set_cell(0, Vector2i(8, y), 4, Vector2i.ZERO)
-			tiles.set_cell(0, Vector2i(8, y), 7, Vector2i.ZERO)
+		for cell in _side_door_cells(LEFT_WALL):
+			top.set_cell(0, cell, 4, Vector2i.ZERO)
+			tiles.set_cell(0, cell, 7, Vector2i.ZERO)
 
 # Floor 2's open side doors show the dark beyond the doorway through the frame, where
 # floor 1 has wall above the passage. The upper two cells keep their collision (FLOOR_ALT
@@ -422,9 +481,10 @@ func _open_side_doorways() -> void:
 	if has_node("BossDoorBody"):
 		sides.erase(Door.RIGHT)
 	for door in sides:
-		for i in range(3):
-			var cell := Vector2i(SIDE_DOOR_X[door], 11 + i)
-			tiles.set_cell(0, cell, BLACK if i == 2 else FLOOR_ALT, Vector2i.ZERO)
+		var side_cells := _side_door_cells(far_wall if door == Door.RIGHT else LEFT_WALL)
+		for i in range(side_cells.size()):
+			var cell := side_cells[i]
+			tiles.set_cell(0, cell, BLACK if i == side_cells.size() - 1 else FLOOR_ALT, Vector2i.ZERO)
 			if top_walls != null:
 				top_walls.erase_cell(0, cell)
 
@@ -438,38 +498,42 @@ func _draw_locks() -> void:
 	if _floor2_doors:
 		# Only open doors get a lock, since the walls of a closed one don't cover it.
 		var source: int = FLOOR2_LOCK_FIRST_SOURCE[completion_criteria]
-		for door: Door in FLOOR2_LOCK_CELLS:
-			for cell: Vector2i in FLOOR2_LOCK_CELLS[door]:
+		var lock_cells := floor2_lock_cells
+		for door: Door in lock_cells:
+			for cell: Vector2i in lock_cells[door]:
 				if doors[door]:
 					locks.set_cell(0, cell, source, Vector2i.ZERO)
 				source += 1
 		return
-	tiles.set_cell(0, Vector2i(13, 8), 21 if switches else 20, Vector2i.ZERO)
-	locks.set_cell(0, Vector2i(8, 13), 1 if switches else 0, Vector2i.ZERO)
-	locks.set_cell(0, Vector2i(8, 12), 5 if switches else 4, Vector2i.ZERO)
-	tiles.set_cell(0, Vector2i(13, 18), 18, Vector2i.ZERO)
-	locks.set_cell(0, Vector2i(18, 13), 2 if switches else 3, Vector2i.ZERO)
-	locks.set_cell(0, Vector2i(18, 12), 6 if switches else 7, Vector2i.ZERO)
+	var cells := door_cells
+	tiles.set_cell(0, cells[Door.TOP], 21 if switches else 20, Vector2i.ZERO)
+	locks.set_cell(0, cells[Door.LEFT], 1 if switches else 0, Vector2i.ZERO)
+	locks.set_cell(0, cells[Door.LEFT] + Vector2i.UP, 5 if switches else 4, Vector2i.ZERO)
+	tiles.set_cell(0, cells[Door.BOTTOM], 18, Vector2i.ZERO)
+	locks.set_cell(0, cells[Door.RIGHT], 2 if switches else 3, Vector2i.ZERO)
+	locks.set_cell(0, cells[Door.RIGHT] + Vector2i.UP, 6 if switches else 7, Vector2i.ZERO)
 
 func _draw_unlocked_doors() -> void:
 	var locks: TileMap = get_node_or_null("Locks")
 	if _floor2_doors:
 		if locks != null:
-			for door: Door in FLOOR2_LOCK_CELLS:
+			var lock_cells := floor2_lock_cells
+			for door: Door in lock_cells:
 				if doors[door]:
-					for cell: Vector2i in FLOOR2_LOCK_CELLS[door]:
+					for cell: Vector2i in lock_cells[door]:
 						locks.erase_cell(0, cell)
 		return
+	var cells := door_cells
 	if doors[Door.TOP]:
-		tiles.set_cell(0, Vector2i(13, 8), 1, Vector2i.ZERO)
+		tiles.set_cell(0, cells[Door.TOP], 1, Vector2i.ZERO)
 	if doors[Door.LEFT]:
-		locks.set_cell(0, Vector2i(8, 13), 8, Vector2i.ZERO)
-		locks.set_cell(0, Vector2i(8, 12), 8, Vector2i.ZERO)
+		locks.set_cell(0, cells[Door.LEFT], 8, Vector2i.ZERO)
+		locks.set_cell(0, cells[Door.LEFT] + Vector2i.UP, 8, Vector2i.ZERO)
 	if doors[Door.BOTTOM]:
-		tiles.set_cell(0, Vector2i(13, 18), 16, Vector2i.ZERO)
+		tiles.set_cell(0, cells[Door.BOTTOM], 16, Vector2i.ZERO)
 	if doors[Door.RIGHT]:
-		locks.set_cell(0, Vector2i(18, 13), 8, Vector2i.ZERO)
-		locks.set_cell(0, Vector2i(18, 12), 8, Vector2i.ZERO)
+		locks.set_cell(0, cells[Door.RIGHT], 8, Vector2i.ZERO)
+		locks.set_cell(0, cells[Door.RIGHT] + Vector2i.UP, 8, Vector2i.ZERO)
 
 # --- Signals ---
 

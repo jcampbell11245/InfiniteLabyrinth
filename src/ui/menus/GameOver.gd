@@ -20,11 +20,17 @@ func _on_player_died() -> void:
 	$GameOverSFX.play()
 	visible = true
 	scale = Vector2.ONE * SHOW_SCALE
-	SaveData.floor_number = Game.START_FLOOR
-	SaveData.save()
-	
+	# A death while play-testing a room-creator room isn't part of a run.
+	var testing := Game.overworld != null && Game.overworld.is_test()
+	if !testing:
+		SaveData.floor_number = Game.START_FLOOR
+		SaveData.save()
+
 	await get_tree().create_timer(SHOW_TIME).timeout
 	visible = false
+	if testing:
+		Game.overworld.leave_test()
+		return
 	get_tree().paused = false
 	Game.upgrade_menu.show_menu()
 

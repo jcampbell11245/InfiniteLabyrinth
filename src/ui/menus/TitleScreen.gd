@@ -3,8 +3,10 @@ extends Control
 # First screen on launch. Start begins a run through Boot; Quit closes the game. Works
 # with the mouse (hovering selects, clicking presses), the D-pad/stick/arrow keys
 # (ui_up/ui_down move between options) and ui_accept (A, Enter, Space) to press.
+# F1 opens the room creator.
 
 const BOOT_SCENE := "res://src/ui/menus/Boot.tscn"
+const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected option's
 
 @onready var start_button: TextureButton = $Canvas/Start
@@ -22,6 +24,12 @@ func _ready() -> void:
 	Music.play_title()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey && event.pressed && (event as InputEventKey).keycode == KEY_F1:
+		# Handled first: changing scene takes this screen out of the tree, viewport and all.
+		get_viewport().set_input_as_handled()
+		Music.stop_title()
+		get_tree().change_scene_to_file(ROOM_EDITOR)
+		return
 	# If focus was lost (e.g. a click on the background), the next up/down/accept
 	# selects Start again instead of doing nothing.
 	if get_viewport().gui_get_focus_owner() == null && (

@@ -10,14 +10,14 @@
 script = ExtResource("2")
 
 [node name="Player" parent="." unique_id=1108934402 instance=ExtResource("3")]
-position = Vector2(132, 710)
+position = Vector2(180, 950)
 
 [node name="CameraRig" type="CharacterBody2D" parent="." unique_id=599722611]
-position = Vector2(150, 719)
+position = Vector2(195, 949)
 motion_mode = 1
 script = ExtResource("5")
 
 [node name="Camera2D" parent="CameraRig" unique_id=597030113 instance=ExtResource("1")]
-zoom = Vector2(2.857, 2.857)
+zoom = Vector2(2.5, 2.5)
 
 [node name="PauseLayer" parent="." unique_id=545780603 instance=ExtResource("4")]

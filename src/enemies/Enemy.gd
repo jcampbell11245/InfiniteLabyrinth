@@ -173,8 +173,9 @@ func _keep_off_side_walls() -> void:
 	if side_wall_margin <= 0:
 		return
 	# position is room-local, since enemies are direct children of their room.
-	position.x = clampf(position.x, Room.FLOOR_RECT.position.x + side_wall_margin,
-		Room.FLOOR_RECT.end.x - side_wall_margin)
+	var floor_rect := room.floor_rect
+	position.x = clampf(position.x, floor_rect.position.x + side_wall_margin,
+		floor_rect.end.x - side_wall_margin)
 
 func _on_invincibility_cooldown_timeout() -> void:
 	animator.modulate.a = 1

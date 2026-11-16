@@ -10,6 +10,18 @@ which starts a new run on floor 1 (coins and upgrades carry over) and loads the 
 Progress (floor, coins, upgrade levels) lives in `user://save.cfg`, read and written through
 the `SaveData` autoload.
 
+## Room creator
+
+Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
+Pick a tool on the left (or press 1-8), then left-click or drag on the floor to paint pitfalls,
+and stalagmites, or click to place goblins, knights, wizards and switches; right-click
+erases. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
+dying) goes back to the editor with the design intact. **Export** writes the design as a
+plain-text grid to a `room_designs` folder and copies it to the clipboard, ready to be turned
+into a scene in `src/world/rooms/`. Run from source, the folder is in the project; in an
+exported build it sits beside the game's executable (or in the user data folder if that one
+can't be written to). **Open folder** opens it.
+
 ## Smoke test
 
 `tools/smoke_test.gd` loads every script and scene under `src/`, then boots the game headless
@@ -50,6 +62,8 @@ src/world/     floor layout (WorldGenerator), building it (Overworld), room scri
   keyrooms/    rooms holding the three keys
   special/     start, end and boss rooms
   tiles/       TileMap scenes used by rooms
+src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
+               blank room it paints on
 src/ui/        HUD widgets and menus (Boot is the main scene)
 src/audio/     enemy death sound players
 tools/         headless smoke test

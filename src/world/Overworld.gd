@@ -3,11 +3,18 @@ extends Node2D
 
 # One floor of the dungeon: builds the rooms from a WorldGenerator layout and runs the
 # boss-door cutscene. Reloaded for every new floor.
+#
+# With test_design set (by the room creator) it builds just that room instead, with every
+# door closed, to play-test it. F1, or dying, goes back to the room creator.
 
 # Top-left offset of the room grid; a room at (row, col) sits at GRID_ORIGIN + ROOM_SIZE * (col, row).
 # Column 0 holds the start room, columns 1..COLUMNS the generated rooms, then the end room.
 const GRID_ORIGIN := Vector2(-191, -168)
 const BossRoom := preload("res://src/world/special/BossRoom.tscn")
+const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
+const TEST_ROOM_ID := 0
+
+static var test_design: RoomDesign # Set while play-testing a room from the room creator
 
 var floor_number := 1
 var rooms_by_id := {} # room_id -> Room
@@ -21,16 +28,33 @@ func _exit_tree() -> void:
 func _ready() -> void:
 	floor_number = SaveData.floor_number
 	
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	_build(WorldGenerator.generate(rng))
+	if is_test():
+		_build_test(test_design)
+	else:
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		_build(WorldGenerator.generate(rng))
 	Game.room_entered.emit(Game.player.current_room) # Fades the start room in
 	
 	Music.start_floor()
 	Game.player.boss_door_reached.connect(_on_player_boss_door_reached)
 	Game.player.transition_pause_finished.connect(_on_player_transition_pause_finished)
-	var door_close: AudioStreamPlayer = rooms_by_id[Constants.BOSS_ROOM].get_node("BossDoorBody/BossDoorClose")
-	door_close.finished.connect(_on_boss_door_closed)
+	if rooms_by_id.has(Constants.BOSS_ROOM):
+		var door_close: AudioStreamPlayer = rooms_by_id[Constants.BOSS_ROOM].get_node("BossDoorBody/BossDoorClose")
+		door_close.finished.connect(_on_boss_door_closed)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if is_test() && event is InputEventKey && event.pressed && (event as InputEventKey).keycode == KEY_F1:
+		leave_test()
+
+# True while play-testing a room from the room creator.
+func is_test() -> bool:
+	return test_design != null
+
+func leave_test() -> void:
+	get_tree().paused = false
+	Music.stop_all()
+	get_tree().change_scene_to_file(ROOM_EDITOR)
 
 func grid_position(row: int, col: int) -> Vector2:
 	return GRID_ORIGIN + Constants.ROOM_SIZE * Vector2(col, row)
@@ -50,6 +74,7 @@ func _build(layout: Array[PackedStringArray]) -> void:
 	start.close_door(Room.Door.BOTTOM)
 	
 	var boss := _add_room(BossRoom, Constants.BOSS_ROOM, middle, -1)
+	_attach_left_of(boss, start)
 	boss.close_door(Room.Door.TOP)
 	boss.close_door(Room.Door.BOTTOM)
 	boss.close_door(Room.Door.LEFT)
@@ -74,6 +99,35 @@ func _build(layout: Array[PackedStringArray]) -> void:
 				room.close_door(Room.Door.LEFT)
 			elif col == last_col - 1:
 				room.close_door(Room.Door.RIGHT)
+
+# Builds the room creator's design on its own, with the player on it and every door shut.
+func _build_test(design: RoomDesign) -> void:
+	var room := design.build_room()
+	room.room_id = TEST_ROOM_ID
+	add_child(room)
+	room.position = grid_position(WorldGenerator.MIDDLE_ROW, 0)
+	rooms_by_id[TEST_ROOM_ID] = room
+	for door: Room.Door in [Room.Door.TOP, Room.Door.RIGHT, Room.Door.BOTTOM, Room.Door.LEFT]:
+		room.close_door(door)
+	var player := Game.player
+	player.current_room = TEST_ROOM_ID
+	player.position = room.position + room.tiles.map_to_local(RoomDesign.tile_cell(design.spawn_index())) 		+ Player.RESPAWN_OFFSET
+	player.last_tile = player.position
+	Game.camera_rig.position = room.position + room.centre
+	var hint := Label.new()
+	hint.text = "Testing room  -  F1: back to the room creator"
+	hint.add_theme_font_size_override("font_size", 26)
+	hint.position = Vector2(40, 1080 - 70)
+	var layer := CanvasLayer.new()
+	layer.add_child(hint)
+	add_child(layer)
+
+# Moves `room` so its right door opens onto `neighbour`'s left door. Needed for the boss
+# room, which is smaller than the grid's rooms.
+func _attach_left_of(room: Room, neighbour: Room) -> void:
+	var right_door: Vector2 = room.tiles.map_to_local(room.door_cells[Room.Door.RIGHT])
+	var left_door: Vector2 = neighbour.tiles.map_to_local(neighbour.door_cells[Room.Door.LEFT])
+	room.position = neighbour.position + left_door - right_door - Vector2(Room.CELL_SIZE, 0)
 
 func _add_room(scene: PackedScene, id: int, row: int, col: int) -> Room:
 	var room: Room = scene.instantiate()

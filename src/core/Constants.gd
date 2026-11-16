@@ -3,7 +3,7 @@ class_name Constants
 # Dungeon layout: a grid of COLUMNS x ROWS generated rooms, plus the special rooms below.
 const COLUMNS := 6
 const ROWS := 5
-const ROOM_SIZE := Vector2(264, 288) # Distance between neighbouring rooms, in pixels
+const ROOM_SIZE := Vector2(360, 384) # Distance between neighbouring rooms, in pixels (13x13-floor rooms)
 
 # Ids of the rooms that sit outside the grid (grid rooms are 0..COLUMNS*ROWS-1).
 const START_ROOM := 60
