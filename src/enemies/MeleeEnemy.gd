@@ -8,7 +8,6 @@ extends Enemy
 # shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
 # still until the reaction is over.
 
-const BLOCK_STUN_TIME := 1.0
 
 @export var only_hit_during_attack: bool
 @export var starting_direction := Direction.RIGHT
@@ -82,7 +81,7 @@ func is_detected() -> bool:
 
 func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):
-		$BlockStun.start(BLOCK_STUN_TIME)
+		$BlockStun.start(Tuning.knight_block_stun)
 		Juice.play($Block)
 		_play_reaction("block")
 		return true

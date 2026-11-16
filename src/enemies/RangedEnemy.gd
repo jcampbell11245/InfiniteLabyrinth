@@ -7,9 +7,8 @@ extends Enemy
 # forth, stronger and faster each time.
 
 const Fireball := preload("res://src/projectiles/Fireball.tscn")
-const BURST_COOLDOWN := 2.5 # Replaces attack_cooldown_length once a fireball is out
-const BURST_SHOT_DELAY := 0.5 # Between each of the three shots
-const DEFLECT_MISS_CHANCE := 0.3 # Chance a returned fireball gets through
+# Burst cooldown (replaces attack_cooldown_length once a fireball is out), the delay
+# between each of the three shots and the deflect miss chance are in Tuning.
 const DEFLECT_REACH := 22.0 # Pixels ahead of the wizard where it bats a fireball back
 const DEFLECT_WIDTH := 12.0 # Pixels either side of a fireball's path that still count
 
@@ -84,7 +83,8 @@ func shoot_fireball() -> void:
 	fireball.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)
 	fireball.direction = direction
 	fireball.damage = damage
-	attack_cooldown.start(BURST_COOLDOWN)
+	fireball.speed = Tuning.fireball_speed
+	attack_cooldown.start(Tuning.wizard_burst_cooldown)
 
 func _attack_action() -> String:
 	return "shoot"
@@ -98,7 +98,7 @@ func _try_deflect() -> void:
 		if _judged.get(shot, -1) == shot.deflections || !_is_incoming(shot):
 			continue
 		_judged[shot] = shot.deflections
-		if randf() < DEFLECT_MISS_CHANCE:
+		if randf() < Tuning.wizard_deflect_miss_chance:
 			continue # Fumbled; it flies on and hits
 		_face(Direction.to_vector(shot.direction) * -1)
 		shot.deflect(direction)
@@ -148,8 +148,8 @@ func _can_retreat() -> bool:
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("shoot") && animator.frame == attack_frame:
 		shoot_fireball()
-		$SecondShotCountdown.start(BURST_SHOT_DELAY)
-		$ThirdShotCountdown.start(BURST_SHOT_DELAY * 2)
+		$SecondShotCountdown.start(Tuning.wizard_shot_delay)
+		$ThirdShotCountdown.start(Tuning.wizard_shot_delay * 2)
 
 func _on_second_shot_countdown_timeout() -> void:
 	shoot_fireball()

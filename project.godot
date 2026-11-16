@@ -18,9 +18,11 @@ config/icon="res://icon.png"
 [autoload]
 
 SaveData="*res://src/autoload/SaveData.gd"
+Tuning="*res://src/autoload/Tuning.gd"
 Game="*res://src/autoload/Game.gd"
 Music="*res://src/autoload/Music.tscn"
 Juice="*res://src/autoload/Juice.gd"
+DebugMenu="*res://src/autoload/DebugMenu.gd"
 
 [debug]
 

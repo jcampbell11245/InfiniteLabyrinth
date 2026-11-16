@@ -23,6 +23,20 @@ into a scene in `src/world/rooms/`. Run from source, the folder is in the projec
 exported build it sits beside the game's executable (or in the user data folder if that one
 can't be written to). **Open folder** opens it.
 
+## Debug menu
+
+In debug builds (running from the editor or a debug export), **F2** opens the debug menu over
+the game and pauses it; F2 or **Close** shuts it again. The **Progress** tab edits the running
+floor (health, coins, keys, arrows, time left, floor, upgrade levels) and has Full heal, Kill
+enemies in this room and Next floor buttons. The other tabs edit the gameplay numbers in
+`src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, timer, loot, hit-stop,
+cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back
+to their shipped value, Progress rows to what they were when the menu opened. **Reset all**
+resets every row. **Export** writes every Tuning value, changed ones first and marked `*`, to a
+`tuning_exports` folder (same locations as the room creator's export) and copies it to the
+clipboard. Hover a row's name to see where its value lives in the code. Changed values last
+until the game closes; copy the ones you want to keep into the defaults in `Tuning.gd`.
+
 ## Smoke test
 
 `tools/smoke_test.gd` loads every script and scene under `src/`, then boots the game headless

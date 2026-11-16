@@ -7,8 +7,7 @@ extends Sprite2D
 
 const POP_SPEED := 70.0 # Pixels/sec outward at the start
 const POP_TIME := 0.3 # Seconds before it starts homing
-const HOME_ACCEL := 900.0 # Pixels/sec² towards the player
-const COLLECT_DISTANCE := 6.0
+# Homing acceleration and collect distance are Tuning.pickup_home_accel/_collect_distance.
 
 var _velocity := Vector2.ZERO
 var _age := 0.0
@@ -30,10 +29,10 @@ func _process(delta: float) -> void:
 		_velocity = _velocity.move_toward(Vector2.ZERO, POP_SPEED * 2.5 * delta)
 	else:
 		var to_player := player.global_position - global_position
-		if to_player.length() < COLLECT_DISTANCE:
+		if to_player.length() < Tuning.pickup_collect_distance:
 			_collect()
 			return
-		_velocity += to_player.normalized() * HOME_ACCEL * delta
+		_velocity += to_player.normalized() * Tuning.pickup_home_accel * delta
 		# Turn hard towards the player so it doesn't orbit.
 		_velocity = _velocity.normalized().slerp(to_player.normalized(), 0.25) * _velocity.length()
 	global_position += _velocity * delta

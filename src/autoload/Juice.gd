@@ -14,9 +14,8 @@ const TWINKLE_VOLUME_DB := -6.0
 const Dizzy := preload("res://src/effects/Dizzy.gd")
 const CLANK := preload("res://assets/sfx/clank1.wav")
 
-# Hit-stop slows the whole game to this fraction of normal speed rather than 0, so
-# anything dividing by delta keeps working.
-const HITSTOP_TIME_SCALE := 0.05
+# Hit-stop slows the whole game to Tuning.hitstop_time_scale of normal speed rather than
+# 0, so anything dividing by delta keeps working.
 
 # Shake presets: [duration, frequency, amplitude]. Amplitude is in pixels before the
 # display scale-up, so 1-3 is already plenty.
@@ -63,21 +62,24 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _hitstop_until != 0 && Time.get_ticks_msec() >= _hitstop_until:
 		_hitstop_until = 0
-		Engine.time_scale = 1.0
+	if _hitstop_until == 0:
+		Engine.time_scale = Tuning.game_speed # Set every frame so debug menu changes apply at once
 
 # Freezes the game for `seconds` of real time. Overlapping calls extend, never shorten.
 func hitstop(seconds: float) -> void:
+	if !Tuning.hitstop_enabled:
+		return
 	var until := Time.get_ticks_msec() + int(seconds * 1000)
 	if until <= _hitstop_until:
 		return
 	_hitstop_until = until
-	Engine.time_scale = HITSTOP_TIME_SCALE
+	Engine.time_scale = Tuning.hitstop_time_scale * Tuning.game_speed
 
 # Shakes the game camera with one of the SHAKE_ presets. A weaker shake never cuts a
 # stronger one short.
 func shake(preset: Array) -> void:
 	if Game.camera != null:
-		Game.camera.shake_at_least(preset[0], preset[1], preset[2])
+		Game.camera.shake_at_least(preset[0], preset[1], preset[2] * Tuning.shake_multiplier)
 
 # Plays a sound with its pitch nudged up or down by up to `spread`, so repeats don't sound
 # identical. `base` shifts the centre pitch (used for combo pitch-ups).

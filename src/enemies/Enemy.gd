@@ -10,9 +10,7 @@ extends CharacterBody2D
 signal died(enemy: Enemy)
 
 const KNOCKBACK_FRICTION := 200 # Pixels/sec lost per second
-const CRIT_ROLL_MAX := 30 # A hit crits when randi_range(0, CRIT_ROLL_MAX) < damage upgrade level
 const CLOSE_RANGE := 25 # Pixels on either axis
-const SWORD_DAMAGE := 1.0 # Health a sword hit takes; arrows carry their own damage
 
 @export var speed: float
 @export var knockback_speed: float
@@ -23,7 +21,7 @@ const SWORD_DAMAGE := 1.0 # Health a sword hit takes; arrows carry their own dam
 @export var attack_cooldown_length: float
 # Parrying. The attack animation freezes on its last windup frame (the one before
 # attack_frame) for a random windup hold, rolled within this range each attack. Then a
-# twinkle shows and the enemy holds PARRY_WINDOW longer before striking. A sword hit in
+# twinkle shows and the enemy holds Tuning.parry_window longer before striking. A sword hit in
 # that window parries; one before the twinkle is blocked and staggers the player; one
 # after it is too late (see _on_player_sword). Both 0 means no hold, twinkle or parrying.
 @export var windup_hold_min := 0.0
@@ -51,6 +49,9 @@ var _parry_timer: Timer # Running while the parry window is open
 var _stun_timer: Timer # Running while stunned from being parried
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
 var _dizzy: Node2D # Stars shown while stunned
+# The scene's own values, before Tuning's enemy multipliers.
+var _base := {}
+var _health_multiplier := 1.0 # Tuning.enemy_health_multiplier last applied to health
 
 @onready var player: Player = Game.player
 @onready var room: Room = get_parent()
@@ -64,20 +65,42 @@ const HITSTOP_HIT := 0.05
 const HITSTOP_KILL := 0.09
 const HITSTOP_CRIT := 0.12
 const HITSTOP_BLOCK := 0.03
-const PARRY_WINDOW := 0.25 # Seconds from the twinkle to the strike; a sword hit in it parries
-const PARRIED_STUN_TIME := 1.0 # Seconds a parried enemy stands helpless
-const PARRIED_KNOCKBACK := 0.5 # Times knockback_speed for being parried
+# The parry window, parried stun and knockback, sword damage and crit roll are in Tuning.
 const PARRY_SPARK := Color(1, 0.95, 0.7)
 const PARRY_HITSTOP := 0.1
 const FEET_OFFSET := Vector2(0, 8) # From the origin down to where the enemy stands
 
 func _ready() -> void:
 	critical_chance = SaveData.damage_level
+	add_to_group("enemies")
+	for key: String in ["speed", "damage", "knockback_speed", "attack_cooldown_length", "windup_hold_min", "windup_hold_max"]:
+		_base[key] = get(key)
+	apply_tuning()
+	Tuning.changed.connect(_on_tuning_changed)
 	Juice.add_flash(animator)
 	_twinkle_timer = _add_timer(_twinkle)
 	_parry_timer = _add_timer(_end_windup_hold)
 	_stun_timer = _add_timer(_show_dizzy.bind(false))
 	_vulnerable_timer = _add_timer(_set_vulnerable.bind(false))
+
+func _on_tuning_changed(key: String) -> void:
+	if key.begins_with("enemy_") || key == "freeze_enemies":
+		apply_tuning()
+
+# Applies Tuning's enemy multipliers to the scene's values. Health keeps its share of the
+# maximum: a half-dead enemy stays half dead when the multiplier changes.
+func apply_tuning() -> void:
+	speed = _base.speed * Tuning.enemy_speed_multiplier
+	damage = _base.damage * Tuning.enemy_damage_multiplier
+	knockback_speed = _base.knockback_speed * Tuning.enemy_knockback_multiplier
+	attack_cooldown_length = _base.attack_cooldown_length * Tuning.enemy_attack_cooldown_multiplier
+	windup_hold_min = _base.windup_hold_min * Tuning.enemy_windup_multiplier
+	windup_hold_max = _base.windup_hold_max * Tuning.enemy_windup_multiplier
+	if windup_hold_max <= 0 && _base.windup_hold_max > 0:
+		windup_hold_max = 0.001 # Still parryable, with no hold before the twinkle
+	health *= Tuning.enemy_health_multiplier / _health_multiplier
+	_health_multiplier = Tuning.enemy_health_multiplier
+	process_mode = Node.PROCESS_MODE_DISABLED if Tuning.freeze_enemies else Node.PROCESS_MODE_INHERIT
 
 # A one-shot timer child, made in code so the scenes don't need one.
 func _add_timer(on_timeout := Callable()) -> Timer:
@@ -111,7 +134,7 @@ func take_damage(from_direction: String, amount: float) -> void:
 	animator.modulate.a = 0.5
 	
 	if is_vulnerable():
-		amount *= Constants.STAGGER_DAMAGE_MULTIPLIER
+		amount *= Tuning.stagger_damage_multiplier
 		_set_vulnerable(false)
 	var critical := _roll_critical()
 	_lose_health(amount, critical)
@@ -139,8 +162,8 @@ func die() -> void:
 	Juice.burst(room, global_position, blood_color, 18, 100.0, Vector2.ZERO, 3.0, 0.5)
 	Juice.splat(room, global_position + FEET_OFFSET, blood_color.darkened(0.1))
 	Juice.drop_coins(room, global_position, roundi(coin_reward * _coin_multiplier()))
-	if randf() < Constants.ARROW_DROP_CHANCE:
-		Juice.drop_arrows(room, global_position, randi_range(1, Constants.ARROW_DROP_MAX))
+	if randf() < Tuning.arrow_drop_chance:
+		Juice.drop_arrows(room, global_position, randi_range(1, Tuning.arrow_drop_max))
 	died.emit(self)
 	queue_free()
 
@@ -156,10 +179,10 @@ func _blocks_hit() -> bool:
 func _roll_critical() -> bool:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	return rng.randi_range(0, CRIT_ROLL_MAX) < critical_chance
+	return rng.randi_range(0, Tuning.crit_roll_max) < critical_chance
 
 func _lose_health(amount: float, critical: bool) -> void:
-	if critical:
+	if critical || Tuning.one_hit_kills:
 		health = 0
 	else:
 		health -= amount
@@ -174,7 +197,7 @@ func _on_staggered() -> void:
 # Coins are coin_reward times "floor.looting": floor 1 with no looting is x1.0, floor 1 with
 # looting 1 is x1.1, floor 2 with looting 3 is x2.3. Looting tops out at 9, one decimal digit.
 func _coin_multiplier() -> float:
-	return Game.overworld.floor_number + SaveData.looting_level / 10.0
+	return (Game.overworld.floor_number + SaveData.looting_level / 10.0) * Tuning.coin_multiplier
 
 # --- Helpers for subclasses ---
 
@@ -231,7 +254,7 @@ func _parry_timing() -> Parry:
 func _on_player_sword(from_direction: String) -> void:
 	match _parry_timing():
 		Parry.NONE:
-			take_damage(from_direction, SWORD_DAMAGE)
+			take_damage(from_direction, Tuning.sword_damage)
 		Parry.IN_WINDOW:
 			_parry_feedback()
 			stagger(from_direction)
@@ -260,11 +283,11 @@ func is_vulnerable() -> bool:
 
 # Parried: the attack is cancelled, the enemy is knocked back the way the player's sword
 # travels and stunned for a moment, and its next hit taken (within
-# STAGGER_VULNERABLE_TIME) is multiplied.
+# Tuning.stagger_vulnerable_time) is multiplied.
 func stagger(from_direction: String) -> void:
 	_end_windup_hold()
-	knockback = Direction.to_vector(from_direction) * knockback_speed * PARRIED_KNOCKBACK
-	_stun_timer.start(PARRIED_STUN_TIME)
+	knockback = Direction.to_vector(from_direction) * knockback_speed * Tuning.parried_knockback
+	_stun_timer.start(Tuning.parried_stun_time)
 	_set_vulnerable(true)
 	_show_dizzy(true)
 	_play("idle")
@@ -272,7 +295,7 @@ func stagger(from_direction: String) -> void:
 
 func _set_vulnerable(on: bool) -> void:
 	if on:
-		_vulnerable_timer.start(Constants.STAGGER_VULNERABLE_TIME)
+		_vulnerable_timer.start(Tuning.stagger_vulnerable_time)
 	else:
 		_vulnerable_timer.stop()
 
@@ -283,7 +306,7 @@ func _show_dizzy(on: bool) -> void:
 		_dizzy = Juice.dizzy(self, dizzy_offset)
 
 # Call every frame. Freezes the attack animation on its last windup frame, once per
-# attack: a random windup hold, then the twinkle, then PARRY_WINDOW, then the strike.
+# attack: a random windup hold, then the twinkle, then Tuning.parry_window, then the strike.
 # The attack cooldown is paused too, so the hold adds to the time between attacks
 # instead of eating into it.
 func _update_windup() -> void:
@@ -305,7 +328,7 @@ func _update_windup() -> void:
 # The "about to strike" glint, out in front of the enemy's face. Opens the parry window.
 func _twinkle() -> void:
 	_twinkled_at = Time.get_ticks_msec()
-	_parry_timer.start(PARRY_WINDOW)
+	_parry_timer.start(Tuning.parry_window)
 	var forward := Direction.to_vector(direction) * twinkle_offset.x
 	Juice.twinkle(self, forward + Vector2(0, twinkle_offset.y))
 

@@ -9,7 +9,6 @@ extends CharacterBody2D
 # again by a wizard, each time getting stronger and faster (see deflect). Once the player
 # has hit it back it is hostile to enemies instead of the player, and tinted to show it.
 
-const LIFETIME := 5.0
 const SPAWN_MARGIN := 5.0 # Distance from walls to keep the spawn point, covering the hitbox
 
 @export var speed: float # Pixels/sec
@@ -30,7 +29,7 @@ var _hit := false # Impact effects play once, though area and body signals can b
 var _contacts: Array[Node2D] = [] # Deflectable shots: touched this frame, resolved at its end
 
 func _ready() -> void:
-	$ExistenceTime.start(LIFETIME)
+	$ExistenceTime.start(Tuning.projectile_lifetime)
 
 func _physics_process(_delta: float) -> void:
 	if free_in_end_room && Game.player.current_room == Constants.END_ROOM:
@@ -57,10 +56,10 @@ func _set_direction(value: String) -> void:
 func deflect(new_direction: String) -> void:
 	deflections += 1
 	direction = new_direction
-	damage *= Constants.DEFLECT_DAMAGE_MULTIPLIER
-	speed = minf(speed * Constants.DEFLECT_SPEED_MULTIPLIER, Constants.DEFLECT_MAX_SPEED)
+	damage *= Tuning.deflect_damage_multiplier
+	speed = minf(speed * Tuning.deflect_speed_multiplier, Tuning.deflect_max_speed)
 	_set_hostile_to_player(!hostile_to_player)
-	$ExistenceTime.start(LIFETIME)
+	$ExistenceTime.start(Tuning.projectile_lifetime)
 	Juice.burst(get_parent(), global_position, Color(1, 0.95, 0.7), 8, 80.0,
 		Direction.to_vector(new_direction), 1.5, 0.2)
 

@@ -6,7 +6,6 @@ extends Enemy
 enum Mode { CHASE, RANGED }
 
 const Laser := preload("res://src/projectiles/Laser.tscn")
-const LASER_COOLDOWN := 1.0
 
 var mode := Mode.CHASE
 var swing_rest := 0.0 # Seconds left standing idle after a slash before the next one
@@ -78,7 +77,8 @@ func shoot_laser() -> void:
 	laser.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)
 	laser.direction = String(animator.animation).get_slice("_", 1)
 	laser.damage = damage
-	attack_cooldown.start(LASER_COOLDOWN)
+	laser.speed = Tuning.laser_speed
+	attack_cooldown.start(Tuning.boss_laser_cooldown)
 
 func die() -> void:
 	$Won.visible = true

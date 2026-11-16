@@ -12,9 +12,16 @@ var _last_health := -1.0
 
 func _ready() -> void:
 	Game.health_changed.connect(_show)
-	max_hearts = SaveData.health_level + Constants.BASE_HEALTH
-	for heart in range(max_hearts):
-		get_child(heart).visible = true
+	add_to_group("hearts")
+	set_max_hearts(SaveData.health_level + Tuning.base_health)
+
+# Shows one heart per point of max health, up to the hearts the scene holds.
+func set_max_hearts(count: int) -> void:
+	max_hearts = clampi(count, 1, get_child_count())
+	for n in range(get_child_count()):
+		get_child(n).visible = n < max_hearts
+	if _last_health >= 0:
+		_show(_last_health)
 
 func _show(health: float) -> void:
 	if _last_health >= 0 && health != _last_health:

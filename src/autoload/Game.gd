@@ -14,10 +14,10 @@ signal player_died
 
 var coins := 0 # Banked into SaveData when the floor ends
 var keys := 0 # Collected this floor; three open the end room
-var arrows := 0 # Left to shoot; refilled to Constants.START_ARROWS each floor
+var arrows := 0 # Left to shoot; refilled to Tuning.start_arrows each floor
 
-const DEBUG_START_KEYS := 0 # Keys given at the start of each floor. Raise it to test the end room quickly.
-const START_FLOOR := 1 # Floor a new run starts on. Raise it to test a later floor's art.
+# Keys given at the start of each floor and the floor a new run starts on are
+# Tuning.start_keys and Tuning.start_floor (debug menu, F2).
 
 var overworld: Overworld
 var player: Player
@@ -32,8 +32,8 @@ func register(world: Overworld) -> void:
 	camera = camera_rig.get_node("Camera2D")
 	upgrade_menu = camera.get_node("UpgradeMenu/Control")
 	coins = SaveData.coins
-	keys = DEBUG_START_KEYS
-	arrows = Constants.START_ARROWS
+	keys = Tuning.start_keys
+	arrows = Tuning.start_arrows
 
 func unregister(world: Overworld) -> void:
 	if overworld == world:
