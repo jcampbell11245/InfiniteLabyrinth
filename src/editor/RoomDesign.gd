@@ -88,6 +88,59 @@ func clear() -> void:
 	cells.fill(Cell.FLOOR)
 	objects.clear()
 
+# Removes every goblin, knight and wizard; switches stay.
+func clear_enemies() -> void:
+	for index: Vector2i in objects.keys():
+		if objects[index] != "switch":
+			objects.erase(index)
+
+# Turns every pitfall and stalagmite back to floor; enemies and switches stay.
+func clear_tiles() -> void:
+	cells.fill(Cell.FLOOR)
+
+# --- Undo and redo ---
+# Each step is a snapshot of the whole design from before the change. The room is tiny
+# (169 cells), so whole copies are simpler than recording individual edits.
+
+const HISTORY_LIMIT := 200
+
+var _undo_steps: Array[Dictionary] = []
+var _redo_steps: Array[Dictionary] = []
+
+func snapshot() -> Dictionary:
+	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "clear_by": clear_by}
+
+func restore(state: Dictionary) -> void:
+	cells = (state.cells as PackedByteArray).duplicate()
+	objects = (state.objects as Dictionary).duplicate()
+	clear_by = state.clear_by
+
+# Records a change made since `before` (a snapshot()) as one undo step. Does nothing if
+# the design ended up the same, so a click that changes nothing isn't a step.
+func record(before: Dictionary) -> void:
+	if before == snapshot():
+		return
+	_undo_steps.append(before)
+	if _undo_steps.size() > HISTORY_LIMIT:
+		_undo_steps.pop_front()
+	_redo_steps.clear()
+
+func can_undo() -> bool:
+	return !_undo_steps.is_empty()
+
+func can_redo() -> bool:
+	return !_redo_steps.is_empty()
+
+func undo() -> void:
+	if can_undo():
+		_redo_steps.append(snapshot())
+		restore(_undo_steps.pop_back())
+
+func redo() -> void:
+	if can_redo():
+		_undo_steps.append(snapshot())
+		restore(_redo_steps.pop_back())
+
 func count(kind: String) -> int:
 	return objects.values().count(kind)
 
@@ -107,15 +160,17 @@ func clear_problem() -> String:
 		return "No enemies: the room opens straight away"
 	return ""
 
-# Where the play-test puts the player: the free floor cell nearest the middle.
+# Where the play-test puts the player: the free floor cell nearest the middle of the left
+# edge, just inside the left door, as if they had walked in from the room to the left.
 func spawn_index() -> Vector2i:
-	var middle := Vector2i.ONE * (SIZE / 2)
-	var best := middle
+	@warning_ignore("integer_division")
+	var target := Vector2i(0, SIZE / 2)
+	var best := target
 	var best_distance := INF
 	for y in range(SIZE):
 		for x in range(SIZE):
 			var index := Vector2i(x, y)
-			var distance := Vector2(index - middle).length()
+			var distance := Vector2(index - target).length()
 			if get_cell(index) == Cell.FLOOR && !objects.has(index) && distance < best_distance:
 				best = index
 				best_distance = distance

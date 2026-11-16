@@ -15,7 +15,8 @@ the `SaveData` autoload.
 Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
 Pick a tool on the left (or press 1-8), then left-click or drag on the floor to paint pitfalls,
 and stalagmites, or click to place goblins, knights, wizards and switches; right-click
-erases. Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
+erases. Ctrl+Z undoes and Ctrl+Y redoes, or use the Undo and Redo buttons. Clear opens a menu to
+wipe everything, just the enemies, or just the tiles (pitfalls and stalagmites). Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
 dying) goes back to the editor with the design intact. **Export** writes the design as a
 plain-text grid to a `room_designs` folder and copies it to the clipboard, ready to be turned
 into a scene in `src/world/rooms/`. Run from source, the folder is in the project; in an

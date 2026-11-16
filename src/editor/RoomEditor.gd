@@ -4,7 +4,7 @@ extends Node2D
 # pick a tool on the left, left-click or drag on the floor to paint it, right-click to
 # erase. Play builds the room on its own to test it (F1 there comes back here); Export
 # writes it to a text file (and the clipboard) that can be turned into a room scene, and
-# Open folder shows where the files went.
+# Open folder shows where the files went. Ctrl+Z undoes; Ctrl+Y or Ctrl+Shift+Z redo.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const PLAY_SCENE := "res://src/world/Overworld.tscn"
@@ -21,6 +21,19 @@ const GRID_COLOR := Color(1, 1, 1, 0.08)
 const HOVER_COLOR := Color(1, 0.9, 0.3, 0.9)
 const ERASE_COLOR := Color(1, 0.3, 0.3, 0.9)
 const SELECTED_COLOR := Color(0.95, 0.8, 0.35) # Background of the selected tool and clear condition
+
+# The Clear menu's items, and what each says it cleared.
+enum ClearWhat { EVERYTHING, ENEMIES, TILES }
+const CLEAR_LABELS := {
+	ClearWhat.EVERYTHING: "Everything",
+	ClearWhat.ENEMIES: "Enemies",
+	ClearWhat.TILES: "Tiles",
+}
+const CLEAR_HINTS := {
+	ClearWhat.EVERYTHING: "",
+	ClearWhat.ENEMIES: "  (switches stay)",
+	ClearWhat.TILES: "  (pitfalls and stalagmites)",
+}
 
 # Each tool: [label, what it paints ("cell", "object" or "erase"), value].
 const TOOLS := [
@@ -41,6 +54,9 @@ var _objects: Node2D # Sprites standing in for the design's enemies and switches
 var _overlay: Node2D # Grid lines and the hovered cell
 var _hover := Vector2i(-1, -1) # Floor index under the mouse, or off the floor
 var _painting := 0 # Mouse button held down over the floor (MOUSE_BUTTON_LEFT/RIGHT), or 0
+var _stroke_before := {} # The design as the current click-and-drag began, for its undo step
+var _undo_button: Button
+var _redo_button: Button
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
 var _tool_buttons: Array[Button] = []
 var _info: Label
@@ -84,6 +100,7 @@ func _ready() -> void:
 	_build_ui()
 	_refresh_objects()
 	_refresh_info()
+	_refresh_history()
 	_select_tool(tool)
 
 func _exit_tree() -> void:
@@ -100,17 +117,27 @@ func _unhandled_input(event: InputEvent) -> void:
 		if button.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 			if button.pressed:
 				_painting = button.button_index
+				_stroke_before = design.snapshot()
 				_update_hover()
 				_apply(_hover, true)
 			elif _painting == button.button_index:
 				_painting = 0
+				# A whole click-and-drag is one undo step.
+				design.record(_stroke_before)
+				_refresh_history()
 	elif event is InputEventMouseMotion:
 		_update_hover()
 		if _painting != 0:
 			_apply(_hover, false)
 	elif event is InputEventKey && event.pressed && !event.echo:
-		var key := (event as InputEventKey).keycode
-		if key == KEY_ESCAPE:
+		var key_event := event as InputEventKey
+		var key := key_event.keycode
+		if key_event.is_command_or_control_pressed():
+			if key == KEY_Z && !key_event.shift_pressed:
+				_undo()
+			elif key == KEY_Y || (key == KEY_Z && key_event.shift_pressed):
+				_redo()
+		elif key == KEY_ESCAPE:
 			get_tree().change_scene_to_file(TITLE_SCENE)
 		elif key == KEY_F5:
 			_play()
@@ -145,6 +172,29 @@ func _apply(index: Vector2i, clicked: bool) -> void:
 	_refresh_info()
 
 # --- Actions ---
+
+func _undo() -> void:
+	if _painting == 0 && design.can_undo():
+		design.undo()
+		_redraw_design()
+		_status.text = "Undone"
+
+func _redo() -> void:
+	if _painting == 0 && design.can_redo():
+		design.redo()
+		_redraw_design()
+		_status.text = "Redone"
+
+# Redraws everything from the design, after it changed wholesale (undo, redo, clear).
+func _redraw_design() -> void:
+	design.paint_all(_preview)
+	_refresh_objects()
+	_refresh_info()
+	_refresh_history()
+
+func _refresh_history() -> void:
+	_undo_button.disabled = !design.can_undo()
+	_redo_button.disabled = !design.can_redo()
 
 func _play() -> void:
 	Overworld.test_design = design
@@ -190,18 +240,29 @@ func _open_export_folder() -> void:
 	if _export_dir != "":
 		OS.shell_open(_export_dir)
 
-func _clear() -> void:
-	design.clear()
-	design.paint_all(_preview)
-	_refresh_objects()
-	_refresh_info()
-	_status.text = "Cleared"
+# Clears what the Clear menu's item `what` names (a ClearWhat).
+func _clear(what: int) -> void:
+	var before := design.snapshot()
+	match what:
+		ClearWhat.EVERYTHING: design.clear()
+		ClearWhat.ENEMIES: design.clear_enemies()
+		ClearWhat.TILES: design.clear_tiles()
+	design.record(before)
+	_redraw_design()
+	_status.text = "Cleared %s (Ctrl+Z to undo)" % (CLEAR_LABELS[what] as String).to_lower()
 
 func _select_tool(index: int) -> void:
 	tool = index
 	for i in range(_tool_buttons.size()):
 		_tool_buttons[i].button_pressed = i == index
 	_overlay.queue_redraw()
+
+func _set_clear_by(condition: String) -> void:
+	var before := design.snapshot()
+	design.clear_by = condition
+	design.record(before)
+	_refresh_info()
+	_refresh_history()
 
 # --- Drawing ---
 
@@ -232,12 +293,14 @@ func _sprite_for(kind: String) -> AnimatedSprite2D:
 	if !_sprite_cache.has(kind):
 		var scene: Node = (load(RoomDesign.OBJECT_SCENES[kind]) as PackedScene).instantiate()
 		var source: AnimatedSprite2D = scene.get_node("AnimatedSprite2D")
+		# The scene's root can be scaled too (enemies are 0.75), so that's folded in.
+		var root_scale: Vector2 = (scene as Node2D).scale
 		var sprite := AnimatedSprite2D.new()
 		sprite.sprite_frames = source.sprite_frames
 		sprite.animation = source.animation
-		sprite.position = source.position
+		sprite.position = source.position * root_scale
 		sprite.offset = source.offset
-		sprite.scale = source.scale
+		sprite.scale = source.scale * root_scale
 		sprite.centered = source.centered
 		sprite.flip_h = source.flip_h
 		_sprite_cache[kind] = sprite
@@ -250,10 +313,6 @@ func _refresh_info() -> void:
 		_clear_buttons[condition].button_pressed = condition == design.clear_by
 	_warning.text = design.clear_problem()
 	_warning.visible = _warning.text != ""
-
-func _set_clear_by(condition: String) -> void:
-	design.clear_by = condition
-	_refresh_info()
 
 # --- UI ---
 
@@ -310,16 +369,25 @@ func _build_ui() -> void:
 	_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(_warning)
 	column.add_child(HSeparator.new())
+	var history := HBoxContainer.new()
+	column.add_child(history)
+	_undo_button = _add_button(history, "Undo", _undo)
+	_redo_button = _add_button(history, "Redo", _redo)
+	for button in [_undo_button, _redo_button]:
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_undo_button.tooltip_text = "Ctrl+Z"
+	_redo_button.tooltip_text = "Ctrl+Y or Ctrl+Shift+Z"
 	_add_button(column, "Play  (F5)", _play)
 	_add_button(column, "Export", _export)
 	_open_folder = _add_button(column, "Open folder", _open_export_folder)
 	_open_folder.disabled = true # Until something has been exported
-	_add_button(column, "Clear", _clear)
+	column.add_child(_clear_menu())
 	_add_button(column, "Back  (Esc)", get_tree().change_scene_to_file.bind(TITLE_SCENE))
 
 	var help := Label.new()
 	help.theme = theme
-	help.text = "Left click: paint    Right click: erase    1-%d: pick a tool" % TOOLS.size()
+	help.text = "Left click: paint    Right click: erase    1-%d: pick a tool    Ctrl+Z: undo    Ctrl+Y: redo" % TOOLS.size()
 	help.position = Vector2(PANEL_WIDTH + 32, 24)
 	layer.add_child(help)
 	_status = Label.new()
@@ -328,6 +396,20 @@ func _build_ui() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.size = Vector2(1920 - PANEL_WIDTH - 64, 48)
 	layer.add_child(_status)
+
+# The Clear button, which opens a menu: clear everything, just the enemies, or just the tiles.
+func _clear_menu() -> MenuButton:
+	var menu := MenuButton.new()
+	menu.text = "Clear  ▾"
+	menu.flat = false # Drawn like the other buttons
+	menu.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	menu.focus_mode = Control.FOCUS_NONE
+	var popup := menu.get_popup()
+	popup.add_theme_font_size_override("font_size", FONT_SIZE)
+	for what: int in CLEAR_LABELS:
+		popup.add_item(CLEAR_LABELS[what] + CLEAR_HINTS[what], what)
+	popup.id_pressed.connect(_clear)
+	return menu
 
 func _add_button(parent: Control, text: String, action: Callable) -> Button:
 	var button := Button.new()
