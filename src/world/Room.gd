@@ -52,6 +52,12 @@ const PIT_INSET_BOTTOM := 4.0
 const FLOOR2_LOCK_FIRST_SOURCE := {"enemies": 9, "switches": 18}
 const TOP_BACK_Z := 0 # The top wall: over the floor, under everything standing on it (z 1 and up)
 const BLACK := 16 # Plain black tile, the dark beyond a doorway
+# Stalagmite tile source for each set of joined stalagmite neighbours, as a mask of
+# 1 top, 2 right, 4 bottom, 8 left. Matches the source order in Stalagmites.tscn.
+const STALAGMITE_SOURCES := {
+	0: 0, 4: 1, 8: 2, 12: 3, 10: 4, 14: 5, 2: 6, 1: 7,
+	5: 8, 9: 9, 13: 10, 11: 11, 15: 12, 3: 13, 7: 14, 6: 15,
+}
 const PitfallSpikes := preload("res://src/world/tiles/PitfallSpikes.tscn")
 const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.tscn")
 
@@ -101,7 +107,8 @@ var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
 var _detectors: TileMap # Transition detector tiles, one per open doorway
 var _key_gate: StaticBody2D # End room only: blocks the top door until the player has 3 keys
 var _was_cleared := false # Doors were already unlocked last time they were drawn
-var _kill_streak := 0 # Enemies killed since the player last walked in; pitches death sounds up
+var _kill_streak := 0 # Kills in quick succession (Tuning.kill_combo_window); pitches death sounds up
+var _last_kill_at := -100000 # Ticks (ms) of the last kill in this room
 var _floor2_doors := false # Doors use the floor-2 art and lock drawing
 var _top_back: TileMap # The top wall's cells from Top, drawn below everything on the floor
 var _top_arch: TileMap # The top door's column of them, raised while the player walks through
@@ -122,10 +129,12 @@ func _ready() -> void:
 		$Switches.switch_hit.connect(_refresh_doors)
 	Game.room_entered.connect(_on_room_entered)
 	Game.keys_changed.connect(_on_keys_changed)
+	fade.animation_finished.connect(_on_fade_finished)
 
 	_fit_cover_and_detection()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
+	_join_stalagmites()
 	_add_decorations(rng)
 	_add_floor_variants(rng)
 	_add_pitfall_edges()
@@ -230,6 +239,23 @@ func _is_floor(cell: Vector2i) -> bool:
 
 func _is_pit(cell: Vector2i) -> bool:
 	return pitfalls.get_cell_source_id(0, cell) != -1
+
+# Redraws every stalagmite with the piece that joins it to its stalagmite neighbours, so a
+# patch reads as one rock whatever pieces the room scene was painted with.
+func _join_stalagmites() -> void:
+	var stalagmites: TileMap = get_node_or_null("Stalagmites")
+	if stalagmites == null:
+		return
+	var cells := stalagmites.get_used_cells(0)
+	var sources := {} # Cell -> source to draw, worked out before any cell changes
+	for cell in cells:
+		var mask := 0
+		for i in RoomDesign.NEIGHBOURS.size():
+			if stalagmites.get_cell_source_id(0, cell + RoomDesign.NEIGHBOURS[i]) != -1:
+				mask |= 1 << i
+		sources[cell] = STALAGMITE_SOURCES[mask]
+	for cell: Vector2i in sources:
+		stalagmites.set_cell(0, cell, sources[cell], Vector2i.ZERO)
 
 func _add_decorations(rng: RandomNumberGenerator) -> void:
 	var decorations: TileMap = get_node_or_null("Decorations")
@@ -553,14 +579,29 @@ func _on_room_entered(id: int) -> void:
 		_draw_locks()
 	_refresh_doors()
 
+# Once the room has faded to black behind a player who left, any enemy still alive goes
+# back to where it started, unseen. (A player who turns back before the fade ends cuts it
+# short, and finds the enemies where they left them.)
+func _on_fade_finished(anim_name: StringName) -> void:
+	if anim_name != "FadeOut":
+		return
+	for child in get_children():
+		var enemy := child as Enemy
+		if enemy != null && !enemy.is_queued_for_deletion():
+			enemy.reset_to_spawn()
+
 func _on_keys_changed(_keys: int) -> void:
 	_refresh_doors()
 
 # Death sounds live on the room because the enemy is freed as it dies. Keyed by the
-# enemy's scene file name; wizards have none. Kills in a row since the player walked in
-# pitch the sound up, like a combo.
+# enemy's scene file name; wizards have none. Each kill within Tuning.kill_combo_window of
+# the last pitches the sound up, like a combo; a slower kill starts again at normal pitch.
 func _on_enemy_died(enemy: Enemy) -> void:
 	enemy_count -= 1
+	var now := Time.get_ticks_msec() # Real time, so hit-stop doesn't stretch the window
+	if now - _last_kill_at > Tuning.kill_combo_window * 1000:
+		_kill_streak = 0
+	_last_kill_at = now
 	var pitch := 1.0 + KILL_PITCH_STEP * mini(_kill_streak, KILL_PITCH_MAX_STEPS)
 	_kill_streak += 1
 	match enemy.scene_file_path.get_file().get_basename():

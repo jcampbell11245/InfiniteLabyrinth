@@ -27,12 +27,6 @@ const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relat
 const CELL_CHARS := {Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S"}
 const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O"}
 
-# Stalagmite tile source for each set of joined stalagmite neighbours, as a mask of
-# 1 top, 2 right, 4 bottom, 8 left. Matches the source order in Stalagmites.tscn.
-const STALAGMITE_SOURCES := {
-	0: 0, 4: 1, 8: 2, 12: 3, 10: 4, 14: 5, 2: 6, 1: 7,
-	5: 8, 9: 9, 13: 10, 11: 11, 15: 12, 3: 13, 7: 14, 6: 15,
-}
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 
 # The design open in the room creator. Kept here so it survives the trip to the
@@ -215,7 +209,7 @@ func _paint_stalagmite(stalagmites: TileMap, index: Vector2i) -> void:
 	for i in range(NEIGHBOURS.size()):
 		if _is_stalagmite(index + NEIGHBOURS[i]):
 			mask |= 1 << i
-	stalagmites.set_cell(0, tile_cell(index), STALAGMITE_SOURCES[mask], Vector2i.ZERO)
+	stalagmites.set_cell(0, tile_cell(index), Room.STALAGMITE_SOURCES[mask], Vector2i.ZERO)
 
 # --- Play-test ---
 

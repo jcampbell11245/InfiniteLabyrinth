@@ -3,3 +3,5 @@ CC0 (public domain). https://opengameart.org/content/sfx-the-ultimate-2017-8-bit
 laser_unlock.wav: Powerup__001 from "SFX: The Ultimate 2017 8 bit Mini pack" by phoenix1291,
 CC0 (public domain). https://opengameart.org/content/sfx-the-ultimate-2017-8-bit-mini-pack
 twinkle.wav: synthesized for this project (8-bit pulse-wave ding).
+clank_bad.wav: clank1.wav run through ffmpeg for this project (pitched to 0.7x, 1600 Hz
+low-pass, light 6-bit crush, +3 dB): the blocked-swing version of the clank.

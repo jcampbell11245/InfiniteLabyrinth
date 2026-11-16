@@ -3,8 +3,11 @@ extends Enemy
 # Wizard: backs away while the player is lined up with it on either axis, otherwise casts
 # a burst of three fireballs, half a second apart, in the direction it faces. A fireball the
 # player hits back is batted back again just before it lands, unless the wizard fumbles it
-# (DEFLECT_MISS_CHANCE each time) or is stunned. The two can rally a fireball back and
+# (Tuning.wizard_deflect_miss_chance each time). The two can rally a fireball back and
 # forth, stronger and faster each time.
+#
+# Wizards sit out the parry system: no windup hold or twinkle before a burst, and every
+# sword hit lands as an ordinary hit, mid-burst or not.
 
 const Fireball := preload("res://src/projectiles/Fireball.tscn")
 # Burst cooldown (replaces attack_cooldown_length once a fireball is out), the delay
@@ -24,7 +27,6 @@ var _judged: Dictionary = {} # Fireball -> its deflections when last swung at, s
 
 func _process(_delta: float) -> void:
 	if !player.in_transition && !is_stunned():
-		_update_windup()
 		animate()
 	elif direction != "":
 		_play("idle")
@@ -88,6 +90,16 @@ func shoot_fireball() -> void:
 
 func _attack_action() -> String:
 	return "shoot"
+
+func _on_reset() -> void:
+	retreat_blocked = false
+	_judged.clear()
+	$SecondShotCountdown.stop() # A half-fired burst doesn't finish
+	$ThirdShotCountdown.stop()
+
+# Never parried, blocked or too late: the sword always just hits.
+func _parry_timing() -> Parry:
+	return Parry.NONE
 
 # Swings at any player-deflected fireball about to hit, once per return.
 func _try_deflect() -> void:

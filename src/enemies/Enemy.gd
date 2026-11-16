@@ -82,6 +82,40 @@ func _ready() -> void:
 	_parry_timer = _add_timer(_end_windup_hold)
 	_stun_timer = _add_timer(_show_dizzy.bind(false))
 	_vulnerable_timer = _add_timer(_set_vulnerable.bind(false))
+	_remember_spawn.call_deferred() # After subclasses' _ready have set their facing
+
+# Where and how the enemy started, for reset_to_spawn.
+var _spawn_position: Vector2
+var _spawn_direction := ""
+var _spawn_animation: StringName
+var _spawn_z_index := 0
+
+func _remember_spawn() -> void:
+	_spawn_position = position
+	_spawn_direction = direction
+	_spawn_animation = animator.animation
+	_spawn_z_index = z_index
+
+# The player left the room with this enemy still alive (called once the room has faded to
+# black): back to where and how it started, mid-attack, stun and knockback all dropped.
+# Health is kept.
+func reset_to_spawn() -> void:
+	position = _spawn_position
+	velocity = Vector2.ZERO
+	knockback = Vector2.ZERO
+	direction = _spawn_direction
+	z_index = _spawn_z_index
+	_end_windup_hold()
+	_stun_timer.stop()
+	_show_dizzy(false)
+	_set_vulnerable(false)
+	attack_cooldown.stop()
+	_on_reset()
+	animator.play(_spawn_animation)
+
+# Subclass state to clear in reset_to_spawn.
+func _on_reset() -> void:
+	pass
 
 func _on_tuning_changed(key: String) -> void:
 	if key.begins_with("enemy_") || key == "freeze_enemies":
@@ -259,15 +293,16 @@ func _on_player_sword(from_direction: String) -> void:
 			_parry_feedback()
 			stagger(from_direction)
 		Parry.EARLY:
-			_parry_feedback()
+			_parry_feedback(true)
 			player.stagger()
 		Parry.LATE:
 			pass
 
-func _parry_feedback() -> void:
+# `blocked`: the player swung too early and is the one staggered, so the clank sounds bad.
+func _parry_feedback(blocked := false) -> void:
 	var at := (global_position + player.global_position) / 2
 	Juice.burst(room, at, PARRY_SPARK, 14, 110.0, Vector2.ZERO, 2.0, 0.3)
-	Juice.clank()
+	Juice.clank(blocked)
 	Juice.hitstop(PARRY_HITSTOP)
 	Juice.shake(Juice.SHAKE_MEDIUM)
 
@@ -292,6 +327,7 @@ func stagger(from_direction: String) -> void:
 	_show_dizzy(true)
 	_play("idle")
 	_on_staggered()
+	player.start_finisher(self) # Swings skip their cooldown while this enemy is stunned
 
 func _set_vulnerable(on: bool) -> void:
 	if on:

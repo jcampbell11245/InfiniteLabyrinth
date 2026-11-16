@@ -1,7 +1,7 @@
 extends Enemy
 
-# Goblin and Knight: walks at the player once they enter its detection zone, then slashes
-# when close. A knight (only_hit_during_attack) blocks any hit that lands outside its slash
+# Goblin and Knight: walks at the player once they enter its detection zone, or once the
+# player hits it from anywhere (an arrow from across the room), then slashes when close. A knight (only_hit_during_attack) blocks any hit that lands outside its slash
 # and is stunned for a second afterwards.
 #
 # Enemies whose sprites have them also react to hits: "block" plays once when a hit is
@@ -11,6 +11,10 @@ extends Enemy
 
 @export var only_hit_during_attack: bool
 @export var starting_direction := Direction.RIGHT
+
+# Hit by the player while they're in this room: it chases and attacks even outside its
+# detection zone, until the player leaves the room.
+var noticed := false
 
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var detection_zone: Area2D = $DetectionZonePivot/DetectionZone
@@ -33,7 +37,9 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if player.in_transition:
 		return
-	
+	if !is_player_in_room():
+		noticed = false
+
 	# Turns to track the player while alerted. The two branches gate the room check
 	# differently, which is kept from the original.
 	var alerted := is_detected() || invincibility_cooldown.time_left != 0
@@ -73,11 +79,25 @@ func attack() -> void:
 	if animator.visible:
 		attack_cooldown.start(attack_cooldown_length)
 
-# True when the player is in this room, inside the detection zone and not down a pitfall.
-# The room check stops enemies next door chasing or slashing through the shared wall.
+# True when the player is in this room, not down a pitfall, and either inside the detection
+# zone or has hit this enemy. The room check stops enemies next door chasing or slashing
+# through the shared wall.
 func is_detected() -> bool:
 	return room.player_active && is_player_in_room() \
-		&& detection_zone.get_overlapping_bodies().has(player)
+		&& (noticed || detection_zone.get_overlapping_bodies().has(player))
+
+func _on_reset() -> void:
+	noticed = false
+	hitbox.disabled = true
+	var block_stun: Timer = get_node_or_null("BlockStun")
+	if block_stun != null:
+		block_stun.stop()
+
+# Any hit, even one a knight blocks, gives the player away.
+func take_damage(from_direction: String, amount: float) -> void:
+	if is_player_in_room():
+		noticed = true
+	super(from_direction, amount)
 
 func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):

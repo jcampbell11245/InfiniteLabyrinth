@@ -15,6 +15,7 @@ var roll_cooldown := 1.0 # Seconds after a roll ends before the next
 var hurt_invincibility := 1.0 # Seconds after being hit before the next hit counts
 var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
 var shoot_cooldown := 0.5 # Seconds between arrows
+var sword_cooldown := 0.2 # Seconds after a swing ends before the next can start
 var shoot_recoil := 45.0 # Knockback speed pushed back from each shot
 var blocked_daze_time := 0.6 # Seconds the player can't act after a swing is blocked
 var pitfall_damage := 0.5 # Hearts lost falling down a pitfall
@@ -25,6 +26,7 @@ var sword_damage := 1.0
 var arrow_damage := 0.5
 var parry_window := 0.25 # Seconds from the twinkle to the strike; a sword hit in it parries
 var parried_stun_time := 1.0 # Seconds a parried enemy stands helpless
+var instant_finisher := true # While a parried enemy is stunned, swings skip the sword cooldown
 var parried_knockback := 0.5 # Times the enemy's knockback_speed for being parried
 var stagger_damage_multiplier := 2.5 # Next hit taken while vulnerable
 var stagger_vulnerable_time := 3.0 # Seconds the vulnerability lasts
@@ -72,6 +74,7 @@ var game_speed := 1.0 # Engine.time_scale outside hit-stop
 var hitstop_enabled := true
 var hitstop_time_scale := 0.05
 var shake_multiplier := 1.0
+var kill_combo_window := 1.0 # Seconds between kills for the death sound to keep pitching up
 
 # --- Cheats ---
 var god_mode := false # Hits and falls take no health
@@ -89,6 +92,7 @@ const FIELDS := [
 	["Player", "roll_cooldown", "Roll cooldown (s)", 0, 5, 0.05, "Player.gd roll_cooldown.start(1)"],
 	["Player", "hurt_invincibility", "Invincibility after hit (s)", 0, 5, 0.05, "Player.gd invincibility_cooldown.start(1)"],
 	["Player", "player_knockback", "Knockback when hit", 0, 600, 5, "Player.gd KNOCKBACK_SPEED"],
+	["Player", "sword_cooldown", "Sword cooldown (s)", 0, 3, 0.05, "Player.gd can_swing()"],
 	["Player", "shoot_cooldown", "Shoot cooldown (s)", 0.05, 3, 0.05, "Player.gd shoot_cooldown.start(0.5)"],
 	["Player", "shoot_recoil", "Shoot recoil", 0, 300, 5, "Player.gd SHOOT_RECOIL"],
 	["Player", "blocked_daze_time", "Daze when blocked (s)", 0, 3, 0.05, "Player.gd BLOCKED_DAZE_TIME"],
@@ -99,6 +103,7 @@ const FIELDS := [
 	["Combat", "arrow_damage", "Arrow damage", 0, 20, 0.25, "Player.gd ARROW_DAMAGE"],
 	["Combat", "parry_window", "Parry window (s)", 0, 2, 0.01, "Enemy.gd PARRY_WINDOW"],
 	["Combat", "parried_stun_time", "Parried stun (s)", 0, 5, 0.05, "Enemy.gd PARRIED_STUN_TIME"],
+	["Combat", "instant_finisher", "Instant swings on stunned enemy", 0, 0, 0, "new (Player.in_finisher)"],
 	["Combat", "parried_knockback", "Parried knockback multiplier", 0, 5, 0.05, "Enemy.gd PARRIED_KNOCKBACK"],
 	["Combat", "stagger_damage_multiplier", "Stagger damage multiplier", 1, 10, 0.1, "Constants.gd STAGGER_DAMAGE_MULTIPLIER"],
 	["Combat", "stagger_vulnerable_time", "Stagger vulnerable time (s)", 0, 10, 0.1, "Constants.gd STAGGER_VULNERABLE_TIME"],
@@ -141,6 +146,7 @@ const FIELDS := [
 	["Feel", "hitstop_enabled", "Hit-stop", 0, 0, 0, "new (Juice.hitstop)"],
 	["Feel", "hitstop_time_scale", "Hit-stop time scale", 0, 1, 0.01, "Juice.gd HITSTOP_TIME_SCALE"],
 	["Feel", "shake_multiplier", "Screen shake multiplier", 0, 5, 0.1, "new (Juice.shake)"],
+	["Feel", "kill_combo_window", "Kill combo window (s)", 0, 5, 0.05, "Room.gd _on_enemy_died (was per room visit)"],
 
 	["Cheats", "god_mode", "God mode", 0, 0, 0, "new"],
 	["Cheats", "infinite_arrows", "Infinite arrows", 0, 0, 0, "new"],

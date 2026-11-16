@@ -13,6 +13,8 @@ const TWINKLE_SOUND := preload("res://assets/sfx/twinkle.wav")
 const TWINKLE_VOLUME_DB := -6.0
 const Dizzy := preload("res://src/effects/Dizzy.gd")
 const CLANK := preload("res://assets/sfx/clank1.wav")
+# The clank pitched down, muffled and crushed: the player's swing was blocked.
+const CLANK_BAD := preload("res://assets/sfx/clank_bad.wav")
 
 # Hit-stop slows the whole game to Tuning.hitstop_time_scale of normal speed rather than
 # 0, so anything dividing by delta keeps working.
@@ -42,6 +44,7 @@ const COIN_VOICES := 4 # Players taken in turn, so a new coin doesn't cut off th
 var _hitstop_until := 0 # Ticks (ms) when the current hit-stop ends; 0 when none
 var _coin_players: Array[AudioStreamPlayer] = []
 var _clank_player: AudioStreamPlayer
+var _bad_clank_player: AudioStreamPlayer
 var _next_coin_player := 0
 var _last_coin := -100000 # Ticks (ms) of the last coin sound
 var _coin_chain := 0 # Coins in the current chain
@@ -57,6 +60,9 @@ func _ready() -> void:
 	_clank_player = AudioStreamPlayer.new()
 	_clank_player.stream = CLANK
 	add_child(_clank_player)
+	_bad_clank_player = AudioStreamPlayer.new()
+	_bad_clank_player.stream = CLANK_BAD
+	add_child(_bad_clank_player)
 
 # Ends hit-stop by the real-time clock, since timers run slow while it's on.
 func _process(_delta: float) -> void:
@@ -97,9 +103,10 @@ func arrow_sound() -> void:
 	voice.stream = COIN_SOUNDS.pick_random()
 	play(voice, 0.04, 0.7)
 
-# Swords meeting: a parry, or a blocked swing.
-func clank() -> void:
-	play(_clank_player, 0.06)
+# Swords meeting: a parry, or a deflected shot. `bad` is the duller, lower version for
+# when the player's swing is blocked and they're the one staggered.
+func clank(bad := false) -> void:
+	play(_bad_clank_player if bad else _clank_player, 0.06)
 
 # Plays a coin pickup sound, pitched up the further into a quick chain of coins it is.
 func coin_sound() -> void:

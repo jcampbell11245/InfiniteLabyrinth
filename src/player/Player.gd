@@ -82,6 +82,11 @@ var swing_started_at := 0 # Ticks (ms) when the current or last sword swing bega
 var _daze_timer: Timer # Running while dazed from a blocked swing
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
 var _dizzy: Node2D # Stars shown while dazed
+var _sword_cooldown: Timer # Running after a swing ends, until the next one is allowed
+var _was_slashing := false # The last physics frame ended mid-swing
+# The enemy the player last parried. While it stays stunned, swings skip the sword
+# cooldown so the player can finish it off (Tuning.instant_finisher).
+var _finisher_target: Enemy
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -118,11 +123,17 @@ func _ready() -> void:
 	_vulnerable_timer.one_shot = true
 	_vulnerable_timer.timeout.connect(_set_vulnerable.bind(false))
 	add_child(_vulnerable_timer)
+	_sword_cooldown = Timer.new()
+	_sword_cooldown.one_shot = true
+	add_child(_sword_cooldown)
 
 func _physics_process(delta: float) -> void:
 	if !auto_walking:
-		# Dazed, the player can't move, roll or attack.
-		var input := _read_input() if _daze_timer.is_stopped() else FrameInput.new()
+		# Dazed, down a pitfall, or while the screen is still moving to a new room (the
+		# room isn't fully in view yet, so they could walk into a pit they can't see), the
+		# player can't move, roll or attack.
+		var can_act := _daze_timer.is_stopped() && respawn_cooldown.is_stopped() && !in_transition
+		var input := _read_input() if can_act else FrameInput.new()
 		_handle_input(input)
 		_update_animation(input)
 		_update_hitboxes()
@@ -134,6 +145,7 @@ func _physics_process(delta: float) -> void:
 	# Knockback is moved separately so it doesn't overwrite the movement velocity
 	var move_velocity := velocity
 	knockback = knockback.move_toward(Vector2.ZERO, 300 * delta)
+	_keep_knockback_safe(delta)
 	velocity = knockback
 	move_and_slide()
 	knockback = velocity
@@ -141,6 +153,40 @@ func _physics_process(delta: float) -> void:
 
 	_update_respawn_point()
 	_update_roll_ghosts(delta)
+	_update_sword_cooldown()
+
+# Knockback (from hits and shot recoil) never carries the player into a pit or through a
+# doorway. Any axis of this frame's knockback that would newly touch a pit (the FeetBox's
+# trigger) or a doorway's transition detector (the RoomDetectionBox's) is dropped, so the
+# player slides along the edge instead.
+func _keep_knockback_safe(delta: float) -> void:
+	if knockback == Vector2.ZERO || auto_walking || !visible:
+		return
+	var step := knockback * delta
+	if _would_trigger(Vector2(step.x, 0)):
+		knockback.x = 0
+	if _would_trigger(Vector2(knockback.x * delta, step.y)):
+		knockback.y = 0
+
+# True if moving by `motion` would bring the FeetBox onto a pit, or the RoomDetectionBox onto
+# a doorway detector, that it isn't already touching.
+func _would_trigger(motion: Vector2) -> bool:
+	var space := get_world_2d().direct_space_state
+	for area: Area2D in [$FeetBox, $RoomDetectionBox]:
+		var shape: CollisionShape2D = area.get_node("CollisionShape2D")
+		var query := PhysicsShapeQueryParameters2D.new()
+		query.shape = shape.shape
+		query.collision_mask = area.collision_mask
+		query.collide_with_areas = false # Both areas react to bodies (tile collision)
+		query.transform = shape.global_transform
+		var touching := {}
+		for hit in space.intersect_shape(query):
+			touching[[hit.rid, hit.shape]] = true # Tile cells share a body per chunk
+		query.transform = shape.global_transform.translated(motion)
+		for hit in space.intersect_shape(query):
+			if !touching.has([hit.rid, hit.shape]):
+				return true
+	return false
 
 func _read_input() -> FrameInput:
 	var input := FrameInput.new()
@@ -186,7 +232,11 @@ func _handle_input(input: FrameInput) -> void:
 			velocity += input.move
 	velocity = velocity.normalized() * speed
 
-	if input.melee && _action() not in [Action.SLASH, Action.DAMAGE]:
+	# Decided once, here: _update_animation can drop a swing back to idle (on its last frame,
+	# or when a direction key is let go), which mustn't let a new one start that same frame
+	# before the cooldown has begun.
+	input.melee = input.melee && can_swing()
+	if input.melee:
 		hitbox.disabled = false
 		swing_started_at = Time.get_ticks_msec()
 		Juice.play($Slash)
@@ -223,7 +273,7 @@ func _update_animation(input: FrameInput) -> void:
 			direction = input.held
 			_play(Action.WALK)
 
-	if input.melee && _action() not in [Action.SLASH, Action.DAMAGE]:
+	if input.melee: # Already checked against can_swing() in _handle_input
 		_play(Action.SLASH)
 
 	if input.ranged && _action() != Action.DAMAGE:
@@ -245,6 +295,29 @@ func _update_hitboxes() -> void:
 
 	if _action() != Action.SLASH:
 		hitbox.disabled = true
+
+# Not mid-swing or flinching, and the cooldown after the last swing has run out (or a
+# parried enemy is still stunned).
+func can_swing() -> bool:
+	return _action() not in [Action.SLASH, Action.DAMAGE] && (_sword_cooldown.is_stopped() || in_finisher())
+
+# Called when the player parries `enemy`: until its stun wears off (or it dies), swings
+# come out with no cooldown between them.
+func start_finisher(enemy: Enemy) -> void:
+	if Tuning.instant_finisher:
+		_finisher_target = enemy
+		_sword_cooldown.stop()
+
+func in_finisher() -> bool:
+	return Tuning.instant_finisher && is_instance_valid(_finisher_target) && _finisher_target.is_stunned()
+
+# Starts the sword cooldown as a swing ends, however it ends: finished, blocked, or cut
+# short by a hit or a roll.
+func _update_sword_cooldown() -> void:
+	var slashing := _action() == Action.SLASH
+	if _was_slashing && !slashing && Tuning.sword_cooldown > 0 && !in_finisher():
+		_sword_cooldown.start(Tuning.sword_cooldown)
+	_was_slashing = slashing
 
 func _action() -> Action:
 	var index := ACTION_NAMES.find(String(animator.animation).get_slice("_", 0))
@@ -412,6 +485,9 @@ func _on_feet_box_body_entered(_body: Node2D) -> void:
 		$Fall.play()
 		visible = false
 		knockback = Vector2.ZERO
+		# A swing cut short by the fall ends now, so its hitbox can't hit while down there.
+		_play(Action.IDLE)
+		hitbox.set_deferred("disabled", true) # Called from a collision callback
 		Game.room_by_id(current_room).player_active = false
 		respawn_cooldown.start(1.1)
 

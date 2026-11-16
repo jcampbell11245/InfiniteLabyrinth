@@ -16,6 +16,11 @@ func _ready() -> void:
 	super()
 	direction = Direction.RIGHT
 
+func _on_reset() -> void:
+	mode = Mode.CHASE
+	swing_rest = 0.0
+	hitbox.disabled = true
+
 func _process(_delta: float) -> void:
 	if !_animation_is("slash"):
 		hitbox.disabled = true
