@@ -23,7 +23,9 @@ var base_health := 5 # Hearts before the health upgrade
 
 # --- Combat ---
 var sword_damage := 1.0
-var arrow_damage := 0.5
+var arrow_damage := 1.0
+var arrow_charge_time := 0.6 # Seconds the shoot button must be held for a charged arrow
+var arrow_charge_multiplier := 2.0 # Damage of a charged arrow, times arrow_damage
 var parry_window := 0.25 # Seconds from the twinkle to the strike; a sword hit in it parries
 var parried_stun_time := 1.0 # Seconds a parried enemy stands helpless
 var instant_finisher := true # While a parried enemy is stunned, swings skip the sword cooldown
@@ -47,6 +49,17 @@ var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
 var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
 var boss_laser_cooldown := 1.0
+
+# --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
+var engage_margin := 4.0 # Pixels inside the shorter of the two attack reaches to stop at
+var pack_max_attackers := 1 # Enemies in a group allowed to step in and swing at once
+var pack_swings_min := 1 # Swings per turn before stepping back out (groups only)
+var pack_swings_max := 2
+var pack_turn_gap_min := 0.4 # Seconds between one attacker leaving and the next stepping in
+var pack_turn_gap_max := 1.2
+var pack_turn_timeout := 3.0 # Seconds an attacker gets to reach the player before giving up its turn
+var pack_ring_radius := 70.0 # Pixels from the player that waiting enemies circle at
+var pack_circle_speed := 0.6 # Times the enemy's speed while circling
 
 # --- Projectiles ---
 var arrow_speed := 200.0
@@ -101,6 +114,8 @@ const FIELDS := [
 
 	["Combat", "sword_damage", "Sword damage", 0, 20, 0.5, "Enemy.gd SWORD_DAMAGE"],
 	["Combat", "arrow_damage", "Arrow damage", 0, 20, 0.25, "Player.gd ARROW_DAMAGE"],
+	["Combat", "arrow_charge_time", "Arrow charge time (s)", 0.05, 5, 0.05, "new (Player._update_charge)"],
+	["Combat", "arrow_charge_multiplier", "Charged arrow damage multiplier", 1, 10, 0.1, "new (Player._fire_arrow)"],
 	["Combat", "parry_window", "Parry window (s)", 0, 2, 0.01, "Enemy.gd PARRY_WINDOW"],
 	["Combat", "parried_stun_time", "Parried stun (s)", 0, 5, 0.05, "Enemy.gd PARRIED_STUN_TIME"],
 	["Combat", "instant_finisher", "Instant swings on stunned enemy", 0, 0, 0, "new (Player.in_finisher)"],
@@ -123,6 +138,16 @@ const FIELDS := [
 	["Enemies", "wizard_shot_delay", "Wizard shot delay (s)", 0.05, 3, 0.05, "RangedEnemy.gd BURST_SHOT_DELAY"],
 	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
+
+	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],
+	["AI", "pack_max_attackers", "Max attackers at once", 1, 6, 1, "new (AttackCoordinator)"],
+	["AI", "pack_swings_min", "Swings per turn (min)", 1, 6, 1, "new (MeleeEnemy)"],
+	["AI", "pack_swings_max", "Swings per turn (max)", 1, 6, 1, "new (MeleeEnemy)"],
+	["AI", "pack_turn_gap_min", "Gap between turns min (s)", 0, 5, 0.05, "new (AttackCoordinator)"],
+	["AI", "pack_turn_gap_max", "Gap between turns max (s)", 0, 5, 0.05, "new (AttackCoordinator)"],
+	["AI", "pack_turn_timeout", "Turn timeout (s)", 0.5, 10, 0.1, "new (AttackCoordinator)"],
+	["AI", "pack_ring_radius", "Circle radius (px)", 20, 150, 1, "new (MeleeEnemy)"],
+	["AI", "pack_circle_speed", "Circle speed multiplier", 0, 2, 0.05, "new (MeleeEnemy)"],
 
 	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
 	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],

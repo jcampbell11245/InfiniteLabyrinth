@@ -30,6 +30,19 @@ const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of
 
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
 
+# Charged shots. Holding the shoot button draws the bow (arm held up, a rising creak);
+# after Tuning.arrow_charge_time a ping and flash say it's charged, and letting go then
+# fires an arrow doing Tuning.arrow_charge_multiplier times the damage. Letting go sooner
+# fires a normal arrow. While drawn the player can walk but keeps facing the same way,
+# strafing with the bow aimed.
+const CHARGE_SOUND := preload("res://assets/sfx/arrow_charge.wav")
+const CHARGED_SOUND := preload("res://assets/sfx/arrow_charged.wav")
+const CHARGE_SOUND_LENGTH := 0.6 # Seconds; played faster or slower to fit arrow_charge_time
+const CHARGE_DB := -6.0
+const CHARGED_DB := -2.0
+const CHARGED_FLASH := Color(1, 0.9, 0.5)
+const CHARGED_ARROW_TINT := Color(1.5, 1.25, 0.6)
+
 # Game feel
 const HURT_HITSTOP := 0.08
 const HURT_FLASH := Color(1, 0.35, 0.35)
@@ -62,7 +75,10 @@ class FrameInput:
 	var released := "" # First released direction, same order
 	var roll := false # Rolls trigger on release
 	var melee := false
-	var ranged := false
+	var ranged := false # Shoot pressed this frame: starts drawing the bow
+	var ranged_held := false # Letting go while able to act looses a drawn arrow
+	var acting := false # Read from the controls; false while the player can't act
+	var fired := false # Set by _handle_input when an arrow went out this frame
 
 # Pixels/sec. Tuning values (roll, damage, cooldowns and more) are read from Tuning.
 var speed: float = Tuning.player_speed
@@ -76,6 +92,13 @@ var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene
 var _ghost_timer := 0.0
 var _roll_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
+var _charge_sound: AudioStreamPlayer
+var _charged_sound: AudioStreamPlayer
+
+# Bow drawing; see CHARGE_SOUND.
+var _charging := false
+var _charge_time := 0.0 # Seconds the bow has been drawn
+var _charged := false # Drawn for at least Tuning.arrow_charge_time
 
 # Parrying
 var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
@@ -114,6 +137,10 @@ func _ready() -> void:
 	Juice.add_flash(animator)
 	_roll_sound = _add_sound(ROLL_DB)
 	_land_sound = _add_sound(PIT_LAND_DB)
+	_charge_sound = _add_sound(CHARGE_DB)
+	_charge_sound.stream = CHARGE_SOUND
+	_charged_sound = _add_sound(CHARGED_DB)
+	_charged_sound.stream = CHARGED_SOUND
 	_daze_timer = Timer.new()
 	_daze_timer.one_shot = true
 	_daze_timer.timeout.connect(Juice.set_grey.bind(animator, false))
@@ -137,8 +164,10 @@ func _physics_process(delta: float) -> void:
 		_handle_input(input)
 		_update_animation(input)
 		_update_hitboxes()
-	elif _door_lane != null:
-		_steer_through_door()
+	else:
+		_cancel_charge()
+		if _door_lane != null:
+			_steer_through_door()
 	if visible:
 		move_and_slide()
 
@@ -200,6 +229,8 @@ func _read_input() -> FrameInput:
 	input.roll = Input.is_action_just_released("roll")
 	input.melee = Input.is_action_just_pressed("melee_attack")
 	input.ranged = Input.is_action_just_pressed("ranged_attack")
+	input.ranged_held = Input.is_action_pressed("ranged_attack")
+	input.acting = true
 	return input
 
 # Movement, rolling, attacks and arrows. Runs before _update_animation, so the checks
@@ -219,6 +250,7 @@ func _handle_input(input: FrameInput) -> void:
 		velocity += Direction.to_vector(direction)
 		speed = Tuning.player_speed * Tuning.roll_speed_multiplier
 		rolling.start(Tuning.roll_duration)
+		_cancel_charge()
 		# Rolls pass through enemies (to get behind a knight mid-slash), never walls.
 		set_collision_mask_value(Constants.Layer.ENEMY, false)
 		hitbox.disabled = true
@@ -228,7 +260,8 @@ func _handle_input(input: FrameInput) -> void:
 		Juice.burst(get_parent(), global_position + FEET, DUST, 8, 45.0,
 			-Direction.to_vector(direction), 2.0, 0.35)
 	elif rolling.time_left == 0:
-		if _action() not in [Action.SLASH, Action.SHOOT, Action.DAMAGE] && respawn_cooldown.time_left == 0:
+		var rooted := _action() in [Action.SLASH, Action.SHOOT, Action.DAMAGE] && !_charging
+		if !rooted && respawn_cooldown.time_left == 0:
 			velocity += input.move
 	velocity = velocity.normalized() * speed
 
@@ -237,28 +270,72 @@ func _handle_input(input: FrameInput) -> void:
 	# before the cooldown has begun.
 	input.melee = input.melee && can_swing()
 	if input.melee:
+		_cancel_charge() # A swing (say, to parry) puts the bow down
 		hitbox.disabled = false
 		swing_started_at = Time.get_ticks_msec()
 		Juice.play($Slash)
 
-	if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
-		var arrow: Projectile = Arrow.instantiate()
-		get_parent().add_child(arrow)
-		arrow.position = position
-		arrow.direction = direction
-		arrow.damage = Tuning.arrow_damage
-		arrow.speed = Tuning.arrow_speed
-		if !Tuning.infinite_arrows:
-			Game.add_arrows(-1)
-		shoot_cooldown.start(Tuning.shoot_cooldown)
-		Juice.play($Shoot)
-		var aim := Direction.to_vector(direction)
-		knockback = -aim * Tuning.shoot_recoil
-		Juice.burst(get_parent(), global_position + aim * 10, Color(1, 0.95, 0.7), 5, 60.0,
-			aim, 1.5, 0.15)
+	_update_charge(input)
+
+# Draws the bow on a press, charges it while held and looses the arrow on release.
+# Losing the button any other way (dazed, falling, a room transition) lowers it unfired.
+func _update_charge(input: FrameInput) -> void:
+	if !_charging:
+		if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
+			_charging = true
+			_charge_time = 0.0
+			_charged = false
+			var rate := CHARGE_SOUND_LENGTH / maxf(Tuning.arrow_charge_time, 0.01)
+			Juice.play(_charge_sound, 0.0, clampf(rate, 0.25, 4.0))
+		else:
+			return
+	if !input.ranged_held:
+		if input.acting:
+			_fire_arrow(_charged)
+			input.fired = true
+		_cancel_charge()
+		return
+	_charge_time += get_physics_process_delta_time()
+	if !_charged && _charge_time >= Tuning.arrow_charge_time:
+		_charged = true
+		_charge_sound.stop()
+		Juice.play(_charged_sound, 0.02)
+		Juice.flash(animator, 0.15, CHARGED_FLASH)
+		Juice.burst(get_parent(), global_position, CHARGED_FLASH, 8, 50.0, Vector2.ZERO, 1.5, 0.25)
+
+# Stops drawing the bow without shooting.
+func _cancel_charge() -> void:
+	if !_charging:
+		return
+	_charging = false
+	_charged = false
+	_charge_sound.stop()
+	if _action() in [Action.SHOOT, Action.WALKSHOOT] && !animator.is_playing():
+		_play(Action.IDLE) # Was held on the drawn pose
+
+func _fire_arrow(charged: bool) -> void:
+	var arrow: Projectile = Arrow.instantiate()
+	get_parent().add_child(arrow)
+	arrow.position = position
+	arrow.direction = direction
+	arrow.damage = Tuning.arrow_damage * (Tuning.arrow_charge_multiplier if charged else 1.0)
+	arrow.speed = Tuning.arrow_speed
+	if charged:
+		arrow.modulate = CHARGED_ARROW_TINT
+	if !Tuning.infinite_arrows:
+		Game.add_arrows(-1)
+	shoot_cooldown.start(Tuning.shoot_cooldown)
+	Juice.play($Shoot, 0.08, 0.85 if charged else 1.0)
+	var aim := Direction.to_vector(direction)
+	knockback = -aim * Tuning.shoot_recoil * (1.5 if charged else 1.0)
+	Juice.burst(get_parent(), global_position + aim * 10, Color(1, 0.95, 0.7), 10 if charged else 5,
+		60.0, aim, 1.5, 0.15)
 
 # Each check reads the action again, since earlier lines may have changed the animation.
 func _update_animation(input: FrameInput) -> void:
+	if _charging:
+		_show_drawn_bow(input)
+		return
 	if input.released != "":
 		direction = input.released
 		_play(Action.IDLE)
@@ -276,11 +353,23 @@ func _update_animation(input: FrameInput) -> void:
 	if input.melee: # Already checked against can_swing() in _handle_input
 		_play(Action.SLASH)
 
-	if input.ranged && _action() != Action.DAMAGE:
-		if _action() in [Action.WALK, Action.WALKSHOOT]:
+	if input.fired:
+		if input.move != Vector2.ZERO:
 			_play(Action.WALKSHOOT)
 		else:
-			_play(Action.SHOOT)
+			_play(Action.SHOOT) # Plays out from the held pose, then back to idle
+
+# Arm up while the bow is drawn: walking with it up, or holding the shoot pose still.
+# Facing is locked to where the bow was drawn, so walking strafes instead of turning.
+func _show_drawn_bow(input: FrameInput) -> void:
+	if input.move != Vector2.ZERO && rolling.time_left == 0:
+		_play(Action.WALKSHOOT)
+	else:
+		var pose := ACTION_NAMES[Action.SHOOT] + "_" + direction
+		if animator.animation != pose:
+			animator.play(pose)
+		animator.pause()
+		animator.frame = 0
 
 # The hurtbox's size is set in the scene to cover the sprite; facing sideways the sprite
 # sits a little off-centre, so the hurtbox follows it.
@@ -338,6 +427,7 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 		Juice.flash(animator, 0.15, HURT_FLASH)
 
 		if from_direction != "":
+			_cancel_charge()
 			_play(Action.DAMAGE, from_direction)
 			knockback = Direction.to_vector(from_direction) * Tuning.player_knockback
 			Juice.hitstop(HURT_HITSTOP)

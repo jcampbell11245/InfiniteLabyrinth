@@ -5,3 +5,8 @@ CC0 (public domain). https://opengameart.org/content/sfx-the-ultimate-2017-8-bit
 twinkle.wav: synthesized for this project (8-bit pulse-wave ding).
 clank_bad.wav: clank1.wav run through ffmpeg for this project (pitched to 0.7x, 1600 Hz
 low-pass, light 6-bit crush, +3 dB): the blocked-swing version of the clank.
+arrow_charge.wav: shoot1.wav run through ffmpeg for this project (reversed, four 0.15 s
+slices pitched 0.70x/0.84x/1.0x/1.19x and joined, 3000 Hz low-pass, light 8-bit crush):
+the bow-drawing sound while an arrow charges.
+arrow_charged.wav: shoot1.wav run through ffmpeg for this project (pitched to 1.9x,
+600 Hz high-pass, short double echo): the "fully charged" ping.
