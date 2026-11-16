@@ -25,6 +25,9 @@ func _physics_process(delta: float) -> void:
 	if player.in_transition:
 		return
 	swing_rest = max(swing_rest - delta, 0.0)
+	if is_stunned(): # Parried
+		_apply_knockback(delta)
+		return
 	
 	if is_player_in_room():
 		if _is_player_mostly_horizontal():

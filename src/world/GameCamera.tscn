@@ -6,6 +6,8 @@
 [ext_resource type="Script" uid="uid://dfraswj8yhq6m" path="res://src/ui/hud/Coins.gd" id="4"]
 [ext_resource type="Texture2D" uid="uid://c687csk36kl3" path="res://assets/sprites/hud/key.png" id="5"]
 [ext_resource type="Script" uid="uid://ekl0jpe52y74" path="res://src/ui/hud/Keys.gd" id="6"]
+[ext_resource type="Script" path="res://src/ui/hud/Arrows.gd" id="arrows_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hud/arrow_count.png" id="arrows_icon"]
 [ext_resource type="PackedScene" path="res://src/ui/menus/UpgradeMenu.tscn" id="7"]
 [ext_resource type="Texture2D" uid="uid://da7k6f763hgna" path="res://assets/sprites/hud/game_over.png" id="8"]
 [ext_resource type="Script" uid="uid://lby1gnmktu23" path="res://src/ui/menus/GameOver.gd" id="9"]
@@ -310,6 +312,25 @@ offset_right = 237.789
 offset_bottom = 31.0
 theme_override_fonts/normal_font = SubResource("19")
 bbcode_enabled = true
+text = "0"
+
+[node name="Arrows" type="HBoxContainer" parent="HudLayer/Hud"]
+layout_mode = 2
+script = ExtResource("arrows_script")
+
+[node name="Icon" type="Sprite2D" parent="HudLayer/Hud/Arrows"]
+position = Vector2(292, -0.8)
+scale = Vector2(0.45, 0.45)
+texture = ExtResource("arrows_icon")
+
+[node name="Counter" type="Marker2D" parent="HudLayer/Hud/Arrows"]
+position = Vector2(298.5, -5.17272)
+scale = Vector2(0.5, 0.5)
+
+[node name="ArrowText" type="RichTextLabel" parent="HudLayer/Hud/Arrows/Counter"]
+offset_right = 80.0
+offset_bottom = 40.0
+theme_override_fonts/normal_font = SubResource("7")
 text = "0"
 
 [node name="UpgradeMenu" parent="." unique_id=1264262268 instance=ExtResource("7")]

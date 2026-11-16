@@ -6,7 +6,13 @@ extends Node
 
 const FlashShader := preload("res://src/effects/flash.gdshader")
 const Coin := preload("res://src/effects/CoinPickup.gd")
+const ArrowPickup := preload("res://src/effects/ArrowPickup.gd")
 const Splat := preload("res://src/effects/Splat.gd")
+const Twinkle := preload("res://src/effects/Twinkle.gd")
+const TWINKLE_SOUND := preload("res://assets/sfx/twinkle.wav")
+const TWINKLE_VOLUME_DB := -6.0
+const Dizzy := preload("res://src/effects/Dizzy.gd")
+const CLANK := preload("res://assets/sfx/clank1.wav")
 
 # Hit-stop slows the whole game to this fraction of normal speed rather than 0, so
 # anything dividing by delta keeps working.
@@ -36,6 +42,7 @@ const COIN_VOICES := 4 # Players taken in turn, so a new coin doesn't cut off th
 
 var _hitstop_until := 0 # Ticks (ms) when the current hit-stop ends; 0 when none
 var _coin_players: Array[AudioStreamPlayer] = []
+var _clank_player: AudioStreamPlayer
 var _next_coin_player := 0
 var _last_coin := -100000 # Ticks (ms) of the last coin sound
 var _coin_chain := 0 # Coins in the current chain
@@ -48,6 +55,9 @@ func _ready() -> void:
 		voice.volume_db = COIN_VOLUME_DB
 		add_child(voice)
 		_coin_players.append(voice)
+	_clank_player = AudioStreamPlayer.new()
+	_clank_player.stream = CLANK
+	add_child(_clank_player)
 
 # Ends hit-stop by the real-time clock, since timers run slow while it's on.
 func _process(_delta: float) -> void:
@@ -76,6 +86,18 @@ func play(sound: Node, spread := 0.08, base := 1.0) -> void:
 		return
 	sound.pitch_scale = base * randf_range(1.0 - spread, 1.0 + spread)
 	sound.play()
+
+# An arrow reaching the player: a coin sound pitched well down, so it reads as loot but
+# not money.
+func arrow_sound() -> void:
+	var voice := _coin_players[_next_coin_player]
+	_next_coin_player = (_next_coin_player + 1) % COIN_VOICES
+	voice.stream = COIN_SOUNDS.pick_random()
+	play(voice, 0.04, 0.7)
+
+# Swords meeting: a parry, or a blocked swing.
+func clank() -> void:
+	play(_clank_player, 0.06)
 
 # Plays a coin pickup sound, pitched up the further into a quick chain of coins it is.
 func coin_sound() -> void:
@@ -108,6 +130,17 @@ func flash(sprite: CanvasItem, seconds := 0.12, color := Color.WHITE) -> void:
 	tween.tween_interval(seconds * 0.4)
 	tween.tween_method(func(v: float) -> void: material.set_shader_parameter("flash", v),
 		1.0, 0.0, seconds * 0.6)
+
+# Fades a sprite (set up with add_flash) to greyscale, or back with `on` false.
+func set_grey(sprite: CanvasItem, on: bool, seconds := 0.08) -> void:
+	var material := sprite.material as ShaderMaterial
+	if material == null:
+		return
+	var current: Variant = material.get_shader_parameter("grey") # null until first set
+	var from: float = current if current != null else 0.0
+	sprite.create_tween().tween_method(
+		func(v: float) -> void: material.set_shader_parameter("grey", v),
+		from, 1.0 if on else 0.0, seconds)
 
 # A one-shot spray of square particles that frees itself. `direction` biases the spray
 # (Vector2.ZERO sprays all round).
@@ -144,6 +177,30 @@ func burst(parent: Node, at: Vector2, color: Color, amount := 10, speed := 60.0,
 	p.finished.connect(p.queue_free)
 	return p
 
+# A quick star glint at `offset` from `parent`, which it follows. Enemies flash one just
+# before they strike so the player can see it coming.
+func twinkle(parent: Node2D, offset: Vector2, color := Color(1, 0.95, 0.7)) -> void:
+	var t: Node2D = Twinkle.new()
+	t.color = color
+	t.position = offset
+	t.z_index = 5
+	parent.add_child(t)
+	# Rides on the twinkle node, which outlives the sound, so overlapping twinkles from
+	# several enemies don't cut each other off.
+	var sound := AudioStreamPlayer.new()
+	sound.stream = TWINKLE_SOUND
+	sound.volume_db = TWINKLE_VOLUME_DB
+	t.add_child(sound)
+	play(sound, 0.05)
+
+# Stars circling at `offset` from `parent` (over its head). Stays until the caller frees it.
+func dizzy(parent: Node2D, offset: Vector2) -> Node2D:
+	var d: Node2D = Dizzy.new()
+	d.position = offset
+	d.z_index = 5
+	parent.add_child(d)
+	return d
+
 # Leaves a permanent stain on the floor of `room` (blood, ash, scorch) so cleared rooms
 # remember the fight.
 func splat(room: Node2D, at: Vector2, color: Color, radius := 9.0) -> void:
@@ -171,3 +228,11 @@ func drop_coins(parent: Node, at: Vector2, total: int) -> void:
 		coin.value = each + (remainder if i == 0 else 0)
 		parent.add_child(coin)
 		coin.global_position = at
+
+# Throws `count` arrows out of `at` as pickups that fly to the player and are added to
+# Game.arrows when they arrive.
+func drop_arrows(parent: Node, at: Vector2, count: int) -> void:
+	for i in count:
+		var arrow: Node2D = ArrowPickup.new()
+		parent.add_child(arrow)
+		arrow.global_position = at

@@ -41,6 +41,10 @@ const GHOST_FADE := 0.2
 const FEET := Vector2(0, 13) # From the origin to the player's feet
 const DUST := Color(0.75, 0.7, 0.6)
 
+# Parrying: see Enemy._on_player_sword.
+const BLOCKED_DAZE_TIME := 0.6 # Seconds the player can't act after a swing is blocked
+const DIZZY_OFFSET := Vector2(0, -24) # Over the player's head
+
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
 	preload("res://assets/sfx/movement/roll3.wav"),
@@ -76,6 +80,12 @@ var _ghost_timer := 0.0
 var _roll_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
 
+# Parrying
+var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
+var _daze_timer: Timer # Running while dazed from a blocked swing
+var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
+var _dizzy: Node2D # Stars shown while dazed
+
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
 # until the TransitionPause timer (and any boss-door cutscene) ends; enemies freeze meanwhile.
@@ -101,10 +111,20 @@ func _ready() -> void:
 	Juice.add_flash(animator)
 	_roll_sound = _add_sound(ROLL_DB)
 	_land_sound = _add_sound(PIT_LAND_DB)
+	_daze_timer = Timer.new()
+	_daze_timer.one_shot = true
+	_daze_timer.timeout.connect(Juice.set_grey.bind(animator, false))
+	_daze_timer.timeout.connect(_show_dizzy.bind(false))
+	add_child(_daze_timer)
+	_vulnerable_timer = Timer.new()
+	_vulnerable_timer.one_shot = true
+	_vulnerable_timer.timeout.connect(_set_vulnerable.bind(false))
+	add_child(_vulnerable_timer)
 
 func _physics_process(delta: float) -> void:
 	if !auto_walking:
-		var input := _read_input()
+		# Dazed, the player can't move, roll or attack.
+		var input := _read_input() if _daze_timer.is_stopped() else FrameInput.new()
 		_handle_input(input)
 		_update_animation(input)
 		_update_hitboxes()
@@ -141,6 +161,13 @@ func _read_input() -> FrameInput:
 # Movement, rolling, attacks and arrows. Runs before _update_animation, so the checks
 # here see the animation from the previous frame.
 func _handle_input(input: FrameInput) -> void:
+	# Out of arrows, the shot never happens; the HUD counter shakes instead.
+	if input.ranged && Game.arrows <= 0:
+		input.ranged = false
+		if _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
+			Game.arrows_empty.emit()
+			shoot_cooldown.start(0.5)
+
 	if rolling.time_left == 0:
 		velocity = Vector2.ZERO
 
@@ -163,6 +190,7 @@ func _handle_input(input: FrameInput) -> void:
 
 	if input.melee && _action() not in [Action.SLASH, Action.DAMAGE]:
 		hitbox.disabled = false
+		swing_started_at = Time.get_ticks_msec()
 		Juice.play($Slash)
 
 	if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
@@ -171,6 +199,7 @@ func _handle_input(input: FrameInput) -> void:
 		arrow.position = position
 		arrow.direction = direction
 		arrow.damage = ARROW_DAMAGE
+		Game.add_arrows(-1)
 		shoot_cooldown.start(0.5)
 		Juice.play($Shoot)
 		var aim := Direction.to_vector(direction)
@@ -246,6 +275,10 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 		if !mute:
 			Juice.play($Hit, 0.05)
 
+		# Pitfall falls (no direction) aren't hits, so they don't use up a vulnerability.
+		if from_direction != "" && is_vulnerable():
+			damage *= Constants.STAGGER_DAMAGE_MULTIPLIER
+			_set_vulnerable(false)
 		health -= damage
 		Game.health_changed.emit(health)
 		if health <= 0:
@@ -312,7 +345,53 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
 	elif area.get_name() == "ProjectileHitbox":
-		take_damage(area.get_parent().damage, area.get_parent().direction, false)
+		var shot: Projectile = area.get_parent()
+		if shot.deflectable:
+			_take_deflectable_hit.call_deferred(shot)
+		else:
+			take_damage(shot.damage, shot.direction, false)
+
+# A deflectable shot touched the hurtbox. Waits for the end of the frame, by when the shot
+# has decided whether the sword touching it this frame sent it back.
+func _take_deflectable_hit(shot: Projectile) -> void:
+	if is_instance_valid(shot) && shot.hostile_to_player && !_sword_is_on(shot):
+		take_damage(shot.damage, shot.direction, false)
+
+func _sword_is_on(shot: Projectile) -> bool:
+	return is_slashing() && $HitboxPivot/Hitbox.overlaps_area(shot.get_node("ProjectileHitbox"))
+
+# Mid-swing with the sword out.
+func is_slashing() -> bool:
+	return _action() == Action.SLASH && !hitbox.disabled
+
+# An enemy blocked a swing made too early, before its twinkle: the swing ends, the
+# player is dazed (can't act) for a moment, and their next hit taken is multiplied.
+func stagger() -> void:
+	_play(Action.IDLE)
+	hitbox.set_deferred("disabled", true) # Called from a collision callback
+	velocity = Vector2.ZERO
+	_daze_timer.start(BLOCKED_DAZE_TIME)
+	Juice.set_grey(animator, true) # Greyed out while dazed, to show the player can't act
+	_set_vulnerable(true)
+	_show_dizzy(true)
+
+func is_dazed() -> bool:
+	return !_daze_timer.is_stopped()
+
+func is_vulnerable() -> bool:
+	return !_vulnerable_timer.is_stopped()
+
+func _set_vulnerable(on: bool) -> void:
+	if on:
+		_vulnerable_timer.start(Constants.STAGGER_VULNERABLE_TIME)
+	else:
+		_vulnerable_timer.stop()
+
+func _show_dizzy(on: bool) -> void:
+	if is_instance_valid(_dizzy):
+		_dizzy.queue_free()
+	if on:
+		_dizzy = Juice.dizzy(self, DIZZY_OFFSET)
 
 func _on_invincibility_cooldown_timeout() -> void:
 	animator.modulate.a = 1

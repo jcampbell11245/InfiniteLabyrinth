@@ -23,6 +23,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if !player.in_transition:
+		_update_windup()
 		if !_animation_is("slash"):
 			hitbox.disabled = true
 		if !_is_reacting():
@@ -97,8 +98,13 @@ func _play_reaction(action: String) -> void:
 	if animator.sprite_frames.has_animation(action + "_" + direction):
 		_play(action)
 
-# True while a block plays out, or while flashing after a hit.
+func _on_staggered() -> void:
+	_play_reaction("vuln")
+
+# True while stunned from a parry, while a block plays out, or while flashing after a hit.
 func _is_reacting() -> bool:
+	if is_stunned():
+		return true
 	if _animation_is("block"):
 		return animator.is_playing()
 	if _animation_is("vuln"):

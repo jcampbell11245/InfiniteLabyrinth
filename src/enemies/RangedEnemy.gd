@@ -1,11 +1,17 @@
 extends Enemy
 
 # Wizard: backs away while the player is lined up with it on either axis, otherwise casts
-# a burst of three fireballs, half a second apart, in the direction it faces.
+# a burst of three fireballs, half a second apart, in the direction it faces. A fireball the
+# player hits back is batted back again just before it lands, unless the wizard fumbles it
+# (DEFLECT_MISS_CHANCE each time) or is stunned. The two can rally a fireball back and
+# forth, stronger and faster each time.
 
 const Fireball := preload("res://src/projectiles/Fireball.tscn")
 const BURST_COOLDOWN := 2.5 # Replaces attack_cooldown_length once a fireball is out
 const BURST_SHOT_DELAY := 0.5 # Between each of the three shots
+const DEFLECT_MISS_CHANCE := 0.3 # Chance a returned fireball gets through
+const DEFLECT_REACH := 22.0 # Pixels ahead of the wizard where it bats a fireball back
+const DEFLECT_WIDTH := 12.0 # Pixels either side of a fireball's path that still count
 
 # Room-local bounds on backing away. The wizard faces the player and backs away from them,
 # so facing left it backs towards RETREAT_LIMIT_RIGHT, and so on.
@@ -15,9 +21,11 @@ const RETREAT_LIMIT_UP := 214
 const RETREAT_LIMIT_DOWN := 406
 
 var retreat_blocked := false # Backing away ran into something; shoot instead until the next burst
+var _judged: Dictionary = {} # Fireball -> its deflections when last swung at, so each return gets one try
 
 func _process(_delta: float) -> void:
-	if !player.in_transition:
+	if !player.in_transition && !is_stunned():
+		_update_windup()
 		animate()
 	elif direction != "":
 		_play("idle")
@@ -25,7 +33,11 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if player.in_transition || !room.player_active || !is_player_in_room():
 		return
+	if is_stunned(): # Parried
+		_apply_knockback(delta)
+		return
 	
+	_try_deflect()
 	if !_is_bursting():
 		if _is_player_mostly_horizontal():
 			_face_player_horizontally()
@@ -73,6 +85,42 @@ func shoot_fireball() -> void:
 	fireball.direction = direction
 	fireball.damage = damage
 	attack_cooldown.start(BURST_COOLDOWN)
+
+func _attack_action() -> String:
+	return "shoot"
+
+# Swings at any player-deflected fireball about to hit, once per return.
+func _try_deflect() -> void:
+	for node in room.get_children():
+		var shot := node as Projectile
+		if shot == null || !shot.deflectable || shot.hostile_to_player || shot._hit:
+			continue
+		if _judged.get(shot, -1) == shot.deflections || !_is_incoming(shot):
+			continue
+		_judged[shot] = shot.deflections
+		if randf() < DEFLECT_MISS_CHANCE:
+			continue # Fumbled; it flies on and hits
+		_face(Direction.to_vector(shot.direction) * -1)
+		shot.deflect(direction)
+		Juice.flash(animator, 0.1, Color(0.8, 0.6, 1.0))
+		Juice.play($Attack)
+	# Forget fireballs that have gone.
+	for shot in _judged.keys():
+		if !is_instance_valid(shot):
+			_judged.erase(shot)
+
+# Heading straight at the wizard and about to arrive.
+func _is_incoming(shot: Projectile) -> bool:
+	var heading := Direction.to_vector(shot.direction)
+	var to_me := global_position - shot.global_position
+	var ahead := to_me.dot(heading)
+	return ahead > 0 && ahead < DEFLECT_REACH && absf(to_me.cross(heading)) < DEFLECT_WIDTH
+
+# Turns to face along `facing`, one of the four direction vectors.
+func _face(facing: Vector2) -> void:
+	for dir in [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]:
+		if Direction.to_vector(dir).is_equal_approx(facing):
+			direction = dir
 
 # From the start of the shoot animation until the third shot is out. The wizard keeps
 # the facing it started the burst with, so all three shots fly the same way.
