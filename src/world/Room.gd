@@ -112,6 +112,7 @@ var _last_kill_at := -100000 # Ticks (ms) of the last kill in this room
 var _floor2_doors := false # Doors use the floor-2 art and lock drawing
 var _top_back: TileMap # The top wall's cells from Top, drawn below everything on the floor
 var _top_arch: TileMap # The top door's column of them, raised while the player walks through
+var _nav: RoomNav # Enemy pathfinding; see nav()
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
 @onready var knight_death: AudioStreamPlayer = $KnightDeath
@@ -192,6 +193,13 @@ func is_cleared() -> bool:
 	return false
 
 # --- Geometry ---
+
+# Pathfinding round this room's pits and rocks for its enemies, built the first time one
+# asks. Call it from a physics callback: building it queries the physics world.
+func nav() -> RoomNav:
+	if _nav == null:
+		_nav = RoomNav.new(self)
+	return _nav
 
 func _on_floor(cell: Vector2i) -> bool:
 	return cell.x >= FLOOR_FIRST && cell.x <= floor_last && cell.y >= FLOOR_FIRST && cell.y <= floor_last

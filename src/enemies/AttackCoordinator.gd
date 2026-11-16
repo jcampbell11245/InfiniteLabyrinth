@@ -12,6 +12,7 @@ extends Node
 
 const NODE_NAME := "AttackCoordinator"
 const STALE_FRAMES := 2 # A member that misses this many physics frames has left the fight
+const TURN_RANGE := 1.4 # Turns go to members within this many circle radii of the player
 
 var _last_seen := {} # Enemy -> physics frame of its last check-in
 var _attackers: Array[Enemy] = []
@@ -91,15 +92,28 @@ func _physics_process(delta: float) -> void:
 		if _attackers.size() < Tuning.pack_max_attackers:
 			_gap = randf_range(Tuning.pack_turn_gap_min, maxf(Tuning.pack_turn_gap_min, Tuning.pack_turn_gap_max))
 
-# A random member ready to fight, avoiding whoever just had a turn if anyone else can go.
+# A random member ready to fight and already near the player (on the circle, not still
+# making its way over), avoiding whoever just had a turn if anyone else can go. If nobody
+# is near yet, the nearest gets it, so the player isn't left waiting.
 func _pick_next() -> Enemy:
 	var ready: Array[Enemy] = []
+	var nearest: Enemy = null
+	var nearest_distance := INF
+	var player_at: Vector2 = Game.player.global_position
 	for enemy in _last_seen:
-		if _alive(enemy) && !_attackers.has(enemy) && enemy.can_take_turn():
+		if !_alive(enemy) || _attackers.has(enemy) || !enemy.can_take_turn():
+			continue
+		var distance: float = enemy.global_position.distance_to(player_at)
+		if distance <= Tuning.pack_ring_radius * TURN_RANGE:
 			ready.append(enemy)
+		if distance < nearest_distance:
+			nearest = enemy
+			nearest_distance = distance
+	if ready.is_empty():
+		return nearest
 	if ready.size() > 1 && ready.has(_last_attacker):
 		ready.erase(_last_attacker)
-	return null if ready.is_empty() else ready.pick_random()
+	return ready.pick_random()
 
 func _prune() -> void:
 	var frame := Engine.get_physics_frames()

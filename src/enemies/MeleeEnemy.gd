@@ -14,6 +14,23 @@ extends Enemy
 # and nobody starts a swing while another enemy is partway through one, so the player only
 # ever has one windup to parry.
 #
+# Unparryable attacks (unparryable_attack, knights): some swings, Tuning.unparryable_chance of
+# them, glint red instead of white and can't be parried; see Enemy._on_player_sword. The
+# player has to roll through the enemy and hit it from behind. The enemy doesn't turn to
+# follow them until the attack is over. Afterwards it's stuck in end lag: frozen on the
+# attack's last frame for Tuning.heavy_end_lag, unable to move, turn or attack, and hits
+# don't knock it out of the pose (no stun, though: no stars, no extra damage).
+#
+# Any other attack turns round if the player gets behind the enemy at any point in it,
+# windup or follow-through, carrying on the same swing; the blade is still live after the
+# strike, so a player who rolls through gets caught by it. Rolling through only beats
+# unparryable attacks.
+#
+# Double attacks (double_attack, goblins): some swings, Tuning.double_attack_chance of them,
+# come with a follow-up. Parrying the first doesn't stagger the enemy; it swings again
+# straight away, glinting Tuning.double_attack_hold after the parry, and only parrying that
+# second swing staggers it. A first swing that isn't parried is just a single attack.
+#
 # Enemies whose sprites have them also react to hits: "block" plays once when a hit is
 # shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
 # still until the reaction is over.
@@ -21,6 +38,7 @@ extends Enemy
 const SLOT_TOLERANCE := 6.0 # Pixels off the player's row or column that still lines up a swing
 const ARRIVE_DISTANCE := 3.0 # Pixels from a circle target that count as there
 const SLOT_ARRIVE := 0.5 # Pixels from the attack spot that count as there
+const SLOT_PREFERENCE := 0.6 # Distance multiplier for the attack spot it's already heading for
 const MIN_ENGAGE := 12.0 # Never tries to stand closer than this to the player
 const AXIS_STICKINESS := 1.3 # How much the other axis must dominate before switching sides
 const ORBIT_LEAD := 0.5 # Radians ahead along the circle a drifting enemy aims for
@@ -31,9 +49,12 @@ const RING_WALL_MARGIN := 14.0 # Circle targets stay this far inside the floor
 const RING_CRAMPED := 0.8 # Share of the circle's radius a wall can squash it to before moving round
 const WALL_PUSH := 0.6 # Radians: how hard a cramped enemy slides round towards open floor
 const WALL_PROBE := 0.4 # Radians either side checked for more room
+const FOLLOW_UP_FLASH := Color(1, 0.6, 0.3) # Shown as a parried double attack swings again
 
 @export var only_hit_during_attack: bool
 @export var starting_direction := Direction.RIGHT
+@export var double_attack := false # Some swings follow up when parried; see above
+@export var unparryable_attack := false # Some swings can't be parried; see above
 
 # Hit by the player, or saw them, while they're in this room: it fights even outside its
 # detection zone, until the player leaves the room.
@@ -46,12 +67,17 @@ var _slot_horizontal := true # Lining up beside the player (true) or above/below
 var _orbit_dir := 0.0 # -1, 0 or 1: drift around the circle
 var _orbit_change_in := 0.0
 var _reach_cache := {} # Horizontal (bool) -> engage distance
+var _follow_up_ready := false # This swing is the first of a double attack
+var _end_lag: Timer # Running while frozen at the end of an unparryable attack
+var _end_lagged := false # This swing has had its end lag
+var _turning := false # Swapping a swing's facing; its frame changes aren't real ones
 
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var detection_zone: Area2D = $DetectionZonePivot/DetectionZone
 
 func _ready() -> void:
 	super()
+	_end_lag = _add_timer(_on_end_lag_over)
 	direction = starting_direction
 	_play("idle")
 
@@ -84,6 +110,8 @@ func _physics_process(delta: float) -> void:
 	if !_animation_is("slash"): # Committed to a swing's facing until it ends
 		_update_facing()
 		_point_pivots()
+	elif !_unparryable && _is_player_behind():
+		_turn_mid_attack()
 
 	if _is_reacting() || _animation_is("slash"):
 		pass # Rooted while staggered, flinching or swinging
@@ -157,19 +185,38 @@ func _on_swing_finished() -> void:
 
 # Walks to the attack spot beside the player, then swings once lined up.
 func _fight(coordinator: AttackCoordinator, delta: float) -> void:
-	var from_player := position - _player_position()
-	_pick_slot_axis(from_player)
 	if _in_strike_position(_slot_horizontal):
 		if _can_start_swing(coordinator):
 			_start_swing(_slot_horizontal)
 		return
-	var reach := _engage_distance(_slot_horizontal)
-	var slot := _player_position()
-	if _slot_horizontal:
-		slot.x += reach * (1.0 if from_player.x >= 0 else -1.0)
-	else:
-		slot.y += reach * (1.0 if from_player.y >= 0 else -1.0)
-	_walk_to(slot, speed, delta, SLOT_ARRIVE)
+	_walk_to(_pick_slot(), speed, delta, SLOT_ARRIVE)
+
+# The attack spot to head for: one of the four beside the player (left, right, above,
+# below), skipping any with a pit or rock underfoot. Prefers the side it's already lining
+# up on, so it doesn't dither near a diagonal, otherwise the nearest.
+func _pick_slot() -> Vector2:
+	var centre := _player_position()
+	var from_player := position - centre
+	_pick_slot_axis(from_player)
+	var nav := room.nav()
+	var best := Vector2.ZERO
+	var best_score := INF
+	for side: Vector2 in [Vector2.RIGHT, Vector2.LEFT, Vector2.DOWN, Vector2.UP]:
+		var horizontal := side.y == 0
+		var slot := centre + side * _engage_distance(horizontal)
+		if !nav.is_open(slot + _feet()):
+			continue
+		var score := position.distance_to(slot)
+		var preferred_side := signf(from_player.x if horizontal else from_player.y)
+		if horizontal == _slot_horizontal && (side.x if horizontal else side.y) == preferred_side:
+			score *= SLOT_PREFERENCE
+		if score < best_score:
+			best = slot
+			best_score = score
+			_slot_horizontal = horizontal
+	if best_score == INF: # Boxed in on every side; just head for the player
+		return centre
+	return best
 
 # Waits its turn on a circle around the player, spaced out from the others and drifting
 # at random. Swings anyway if the player walks into reach and nobody else is swinging.
@@ -246,8 +293,63 @@ func _start_swing(horizontal: bool) -> void:
 	else:
 		_face_player_vertically()
 	_point_pivots()
+	_mark_attack_start()
 	_play("slash")
 	attack()
+	_unparryable = unparryable_attack && randf() < Tuning.unparryable_chance
+	_end_lagged = false
+	_follow_up_ready = !_unparryable && double_attack && randf() < Tuning.double_attack_chance
+
+func in_end_lag() -> bool:
+	return !_end_lag.is_stopped()
+
+# The unparryable attack has swung through: freeze on its last frame, blade harmless.
+func _start_end_lag() -> void:
+	_end_lagged = true
+	animator.pause()
+	hitbox.disabled = true
+	_end_lag.start(Tuning.heavy_end_lag)
+
+# Plays out the last of the attack, back to idle.
+func _on_end_lag_over() -> void:
+	if _animation_is("slash"):
+		animator.play()
+
+func _hit_interrupts_attack() -> bool:
+	return !in_end_lag()
+
+func _is_player_behind() -> bool:
+	return Direction.to_vector(direction).dot(_to_player()) < 0
+
+# The player got behind mid-attack (rolled through): face them and carry on with the same
+# swing, at the same point in it, held or not. The hitbox turns with it.
+func _turn_mid_attack() -> void:
+	var frame := animator.frame
+	var held := !animator.is_playing()
+	if _is_player_mostly_horizontal():
+		_face_player_horizontally()
+	else:
+		_face_player_vertically()
+	_point_pivots()
+	_turning = true # Re-showing the same frame isn't a new strike
+	_play("slash")
+	animator.frame = frame
+	_turning = false
+	if held:
+		animator.pause()
+
+# The first swing of a double attack was parried: swing again at once. The player can
+# swing again straight away too, cutting their parrying swing short, to meet it (or, too
+# soon, to be blocked by it).
+func _parried_follow_up() -> bool:
+	if !_follow_up_ready:
+		return false
+	_follow_up_ready = false
+	Juice.flash(animator, 0.12, FOLLOW_UP_FLASH)
+	_restart_attack(Tuning.double_attack_hold)
+	attack()
+	player.allow_instant_swing()
+	return true
 
 # Where to stand to fight: the shorter of this enemy's slash reach (onto the player's
 # hurtbox) and the player's sword reach (onto this enemy's hurtbox), less
@@ -270,17 +372,26 @@ static func _half_extent(shape: CollisionShape2D, owner_body: Node2D, horizontal
 	var size := rect.size.x * absf(owner_body.scale.x) if horizontal else rect.size.y * absf(owner_body.scale.y)
 	return size / 2
 
+# From the enemy's origin to the middle of its feet (its body's collision shape).
+func _feet() -> Vector2:
+	return ($CollisionShape2D as Node2D).position * scale
+
 # The player's position in the room's space, which is the space `position` is in.
 func _player_position() -> Vector2:
 	return room.to_local(player.global_position)
 
-# Heads for `target` (room space), sliding along whatever it bumps into.
+# Heads for `target` (room space), round any pits and rocks in the way (Room.nav), sliding
+# along whatever it still bumps into.
 func _walk_to(target: Vector2, walk_speed: float, delta: float, arrive := ARRIVE_DISTANCE) -> void:
-	var to_target := target - position
-	var distance := to_target.length()
-	if distance <= arrive:
+	if position.distance_to(target) <= arrive:
 		return
-	var motion := to_target / distance * minf(walk_speed * delta, distance)
+	var feet := _feet()
+	var waypoint := room.nav().next_waypoint(position + feet, target + feet) - feet
+	var to_waypoint := waypoint - position
+	var distance := to_waypoint.length()
+	if distance < 0.01:
+		return
+	var motion := to_waypoint / distance * minf(walk_speed * delta, distance)
 	var collision := move_and_collide(motion)
 	if collision != null:
 		move_and_collide(collision.get_remainder().slide(collision.get_normal()))
@@ -292,6 +403,8 @@ func _on_reset() -> void:
 	_was_attacker = false
 	_swings_left = 0
 	_moving = false
+	_follow_up_ready = false
+	_end_lag.stop()
 	var block_stun: Timer = get_node_or_null("BlockStun")
 	if block_stun != null:
 		block_stun.stop()
@@ -301,6 +414,8 @@ func take_damage(from_direction: String, amount: float) -> void:
 	if is_player_in_room():
 		noticed = true
 	super(from_direction, amount)
+	if in_end_lag():
+		knockback = Vector2.ZERO # Planted until the end lag is over
 
 func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):
@@ -311,7 +426,8 @@ func _blocks_hit() -> bool:
 	return false
 
 func _after_hit() -> void:
-	_play_reaction("vuln")
+	if !in_end_lag(): # Stays in the pose; the hit flash still shows
+		_play_reaction("vuln")
 
 # Plays a hit reaction if this enemy's sprites have one. It uses the enemy's own facing,
 # not the hit's direction that take_damage shows when it interrupts a slash, so the enemy
@@ -325,9 +441,10 @@ func _on_staggered() -> void:
 	_swings_left = 0
 	_play_reaction("vuln")
 
-# True while stunned from a parry, while a block plays out, or while flashing after a hit.
+# True while stunned from a parry, in end lag, while a block plays out, or while flashing
+# after a hit.
 func _is_reacting() -> bool:
-	if is_stunned():
+	if is_stunned() || in_end_lag():
 		return true
 	if _animation_is("block"):
 		return animator.is_playing()
@@ -341,6 +458,10 @@ func _lose_health(amount: float, critical: bool) -> void:
 	super(amount, critical)
 
 func _on_animated_sprite_2d_frame_changed() -> void:
+	if _turning:
+		return
 	if _animation_is("slash") && animator.frame == attack_frame:
 		Juice.play($Attack)
 		hitbox.disabled = false
+	elif _animation_is("slash") && _unparryable && !_end_lagged && animator.frame == attack_end_frame - 1:
+		_start_end_lag()

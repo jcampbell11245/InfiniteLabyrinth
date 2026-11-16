@@ -15,6 +15,8 @@ const Dizzy := preload("res://src/effects/Dizzy.gd")
 const CLANK := preload("res://assets/sfx/clank1.wav")
 # The clank pitched down, muffled and crushed: the player's swing was blocked.
 const CLANK_BAD := preload("res://assets/sfx/clank_bad.wav")
+# The wizard's fireball sound sent back the other way: a fireball batted back.
+const DEFLECT := preload("res://assets/sfx/deflect.wav")
 
 # Hit-stop slows the whole game to Tuning.hitstop_time_scale of normal speed rather than
 # 0, so anything dividing by delta keeps working.
@@ -45,6 +47,7 @@ var _hitstop_until := 0 # Ticks (ms) when the current hit-stop ends; 0 when none
 var _coin_players: Array[AudioStreamPlayer] = []
 var _clank_player: AudioStreamPlayer
 var _bad_clank_player: AudioStreamPlayer
+var _deflect_player: AudioStreamPlayer
 var _next_coin_player := 0
 var _last_coin := -100000 # Ticks (ms) of the last coin sound
 var _coin_chain := 0 # Coins in the current chain
@@ -63,6 +66,9 @@ func _ready() -> void:
 	_bad_clank_player = AudioStreamPlayer.new()
 	_bad_clank_player.stream = CLANK_BAD
 	add_child(_bad_clank_player)
+	_deflect_player = AudioStreamPlayer.new()
+	_deflect_player.stream = DEFLECT
+	add_child(_deflect_player)
 
 # Ends hit-stop by the real-time clock, since timers run slow while it's on.
 func _process(_delta: float) -> void:
@@ -107,6 +113,10 @@ func arrow_sound() -> void:
 # when the player's swing is blocked and they're the one staggered.
 func clank(bad := false) -> void:
 	play(_bad_clank_player if bad else _clank_player, 0.06)
+
+# A fireball batted back, by the player's sword or a wizard.
+func deflect_sound() -> void:
+	play(_deflect_player, 0.06)
 
 # Plays a coin pickup sound, pitched up the further into a quick chain of coins it is.
 func coin_sound() -> void:

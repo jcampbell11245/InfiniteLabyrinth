@@ -73,7 +73,7 @@ class FrameInput:
 	var move := Vector2.ZERO # Sum of the held directions, not normalised
 	var held := "" # First held direction, checked right, left, down, up
 	var released := "" # First released direction, same order
-	var roll := false # Rolls trigger on release
+	var roll := false # Rolls trigger on press
 	var melee := false
 	var ranged := false # Shoot pressed this frame: starts drawing the bow
 	var ranged_held := false # Letting go while able to act looses a drawn arrow
@@ -102,6 +102,7 @@ var _charged := false # Drawn for at least Tuning.arrow_charge_time
 
 # Parrying
 var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
+var swing_started_frame := -1 # Physics frame the current or last swing began
 var _daze_timer: Timer # Running while dazed from a blocked swing
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
 var _dizzy: Node2D # Stars shown while dazed
@@ -110,6 +111,9 @@ var _was_slashing := false # The last physics frame ended mid-swing
 # The enemy the player last parried. While it stays stunned, swings skip the sword
 # cooldown so the player can finish it off (Tuning.instant_finisher).
 var _finisher_target: Enemy
+var _skip_sword_cooldown := false # The swing under way ends without the cooldown (double attacks)
+var _instant_swing := false # The next swing can start at once, cutting short the one under way
+var _rearm_hitbox := false # A swing was cut short; switch the sword back on next physics frame
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -155,6 +159,12 @@ func _ready() -> void:
 	add_child(_sword_cooldown)
 
 func _physics_process(delta: float) -> void:
+	# Off for one physics step, so an enemy the old swing was already touching registers
+	# the new one as a fresh hit.
+	if _rearm_hitbox:
+		_rearm_hitbox = false
+		if _action() == Action.SLASH:
+			hitbox.disabled = false
 	if !auto_walking:
 		# Dazed, down a pitfall, or while the screen is still moving to a new room (the
 		# room isn't fully in view yet, so they could walk into a pit they can't see), the
@@ -226,7 +236,7 @@ func _read_input() -> FrameInput:
 				input.held = dir
 		if input.released == "" && Input.is_action_just_released(dir):
 			input.released = dir
-	input.roll = Input.is_action_just_released("roll")
+	input.roll = Input.is_action_just_pressed("roll")
 	input.melee = Input.is_action_just_pressed("melee_attack")
 	input.ranged = Input.is_action_just_pressed("ranged_attack")
 	input.ranged_held = Input.is_action_pressed("ranged_attack")
@@ -271,8 +281,16 @@ func _handle_input(input: FrameInput) -> void:
 	input.melee = input.melee && can_swing()
 	if input.melee:
 		_cancel_charge() # A swing (say, to parry) puts the bow down
-		hitbox.disabled = false
+		if _action() == Action.SLASH: # Cutting short a parried swing; see allow_instant_swing
+			animator.frame = 0
+			hitbox.disabled = true
+			_rearm_hitbox = true
+		else:
+			hitbox.disabled = false
+		_instant_swing = false
+		_skip_sword_cooldown = false
 		swing_started_at = Time.get_ticks_msec()
+		swing_started_frame = Engine.get_physics_frames()
 		Juice.play($Slash)
 
 	_update_charge(input)
@@ -385,9 +403,14 @@ func _update_hitboxes() -> void:
 	if _action() != Action.SLASH:
 		hitbox.disabled = true
 
-# Not mid-swing or flinching, and the cooldown after the last swing has run out (or a
-# parried enemy is still stunned).
+# Not rolling, mid-swing or flinching, and the cooldown after the last swing has run out
+# (or a parried enemy is still stunned). No swinging out of a roll: its invincibility would
+# let the player hit from behind an enemy that's turning round to strike them.
 func can_swing() -> bool:
+	if rolling.time_left > 0:
+		return false
+	if _instant_swing && _action() != Action.DAMAGE:
+		return true
 	return _action() not in [Action.SLASH, Action.DAMAGE] && (_sword_cooldown.is_stopped() || in_finisher())
 
 # Called when the player parries `enemy`: until its stun wears off (or it dies), swings
@@ -397,6 +420,14 @@ func start_finisher(enemy: Enemy) -> void:
 		_finisher_target = enemy
 		_sword_cooldown.stop()
 
+# An enemy is following up a parried swing with another: the player can swing again at
+# once, cutting this swing short, and if they don't, it ends with no cooldown. Swinging
+# before the follow-up's glint is as early (and blocked) as ever.
+func allow_instant_swing() -> void:
+	_instant_swing = true
+	_skip_sword_cooldown = true
+	_sword_cooldown.stop()
+
 func in_finisher() -> bool:
 	return Tuning.instant_finisher && is_instance_valid(_finisher_target) && _finisher_target.is_stunned()
 
@@ -404,8 +435,11 @@ func in_finisher() -> bool:
 # short by a hit or a roll.
 func _update_sword_cooldown() -> void:
 	var slashing := _action() == Action.SLASH
-	if _was_slashing && !slashing && Tuning.sword_cooldown > 0 && !in_finisher():
-		_sword_cooldown.start(Tuning.sword_cooldown)
+	if _was_slashing && !slashing:
+		if Tuning.sword_cooldown > 0 && !in_finisher() && !_skip_sword_cooldown:
+			_sword_cooldown.start(Tuning.sword_cooldown)
+		_skip_sword_cooldown = false
+		_instant_swing = false
 	_was_slashing = slashing
 
 func _action() -> Action:

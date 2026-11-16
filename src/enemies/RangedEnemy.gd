@@ -115,7 +115,7 @@ func _try_deflect() -> void:
 		_face(Direction.to_vector(shot.direction) * -1)
 		shot.deflect(direction)
 		Juice.flash(animator, 0.1, Color(0.8, 0.6, 1.0))
-		Juice.play($Attack)
+		Juice.deflect_sound()
 	# Forget fireballs that have gone.
 	for shot in _judged.keys():
 		if !is_instance_valid(shot):

@@ -105,7 +105,7 @@ func _resolve_contacts() -> void:
 		if is_instance_valid(node) && _is_deflecting_sword(node):
 			var player: Player = node.get_parent().get_parent()
 			deflect(player.direction)
-			Juice.clank()
+			Juice.deflect_sound()
 			Juice.hitstop(0.05)
 			return
 	_impact()

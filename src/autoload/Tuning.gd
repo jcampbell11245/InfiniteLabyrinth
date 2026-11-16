@@ -10,8 +10,8 @@ signal changed(key: String)
 # --- Player ---
 var player_speed := 125.0 # Pixels/sec walking
 var roll_speed_multiplier := 2.0 # Times player_speed while rolling
-var roll_duration := 0.25 # Seconds; with the multiplier this sets the roll distance
-var roll_cooldown := 1.0 # Seconds after a roll ends before the next
+var roll_duration := 0.2 # Seconds; with the multiplier this sets the roll distance (just through an enemy)
+var roll_cooldown := 0.5 # Seconds after a roll ends before the next
 var hurt_invincibility := 1.0 # Seconds after being hit before the next hit counts
 var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
 var shoot_cooldown := 0.5 # Seconds between arrows
@@ -45,6 +45,11 @@ var enemy_speed_multiplier := 1.0
 var enemy_knockback_multiplier := 1.0
 var enemy_attack_cooldown_multiplier := 1.0
 var enemy_windup_multiplier := 1.0 # Random windup hold before the twinkle
+var unparryable_chance := 0.3 # Knight swings that glint red and can't be parried
+var unparryable_window := 0.5 # Seconds from the red twinkle to the strike, to roll behind in
+var heavy_end_lag := 1.0 # Seconds a knight stays frozen at the end of an unparryable attack
+var double_attack_chance := 0.35 # Goblin swings that follow up with a second when parried
+var double_attack_hold := 0.45 # Seconds from parrying the first swing to the second's glint
 var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
 var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
@@ -134,6 +139,11 @@ const FIELDS := [
 	["Enemies", "enemy_knockback_multiplier", "Knockback taken multiplier", 0, 5, 0.05, "new (enemy .tscn knockback_speed)"],
 	["Enemies", "enemy_attack_cooldown_multiplier", "Attack cooldown multiplier", 0.1, 5, 0.05, "new (enemy .tscn attack_cooldown_length)"],
 	["Enemies", "enemy_windup_multiplier", "Windup hold multiplier", 0, 5, 0.05, "new (enemy .tscn windup_hold_min/max)"],
+	["Enemies", "unparryable_chance", "Knight unparryable attack chance", 0, 1, 0.05, "new (MeleeEnemy unparryable_attack)"],
+	["Enemies", "unparryable_window", "Knight unparryable: red star to strike (s)", 0.05, 2, 0.05, "new (Enemy._twinkle)"],
+	["Enemies", "heavy_end_lag", "Knight unparryable end lag (s)", 0, 5, 0.05, "new (MeleeEnemy._start_end_lag)"],
+	["Enemies", "double_attack_chance", "Goblin double attack chance", 0, 1, 0.05, "new (MeleeEnemy double_attack)"],
+	["Enemies", "double_attack_hold", "Double attack follow-up hold (s)", 0, 2, 0.05, "new (MeleeEnemy._parried_follow_up)"],
 	["Enemies", "wizard_burst_cooldown", "Wizard burst cooldown (s)", 0.1, 10, 0.1, "RangedEnemy.gd BURST_COOLDOWN"],
 	["Enemies", "wizard_shot_delay", "Wizard shot delay (s)", 0.05, 3, 0.05, "RangedEnemy.gd BURST_SHOT_DELAY"],
 	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],

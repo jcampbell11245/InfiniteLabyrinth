@@ -1277,6 +1277,7 @@ dizzy_offset = Vector2(0, -30)
 windup_hold_min = 0.1
 windup_hold_max = 0.6
 only_hit_during_attack = true
+unparryable_attack = true
 coin_reward = 30
 side_wall_margin = 22.0
 

@@ -43,6 +43,13 @@ var direction := "" # Direction facing; "" until first set
 var knockback := Vector2.ZERO
 var critical_chance := 0
 var _windup_held := false # The current attack has reached its windup hold
+var _next_hold := -1.0 # Seconds of windup hold for the next attack instead of a random roll; -1 rolls
+# The attack under way can't be parried (see _on_player_sword): set by a subclass as it
+# starts the attack, cleared once the attack animation ends.
+var _unparryable := false
+# Physics frame the attack under way started; -1 outside one. A player swing begun before
+# this was already coming and just hits (see _swung_first).
+var _attack_started_frame := -1
 var _twinkled_at := -1 # Ticks (ms) the current attack's twinkle showed; -1 before it does
 var _twinkle_timer: Timer # Counts down the random part of the windup hold
 var _parry_timer: Timer # Running while the parry window is open
@@ -67,6 +74,8 @@ const HITSTOP_CRIT := 0.12
 const HITSTOP_BLOCK := 0.03
 # The parry window, parried stun and knockback, sword damage and crit roll are in Tuning.
 const PARRY_SPARK := Color(1, 0.95, 0.7)
+const TWINKLE_COLOR := Color(1, 0.95, 0.7)
+const UNPARRYABLE_TWINKLE_COLOR := Color(1, 0.2, 0.15) # Warns that the attack can't be parried
 const PARRY_HITSTOP := 0.1
 const FEET_OFFSET := Vector2(0, 8) # From the origin down to where the enemy stands
 
@@ -106,6 +115,8 @@ func reset_to_spawn() -> void:
 	direction = _spawn_direction
 	z_index = _spawn_z_index
 	_end_windup_hold()
+	_next_hold = -1.0
+	_unparryable = false
 	_stun_timer.stop()
 	_show_dizzy(false)
 	_set_vulnerable(false)
@@ -159,7 +170,7 @@ func take_damage(from_direction: String, amount: float) -> void:
 		return
 	
 	# Interrupts an attack. Faces the direction the hit travels in, not the attacker.
-	if _animation_is("slash"):
+	if _animation_is("slash") && _hit_interrupts_attack():
 		_end_windup_hold()
 		_play("idle", from_direction)
 	
@@ -224,6 +235,10 @@ func _lose_health(amount: float, critical: bool) -> void:
 func _after_hit() -> void:
 	pass
 
+# Whether a hit that lands mid-attack cuts the attack short.
+func _hit_interrupts_attack() -> bool:
+	return true
+
 # Just parried (already idle and stunned); show it.
 func _on_staggered() -> void:
 	pass
@@ -275,6 +290,8 @@ func _parry_timing() -> Parry:
 		return Parry.NONE
 	if animator.frame > attack_frame: # Already struck; recovering
 		return Parry.NONE
+	if _swung_first():
+		return Parry.NONE
 	if _twinkled_at < 0 || player.swing_started_at < _twinkled_at:
 		return Parry.EARLY
 	if !_parry_timer.is_stopped():
@@ -285,13 +302,29 @@ func _parry_timing() -> Parry:
 # the window the enemy is parried; early, it blocks and staggers the player but keeps
 # attacking; late, the swing does nothing and the enemy's strike lands. Otherwise it's
 # an ordinary hit.
+#
+# An unparryable attack (red twinkle) can't be met head on: before it strikes, a sword hit
+# from the front is blocked and staggers the player, whatever the timing. One from behind
+# (the sword travelling the way the enemy faces, after rolling through it) lands.
+#
+# Either way, a swing the player started before the enemy began its attack isn't a clash:
+# the player got in first, so it's an ordinary hit (which cuts the attack short).
 func _on_player_sword(from_direction: String) -> void:
+	if _unparryable && _animation_is(_attack_action()) && animator.frame <= attack_frame \
+			&& !_swung_first():
+		if from_direction == direction:
+			take_damage(from_direction, Tuning.sword_damage)
+		else:
+			_parry_feedback(true)
+			player.stagger()
+		return
 	match _parry_timing():
 		Parry.NONE:
 			take_damage(from_direction, Tuning.sword_damage)
 		Parry.IN_WINDOW:
 			_parry_feedback()
-			stagger(from_direction)
+			if !_parried_follow_up():
+				stagger(from_direction)
 		Parry.EARLY:
 			_parry_feedback(true)
 			player.stagger()
@@ -309,6 +342,32 @@ func _parry_feedback(blocked := false) -> void:
 # The animation whose windup can be parried.
 func _attack_action() -> String:
 	return "slash"
+
+# Call as an attack starts.
+func _mark_attack_start() -> void:
+	_attack_started_frame = Engine.get_physics_frames()
+
+# The player's current swing began before the attack under way started, or on the same
+# frame (before its first frame was even drawn). Counted in physics frames, which hit-stop
+# and frame rate can't blur.
+func _swung_first() -> bool:
+	return _attack_started_frame >= 0 && player.swing_started_frame <= _attack_started_frame
+
+# Parried in the window. Return true to carry on attacking (having started a follow-up)
+# instead of being staggered.
+func _parried_follow_up() -> bool:
+	return false
+
+# Starts the attack animation over from its first frame, as a fresh attack whose windup
+# hold lasts `hold` seconds.
+func _restart_attack(hold: float) -> void:
+	_end_windup_hold()
+	_windup_held = false
+	_twinkled_at = -1
+	_next_hold = hold
+	_mark_attack_start()
+	_play(_attack_action())
+	animator.frame = 0
 
 func is_stunned() -> bool:
 	return !_stun_timer.is_stopped()
@@ -349,24 +408,31 @@ func _update_windup() -> void:
 	if !_animation_is(_attack_action()):
 		_windup_held = false
 		_twinkled_at = -1
+		_unparryable = false
+		_attack_started_frame = -1
 		return
+	if _attack_started_frame < 0: # Subclasses that don't mark their attacks
+		_mark_attack_start()
 	if _windup_held || windup_hold_max <= 0 || animator.frame != maxi(attack_frame - 1, 0):
 		return
 	_windup_held = true
 	animator.pause()
 	attack_cooldown.paused = true
-	var hold := randf_range(windup_hold_min, maxf(windup_hold_min, windup_hold_max))
+	var hold := _next_hold if _next_hold >= 0 else randf_range(windup_hold_min, maxf(windup_hold_min, windup_hold_max))
+	_next_hold = -1.0
 	if hold > 0:
 		_twinkle_timer.start(hold)
 	else:
 		_twinkle()
 
-# The "about to strike" glint, out in front of the enemy's face. Opens the parry window.
+# The "about to strike" glint, out in front of the enemy's face. Opens the parry window,
+# or for an unparryable attack the longer Tuning.unparryable_window to roll behind in.
 func _twinkle() -> void:
 	_twinkled_at = Time.get_ticks_msec()
-	_parry_timer.start(Tuning.parry_window)
+	_parry_timer.start(Tuning.unparryable_window if _unparryable else Tuning.parry_window)
 	var forward := Direction.to_vector(direction) * twinkle_offset.x
-	Juice.twinkle(self, forward + Vector2(0, twinkle_offset.y))
+	Juice.twinkle(self, forward + Vector2(0, twinkle_offset.y),
+		UNPARRYABLE_TWINKLE_COLOR if _unparryable else TWINKLE_COLOR)
 
 # Carries the attack through, unless something (like a hit) already replaced it.
 func _end_windup_hold() -> void:
