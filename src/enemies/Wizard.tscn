@@ -359,10 +359,12 @@ speed = 100.0
 attack_frame = 3
 knockback_speed = 150.0
 damage = 0.5
-health = 2.0
+health = 1.0
 blood_color = Color(0.45, 0.2, 0.6, 1)
 attack_end_frame = 4
 attack_cooldown_length = 1.0
+windup_hold_min = 0.1
+windup_hold_max = 0.5
 coin_reward = 20
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1305928878]

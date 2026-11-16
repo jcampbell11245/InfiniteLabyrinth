@@ -8,7 +8,6 @@ extends Enemy
 # shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
 # still until the reaction is over.
 
-const BLOCK_STUN_TIME := 1.0
 
 @export var only_hit_during_attack: bool
 @export var starting_direction := Direction.RIGHT
@@ -23,6 +22,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if !player.in_transition:
+		_update_windup()
 		if !_animation_is("slash"):
 			hitbox.disabled = true
 		if !_is_reacting():
@@ -81,7 +81,7 @@ func is_detected() -> bool:
 
 func _blocks_hit() -> bool:
 	if only_hit_during_attack && !_animation_is("slash"):
-		$BlockStun.start(BLOCK_STUN_TIME)
+		$BlockStun.start(Tuning.knight_block_stun)
 		Juice.play($Block)
 		_play_reaction("block")
 		return true
@@ -97,8 +97,13 @@ func _play_reaction(action: String) -> void:
 	if animator.sprite_frames.has_animation(action + "_" + direction):
 		_play(action)
 
-# True while a block plays out, or while flashing after a hit.
+func _on_staggered() -> void:
+	_play_reaction("vuln")
+
+# True while stunned from a parry, while a block plays out, or while flashing after a hit.
 func _is_reacting() -> bool:
+	if is_stunned():
+		return true
 	if _animation_is("block"):
 		return animator.is_playing()
 	if _animation_is("vuln"):

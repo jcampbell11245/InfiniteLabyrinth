@@ -81,6 +81,7 @@ speed = 150.0
 breaks_on_hit = true
 free_in_end_room = true
 impact_color = Color(1, 0.55, 0.15, 1)
+deflectable = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1583105955]
 autoplay = "default"

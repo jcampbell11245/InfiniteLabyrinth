@@ -23,7 +23,7 @@ func _on_player_died() -> void:
 	# A death while play-testing a room-creator room isn't part of a run.
 	var testing := Game.overworld != null && Game.overworld.is_test()
 	if !testing:
-		SaveData.floor_number = Game.START_FLOOR
+		SaveData.floor_number = Tuning.start_floor
 		SaveData.save()
 
 	await get_tree().create_timer(SHOW_TIME).timeout

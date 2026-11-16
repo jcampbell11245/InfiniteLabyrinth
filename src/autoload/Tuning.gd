@@ -1,0 +1,179 @@
+extends Node
+
+# Every gameplay number the debug menu (F2) can change while the game runs. Game code
+# reads these instead of its own constants, so a change applies at once (or, for values
+# only read when something spawns, to the next one spawned). The defaults below are the
+# shipped values; DebugMenu resets fields to them and exports the changed ones.
+
+signal changed(key: String)
+
+# --- Player ---
+var player_speed := 125.0 # Pixels/sec walking
+var roll_speed_multiplier := 2.0 # Times player_speed while rolling
+var roll_duration := 0.25 # Seconds; with the multiplier this sets the roll distance
+var roll_cooldown := 1.0 # Seconds after a roll ends before the next
+var hurt_invincibility := 1.0 # Seconds after being hit before the next hit counts
+var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
+var shoot_cooldown := 0.5 # Seconds between arrows
+var shoot_recoil := 45.0 # Knockback speed pushed back from each shot
+var blocked_daze_time := 0.6 # Seconds the player can't act after a swing is blocked
+var pitfall_damage := 0.5 # Hearts lost falling down a pitfall
+var base_health := 5 # Hearts before the health upgrade
+
+# --- Combat ---
+var sword_damage := 1.0
+var arrow_damage := 0.5
+var parry_window := 0.25 # Seconds from the twinkle to the strike; a sword hit in it parries
+var parried_stun_time := 1.0 # Seconds a parried enemy stands helpless
+var parried_knockback := 0.5 # Times the enemy's knockback_speed for being parried
+var stagger_damage_multiplier := 2.5 # Next hit taken while vulnerable
+var stagger_vulnerable_time := 3.0 # Seconds the vulnerability lasts
+var crit_roll_max := 30 # A hit crits when randi_range(0, crit_roll_max) < damage upgrade level
+var deflect_damage_multiplier := 1.5
+var deflect_speed_multiplier := 1.15
+var deflect_max_speed := 450.0 # Pixels/sec
+var knight_block_stun := 1.0 # Seconds a knight stands after blocking
+
+# --- Enemies (multipliers on each enemy's own scene values) ---
+var enemy_health_multiplier := 1.0
+var enemy_damage_multiplier := 1.0
+var enemy_speed_multiplier := 1.0
+var enemy_knockback_multiplier := 1.0
+var enemy_attack_cooldown_multiplier := 1.0
+var enemy_windup_multiplier := 1.0 # Random windup hold before the twinkle
+var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
+var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
+var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
+var boss_laser_cooldown := 1.0
+
+# --- Projectiles ---
+var arrow_speed := 200.0
+var fireball_speed := 150.0
+var laser_speed := 300.0
+var projectile_lifetime := 5.0 # Seconds before a shot vanishes
+
+# --- Time limit ---
+var base_time := 90 # Seconds on the level timer before the time upgrade
+var time_per_level := 30 # Seconds added per time upgrade level
+
+# --- Loot & economy ---
+var start_arrows := 10 # Arrows at the start of each floor
+var start_keys := 0 # Keys at the start of each floor
+var start_floor := 1 # Floor a new run starts on
+var arrow_drop_chance := 0.4
+var arrow_drop_max := 2
+var coin_multiplier := 1.0 # On top of the floor and looting multiplier
+var upgrade_cost_multiplier := 1.0
+var pickup_collect_distance := 6.0 # Pixels; raise it for a coin magnet
+var pickup_home_accel := 900.0 # Pixels/sec² pickups fly towards the player
+
+# --- Game feel ---
+var game_speed := 1.0 # Engine.time_scale outside hit-stop
+var hitstop_enabled := true
+var hitstop_time_scale := 0.05
+var shake_multiplier := 1.0
+
+# --- Cheats ---
+var god_mode := false # Hits and falls take no health
+var infinite_arrows := false
+var one_hit_kills := false
+var freeze_enemies := false
+var freeze_timer := false # The level timer stops counting down
+
+# Display order and metadata for the debug menu: [category, key, label, min, max, step,
+# where the value used to live (for the export)]. Booleans ignore min, max and step.
+const FIELDS := [
+	["Player", "player_speed", "Walk speed", 0, 600, 1, "Player.gd speed"],
+	["Player", "roll_speed_multiplier", "Roll speed multiplier", 0, 6, 0.05, "Player.gd (literal 2)"],
+	["Player", "roll_duration", "Roll duration (s)", 0.02, 2, 0.01, "Player.gd rolling.start(0.25)"],
+	["Player", "roll_cooldown", "Roll cooldown (s)", 0, 5, 0.05, "Player.gd roll_cooldown.start(1)"],
+	["Player", "hurt_invincibility", "Invincibility after hit (s)", 0, 5, 0.05, "Player.gd invincibility_cooldown.start(1)"],
+	["Player", "player_knockback", "Knockback when hit", 0, 600, 5, "Player.gd KNOCKBACK_SPEED"],
+	["Player", "shoot_cooldown", "Shoot cooldown (s)", 0.05, 3, 0.05, "Player.gd shoot_cooldown.start(0.5)"],
+	["Player", "shoot_recoil", "Shoot recoil", 0, 300, 5, "Player.gd SHOOT_RECOIL"],
+	["Player", "blocked_daze_time", "Daze when blocked (s)", 0, 3, 0.05, "Player.gd BLOCKED_DAZE_TIME"],
+	["Player", "pitfall_damage", "Pitfall damage", 0, 5, 0.5, "Player.gd take_damage(0.5, ...)"],
+	["Player", "base_health", "Base hearts", 1, 5, 1, "Constants.gd BASE_HEALTH"],
+
+	["Combat", "sword_damage", "Sword damage", 0, 20, 0.5, "Enemy.gd SWORD_DAMAGE"],
+	["Combat", "arrow_damage", "Arrow damage", 0, 20, 0.25, "Player.gd ARROW_DAMAGE"],
+	["Combat", "parry_window", "Parry window (s)", 0, 2, 0.01, "Enemy.gd PARRY_WINDOW"],
+	["Combat", "parried_stun_time", "Parried stun (s)", 0, 5, 0.05, "Enemy.gd PARRIED_STUN_TIME"],
+	["Combat", "parried_knockback", "Parried knockback multiplier", 0, 5, 0.05, "Enemy.gd PARRIED_KNOCKBACK"],
+	["Combat", "stagger_damage_multiplier", "Stagger damage multiplier", 1, 10, 0.1, "Constants.gd STAGGER_DAMAGE_MULTIPLIER"],
+	["Combat", "stagger_vulnerable_time", "Stagger vulnerable time (s)", 0, 10, 0.1, "Constants.gd STAGGER_VULNERABLE_TIME"],
+	["Combat", "crit_roll_max", "Crit roll max (lower = more crits)", 0, 100, 1, "Enemy.gd CRIT_ROLL_MAX"],
+	["Combat", "deflect_damage_multiplier", "Deflect damage multiplier", 0, 5, 0.05, "Constants.gd DEFLECT_DAMAGE_MULTIPLIER"],
+	["Combat", "deflect_speed_multiplier", "Deflect speed multiplier", 0, 3, 0.05, "Constants.gd DEFLECT_SPEED_MULTIPLIER"],
+	["Combat", "deflect_max_speed", "Deflect max speed", 50, 1000, 10, "Constants.gd DEFLECT_MAX_SPEED"],
+	["Combat", "knight_block_stun", "Knight block stun (s)", 0, 5, 0.05, "MeleeEnemy.gd BLOCK_STUN_TIME"],
+
+	["Enemies", "enemy_health_multiplier", "Health multiplier", 0.1, 10, 0.1, "new (enemy .tscn health)"],
+	["Enemies", "enemy_damage_multiplier", "Damage multiplier", 0, 10, 0.1, "new (enemy .tscn damage)"],
+	["Enemies", "enemy_speed_multiplier", "Speed multiplier", 0, 5, 0.05, "new (enemy .tscn speed)"],
+	["Enemies", "enemy_knockback_multiplier", "Knockback taken multiplier", 0, 5, 0.05, "new (enemy .tscn knockback_speed)"],
+	["Enemies", "enemy_attack_cooldown_multiplier", "Attack cooldown multiplier", 0.1, 5, 0.05, "new (enemy .tscn attack_cooldown_length)"],
+	["Enemies", "enemy_windup_multiplier", "Windup hold multiplier", 0, 5, 0.05, "new (enemy .tscn windup_hold_min/max)"],
+	["Enemies", "wizard_burst_cooldown", "Wizard burst cooldown (s)", 0.1, 10, 0.1, "RangedEnemy.gd BURST_COOLDOWN"],
+	["Enemies", "wizard_shot_delay", "Wizard shot delay (s)", 0.05, 3, 0.05, "RangedEnemy.gd BURST_SHOT_DELAY"],
+	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
+	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
+
+	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
+	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],
+	["Projectiles", "laser_speed", "Laser speed", 10, 1000, 10, "Laser.tscn speed"],
+	["Projectiles", "projectile_lifetime", "Lifetime (s)", 0.5, 30, 0.5, "Projectile.gd LIFETIME"],
+
+	["Timer", "base_time", "Base time limit (s)", 5, 1800, 5, "LevelCountdown.gd BASE_TIME"],
+	["Timer", "time_per_level", "Seconds per time upgrade", 0, 300, 5, "LevelCountdown.gd TIME_PER_LEVEL"],
+
+	["Loot", "start_arrows", "Arrows per floor", 0, 99, 1, "Constants.gd START_ARROWS"],
+	["Loot", "start_keys", "Keys per floor", 0, 3, 1, "Game.gd DEBUG_START_KEYS"],
+	["Loot", "start_floor", "Run start floor", 1, 10, 1, "Game.gd START_FLOOR"],
+	["Loot", "arrow_drop_chance", "Arrow drop chance", 0, 1, 0.05, "Constants.gd ARROW_DROP_CHANCE"],
+	["Loot", "arrow_drop_max", "Arrow drop max", 1, 10, 1, "Constants.gd ARROW_DROP_MAX"],
+	["Loot", "coin_multiplier", "Coin multiplier", 0, 20, 0.1, "new (Enemy._coin_multiplier)"],
+	["Loot", "upgrade_cost_multiplier", "Upgrade cost multiplier", 0, 5, 0.05, "new (UpgradeMenu.gd COSTS)"],
+	["Loot", "pickup_collect_distance", "Pickup collect distance", 1, 400, 1, "Pickup.gd COLLECT_DISTANCE"],
+	["Loot", "pickup_home_accel", "Pickup homing accel", 50, 5000, 50, "Pickup.gd HOME_ACCEL"],
+
+	["Feel", "game_speed", "Game speed", 0.1, 3, 0.05, "new (Engine.time_scale)"],
+	["Feel", "hitstop_enabled", "Hit-stop", 0, 0, 0, "new (Juice.hitstop)"],
+	["Feel", "hitstop_time_scale", "Hit-stop time scale", 0, 1, 0.01, "Juice.gd HITSTOP_TIME_SCALE"],
+	["Feel", "shake_multiplier", "Screen shake multiplier", 0, 5, 0.1, "new (Juice.shake)"],
+
+	["Cheats", "god_mode", "God mode", 0, 0, 0, "new"],
+	["Cheats", "infinite_arrows", "Infinite arrows", 0, 0, 0, "new"],
+	["Cheats", "one_hit_kills", "One-hit kills", 0, 0, 0, "new"],
+	["Cheats", "freeze_enemies", "Freeze enemies", 0, 0, 0, "new"],
+	["Cheats", "freeze_timer", "Freeze level timer", 0, 0, 0, "new"],
+]
+
+var _defaults := {} # key -> shipped value, read before anything can change it
+
+func _ready() -> void:
+	for field: Array in FIELDS:
+		_defaults[field[1]] = get(field[1])
+
+func default_of(key: String) -> Variant:
+	return _defaults[key]
+
+func is_default(key: String) -> bool:
+	return get(key) == _defaults[key]
+
+func set_value(key: String, value: Variant) -> void:
+	if get(key) == value:
+		return
+	set(key, value)
+	changed.emit(key)
+
+func reset(key: String) -> void:
+	set_value(key, _defaults[key])
+
+func reset_all() -> void:
+	for field: Array in FIELDS:
+		reset(field[1])
+
+# The level timer's full length for the current time upgrade.
+func time_limit() -> float:
+	return base_time + SaveData.time_level * time_per_level

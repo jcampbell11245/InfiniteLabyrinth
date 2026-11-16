@@ -10,7 +10,8 @@ const START_ROOM := 60
 const END_ROOM := 61
 const BOSS_ROOM := 62
 
-const BASE_HEALTH := 5 # Hearts before the health upgrade
+# Health, arrows, parrying and deflecting numbers moved to the Tuning autoload so the
+# debug menu (F2) can change them while the game runs.
 
 # Physics layers, matching Project Settings > Layer Names > 2D Physics.
 enum Layer {

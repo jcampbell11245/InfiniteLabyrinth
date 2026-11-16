@@ -20,7 +20,6 @@ const RESPAWN_PROBE := Vector2(0, 14) # Point below the player's origin that pic
 const RESPAWN_OFFSET := Vector2(0, -5) # Player's origin relative to the respawn tile's centre
 
 # How long enemies stay frozen after the player starts walking through a door, by direction.
-const KNOCKBACK_SPEED := 150.0 # Pixels/sec the player is pushed when hit; decays at 300/sec
 
 const DOOR_PULL := 10.0 # Per second: how hard the auto-walk centres the player in a doorway
 
@@ -30,16 +29,17 @@ const HURTBOX_Y := -2.0 # Hurtbox centre; the sprite spans about -19.5..15
 const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of centre
 
 const Arrow := preload("res://src/projectiles/Arrow.tscn")
-const ARROW_DAMAGE := 0.5 # Enemy health per arrow; a sword hit takes 1
 
 # Game feel
-const SHOOT_RECOIL := 45.0 # Knockback speed pushed back from each shot
 const HURT_HITSTOP := 0.08
 const HURT_FLASH := Color(1, 0.35, 0.35)
 const GHOST_INTERVAL := 0.04 # Seconds between afterimages while rolling
 const GHOST_FADE := 0.2
 const FEET := Vector2(0, 13) # From the origin to the player's feet
 const DUST := Color(0.75, 0.7, 0.6)
+
+# Parrying: see Enemy._on_player_sword.
+const DIZZY_OFFSET := Vector2(0, -24) # Over the player's head
 
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
@@ -64,8 +64,9 @@ class FrameInput:
 	var melee := false
 	var ranged := false
 
-var speed := 125 # Pixels/sec
-var health: float = Constants.BASE_HEALTH # In hearts; halves happen
+# Pixels/sec. Tuning values (roll, damage, cooldowns and more) are read from Tuning.
+var speed: float = Tuning.player_speed
+var health: float = Tuning.base_health # In hearts; halves happen
 var current_room := Constants.START_ROOM
 var direction := Direction.RIGHT # Direction the player is facing
 
@@ -75,6 +76,12 @@ var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene
 var _ghost_timer := 0.0
 var _roll_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
+
+# Parrying
+var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
+var _daze_timer: Timer # Running while dazed from a blocked swing
+var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
+var _dizzy: Node2D # Stars shown while dazed
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -97,14 +104,25 @@ var _door_lane: Variant = null
 
 func _ready() -> void:
 	z_index = 2
-	health = SaveData.health_level + Constants.BASE_HEALTH
+	health = max_health()
+	Tuning.changed.connect(_on_tuning_changed)
 	Juice.add_flash(animator)
 	_roll_sound = _add_sound(ROLL_DB)
 	_land_sound = _add_sound(PIT_LAND_DB)
+	_daze_timer = Timer.new()
+	_daze_timer.one_shot = true
+	_daze_timer.timeout.connect(Juice.set_grey.bind(animator, false))
+	_daze_timer.timeout.connect(_show_dizzy.bind(false))
+	add_child(_daze_timer)
+	_vulnerable_timer = Timer.new()
+	_vulnerable_timer.one_shot = true
+	_vulnerable_timer.timeout.connect(_set_vulnerable.bind(false))
+	add_child(_vulnerable_timer)
 
 func _physics_process(delta: float) -> void:
 	if !auto_walking:
-		var input := _read_input()
+		# Dazed, the player can't move, roll or attack.
+		var input := _read_input() if _daze_timer.is_stopped() else FrameInput.new()
 		_handle_input(input)
 		_update_animation(input)
 		_update_hitboxes()
@@ -141,13 +159,20 @@ func _read_input() -> FrameInput:
 # Movement, rolling, attacks and arrows. Runs before _update_animation, so the checks
 # here see the animation from the previous frame.
 func _handle_input(input: FrameInput) -> void:
+	# Out of arrows, the shot never happens; the HUD counter shakes instead.
+	if input.ranged && Game.arrows <= 0 && !Tuning.infinite_arrows:
+		input.ranged = false
+		if _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
+			Game.arrows_empty.emit()
+			shoot_cooldown.start(Tuning.shoot_cooldown)
+
 	if rolling.time_left == 0:
 		velocity = Vector2.ZERO
 
 	if input.roll && rolling.time_left == 0 && roll_cooldown.time_left == 0:
 		velocity += Direction.to_vector(direction)
-		speed *= 2
-		rolling.start(0.25)
+		speed = Tuning.player_speed * Tuning.roll_speed_multiplier
+		rolling.start(Tuning.roll_duration)
 		# Rolls pass through enemies (to get behind a knight mid-slash), never walls.
 		set_collision_mask_value(Constants.Layer.ENEMY, false)
 		hitbox.disabled = true
@@ -163,6 +188,7 @@ func _handle_input(input: FrameInput) -> void:
 
 	if input.melee && _action() not in [Action.SLASH, Action.DAMAGE]:
 		hitbox.disabled = false
+		swing_started_at = Time.get_ticks_msec()
 		Juice.play($Slash)
 
 	if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
@@ -170,11 +196,14 @@ func _handle_input(input: FrameInput) -> void:
 		get_parent().add_child(arrow)
 		arrow.position = position
 		arrow.direction = direction
-		arrow.damage = ARROW_DAMAGE
-		shoot_cooldown.start(0.5)
+		arrow.damage = Tuning.arrow_damage
+		arrow.speed = Tuning.arrow_speed
+		if !Tuning.infinite_arrows:
+			Game.add_arrows(-1)
+		shoot_cooldown.start(Tuning.shoot_cooldown)
 		Juice.play($Shoot)
 		var aim := Direction.to_vector(direction)
-		knockback = -aim * SHOOT_RECOIL
+		knockback = -aim * Tuning.shoot_recoil
 		Juice.burst(get_parent(), global_position + aim * 10, Color(1, 0.95, 0.7), 5, 60.0,
 			aim, 1.5, 0.15)
 
@@ -231,13 +260,13 @@ func _play(action: Action, dir := "") -> void:
 # the knockback. Pass "" for damage with no flinch or knockback (falling down a pitfall).
 func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 	if invincibility_cooldown.time_left == 0:
-		invincibility_cooldown.start(1)
+		invincibility_cooldown.start(Tuning.hurt_invincibility)
 		animator.modulate.a = 0.5
 		Juice.flash(animator, 0.15, HURT_FLASH)
 
 		if from_direction != "":
 			_play(Action.DAMAGE, from_direction)
-			knockback = Direction.to_vector(from_direction) * KNOCKBACK_SPEED
+			knockback = Direction.to_vector(from_direction) * Tuning.player_knockback
 			Juice.hitstop(HURT_HITSTOP)
 			Juice.shake(Juice.SHAKE_MEDIUM)
 			Juice.burst(get_parent(), global_position, Color(0.8, 0.1, 0.1), 8, 70.0,
@@ -246,7 +275,12 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 		if !mute:
 			Juice.play($Hit, 0.05)
 
-		health -= damage
+		# Pitfall falls (no direction) aren't hits, so they don't use up a vulnerability.
+		if from_direction != "" && is_vulnerable():
+			damage *= Tuning.stagger_damage_multiplier
+			_set_vulnerable(false)
+		if !Tuning.god_mode:
+			health -= damage
 		Game.health_changed.emit(health)
 		if health <= 0:
 			die()
@@ -303,6 +337,15 @@ func _update_roll_ghosts(delta: float) -> void:
 	tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE)
 	tween.tween_callback(ghost.queue_free)
 
+# Hearts at full health, with the health upgrade.
+func max_health() -> int:
+	return SaveData.health_level + Tuning.base_health
+
+# Walk speed changes apply at once, unless mid-roll (the roll's end eases back to it).
+func _on_tuning_changed(key: String) -> void:
+	if key == "player_speed" && rolling.time_left == 0 && speed != 0:
+		speed = Tuning.player_speed
+
 func _on_level_countdown_timeout() -> void:
 	die()
 
@@ -312,7 +355,53 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
 	elif area.get_name() == "ProjectileHitbox":
-		take_damage(area.get_parent().damage, area.get_parent().direction, false)
+		var shot: Projectile = area.get_parent()
+		if shot.deflectable:
+			_take_deflectable_hit.call_deferred(shot)
+		else:
+			take_damage(shot.damage, shot.direction, false)
+
+# A deflectable shot touched the hurtbox. Waits for the end of the frame, by when the shot
+# has decided whether the sword touching it this frame sent it back.
+func _take_deflectable_hit(shot: Projectile) -> void:
+	if is_instance_valid(shot) && shot.hostile_to_player && !_sword_is_on(shot):
+		take_damage(shot.damage, shot.direction, false)
+
+func _sword_is_on(shot: Projectile) -> bool:
+	return is_slashing() && $HitboxPivot/Hitbox.overlaps_area(shot.get_node("ProjectileHitbox"))
+
+# Mid-swing with the sword out.
+func is_slashing() -> bool:
+	return _action() == Action.SLASH && !hitbox.disabled
+
+# An enemy blocked a swing made too early, before its twinkle: the swing ends, the
+# player is dazed (can't act) for a moment, and their next hit taken is multiplied.
+func stagger() -> void:
+	_play(Action.IDLE)
+	hitbox.set_deferred("disabled", true) # Called from a collision callback
+	velocity = Vector2.ZERO
+	_daze_timer.start(Tuning.blocked_daze_time)
+	Juice.set_grey(animator, true) # Greyed out while dazed, to show the player can't act
+	_set_vulnerable(true)
+	_show_dizzy(true)
+
+func is_dazed() -> bool:
+	return !_daze_timer.is_stopped()
+
+func is_vulnerable() -> bool:
+	return !_vulnerable_timer.is_stopped()
+
+func _set_vulnerable(on: bool) -> void:
+	if on:
+		_vulnerable_timer.start(Tuning.stagger_vulnerable_time)
+	else:
+		_vulnerable_timer.stop()
+
+func _show_dizzy(on: bool) -> void:
+	if is_instance_valid(_dizzy):
+		_dizzy.queue_free()
+	if on:
+		_dizzy = Juice.dizzy(self, DIZZY_OFFSET)
 
 func _on_invincibility_cooldown_timeout() -> void:
 	animator.modulate.a = 1
@@ -330,14 +419,13 @@ func _on_respawn_cooldown_timeout() -> void:
 	visible = true
 	Game.room_by_id(current_room).player_active = true
 	position = last_tile
-	take_damage(0.5, "", true)
+	take_damage(Tuning.pitfall_damage, "", true)
 	_land_sound.volume_db = PIT_LAND_DB
 	_play_random(_land_sound, LANDINGS, 0.05)
 	Juice.burst(get_parent(), global_position + FEET, DUST, 10, 40.0, Vector2.ZERO, 2.0, 0.4)
 
 func _on_rolling_timeout() -> void:
-	@warning_ignore("integer_division")
-	create_tween().tween_property(self, "speed", speed / 2, 0.25) \
+	create_tween().tween_property(self, "speed", Tuning.player_speed, 0.25) \
 		.set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	_play(Action.IDLE)
 	Juice.burst(get_parent(), global_position + FEET, DUST, 5, 30.0, Vector2.ZERO, 1.5, 0.3)
@@ -346,7 +434,7 @@ func _on_rolling_timeout() -> void:
 	set_collision_mask_value(Constants.Layer.ENEMY, true)
 	hitbox.disabled = false
 	hurtbox.disabled = false
-	roll_cooldown.start(1)
+	roll_cooldown.start(Tuning.roll_cooldown)
 
 # --- Room transitions ---
 

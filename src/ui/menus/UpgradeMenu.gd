@@ -49,23 +49,30 @@ func show_menu() -> void:
 	get_tree().paused = new_pause_state
 	visible = new_pause_state
 	for i in range(UPGRADES.size()):
-		get_node(UPGRADES[i].cost).text = str(COSTS[_level(i)])
+		get_node(UPGRADES[i].cost).text = str(cost(_level(i)))
 	_select(0)
 
 func buy(index: int) -> void:
 	var level := _level(index)
-	if level == MAX_LEVEL || Game.coins < COSTS[level]:
+	if level == MAX_LEVEL || Game.coins < cost(level):
 		return
-	Game.add_coins(-COSTS[level])
+	Game.add_coins(-cost(level))
 	SaveData.set(UPGRADES[index].level, level + 1)
 	get_node(UPGRADES[index].meter).animation = str(level + 2)
-	get_node(UPGRADES[index].cost).text = str(COSTS[level + 1])
+	get_node(UPGRADES[index].cost).text = str(cost(level + 1))
 	SaveData.save()
 
 func continue_to_next_floor() -> void:
 	show_menu()
 	SaveData.save()
 	Game.overworld.reset_world()
+
+# Price of the next level up from `level`, scaled by the debug menu's cost multiplier,
+# or "MAX" at the top.
+func cost(level: int) -> Variant:
+	if level >= MAX_LEVEL:
+		return COSTS[MAX_LEVEL]
+	return roundi(COSTS[level] * Tuning.upgrade_cost_multiplier)
 
 func _level(index: int) -> int:
 	return SaveData.get(UPGRADES[index].level)
