@@ -20,6 +20,7 @@ const FONT_SIZE := 26
 const GRID_COLOR := Color(1, 1, 1, 0.08)
 const HOVER_COLOR := Color(1, 0.9, 0.3, 0.9)
 const ERASE_COLOR := Color(1, 0.3, 0.3, 0.9)
+const SELECTED_COLOR := Color(0.95, 0.8, 0.35) # Background of the selected tool and clear condition
 
 # Each tool: [label, what it paints ("cell", "object" or "erase"), value].
 const TOOLS := [
@@ -43,6 +44,8 @@ var _painting := 0 # Mouse button held down over the floor (MOUSE_BUTTON_LEFT/RI
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
 var _tool_buttons: Array[Button] = []
 var _info: Label
+var _warning: Label
+var _clear_buttons := {} # "none"/"enemies"/"switches" -> its Button
 var _status: Label
 var _open_folder: Button
 var _export_dir := "" # Absolute folder the last export went to
@@ -242,8 +245,15 @@ func _sprite_for(kind: String) -> AnimatedSprite2D:
 	return (_sprite_cache[kind] as AnimatedSprite2D).duplicate()
 
 func _refresh_info() -> void:
-	_info.text = "Enemies: %d\nSwitches: %d\nOpens by: %s" % [
-		design.enemy_count(), design.count("switch"), design.completion()]
+	_info.text = "Enemies: %d\nSwitches: %d" % [design.enemy_count(), design.count("switch")]
+	for condition: String in _clear_buttons:
+		_clear_buttons[condition].button_pressed = condition == design.clear_by
+	_warning.text = design.clear_problem()
+	_warning.visible = _warning.text != ""
+
+func _set_clear_by(condition: String) -> void:
+	design.clear_by = condition
+	_refresh_info()
 
 # --- UI ---
 
@@ -281,6 +291,24 @@ func _build_ui() -> void:
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
+	var clear_label := Label.new()
+	clear_label.text = "Room clears by:"
+	column.add_child(clear_label)
+	var choices := HBoxContainer.new()
+	column.add_child(choices)
+	var clear_group := ButtonGroup.new()
+	for condition: String in ["none", "enemies", "switches"]:
+		var button := _add_button(choices, condition.capitalize(), _set_clear_by.bind(condition))
+		button.toggle_mode = true
+		button.button_group = clear_group
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_clear_buttons[condition] = button
+	_warning = Label.new()
+	_warning.add_theme_color_override("font_color", Color(1, 0.6, 0.3))
+	_warning.add_theme_font_size_override("font_size", 20)
+	_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	column.add_child(_warning)
 	column.add_child(HSeparator.new())
 	_add_button(column, "Play  (F5)", _play)
 	_add_button(column, "Export", _export)
@@ -306,6 +334,15 @@ func _add_button(parent: Control, text: String, action: Callable) -> Button:
 	button.text = text
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.focus_mode = Control.FOCUS_NONE # Keys belong to the editor, not a focused button
+	# The selected tool or clear condition stands out; the default pressed look is a shade darker.
+	var selected := StyleBoxFlat.new()
+	selected.bg_color = SELECTED_COLOR
+	selected.set_content_margin_all(4)
+	selected.content_margin_left = 6
+	button.add_theme_stylebox_override("pressed", selected)
+	button.add_theme_stylebox_override("hover_pressed", selected)
+	button.add_theme_color_override("font_pressed_color", Color.BLACK)
+	button.add_theme_color_override("font_hover_pressed_color", Color.BLACK)
 	button.pressed.connect(action)
 	parent.add_child(button)
 	return button

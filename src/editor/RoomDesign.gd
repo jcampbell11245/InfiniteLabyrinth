@@ -41,6 +41,7 @@ static var current: RoomDesign
 
 var cells := PackedByteArray() # Cell per floor index, row by row
 var objects := {} # Vector2i floor index -> object kind (a key of OBJECT_SCENES)
+var clear_by := "none" # What opens the room's doors: "none" (never locked), "enemies" or "switches"
 
 func _init() -> void:
 	cells.resize(SIZE * SIZE)
@@ -93,13 +94,18 @@ func count(kind: String) -> int:
 func enemy_count() -> int:
 	return objects.size() - count("switch")
 
-# What opens the room: its switches if it has any, else beating its enemies.
+# What opens the room, as Room.completion_criteria: beating its enemies, hitting its
+# switches, or nothing ("none": the doors never lock).
 func completion() -> String:
-	if count("switch") > 0:
-		return "switches"
-	if enemy_count() > 0:
-		return "enemies"
-	return "none"
+	return clear_by
+
+# Why the room would open the moment the player walks in, or "" if it wouldn't.
+func clear_problem() -> String:
+	if clear_by == "switches" && count("switch") == 0:
+		return "No switches: the room opens straight away"
+	if clear_by == "enemies" && enemy_count() == 0:
+		return "No enemies: the room opens straight away"
+	return ""
 
 # Where the play-test puts the player: the free floor cell nearest the middle.
 func spawn_index() -> Vector2i:
@@ -163,17 +169,16 @@ func _paint_stalagmite(stalagmites: TileMap, index: Vector2i) -> void:
 func build_room() -> Room:
 	var room: Room = (load(BLANK_ROOM) as PackedScene).instantiate()
 	paint_all(room)
-	var switches: Node2D = null
+	# Every room gets a Switches node, even with none, since a switch room reads it.
+	var switches := Node2D.new()
+	switches.name = "Switches"
+	switches.set_script(load(SWITCHES_SCRIPT))
+	room.add_child(switches)
 	for index: Vector2i in objects:
 		var kind: String = objects[index]
 		var node: Node2D = (load(OBJECT_SCENES[kind]) as PackedScene).instantiate()
 		node.position = object_origin(kind, index)
 		if kind == "switch":
-			if switches == null:
-				switches = Node2D.new()
-				switches.name = "Switches"
-				switches.set_script(load(SWITCHES_SCRIPT))
-				room.add_child(switches)
 			switches.add_child(node, true)
 		else:
 			room.add_child(node, true)
