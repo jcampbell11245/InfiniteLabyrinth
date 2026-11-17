@@ -12,7 +12,7 @@ var player_speed := 125.0 # Pixels/sec walking
 var roll_speed_multiplier := 2.0 # Times player_speed while rolling
 var roll_duration := 0.2 # Seconds; with the multiplier this sets the roll distance (just through an enemy)
 var roll_cooldown := 0.5 # Seconds after a roll ends before the next
-var hurt_invincibility := 1.0 # Seconds after being hit before the next hit counts
+var hurt_invincibility := 0.7 # Seconds after being hit before the next hit counts
 var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
 var shoot_cooldown := 0.5 # Seconds between arrows
 var sword_cooldown := 0.3 # Seconds after a swing ends before the next can start
@@ -51,7 +51,7 @@ var unparryable_chance := 0.3 # Knight swings that glint red and can't be parrie
 var unparryable_window := 0.5 # Seconds from the red twinkle to the strike, to roll behind in
 var heavy_end_lag := 1.0 # Seconds a knight stays frozen at the end of an unparryable attack
 var double_attack_chance := 0.35 # Goblin swings that follow up with a second when parried
-var double_attack_hold := 0.45 # Seconds from parrying the first swing to the second's glint
+var double_attack_hold := 0.35 # Seconds from parrying the first swing to the second's glint
 var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
 var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
@@ -62,14 +62,17 @@ var engage_margin := 4.0 # Pixels inside the shorter of the two attack reaches t
 var pack_max_attackers := 1 # Enemies in a group allowed to step in and swing at once
 var pack_swings_min := 1 # Swings per turn before stepping back out (groups only)
 var pack_swings_max := 2
-var pack_turn_gap_min := 0.2 # Seconds between one attacker leaving and the next stepping in
-var pack_turn_gap_max := 0.6
+var pack_turn_gap_min := 0.1 # Seconds between one attacker leaving and the next stepping in
+var pack_turn_gap_max := 0.35
 var pack_turn_timeout := 3.0 # Seconds an attacker gets to reach the player before giving up its turn
 var pack_ring_radius := 70.0 # Pixels from the player that waiting enemies circle at
 var pack_circle_speed := 0.6 # Times the enemy's speed while circling
 var alert_radius := 100.0 # Pixels: noticing the player alerts the rest of the room this close
 var threat_reach := 28.0 # Pixels past its swing distance at which a player closing in sets off its windup
 var counter_attack := true # A hit outside a parry makes it swing back at once, cooldown or not
+var roam_speed := 0.5 # Times the enemy's speed while roaming, before it notices the player
+var roam_pause_min := 0.5 # Seconds it stands at each end of its path, or between wanders in its area
+var roam_pause_max := 1.5
 
 # --- Projectiles ---
 var arrow_speed := 200.0
@@ -169,6 +172,9 @@ const FIELDS := [
 	["AI", "alert_radius", "Alert others radius (px)", 0, 300, 1, "new (MeleeEnemy._alert_pack)"],
 	["AI", "threat_reach", "Windup on approach reach (px)", 0, 80, 1, "new (MeleeEnemy._player_in_threat_range)"],
 	["AI", "counter_attack", "Counter-attack when hit", 0, 0, 0, "new (MeleeEnemy._after_hit)"],
+	["AI", "roam_speed", "Roam speed multiplier", 0, 2, 0.05, "new (MeleeEnemy._roam)"],
+	["AI", "roam_pause_min", "Roam pause min (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],
+	["AI", "roam_pause_max", "Roam pause max (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],
 
 	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
 	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],

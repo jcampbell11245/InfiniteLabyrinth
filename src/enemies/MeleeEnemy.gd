@@ -57,6 +57,15 @@ extends Enemy
 # Enemies whose sprites have them also react to hits: "block" plays once when a hit is
 # shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
 # still until the reaction is over.
+#
+# Roaming (roam_mode, off unless a room sets it): until it notices the player, the enemy
+# walks instead of standing still, at Tuning.roam_speed, facing the way it walks (so its
+# detection half-circle sweeps with it). PATH walks from where it starts through each
+# point of roam_path and back again, over and over, pausing at each end. AREA wanders
+# between random spots inside roam_area, pausing at each. Noticing the player (seeing them,
+# being hit by anything, an arrow included, or being alerted by another enemy) ends it, and
+# it fights as usual. It only roams while the player is in its room; leaving resets it to
+# where it started, like everything else.
 
 const SLOT_TOLERANCE := 6.0 # Pixels off the player's row or column that still lines up a swing
 const ARRIVE_DISTANCE := 3.0 # Pixels from a circle target that count as there
@@ -78,6 +87,12 @@ const SLASH_COVER_MARGIN := 3.0 # Pixels the slash reaches past the player's swo
 
 const DEFAULT_DETECTION_RADIUS := 64.0
 
+enum Roam { NONE, PATH, AREA }
+const ROAM_ARRIVE := 1.5 # Pixels from a roam target that count as there
+const ROAM_STUCK_TIME := 1.0 # Seconds without getting anywhere before giving up on a roam target
+const ROAM_AREA_MARGIN := 4.0 # Pixels inside roam_area that wander spots keep to
+const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting and trying again
+
 @export var only_hit_during_attack: bool
 # Pixels: notices a player this close anywhere but behind it (see _sees_player_nearby).
 # Set per enemy in each room; the room creator draws it as a circle you can drag.
@@ -93,6 +108,13 @@ const DEFAULT_DETECTION_RADIUS := 64.0
 @export var engage_hesitation_max := 0.0
 # Chance it starts a windup at a player rushing into range; rolled once per approach.
 @export_range(0, 1) var rush_windup_chance := 1.0
+# What it does before noticing the player; see Roaming above. Set per enemy in each room
+# with the room creator.
+@export var roam_mode := Roam.NONE
+# PATH: room-local positions (like `position`) it walks through after its starting spot.
+@export var roam_path := PackedVector2Array()
+# AREA: room-local rectangle its feet wander in.
+@export var roam_area := Rect2()
 
 const GUARD_FLASH := Color(0.75, 0.85, 1) # A goblin catching a hit on its blade
 const GUARD_SPARK := Color(1, 0.9, 0.5)
@@ -119,6 +141,13 @@ var _counter_pending := false # Just hit; swing back on the next physics frame
 var _block_counter_pending := false # Just blocked a sword; swing back on the next physics frame
 var _hesitation_left := -1.0 # Seconds before swinging; -1 until rolled for this swing
 var _rush_roll := -1 # 1 if it winds up at the player's current rush, 0 if not, -1 unrolled
+var _roam_home := Vector2.ZERO # Where it starts: the first point of a PATH
+var _roam_index := 1 # PATH: point heading for, 0 being _roam_home
+var _roam_step := 1 # PATH: +1 heading out along the path, -1 heading back
+var _roam_target := Vector2.ZERO # Room-local position heading for
+var _has_roam_target := false
+var _roam_wait := 0.0 # Seconds left standing still before walking on
+var _roam_stuck := 0.0 # Seconds without getting closer to _roam_target
 
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var detection_zone: Area2D = $DetectionZonePivot/DetectionZone
@@ -127,6 +156,7 @@ func _ready() -> void:
 	super()
 	_end_lag = _add_timer(_on_end_lag_over)
 	_cover_player_reach.call_deferred() # Once the player's shapes are in place
+	_roam_home = position
 	direction = starting_direction
 	_play("idle")
 
@@ -178,6 +208,8 @@ func _physics_process(delta: float) -> void:
 		_fight(coordinator, delta)
 	elif engaged:
 		_circle(coordinator, delta)
+	elif _can_roam():
+		_roam(delta)
 
 	_apply_knockback(delta)
 
@@ -635,14 +667,121 @@ func _on_reset() -> void:
 	var block_stun: Timer = get_node_or_null("BlockStun")
 	if block_stun != null:
 		block_stun.stop()
+	_roam_index = 1
+	_roam_step = 1
+	_has_roam_target = false
+	_roam_wait = 0.0
+	_roam_stuck = 0.0
+
+# --- Roaming (see the top of the file) ---
+
+# Hasn't noticed the player, who is in the room (not down a pitfall), and has somewhere to go.
+func _can_roam() -> bool:
+	if noticed || !room.player_active || !is_player_in_room():
+		return false
+	match roam_mode:
+		Roam.PATH: return !roam_path.is_empty()
+		Roam.AREA: return roam_area.has_area()
+	return false
+
+func _roam(delta: float) -> void:
+	if _roam_wait > 0:
+		_roam_wait -= delta
+		return
+	if !_has_roam_target:
+		_has_roam_target = _pick_roam_target()
+		_roam_stuck = 0.0
+		if !_has_roam_target: # Nowhere open to go; try again in a moment
+			_roam_wait = Tuning.roam_pause_min
+			return
+	var before := position
+	var distance_before := position.distance_to(_roam_target)
+	var walk_speed := speed * Tuning.roam_speed
+	_walk_to(_roam_target, walk_speed, delta, ROAM_ARRIVE)
+	_face_roam(_roam_target - before)
+	var distance_now := position.distance_to(_roam_target)
+	if distance_now <= ROAM_ARRIVE:
+		_roam_arrived()
+		return
+	# Blocked by a wall or another enemy, or only creeping along one: give up on this spot
+	# after a while.
+	var progress := distance_before - distance_now
+	_roam_stuck = 0.0 if progress >= walk_speed * delta * 0.25 else _roam_stuck + delta
+	if _roam_stuck >= ROAM_STUCK_TIME:
+		_roam_arrived()
+
+# PATH: the next point along it. AREA: a random open spot in the area. False if there's none.
+# Either way kept side_wall_margin off the side walls, where it can't go.
+func _pick_roam_target() -> bool:
+	if roam_mode == Roam.PATH:
+		_roam_target = _off_side_walls(_roam_point(_roam_index))
+		return true
+	var area := roam_area.grow(-ROAM_AREA_MARGIN)
+	if !area.has_area():
+		area = roam_area
+	var feet := _feet()
+	var nav := room.nav()
+	for i in range(ROAM_PICK_TRIES):
+		var spot := area.position + Vector2(randf() * area.size.x, randf() * area.size.y)
+		if nav.is_open(spot):
+			_roam_target = _off_side_walls(spot - feet)
+			return true
+	return false
+
+func _off_side_walls(point: Vector2) -> Vector2:
+	if side_wall_margin > 0:
+		var floor_rect := room.floor_rect
+		point.x = clampf(point.x, floor_rect.position.x + side_wall_margin, floor_rect.end.x - side_wall_margin)
+	return point
+
+# PATH point `i`: 0 is where it started, then roam_path's points in order.
+func _roam_point(i: int) -> Vector2:
+	return _roam_home if i == 0 else roam_path[i - 1]
+
+# Reached its target (or gave up on it). On a PATH, moves on to the next point, turning
+# round at each end and pausing there; in an AREA, pauses before picking a new spot.
+func _roam_arrived() -> void:
+	_has_roam_target = false
+	if roam_mode == Roam.PATH:
+		var last := roam_path.size() # Index of the far end; 0 is the near one
+		var at_end := _roam_index == 0 || _roam_index == last
+		if _roam_index + _roam_step < 0 || _roam_index + _roam_step > last:
+			_roam_step = -_roam_step
+		_roam_index = clampi(_roam_index + _roam_step, 0, last)
+		if !at_end:
+			return
+	_roam_wait = randf_range(Tuning.roam_pause_min, maxf(Tuning.roam_pause_min, Tuning.roam_pause_max))
+
+# Faces the way it's heading (sticky near a diagonal, so it doesn't flicker), drawn in front
+# of the player when below them.
+func _face_roam(heading: Vector2) -> void:
+	if heading.length() < 0.01:
+		return
+	var horizontal := direction == Direction.LEFT || direction == Direction.RIGHT
+	if horizontal && absf(heading.y) > absf(heading.x) * AXIS_STICKINESS:
+		horizontal = false
+	elif !horizontal && absf(heading.x) > absf(heading.y) * AXIS_STICKINESS:
+		horizontal = true
+	if horizontal:
+		direction = Direction.LEFT if heading.x < 0 else Direction.RIGHT
+	else:
+		direction = Direction.UP if heading.y < 0 else Direction.DOWN
+	z_index = 10 if position.y > _player_position().y else 1
+	_point_pivots()
 
 # --- Guarding (see the top of the file) ---
 
 func _on_player_sword(from_direction: String) -> void:
 	if _can_guard(from_direction):
-		_block_sword(from_direction)
+		_guard.call_deferred(from_direction, player.swing_started_frame)
 	else:
 		super(from_direction)
+
+# Guards against the swing begun on physics frame `swing_frame`, unless it parried another
+# enemy, in which case it passes through untouched (see Enemy._block_player_swing).
+func _guard(from_direction: String, swing_frame: int) -> void:
+	if !player.swing_parried(swing_frame):
+		_block_sword(from_direction)
 
 # Not a knight, not swinging (or recovering from one), not dazed, and facing a player it
 # has already noticed. A swing the player started before this enemy's attack began counts

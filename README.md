@@ -21,6 +21,17 @@ the side it watches, since enemies can't see behind themselves. Wizards have no 
 react to the player anywhere in the room. In room scenes the value is each enemy's
 `detection_radius`.
 
+**Roaming** sets what the selected goblin or knight does before it notices the player:
+**None** (stands still, the default and what every existing room uses), **Path** or **Area**.
+Picking Path or Area switches to the Select tool. For a path, click or drag on the floor to
+draw it from the enemy outwards (dragging back over the last point takes it off), and
+right-click a point to remove it; the enemy walks it there and back, pausing at each end.
+For an area, drag the box's edges or corners to resize it; the enemy wanders between random
+spots inside it. Seeing the player, being hit (arrows included) or being alerted by another
+enemy ends roaming and it fights as usual. Wizards can't roam, since they react to the
+player anywhere in the room. In room scenes these are each enemy's `roam_mode`, `roam_path`
+and `roam_area`; roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
+
 **Tileset** switches the preview (and the play-test) between each floor's art, so a room can
 be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10 that the room
 can appear on (floors after 10 follow Floor 10), with Every floor and No floors to set them

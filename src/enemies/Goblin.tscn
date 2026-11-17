@@ -609,9 +609,9 @@ damage = 0.5
 health = 1.5
 blood_color = Color(0.25, 0.5, 0.12, 1)
 attack_end_frame = 7
-attack_cooldown_length = 0.8
-windup_hold_min = 0.1
-windup_hold_max = 0.5
+attack_cooldown_length = 0.55
+windup_hold_min = 0.05
+windup_hold_max = 0.3
 coin_reward = 10
 double_attack = true
 

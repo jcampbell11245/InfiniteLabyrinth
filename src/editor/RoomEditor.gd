@@ -9,6 +9,13 @@ extends Node2D
 # A goblin or knight that's just been placed, or clicked with the Select tool, shows its
 # detection radius as a circle; dragging the circle's edge (with any tool) resizes it. The
 # filled half is the side it watches: it can't see behind itself.
+#
+# The Roaming buttons set what the selected goblin or knight does before it notices the
+# player: None (stands still), Path or Area. Picking Path or Area switches to the Select
+# tool. With a Path enemy selected, clicking or dragging on the floor draws its path (it
+# walks there and back); right-click a point to take it off. With an Area enemy selected,
+# drag the box's edges or corners to grow or shrink it. Every roaming enemy's path or area
+# shows faintly; the selected one's brightly.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const PLAY_SCENE := "res://src/world/Overworld.tscn"
@@ -28,7 +35,17 @@ const SELECTED_COLOR := Color(0.95, 0.8, 0.35) # Background of the selected tool
 const RADIUS_LINE := Color(0.4, 0.85, 1.0, 0.8) # The selected enemy's detection circle
 const RADIUS_LINE_HOT := Color(0.75, 0.95, 1.0, 1.0) # Its edge under the mouse, or being dragged
 const RADIUS_FILL := Color(0.4, 0.85, 1.0, 0.12) # The half in front, where it can see
-const RADIUS_GRAB := 4.0 # Room pixels either side of the circle's edge that grab it
+const RADIUS_GRAB := 4.0 # Room pixels either side of the circle's (or area's) edge that grab it
+const ROAM_LINE := Color(0.55, 1.0, 0.45, 0.9) # The selected enemy's path or area
+const ROAM_LINE_HOT := Color(0.85, 1.0, 0.75, 1.0) # An area edge under the mouse, or being dragged
+const ROAM_FILL := Color(0.55, 1.0, 0.45, 0.12)
+const ROAM_UNSELECTED := 0.35 # Alpha multiplier for the paths and areas of enemies not selected
+const SELECT_TOOL := 8 # Index of Select in TOOLS
+# Edges of a roaming area, as bits, for dragging them.
+const EDGE_LEFT := 1
+const EDGE_RIGHT := 2
+const EDGE_TOP := 4
+const EDGE_BOTTOM := 8
 const NO_CELL := Vector2i(-1, -1)
 # Floors dropdown items other than the floors themselves (whose ids are 1-10).
 const FLOORS_ALL_ID := 100
@@ -71,6 +88,9 @@ var _stroke_before := {} # The design as the current click-and-drag began, for i
 var _selected := NO_CELL # Floor index of the selected object, or NO_CELL
 var _dragging_radius := false # Resizing the selected enemy's detection circle
 var _edge_hot := false # The mouse is over the selected circle's edge
+var _area_drag := 0 # EDGE_ bits of the selected roaming area being dragged, or 0
+var _area_hot := 0 # EDGE_ bits of the selected roaming area under the mouse (or being dragged)
+var _roam_buttons := {} # "none"/"path"/"area" -> its Button
 var _facing_cache := {} # Object kind -> the direction its scene starts facing
 var _undo_button: Button
 var _redo_button: Button
@@ -136,7 +156,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var button := event as InputEventMouseButton
 		if button.pressed:
 			get_viewport().gui_release_focus() # Out of a floor box, so number keys pick tools again
-		if button.button_index == MOUSE_BUTTON_LEFT && _drag_radius_button(button):
+		if button.button_index == MOUSE_BUTTON_LEFT \
+				&& (_drag_radius_button(button) || _drag_area_button(button)):
 			return
 		if button.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 			if button.pressed:
@@ -146,6 +167,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_apply(_hover, true)
 			elif _painting == button.button_index:
 				_painting = 0
+				if _path_owner() != NO_CELL:
+					design.simplify_path(_path_owner())
+					_overlay.queue_redraw()
+					_refresh_info()
 				# A whole click-and-drag is one undo step.
 				design.record(_stroke_before)
 				_refresh_history()
@@ -153,6 +178,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_update_hover()
 		if _dragging_radius:
 			_resize_radius()
+		elif _area_drag != 0:
+			_resize_area()
 		elif _painting != 0:
 			_apply(_hover, false)
 		_update_edge_hot()
@@ -184,11 +211,25 @@ func _update_hover() -> void:
 # Objects go down on a click only, so a drag doesn't fill the floor with goblins.
 func _apply(index: Vector2i, clicked: bool) -> void:
 	var what: String = TOOLS[tool][1]
+	var path_owner := _path_owner()
 	if what == "select" && _painting == MOUSE_BUTTON_LEFT:
-		if clicked: # Clicking off the floor, or on empty floor, drops the selection
-			_select(index if design.objects.has(index) else NO_CELL)
+		if clicked && design.objects.has(index):
+			_select(index)
+		elif path_owner != NO_CELL && RoomDesign.in_floor(index):
+			# Drawing the selected enemy's path.
+			if design.add_path_point(path_owner, index):
+				_overlay.queue_redraw()
+				_refresh_info()
+		elif clicked: # Clicking off the floor, or on empty floor, drops the selection
+			_select(NO_CELL)
 		return
 	if !RoomDesign.in_floor(index):
+		return
+	# Right-clicking a point on the selected enemy's path takes it off, rather than erasing.
+	if _painting == MOUSE_BUTTON_RIGHT && path_owner != NO_CELL \
+			&& design.remove_path_point(path_owner, index):
+		_overlay.queue_redraw()
+		_refresh_info()
 		return
 	if _painting == MOUSE_BUTTON_RIGHT || what == "erase":
 		design.erase(index)
@@ -243,6 +284,131 @@ func _drag_radius_button(button: InputEventMouseButton) -> bool:
 		return true
 	return false
 
+# --- Roaming ---
+
+# The selected object's cell, if it roams along a path, else NO_CELL.
+func _path_owner() -> Vector2i:
+	return _selected if design.roam_mode(_selected) == "path" else NO_CELL
+
+# The selected object's cell, if it roams in an area, else NO_CELL.
+func _area_owner() -> Vector2i:
+	return _selected if design.roam_mode(_selected) == "area" else NO_CELL
+
+# Sets the selected goblin or knight roaming `mode` ("none", "path" or "area").
+func _set_roam(mode: String) -> void:
+	if !design.objects.has(_selected) || !RoomDesign.can_roam(design.objects[_selected]):
+		_refresh_info()
+		return
+	var before := design.snapshot()
+	design.set_roam_mode(_selected, mode)
+	design.record(before)
+	if mode != "none":
+		_select_tool(SELECT_TOOL) # So clicks draw the path rather than painting
+	match mode:
+		"path": _status.text = "Click or drag on the floor to draw its path; right-click a point to remove it"
+		"area": _status.text = "Drag the box's edges or corners to resize the area it wanders in"
+		_: _status.text = "It stands still until it notices the player"
+	_overlay.queue_redraw()
+	_update_edge_hot()
+	_refresh_info()
+	_refresh_history()
+
+# The EDGE_ bits of the selected area the mouse is over (within RADIUS_GRAB), or 0. If it's
+# over both sides of a thin area, the nearer one.
+func _area_edges_at_mouse() -> int:
+	var enemy_cell := _area_owner()
+	if enemy_cell == NO_CELL:
+		return 0
+	var rect := RoomDesign.area_pixels(design.area_rect(enemy_cell))
+	var mouse := _overlay.get_local_mouse_position()
+	if !rect.grow(RADIUS_GRAB).has_point(mouse):
+		return 0
+	var edges := 0
+	var to_left := absf(mouse.x - rect.position.x)
+	var to_right := absf(mouse.x - rect.end.x)
+	if minf(to_left, to_right) <= RADIUS_GRAB:
+		edges |= EDGE_LEFT if to_left < to_right else EDGE_RIGHT
+	var to_top := absf(mouse.y - rect.position.y)
+	var to_bottom := absf(mouse.y - rect.end.y)
+	if minf(to_top, to_bottom) <= RADIUS_GRAB:
+		edges |= EDGE_TOP if to_top < to_bottom else EDGE_BOTTOM
+	return edges
+
+# Starts or ends a drag of the selected area's edges. True if `button` was used for that.
+func _drag_area_button(button: InputEventMouseButton) -> bool:
+	if button.pressed && _painting == 0 && !_dragging_radius:
+		var edges := _area_edges_at_mouse()
+		if edges != 0:
+			_area_drag = edges
+			_stroke_before = design.snapshot()
+			return true
+	if !button.pressed && _area_drag != 0:
+		_area_drag = 0
+		design.record(_stroke_before) # The whole drag is one undo step
+		_refresh_history()
+		_update_edge_hot()
+		return true
+	return false
+
+# Moves the dragged edges to the cell boundary nearest the mouse.
+func _resize_area() -> void:
+	var enemy_cell := _area_owner()
+	if enemy_cell == NO_CELL:
+		return
+	var rect := design.area_rect(enemy_cell)
+	var left := rect.position.x
+	var top := rect.position.y
+	var right := rect.end.x # One past the last cell
+	var bottom := rect.end.y
+	var line := Vector2i((_overlay.get_local_mouse_position() / Room.CELL_SIZE).round()) \
+		- Vector2i.ONE * Room.FLOOR_FIRST
+	if _area_drag & EDGE_LEFT:
+		left = line.x
+	if _area_drag & EDGE_RIGHT:
+		right = line.x
+	if _area_drag & EDGE_TOP:
+		top = line.y
+	if _area_drag & EDGE_BOTTOM:
+		bottom = line.y
+	design.set_area(enemy_cell, Rect2i(left, top, right - left, bottom - top))
+	_overlay.queue_redraw()
+	_refresh_info()
+
+func _draw_roams() -> void:
+	for index: Vector2i in design.roams:
+		var selected := index == _selected
+		var tint := Color(1, 1, 1, 1.0 if selected else ROAM_UNSELECTED)
+		if design.roam_mode(index) == "path":
+			_draw_path(index, tint, selected)
+		else:
+			_draw_area(index, tint, selected)
+
+func _draw_path(index: Vector2i, tint: Color, selected: bool) -> void:
+	var points := PackedVector2Array([RoomDesign.cell_centre(index)])
+	for cell: Vector2i in design.path_points(index):
+		points.append(RoomDesign.cell_centre(cell))
+	if points.size() > 1:
+		_overlay.draw_polyline(points, ROAM_LINE * tint, 1.5 if selected else 1.0)
+	for i in range(1, points.size()):
+		_overlay.draw_circle(points[i], 2.5 if i == points.size() - 1 else 1.5, ROAM_LINE * tint)
+	# Where the next click would add a point.
+	if selected && TOOLS[tool][1] == "select" && _painting == 0 && RoomDesign.in_floor(_hover) \
+			&& !design.objects.has(_hover):
+		_overlay.draw_dashed_line(points[-1], RoomDesign.cell_centre(_hover), ROAM_LINE * Color(1, 1, 1, 0.5), 1.0, 3.0)
+
+func _draw_area(index: Vector2i, tint: Color, selected: bool) -> void:
+	var rect := RoomDesign.area_pixels(design.area_rect(index))
+	_overlay.draw_rect(rect, ROAM_FILL * tint)
+	_overlay.draw_rect(rect, ROAM_LINE * tint, false, 1.0)
+	if !selected || _area_hot == 0:
+		return
+	# Light up the edges under the mouse.
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	var sides := {EDGE_TOP: [0, 1], EDGE_RIGHT: [1, 2], EDGE_BOTTOM: [2, 3], EDGE_LEFT: [3, 0]}
+	for edge: int in sides:
+		if _area_hot & edge:
+			_overlay.draw_line(corners[sides[edge][0]], corners[sides[edge][1]], ROAM_LINE_HOT, 2.0)
+
 func _resize_radius() -> void:
 	var enemy_cell := _radius_owner()
 	if enemy_cell == NO_CELL:
@@ -251,13 +417,34 @@ func _resize_radius() -> void:
 	_overlay.queue_redraw()
 	_refresh_info()
 
-# Lights up the edge and shows a resize cursor while the mouse is over it.
+# Lights up the circle's edge, or the area's edges, and shows a resize cursor while the mouse
+# is over them. The circle wins where they cross.
 func _update_edge_hot() -> void:
-	var hot := _dragging_radius || (_painting == 0 && _mouse_on_edge())
-	if hot != _edge_hot:
+	var idle := _painting == 0 && !_dragging_radius && _area_drag == 0
+	var hot := _dragging_radius || (idle && _mouse_on_edge())
+	var edges := _area_drag
+	if idle && !hot:
+		edges = _area_edges_at_mouse()
+	if hot != _edge_hot || edges != _area_hot:
 		_edge_hot = hot
-		Input.set_default_cursor_shape(Input.CURSOR_DRAG if hot else Input.CURSOR_ARROW)
+		_area_hot = edges
+		Input.set_default_cursor_shape(_edge_cursor())
 		_overlay.queue_redraw()
+
+func _edge_cursor() -> Input.CursorShape:
+	if _edge_hot:
+		return Input.CURSOR_DRAG
+	var horizontal := _area_hot & (EDGE_LEFT | EDGE_RIGHT)
+	var vertical := _area_hot & (EDGE_TOP | EDGE_BOTTOM)
+	if horizontal && vertical:
+		var falling := (_area_hot & EDGE_LEFT && _area_hot & EDGE_TOP) \
+			|| (_area_hot & EDGE_RIGHT && _area_hot & EDGE_BOTTOM)
+		return Input.CURSOR_FDIAGSIZE if falling else Input.CURSOR_BDIAGSIZE
+	if horizontal:
+		return Input.CURSOR_HSIZE
+	if vertical:
+		return Input.CURSOR_VSIZE
+	return Input.CURSOR_ARROW
 
 # Drops the selection if what was selected has gone (erased, undone, cleared).
 func _check_selection() -> void:
@@ -297,13 +484,13 @@ func _draw_radius() -> void:
 # --- Actions ---
 
 func _undo() -> void:
-	if _painting == 0 && !_dragging_radius && design.can_undo():
+	if _painting == 0 && !_dragging_radius && _area_drag == 0 && design.can_undo():
 		design.undo()
 		_redraw_design()
 		_status.text = "Undone"
 
 func _redo() -> void:
-	if _painting == 0 && !_dragging_radius && design.can_redo():
+	if _painting == 0 && !_dragging_radius && _area_drag == 0 && design.can_redo():
 		design.redo()
 		_redraw_design()
 		_status.text = "Redone"
@@ -418,6 +605,7 @@ func _draw_overlay() -> void:
 		var colour := ERASE_COLOR if TOOLS[tool][1] == "erase" else HOVER_COLOR
 		var rect := Rect2(Vector2(RoomDesign.tile_cell(_hover)) * size, Vector2.ONE * size)
 		_overlay.draw_rect(rect, colour, false, 1.0)
+	_draw_roams()
 	_draw_radius()
 
 func _refresh_objects() -> void:
@@ -460,6 +648,17 @@ func _refresh_info() -> void:
 				% [kind, design.radius_at(_selected)]
 		elif kind == "wizard":
 			_info.text += "\nSelected wizard: no detection\nradius (sees the whole room)"
+		match design.roam_mode(_selected):
+			"path":
+				_info.text += "\nRoams a path of %d points" % design.path_points(_selected).size()
+			"area":
+				var area := design.area_rect(_selected)
+				_info.text += "\nRoams an area of %dx%d cells" % [area.size.x, area.size.y]
+	var can_roam := design.objects.has(_selected) && RoomDesign.can_roam(design.objects[_selected])
+	for mode: String in _roam_buttons:
+		var button: Button = _roam_buttons[mode]
+		button.disabled = !can_roam
+		button.set_pressed_no_signal(can_roam && mode == design.roam_mode(_selected))
 	for condition: String in _clear_buttons:
 		_clear_buttons[condition].button_pressed = condition == design.clear_by
 	for i in range(_tileset_buttons.size()):
@@ -515,6 +714,7 @@ func _build_ui() -> void:
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
+	column.add_child(_roam_row())
 	var clear_label := Label.new()
 	clear_label.text = "Room clears by:"
 	column.add_child(clear_label)
@@ -543,11 +743,19 @@ func _build_ui() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_undo_button.tooltip_text = "Ctrl+Z"
 	_redo_button.tooltip_text = "Ctrl+Y or Ctrl+Shift+Z"
-	_add_button(column, "Play  (F5)", _play)
-	_add_button(column, "Export", _export)
-	_open_folder = _add_button(column, "Open folder", _open_export_folder)
+	# Two to a row, so the panel fits the screen.
+	var play_row := HBoxContainer.new()
+	column.add_child(play_row)
+	var file_row := HBoxContainer.new()
+	column.add_child(file_row)
+	var play := _add_button(play_row, "Play  (F5)", _play)
+	var export := _add_button(play_row, "Export", _export)
+	_open_folder = _add_button(file_row, "Open folder", _open_export_folder)
 	_open_folder.disabled = true # Until something has been exported
-	column.add_child(_clear_menu())
+	var clear_menu := _clear_menu()
+	file_row.add_child(clear_menu)
+	for control: Control in [play, export, _open_folder, clear_menu]:
+		control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_add_button(column, "Back  (Esc)", get_tree().change_scene_to_file.bind(TITLE_SCENE))
 
 	var help := Label.new()
@@ -577,6 +785,28 @@ func _tileset_row() -> HBoxContainer:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.tooltip_text = "Draw the room with floor %d's art (the play-test uses it too)" % floor_number
 		_tileset_buttons.append(button)
+	return row
+
+# "Roaming" and a button per mode, for the selected goblin or knight (disabled otherwise).
+func _roam_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = "Roaming"
+	row.add_child(label)
+	var group := ButtonGroup.new()
+	var tips := {
+		"none": "Stands still until it notices the player",
+		"path": "Walks a path you draw, there and back, until it notices the player",
+		"area": "Wanders a box you size until it notices the player",
+	}
+	for mode: String in RoomDesign.ROAM_MODES:
+		var button := _add_button(row, mode.capitalize(), _set_roam.bind(mode))
+		button.toggle_mode = true
+		button.button_group = group
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.tooltip_text = tips[mode] + " (select a goblin or knight first)"
+		_roam_buttons[mode] = button
 	return row
 
 # "Floors [Every floor ▾]": a dropdown of checkboxes, one per floor, for the floors the room

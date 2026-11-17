@@ -967,7 +967,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"slash_down",
-"speed": 14.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1014,7 +1014,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"slash_left",
-"speed": 14.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1061,7 +1061,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"slash_right",
-"speed": 14.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1108,7 +1108,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"slash_up",
-"speed": 14.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1273,10 +1273,10 @@ damage = 1.5
 health = 2.5
 blood_color = Color(0.07, 0.07, 0.09, 1)
 attack_end_frame = 13
-attack_cooldown_length = 1.0
+attack_cooldown_length = 0.7
 dizzy_offset = Vector2(0, -30)
-windup_hold_min = 0.1
-windup_hold_max = 0.6
+windup_hold_min = 0.05
+windup_hold_max = 0.35
 only_hit_during_attack = true
 per_facing_reach = false
 unparryable_attack = true

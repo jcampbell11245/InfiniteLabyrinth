@@ -322,29 +322,40 @@ func _parry_timing() -> Parry:
 #
 # Either way, a swing the player started before the enemy began its attack isn't a clash:
 # the player got in first, so it's an ordinary hit (which cuts the attack short).
+#
+# A swing that parries one enemy passes through any other it catches that would have
+# blocked it (see _block_player_swing): no block, chip or stagger for the player.
 func _on_player_sword(from_direction: String) -> void:
 	if _unparryable && _animation_is(_attack_action()) && animator.frame <= attack_frame \
 			&& !_swung_first():
 		if from_direction == direction:
 			take_damage(from_direction, Tuning.sword_damage)
 		else:
-			_parry_feedback(true)
-			player.stagger()
-			_chip(Direction.to_vector(from_direction))
+			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
 		return
 	match _parry_timing():
 		Parry.NONE:
 			take_damage(from_direction, Tuning.sword_damage)
 		Parry.IN_WINDOW:
+			player.mark_swing_parried()
 			_parry_feedback()
 			if !_parried_follow_up():
 				stagger(from_direction)
 		Parry.EARLY:
-			_parry_feedback(true)
-			player.stagger()
-			_chip(Direction.to_vector(from_direction))
+			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
 		Parry.LATE:
 			pass
+
+# Blocks the player's swing (begun on physics frame `swing_frame`) and staggers them, unless
+# that swing parried another enemy: then it just passes through this one, no block, chip or
+# stagger. Called deferred, at the end of the physics frame, so a parry the same swing lands
+# on another enemy in the same frame counts whichever contact the engine reported first.
+func _block_player_swing(from_direction: String, swing_frame: int) -> void:
+	if player.swing_parried(swing_frame):
+		return
+	_parry_feedback(true)
+	player.stagger()
+	_chip(Direction.to_vector(from_direction))
 
 # `blocked`: the player swung too early and is the one staggered, so the clank sounds bad.
 func _parry_feedback(blocked := false) -> void:

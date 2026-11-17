@@ -31,6 +31,9 @@ const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O
 const DETECTING_KINDS: Array[String] = ["goblin", "knight"]
 const RADIUS_MIN := 0.0
 const RADIUS_MAX := 400.0
+# Roaming (MeleeEnemy.roam_mode), for the same kinds: "none", "path" or "area".
+const ROAM_MODES: Array[String] = ["none", "path", "area"]
+const AREA_DEFAULT_REACH := 2 # Cells either side of the enemy a new roaming area covers
 
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 
@@ -43,6 +46,11 @@ var objects := {} # Vector2i floor index -> object kind (a key of OBJECT_SCENES)
 # Vector2i floor index -> detection radius in pixels, for goblins and knights given one
 # other than MeleeEnemy.DEFAULT_DETECTION_RADIUS.
 var radii := {}
+# Vector2i floor index -> how the goblin or knight there roams, if it does:
+# {"mode": "path", "points": Array of Vector2i}, the cells it walks through after its own
+# and back again; or {"mode": "area", "rect": Rect2i}, the cells it wanders in (always
+# including its own).
+var roams := {}
 var clear_by := "none" # What opens the room's doors: "none" (never locked), "enemies" or "switches"
 var floors := Room.ALL_FLOORS # Room.floors: bit n - 1 set if it can appear on floor n
 # Which floor's tileset the room creator and its play-test draw with. Only for looking at;
@@ -76,8 +84,12 @@ func get_cell(index: Vector2i) -> Cell:
 func set_cell(index: Vector2i, kind: Cell) -> void:
 	cells[index.y * SIZE + index.x] = kind
 	if kind != Cell.FLOOR:
-		objects.erase(index)
-		radii.erase(index)
+		_forget(index)
+		# Paths can't run through a pit or rock.
+		for enemy: Vector2i in roams:
+			if roams[enemy].mode == "path" && (roams[enemy].points as Array).has(index):
+				(roams[enemy].points as Array).erase(index)
+				simplify_path(enemy)
 
 # Puts an object on `index`, clearing the ground under it to floor. Putting the same kind
 # back on itself keeps its detection radius.
@@ -85,7 +97,14 @@ func set_object(index: Vector2i, kind: String) -> void:
 	cells[index.y * SIZE + index.x] = Cell.FLOOR
 	if objects.get(index) != kind:
 		radii.erase(index)
+		roams.erase(index)
 	objects[index] = kind
+
+# Removes the object on `index` and everything set for it.
+func _forget(index: Vector2i) -> void:
+	objects.erase(index)
+	radii.erase(index)
+	roams.erase(index)
 
 static func has_radius(kind: String) -> bool:
 	return kind in DETECTING_KINDS
@@ -105,8 +124,7 @@ func set_radius(index: Vector2i, radius: float) -> void:
 # Removes the object on `index` if there is one, otherwise turns the cell back to floor.
 func erase(index: Vector2i) -> void:
 	if objects.has(index):
-		objects.erase(index)
-		radii.erase(index)
+		_forget(index)
 	else:
 		set_cell(index, Cell.FLOOR)
 
@@ -114,17 +132,113 @@ func clear() -> void:
 	cells.fill(Cell.FLOOR)
 	objects.clear()
 	radii.clear()
+	roams.clear()
 
 # Removes every goblin, knight and wizard; switches stay.
 func clear_enemies() -> void:
 	for index: Vector2i in objects.keys():
 		if objects[index] != "switch":
-			objects.erase(index)
-			radii.erase(index)
+			_forget(index)
 
 # Turns every pitfall and stalagmite back to floor; enemies and switches stay.
 func clear_tiles() -> void:
 	cells.fill(Cell.FLOOR)
+
+# --- Roaming ---
+
+static func can_roam(kind: String) -> bool:
+	return has_radius(kind)
+
+# "none", "path" or "area" for the enemy on `index`.
+func roam_mode(index: Vector2i) -> String:
+	return roams[index].mode if roams.has(index) else "none"
+
+# Switches the enemy on `index` to roaming `mode`, starting it afresh: an empty path, or an
+# area AREA_DEFAULT_REACH cells round it. Picking the mode it already has changes nothing.
+func set_roam_mode(index: Vector2i, mode: String) -> void:
+	if mode == roam_mode(index) || !objects.has(index) || !can_roam(objects[index]):
+		return
+	match mode:
+		"path":
+			roams[index] = {"mode": "path", "points": []}
+		"area":
+			roams[index] = {"mode": "area", "rect": Rect2i()}
+			var reach := Vector2i.ONE * AREA_DEFAULT_REACH
+			set_area(index, Rect2i(index - reach, reach * 2 + Vector2i.ONE))
+		_:
+			roams.erase(index)
+
+# The cells the enemy on `index` walks through after its own, or [] if it has no path.
+func path_points(index: Vector2i) -> Array:
+	return roams[index].points if roam_mode(index) == "path" else []
+
+# Adds `cell` to the end of the path of the enemy on `index`. Going back onto the point
+# before the last takes the last one off instead, so a drag can back up. False if nothing
+# changed (not floor, or already the end).
+func add_path_point(index: Vector2i, cell: Vector2i) -> bool:
+	if roam_mode(index) != "path" || !in_floor(cell) || get_cell(cell) != Cell.FLOOR:
+		return false
+	var points: Array = roams[index].points
+	var last: Vector2i = points.back() if !points.is_empty() else index
+	if cell == last:
+		return false
+	var before_last: Vector2i = points[-2] if points.size() >= 2 else index
+	if !points.is_empty() && cell == before_last:
+		points.pop_back()
+	else:
+		points.append(cell)
+	return true
+
+# Takes `cell` out of the path of the enemy on `index`. False if it wasn't on it.
+func remove_path_point(index: Vector2i, cell: Vector2i) -> bool:
+	var points := path_points(index)
+	if !points.has(cell):
+		return false
+	points.erase(cell)
+	simplify_path(index)
+	return true
+
+# Drops points that change nothing about the walk: the same cell twice in a row, and points
+# partway along a straight stretch.
+func simplify_path(index: Vector2i) -> void:
+	if roam_mode(index) != "path":
+		return
+	var points: Array = roams[index].points
+	var i := 0
+	while i < points.size():
+		var previous: Vector2i = points[i - 1] if i > 0 else index
+		if previous == points[i]:
+			points.remove_at(i)
+			continue
+		if i + 1 < points.size():
+			var into := Vector2(points[i] - previous)
+			var out := Vector2(points[i + 1] - points[i])
+			if is_zero_approx(into.cross(out)) && into.dot(out) > 0:
+				points.remove_at(i)
+				continue
+		i += 1
+
+# The cells the enemy on `index` wanders in, or an empty rect if it has no area.
+func area_rect(index: Vector2i) -> Rect2i:
+	return roams[index].rect if roam_mode(index) == "area" else Rect2i()
+
+# Sets the area of the enemy on `index`, kept on the floor and round the enemy's own cell.
+func set_area(index: Vector2i, rect: Rect2i) -> void:
+	if roam_mode(index) != "area":
+		return
+	var left := clampi(rect.position.x, 0, index.x)
+	var top := clampi(rect.position.y, 0, index.y)
+	var right := clampi(rect.end.x - 1, index.x, SIZE - 1)
+	var bottom := clampi(rect.end.y - 1, index.y, SIZE - 1)
+	roams[index].rect = Rect2i(left, top, right - left + 1, bottom - top + 1)
+
+# Room-local pixels a rect of floor cells covers.
+static func area_pixels(rect: Rect2i) -> Rect2:
+	return Rect2(Vector2(tile_cell(rect.position)) * Room.CELL_SIZE, Vector2(rect.size) * Room.CELL_SIZE)
+
+# Room-local middle of floor cell `index`, where an enemy standing on it has its feet.
+static func cell_centre(index: Vector2i) -> Vector2:
+	return (Vector2(tile_cell(index)) + Vector2(0.5, 0.5)) * Room.CELL_SIZE
 
 # --- Undo and redo ---
 # Each step is a snapshot of the whole design from before the change. The room is tiny
@@ -137,12 +251,13 @@ var _redo_steps: Array[Dictionary] = []
 
 func snapshot() -> Dictionary:
 	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "radii": radii.duplicate(),
-		"clear_by": clear_by, "floors": floors}
+		"roams": roams.duplicate(true), "clear_by": clear_by, "floors": floors}
 
 func restore(state: Dictionary) -> void:
 	cells = (state.cells as PackedByteArray).duplicate()
 	objects = (state.objects as Dictionary).duplicate()
 	radii = (state.radii as Dictionary).duplicate()
+	roams = (state.roams as Dictionary).duplicate(true)
 	floors = state.floors
 	clear_by = state.clear_by
 
@@ -298,6 +413,16 @@ func build_room() -> Room:
 		node.position = object_origin(kind, index)
 		if has_radius(kind):
 			node.set("detection_radius", radius_at(index))
+		match roam_mode(index):
+			"path":
+				var path := PackedVector2Array()
+				for cell: Vector2i in path_points(index):
+					path.append(object_origin(kind, cell))
+				node.set("roam_mode", MeleeEnemy.Roam.PATH)
+				node.set("roam_path", path)
+			"area":
+				node.set("roam_mode", MeleeEnemy.Roam.AREA)
+				node.set("roam_area", area_pixels(area_rect(index)))
 		if kind == "switch":
 			switches.add_child(node, true)
 		else:
@@ -313,7 +438,7 @@ func to_text() -> String:
 	var lines: PackedStringArray = [
 		"# Infinite Labyrinth room design, made with the room creator.",
 		"# Give this file to Claude to add the room to src/world/rooms/.",
-		"version: 2",
+		"version: 3",
 		"floor_size: %d" % SIZE,
 		"completion: %s" % completion(),
 		"enemy_count: %d" % enemy_count(),
@@ -335,8 +460,28 @@ func to_text() -> String:
 	lines.append("# by floor cell as column,row. Any not listed use the default, %d."
 		% MeleeEnemy.DEFAULT_DETECTION_RADIUS)
 	lines.append("detection_radius:")
-	var listed: Array = radii.keys()
-	listed.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y || (a.y == b.y && a.x < b.x))
-	for index: Vector2i in listed:
+	for index: Vector2i in _sorted(radii.keys()):
 		lines.append("%d,%d %d" % [index.x, index.y, radii[index]])
+	lines.append("# How each goblin and knight that roams does so (MeleeEnemy.roam_mode), by floor cell as")
+	lines.append("# column,row. Any not listed stand still until they notice the player.")
+	lines.append("#   path: walks from its own cell through each listed cell in turn, then back again.")
+	lines.append("#         MeleeEnemy.roam_path holds where the enemy stands on each (RoomDesign.object_origin).")
+	lines.append("#   area: wanders the cells from the first corner to the second, inclusive.")
+	lines.append("#         MeleeEnemy.roam_area holds the pixels those cells cover (RoomDesign.area_pixels).")
+	lines.append("roaming:")
+	for index: Vector2i in _sorted(roams.keys()):
+		var words: PackedStringArray = ["%d,%d" % [index.x, index.y], roam_mode(index)]
+		if roam_mode(index) == "path":
+			for cell: Vector2i in path_points(index):
+				words.append("%d,%d" % [cell.x, cell.y])
+		else:
+			var rect := area_rect(index)
+			words.append("%d,%d" % [rect.position.x, rect.position.y])
+			words.append("%d,%d" % [rect.end.x - 1, rect.end.y - 1])
+		lines.append(" ".join(words))
 	return "\n".join(lines) + "\n"
+
+# Floor indices, top row first, left to right.
+static func _sorted(indices: Array) -> Array:
+	indices.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y || (a.y == b.y && a.x < b.x))
+	return indices

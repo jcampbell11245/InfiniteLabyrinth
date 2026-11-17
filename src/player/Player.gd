@@ -103,6 +103,7 @@ var _charged := false # Drawn for at least Tuning.arrow_charge_time
 # Parrying
 var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
 var swing_started_frame := -1 # Physics frame the current or last swing began
+var _parried_swing := -2 # swing_started_frame of the last swing that parried an enemy
 var _daze_timer: Timer # Running while dazed from a blocked swing
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
 var _dizzy: Node2D # Stars shown while dazed
@@ -580,6 +581,16 @@ func _sword_is_on(shot: Projectile) -> bool:
 # Mid-swing with the sword out.
 func is_slashing() -> bool:
 	return _action() == Action.SLASH && !hitbox.disabled
+
+# The current swing parried an enemy. Any other enemy the same swing catches lets it pass
+# through instead of blocking it (see Enemy._block_player_swing), so a good parry is never
+# undone by the blade clipping a bystander.
+func mark_swing_parried() -> void:
+	_parried_swing = swing_started_frame
+
+# The swing that began on physics frame `swing_frame` parried an enemy.
+func swing_parried(swing_frame: int) -> bool:
+	return _parried_swing == swing_frame
 
 # An enemy blocked a swing made too early, before its twinkle: the swing ends, the
 # player is dazed (can't act) for a moment, and their next hit taken is multiplied.
