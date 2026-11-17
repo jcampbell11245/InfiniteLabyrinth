@@ -15,6 +15,12 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_released("quit") && !get_tree().paused:
 		get_tree().quit()
 
+# Android's back button/gesture pauses (or unpauses) rather than closing the game; see
+# application/config/quit_on_go_back.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		pause()
+
 # Toggles pause, unless something else (game over, upgrade menu) has the game paused.
 func pause() -> void:
 	if pause_state || !get_tree().paused:
