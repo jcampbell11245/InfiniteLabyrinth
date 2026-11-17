@@ -105,7 +105,7 @@ var locked := false # Lock tiles have been drawn (first time the player enters)
 var faded_out := true
 var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
 var _detectors: TileMap # Transition detector tiles, one per open doorway
-var _key_gate: StaticBody2D # End room only: blocks the top door until the player has 3 keys
+var _key_gate: StaticBody2D # End room only: blocks the top door until the player has Tuning.keys_to_finish keys
 var _was_cleared := false # Doors were already unlocked last time they were drawn
 var _kill_streak := 0 # Kills in quick succession (Tuning.kill_combo_window); pitches death sounds up
 var _last_kill_at := -100000 # Ticks (ms) of the last kill in this room
@@ -158,7 +158,7 @@ func close_door(door: Door) -> void:
 	_refresh_doors()
 
 # Blocks the end room's top door. The gate tile has no collision of its own, so this
-# body stands in for it until _refresh_doors sees three keys.
+# body stands in for it until _refresh_doors sees enough keys.
 func add_key_gate() -> void:
 	var tile_layers: int = tiles.tile_set.get_physics_layer_collision_layer(0)
 	var shape := RectangleShape2D.new()
@@ -172,6 +172,7 @@ func add_key_gate() -> void:
 	_key_gate.position = tiles.map_to_local(door_cells[Door.TOP])
 	_key_gate.add_child(collision)
 	add_child(_key_gate)
+	_refresh_doors() # Keys carried over from earlier floors may already be enough
 
 # The point nearest `point` that is at least `margin` inside the floor. Enemies standing
 # against a wall overlap it (their origin is above their feet), so projectiles spawn here
@@ -456,7 +457,7 @@ func set_arch_in_front(in_front: bool) -> void:
 # Redraws the door tiles from the room's state. Safe to call any number of times.
 func _refresh_doors() -> void:
 	_draw_closed_doors()
-	if room_id == Constants.END_ROOM && Game.keys >= 3:
+	if room_id == Constants.END_ROOM && Game.keys >= Tuning.keys_to_finish:
 		tiles.set_cell(0, door_cells[Door.TOP], 1, Vector2i.ZERO)
 		if _key_gate != null:
 			_key_gate.queue_free()
@@ -626,6 +627,7 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	_refresh_doors()
 
 func _on_next_floor_area_entered(_area: Area2D) -> void:
+	Game.finish_floor()
 	SaveData.floor_number = Game.overworld.floor_number + 1
 	Game.upgrade_menu.show_menu()
 

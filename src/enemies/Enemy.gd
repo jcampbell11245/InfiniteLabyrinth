@@ -167,8 +167,9 @@ func take_damage(from_direction: String, amount: float) -> void:
 		Juice.burst(room, global_position - hit_dir * 6, Color(1, 0.9, 0.5), 6, 70.0, -hit_dir, 1.5, 0.25)
 		Juice.hitstop(HITSTOP_BLOCK)
 		Juice.shake(Juice.SHAKE_LIGHT)
+		_chip(hit_dir)
 		return
-	
+
 	# Interrupts an attack. Faces the direction the hit travels in, not the attacker.
 	if _animation_is("slash") && _hit_interrupts_attack():
 		_end_windup_hold()
@@ -187,6 +188,18 @@ func take_damage(from_direction: String, amount: float) -> void:
 	if health <= 0:
 		die()
 	_after_hit()
+
+# A blocked hit still wears the blocker down: Tuning.chip_damage off its health, with no
+# invincibility, crit or stagger bonus. It can finish an enemy off. Call after the block's
+# own feedback.
+func _chip(hit_dir: Vector2) -> void:
+	if Tuning.chip_damage <= 0 || health <= 0:
+		return
+	health -= Tuning.chip_damage
+	if health <= 0.0001: # Repeated small chips leave float error behind
+		health = 0
+		_hit_feedback(hit_dir, false, true)
+		die()
 
 # Flash, spray, freeze and shake, harder for kills and crits.
 func _hit_feedback(hit_dir: Vector2, critical: bool, killed: bool) -> void:
@@ -317,6 +330,7 @@ func _on_player_sword(from_direction: String) -> void:
 		else:
 			_parry_feedback(true)
 			player.stagger()
+			_chip(Direction.to_vector(from_direction))
 		return
 	match _parry_timing():
 		Parry.NONE:
@@ -328,6 +342,7 @@ func _on_player_sword(from_direction: String) -> void:
 		Parry.EARLY:
 			_parry_feedback(true)
 			player.stagger()
+			_chip(Direction.to_vector(from_direction))
 		Parry.LATE:
 			pass
 

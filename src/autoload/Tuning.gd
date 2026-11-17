@@ -37,7 +37,8 @@ var crit_roll_max := 30 # A hit crits when randi_range(0, crit_roll_max) < damag
 var deflect_damage_multiplier := 1.5
 var deflect_speed_multiplier := 1.15
 var deflect_max_speed := 450.0 # Pixels/sec
-var knight_block_stun := 1.0 # Seconds a knight stands after blocking
+var knight_block_stun := 1.0 # Seconds a knight stands after blocking an arrow
+var chip_damage := 0.1 # Health a blocked hit still takes off the enemy that blocked it
 
 # --- Enemies (multipliers on each enemy's own scene values) ---
 var enemy_health_multiplier := 1.0
@@ -61,14 +62,14 @@ var engage_margin := 4.0 # Pixels inside the shorter of the two attack reaches t
 var pack_max_attackers := 1 # Enemies in a group allowed to step in and swing at once
 var pack_swings_min := 1 # Swings per turn before stepping back out (groups only)
 var pack_swings_max := 2
-var pack_turn_gap_min := 0.4 # Seconds between one attacker leaving and the next stepping in
-var pack_turn_gap_max := 1.2
+var pack_turn_gap_min := 0.2 # Seconds between one attacker leaving and the next stepping in
+var pack_turn_gap_max := 0.6
 var pack_turn_timeout := 3.0 # Seconds an attacker gets to reach the player before giving up its turn
 var pack_ring_radius := 70.0 # Pixels from the player that waiting enemies circle at
 var pack_circle_speed := 0.6 # Times the enemy's speed while circling
 var notice_radius := 64.0 # Pixels: notices a player this close anywhere but behind it, detection zone or not
 var alert_radius := 100.0 # Pixels: noticing the player alerts the rest of the room this close
-var threat_reach := 20.0 # Pixels past its swing distance at which a player closing in sets off its windup
+var threat_reach := 28.0 # Pixels past its swing distance at which a player closing in sets off its windup
 var counter_attack := true # A hit outside a parry makes it swing back at once, cooldown or not
 
 # --- Projectiles ---
@@ -83,9 +84,10 @@ var time_per_level := 30 # Seconds added per time upgrade level
 
 # --- Loot & economy ---
 var start_arrows := 10 # Arrows at the start of each floor
-var start_keys := 0 # Keys at the start of each floor
+var start_keys := 0 # Keys given at the start of each floor, on top of any carried over
+var keys_to_finish := 2 # Keys that open the end room; any spare carry over to the next floor
 var start_floor := 1 # Floor a new run starts on
-var arrow_drop_chance := 0.4
+var arrow_drop_chance := 0.2
 var arrow_drop_max := 2
 var coin_multiplier := 1.0 # On top of the floor and looting multiplier
 var upgrade_cost_multiplier := 1.0
@@ -138,6 +140,7 @@ const FIELDS := [
 	["Combat", "deflect_speed_multiplier", "Deflect speed multiplier", 0, 3, 0.05, "Constants.gd DEFLECT_SPEED_MULTIPLIER"],
 	["Combat", "deflect_max_speed", "Deflect max speed", 50, 1000, 10, "Constants.gd DEFLECT_MAX_SPEED"],
 	["Combat", "knight_block_stun", "Knight block stun (s)", 0, 5, 0.05, "MeleeEnemy.gd BLOCK_STUN_TIME"],
+	["Combat", "chip_damage", "Chip damage on a block", 0, 5, 0.05, "new (Enemy._chip)"],
 
 	["Enemies", "enemy_health_multiplier", "Health multiplier", 0.1, 10, 0.1, "new (enemy .tscn health)"],
 	["Enemies", "enemy_damage_multiplier", "Damage multiplier", 0, 10, 0.1, "new (enemy .tscn damage)"],
@@ -179,6 +182,7 @@ const FIELDS := [
 
 	["Loot", "start_arrows", "Arrows per floor", 0, 99, 1, "Constants.gd START_ARROWS"],
 	["Loot", "start_keys", "Keys per floor", 0, 3, 1, "Game.gd DEBUG_START_KEYS"],
+	["Loot", "keys_to_finish", "Keys to open the end room", 0, 3, 1, "Room.gd (was 3)"],
 	["Loot", "start_floor", "Run start floor", 1, 10, 1, "Game.gd START_FLOOR"],
 	["Loot", "arrow_drop_chance", "Arrow drop chance", 0, 1, 0.05, "Constants.gd ARROW_DROP_CHANCE"],
 	["Loot", "arrow_drop_max", "Arrow drop max", 1, 10, 1, "Constants.gd ARROW_DROP_MAX"],

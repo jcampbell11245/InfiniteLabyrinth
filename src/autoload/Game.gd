@@ -13,7 +13,10 @@ signal health_changed(health: float)
 signal player_died
 
 var coins := 0 # Banked into SaveData when the floor ends
-var keys := 0 # Collected this floor; three open the end room
+var keys := 0 # Held now; Tuning.keys_to_finish open the end room
+# Spare keys from the floor just finished, added to the next floor's when it starts. Only
+# set between finishing a floor and the next one starting, so a death or a new run gets none.
+var carried_keys := 0
 var arrows := 0 # Left to shoot; refilled to Tuning.start_arrows each floor
 
 # Keys given at the start of each floor and the floor a new run starts on are
@@ -32,7 +35,8 @@ func register(world: Overworld) -> void:
 	camera = camera_rig.get_node("Camera2D")
 	upgrade_menu = camera.get_node("UpgradeMenu/Control")
 	coins = SaveData.coins
-	keys = Tuning.start_keys
+	keys = Tuning.start_keys + carried_keys
+	carried_keys = 0
 	arrows = Tuning.start_arrows
 
 func unregister(world: Overworld) -> void:
@@ -49,6 +53,10 @@ func room_by_id(id: int) -> Room:
 func add_coins(amount: int) -> void:
 	coins += amount
 	coins_changed.emit(coins)
+
+# The floor is done: the keys the end room took are spent, the rest wait for the next floor.
+func finish_floor() -> void:
+	carried_keys = maxi(keys - Tuning.keys_to_finish, 0)
 
 func add_keys(amount: int) -> void:
 	keys += amount

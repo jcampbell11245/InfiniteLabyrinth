@@ -2,8 +2,8 @@ extends Enemy
 
 # Goblin and Knight. Once the player enters its detection zone, or hits it from anywhere
 # (an arrow from across the room), it fights until the player leaves the room. A knight
-# (only_hit_during_attack) blocks any hit that lands outside its slash and is stunned for a
-# second afterwards.
+# (only_hit_during_attack) blocks any hit that lands outside its slash. Blocking an arrow
+# leaves it stunned for Tuning.knight_block_stun; blocking a sword it counters (see Guarding).
 #
 # Fighting: the enemy whose turn it is (see AttackCoordinator) walks to a spot beside the
 # player, straight left, right, above or below, at a distance where its slash and the
@@ -40,6 +40,18 @@ extends Enemy
 # straight back, cooldown or not, so a second swing meets its windup and is blocked unless
 # timed as a parry. One free hit, then the player has to parry.
 #
+# Guarding: a sword hit that lands before the enemy has started a swing is blocked, not
+# taken, as long as it's seen the player coming and isn't hit from behind (a knight blocks
+# from any side). A block still takes Tuning.chip_damage off it, like every other blocked
+# hit (see Enemy._chip), and it swings straight back, cooldown or not (the same counter as
+# above, but with no flinch if it can't), so a chip can't be followed by another: the next
+# swing meets the counter's windup and is blocked, staggering the player, unless timed as a
+# parry. Hits in a swing's recovery, from behind or from arrows aren't blocked this way.
+#
+# Hesitation (off unless a scene sets it): engage_hesitation_min/max hold a lined-up enemy
+# back for a random moment before it swings, and rush_windup_chance makes it only sometimes
+# start a windup at a player rushing in.
+#
 # Enemies whose sprites have them also react to hits: "block" plays once when a hit is
 # shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
 # still until the reaction is over.
@@ -66,6 +78,14 @@ const SLASH_COVER_MARGIN := 3.0 # Pixels the slash reaches past the player's swo
 @export var starting_direction := Direction.RIGHT
 @export var double_attack := false # Some swings follow up when parried; see above
 @export var unparryable_attack := false # Some swings can't be parried; see above
+# Seconds it waits, lined up and ready, before swinging; rolled again for each swing.
+@export var engage_hesitation_min := 0.0
+@export var engage_hesitation_max := 0.0
+# Chance it starts a windup at a player rushing into range; rolled once per approach.
+@export_range(0, 1) var rush_windup_chance := 1.0
+
+const GUARD_FLASH := Color(0.75, 0.85, 1) # A goblin catching a hit on its blade
+const GUARD_SPARK := Color(1, 0.9, 0.5)
 
 # Hit by the player, or saw them, while they're in this room: it fights even outside its
 # detection zone, until the player leaves the room.
@@ -78,12 +98,17 @@ var _slot_horizontal := true # Lining up beside the player (true) or above/below
 var _orbit_dir := 0.0 # -1, 0 or 1: drift around the circle
 var _orbit_change_in := 0.0
 var _reach_cache := {} # Horizontal (bool) -> engage distance
+var _reach_by_dir := {} # Direction -> pixels from the origin the slash reaches that way
+var _slash_near := 0.0 # Local x of the slash hitbox's back edge, whichever way it reaches
 var _follow_up_ready := false # This swing is the first of a double attack
 var _end_lag: Timer # Running while frozen at the end of an unparryable attack
 var _end_lagged := false # This swing has had its end lag
 var _turning := false # Swapping a swing's facing; its frame changes aren't real ones
 var _was_noticed := false # noticed, last physics frame
 var _counter_pending := false # Just hit; swing back on the next physics frame
+var _block_counter_pending := false # Just blocked a sword; swing back on the next physics frame
+var _hesitation_left := -1.0 # Seconds before swinging; -1 until rolled for this swing
+var _rush_roll := -1 # 1 if it winds up at the player's current rush, 0 if not, -1 unrolled
 
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var detection_zone: Area2D = $DetectionZonePivot/DetectionZone
@@ -127,6 +152,9 @@ func _physics_process(delta: float) -> void:
 	if _counter_pending:
 		_counter_pending = false
 		_counter(coordinator)
+	if _block_counter_pending:
+		_block_counter_pending = false
+		_counter(coordinator, false)
 
 	if !_animation_is("slash"): # Committed to a swing's facing until it ends
 		_update_facing()
@@ -156,6 +184,7 @@ func _update_facing() -> void:
 func _point_pivots() -> void:
 	$HitboxPivot.rotation_degrees = Direction.to_rotation_degrees(direction)
 	$DetectionZonePivot.rotation_degrees = Direction.to_rotation_degrees(direction)
+	_fit_slash_to_facing()
 
 func animate() -> void:
 	if _animation_is("slash") && animator.frame == attack_end_frame:
@@ -222,7 +251,7 @@ func _on_swing_finished() -> void:
 # Walks to the attack spot beside the player, then swings once lined up.
 func _fight(coordinator: AttackCoordinator, delta: float) -> void:
 	if _in_strike_position(_slot_horizontal):
-		if _can_start_swing(coordinator):
+		if _can_start_swing(coordinator) && _done_hesitating(delta):
 			_start_swing(_slot_horizontal)
 		return
 	if _player_rushing_in() && _can_start_swing(coordinator):
@@ -260,9 +289,10 @@ func _pick_slot() -> Vector2:
 # Waits its turn on a circle around the player, spaced out from the others and drifting
 # at random. Swings anyway if the player walks into reach and nobody else is swinging.
 func _circle(coordinator: AttackCoordinator, delta: float) -> void:
-	for horizontal in [true, false]:
+	for horizontal: bool in [true, false]:
 		if _in_strike_position(horizontal) && _can_start_swing(coordinator):
-			_start_swing(horizontal)
+			if _done_hesitating(delta):
+				_start_swing(horizontal)
 			return
 	if _player_rushing_in() && _can_start_swing(coordinator):
 		_start_swing(_is_player_mostly_horizontal())
@@ -333,19 +363,37 @@ func _player_in_threat_range() -> bool:
 
 # In threat range and moving (walking or rolling) towards it: they'll be in reach by the
 # time the windup is, so it starts now instead of letting them swing first.
+# Only rush_windup_chance of approaches set it off, rolled the first time this one does.
 func _player_rushing_in() -> bool:
 	if !_player_in_threat_range():
+		_rush_roll = -1 # A fresh roll for the next approach
 		return false
 	var towards_me := -_to_player()
-	return towards_me.length() > 0.01 && player.velocity.dot(towards_me.normalized()) > RUSH_SPEED
+	if towards_me.length() <= 0.01 || player.velocity.dot(towards_me.normalized()) <= RUSH_SPEED:
+		return false
+	if _rush_roll < 0:
+		_rush_roll = 1 if randf() < rush_windup_chance else 0
+	return _rush_roll == 1
+
+# Counts down a random engage_hesitation_min/max once it's ready to swing; true when it's
+# waited long enough.
+func _done_hesitating(delta: float) -> bool:
+	if engage_hesitation_max <= 0:
+		return true
+	if _hesitation_left < 0:
+		_hesitation_left = randf_range(engage_hesitation_min, maxf(engage_hesitation_min, engage_hesitation_max))
+	_hesitation_left -= delta
+	return _hesitation_left <= 0
 
 # A hit that wasn't a parry: swing straight back, ignoring the attack cooldown, if the
 # player is close and nobody else is mid-swing. Otherwise just flinch.
-func _counter(coordinator: AttackCoordinator) -> void:
+# `flinch` false (after a block) does nothing instead of flinching.
+func _counter(coordinator: AttackCoordinator, flinch := true) -> void:
 	if is_stunned() || in_end_lag() || _animation_is("slash") || !is_detected() \
 			|| coordinator.other_is_swinging(self) || !_player_in_threat_range() \
 			|| (only_hit_during_attack && $BlockStun.time_left != 0):
-		_play_reaction("vuln")
+		if flinch:
+			_play_reaction("vuln")
 		return
 	_start_swing(_is_player_mostly_horizontal())
 
@@ -370,6 +418,8 @@ func _start_swing(horizontal: bool) -> void:
 	else:
 		_face_player_vertically()
 	_point_pivots()
+	_hesitation_left = -1.0
+	_rush_roll = -1
 	# Fresh windup, even straight out of an interrupted one that _update_windup hasn't
 	# seen end yet (a counter).
 	_end_windup_hold()
@@ -434,49 +484,80 @@ func _parried_follow_up() -> bool:
 	player.allow_instant_swing()
 	return true
 
-# Where to stand to fight: the shorter of this enemy's slash reach (onto the player's
-# hurtbox) and the player's sword reach (onto this enemy's hurtbox), less
-# Tuning.engage_margin, so both sides' hits connect. Measured from the scenes' shapes.
+# Where to stand to fight: on each side of the player along that axis, the shorter of this
+# enemy's slash reach (onto the player's hurtbox) and the player's sword reach (onto this
+# enemy's hurtbox); the shorter side wins, less Tuning.engage_margin, so both sides' hits
+# connect. Measured from the scenes' shapes.
 func _engage_distance(horizontal: bool) -> float:
 	if !_reach_cache.has(horizontal):
-		var mine := _forward_reach(hitbox, self) + _half_extent(player.hurtbox, player, horizontal)
-		var theirs := _forward_reach(player.hitbox, player) + _half_extent(hurtbox, self, horizontal)
-		_reach_cache[horizontal] = minf(mine, theirs)
+		var best := INF
+		for dir: String in ([Direction.LEFT, Direction.RIGHT] if horizontal else [Direction.UP, Direction.DOWN]):
+			var mine := _slash_gap(dir, _slash_reach(dir))
+			best = minf(best, minf(mine, _sword_gap(dir)))
+		_reach_cache[horizontal] = best
 	return maxf(_reach_cache[horizontal] - Tuning.engage_margin, MIN_ENGAGE)
+
+# Facing `dir` with the player straight that way: the furthest apart the two origins can
+# be with the player's sword still reaching this enemy's hurtbox. The hurtboxes sit off
+# their owners' origins (above them, mostly), which is why up and down differ.
+func _sword_gap(dir: String) -> float:
+	var v := Direction.to_vector(dir)
+	return _forward_reach(player.hitbox, player) + _shape_centre(hurtbox, self).dot(v) \
+		+ _half_extent(hurtbox, self, v.y == 0)
+
+# The same for this enemy's slash reaching `reach` from its origin onto the player's hurtbox.
+func _slash_gap(dir: String, reach: float) -> float:
+	var v := Direction.to_vector(dir)
+	return reach - _shape_centre(player.hurtbox, player).dot(v) + _half_extent(player.hurtbox, player, v.y == 0)
+
+# Pixels from the origin the slash reaches facing `dir`; see _cover_player_reach.
+func _slash_reach(dir: String) -> float:
+	return _reach_by_dir.get(dir, _forward_reach(hitbox, self))
 
 # The player's sword is broad: standing off on a diagonal, the player could catch a corner
 # of this enemy's hurtbox from somewhere its own slash, aimed one of four ways, can't reach
-# back. So the slash hitbox grows (forward and across, never shrinking) until, from anywhere
-# the player's sword reaches this enemy, facing either axis, the slash reaches the player.
-# Across, it only has to cover as far off-axis as the player can be before the enemy would
-# face the other way (about as far off as they are along).
+# back. So the slash hitbox grows (never shrinking below the scene's) until, from anywhere
+# the player's sword reaches this enemy, the slash reaches the player, plus
+# SLASH_COVER_MARGIN. Forward, that's worked out for each facing on its own
+# (_fit_slash_to_facing swaps the length in), so a slash isn't longer one way just because
+# another way needs it. Across, it only has to cover as far off-axis as the player can be
+# before the enemy would face the other way (about as far off as they are along).
 func _cover_player_reach() -> void:
 	if !is_instance_valid(player):
 		return
 	var sword_reach := _forward_reach(player.hitbox, player)
 	var sword_half_width := _half_extent(player.hitbox, player, false) # Across the blade
-	var need_reach := 0.0
 	var need_half_width := 0.0
 	for horizontal: bool in [true, false]:
-		var mine_along := _half_extent(hurtbox, self, horizontal)
 		var mine_across := _half_extent(hurtbox, self, !horizontal)
-		var theirs_along := _half_extent(player.hurtbox, player, horizontal)
 		var theirs_across := _half_extent(player.hurtbox, player, !horizontal)
-		var furthest_along := sword_reach + mine_along
+		var furthest_along := sword_reach + _half_extent(hurtbox, self, horizontal)
 		var furthest_across := minf(sword_half_width + mine_across, furthest_along)
-		need_reach = maxf(need_reach, furthest_along - theirs_along)
 		need_half_width = maxf(need_half_width, furthest_across - theirs_across)
 
 	var rect := (hitbox.shape as RectangleShape2D).duplicate() as RectangleShape2D
 	var s := absf(scale.x)
-	var far := (need_reach + SLASH_COVER_MARGIN) / s # Local units, like the shape
-	var near := hitbox.position.x - rect.size.x / 2
-	if far > near + rect.size.x:
-		rect.size.x = far - near
-		hitbox.position.x = (near + far) / 2
+	_slash_near = hitbox.position.x - rect.size.x / 2 # Local units, like the shape
+	var scene_reach := _forward_reach(hitbox, self)
+	for dir: String in [Direction.RIGHT, Direction.LEFT, Direction.UP, Direction.DOWN]:
+		var need := _sword_gap(dir) - _slash_gap(dir, 0.0) + SLASH_COVER_MARGIN
+		_reach_by_dir[dir] = maxf(scene_reach, need)
 	rect.size.y = maxf(rect.size.y, 2 * (need_half_width + SLASH_COVER_MARGIN) / s)
 	hitbox.shape = rect
 	_reach_cache.clear()
+	_fit_slash_to_facing()
+
+# Stretches the slash hitbox to the reach worked out for the way it faces.
+func _fit_slash_to_facing() -> void:
+	if !_reach_by_dir.has(direction):
+		return
+	var rect := hitbox.shape as RectangleShape2D
+	var far: float = _reach_by_dir[direction] / absf(scale.x)
+	rect.size.x = far - _slash_near
+	hitbox.position.x = (_slash_near + far) / 2
+
+static func _shape_centre(shape: CollisionShape2D, owner_body: Node2D) -> Vector2:
+	return shape.position * owner_body.scale.abs()
 
 # How far in front of its owner a hitbox reaches (hitboxes point right before their pivot
 # turns them).
@@ -522,11 +603,63 @@ func _on_reset() -> void:
 	_moving = false
 	_follow_up_ready = false
 	_counter_pending = false
+	_block_counter_pending = false
 	_was_noticed = false
 	_end_lag.stop()
+	_hesitation_left = -1.0
+	_rush_roll = -1
 	var block_stun: Timer = get_node_or_null("BlockStun")
 	if block_stun != null:
 		block_stun.stop()
+
+# --- Guarding (see the top of the file) ---
+
+func _on_player_sword(from_direction: String) -> void:
+	if _can_guard(from_direction):
+		_block_sword(from_direction)
+	else:
+		super(from_direction)
+
+# Not swinging (or recovering from one), not dazed, and either a knight or facing a player
+# it has already noticed. A swing the player started before this enemy's attack began
+# counts as landing before it too, even if the windup has started by the time it connects.
+func _can_guard(from_direction: String) -> bool:
+	if invincibility_cooldown.time_left != 0:
+		return false
+	if _animation_is("slash") && !_in_windup_swung_first():
+		return false
+	if is_stunned() || is_vulnerable() || in_end_lag():
+		return false
+	if only_hit_during_attack:
+		return true
+	return noticed && from_direction != direction # The sword travelling its way is from behind
+
+func _in_windup_swung_first() -> bool:
+	return _animation_is("slash") && animator.frame <= attack_frame && _swung_first()
+
+func _block_sword(from_direction: String) -> void:
+	if is_player_in_room():
+		noticed = true
+	if _animation_is("slash"): # Its windup started under the player's swing; drop it to block
+		_end_windup_hold()
+		_play("idle")
+	if _is_player_mostly_horizontal():
+		_face_player_horizontally()
+	else:
+		_face_player_vertically()
+	_point_pivots()
+	var hit_dir := Direction.to_vector(from_direction)
+	Juice.burst(room, global_position - hit_dir * 6, GUARD_SPARK, 6, 70.0, -hit_dir, 1.5, 0.25)
+	Juice.hitstop(HITSTOP_BLOCK)
+	Juice.shake(Juice.SHAKE_LIGHT)
+	if only_hit_during_attack:
+		Juice.play($Block)
+		_play_reaction("block")
+	else:
+		Juice.clank(true)
+		Juice.flash(animator, 0.1, GUARD_FLASH)
+	_chip(hit_dir)
+	_block_counter_pending = Tuning.counter_attack # Swings back next physics frame
 
 # Any hit, even one a knight blocks, gives the player away.
 func take_damage(from_direction: String, amount: float) -> void:

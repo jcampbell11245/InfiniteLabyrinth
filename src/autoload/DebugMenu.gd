@@ -240,7 +240,7 @@ func _build_progress() -> void:
 	_progress_row("Coins (this floor)", TYPE_INT, 10000, 1, true,
 		func() -> int: return Game.coins,
 		func(value: int) -> void: Game.add_coins(value - Game.coins))
-	_progress_row("Keys", TYPE_INT, 3, 1, false,
+	_progress_row("Keys", TYPE_INT, 99, 1, false,
 		func() -> int: return Game.keys,
 		func(value: int) -> void: Game.add_keys(value - Game.keys))
 	_progress_row("Arrows", TYPE_INT, 99, 1, true,
@@ -309,6 +309,7 @@ func _kill_room_enemies() -> void:
 # Ends the floor as the end room does: on to the upgrade menu, then the next floor.
 func _next_floor() -> void:
 	close()
+	Game.finish_floor()
 	SaveData.floor_number = Game.overworld.floor_number + 1
 	Game.upgrade_menu.show_menu()
 

@@ -2,7 +2,8 @@ class_name WorldGenerator
 
 # Lays out a floor: which room scene goes in each cell of a 5-row by 8-column grid.
 # Column 0 holds only the start room and column 7 only the end room, both in the middle
-# row; columns 1..6 are the generated rooms, three of them key rooms. Empty cells are "".
+# row; columns 1..6 are the generated rooms, three of them key rooms
+# (Tuning.keys_to_finish of their keys open the end room; a spare carries over). Empty cells are "".
 # Pure: it only reads the scene lists and the RNG, and instances nothing.
 
 const LAYOUT_ROWS := 5
