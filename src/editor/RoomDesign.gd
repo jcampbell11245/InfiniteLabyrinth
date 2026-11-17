@@ -26,6 +26,11 @@ const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relat
 # Characters in the exported grid.
 const CELL_CHARS := {Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S"}
 const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O"}
+# Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
+# in the room, so they have none.
+const DETECTING_KINDS: Array[String] = ["goblin", "knight"]
+const RADIUS_MIN := 0.0
+const RADIUS_MAX := 400.0
 
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 
@@ -35,7 +40,14 @@ static var current: RoomDesign
 
 var cells := PackedByteArray() # Cell per floor index, row by row
 var objects := {} # Vector2i floor index -> object kind (a key of OBJECT_SCENES)
+# Vector2i floor index -> detection radius in pixels, for goblins and knights given one
+# other than MeleeEnemy.DEFAULT_DETECTION_RADIUS.
+var radii := {}
 var clear_by := "none" # What opens the room's doors: "none" (never locked), "enemies" or "switches"
+var floors := Room.ALL_FLOORS # Room.floors: bit n - 1 set if it can appear on floor n
+# Which floor's tileset the room creator and its play-test draw with. Only for looking at;
+# not part of the design, so it isn't undone or exported.
+var preview_floor := 1
 
 func _init() -> void:
 	cells.resize(SIZE * SIZE)
@@ -65,28 +77,50 @@ func set_cell(index: Vector2i, kind: Cell) -> void:
 	cells[index.y * SIZE + index.x] = kind
 	if kind != Cell.FLOOR:
 		objects.erase(index)
+		radii.erase(index)
 
-# Puts an object on `index`, clearing the ground under it to floor.
+# Puts an object on `index`, clearing the ground under it to floor. Putting the same kind
+# back on itself keeps its detection radius.
 func set_object(index: Vector2i, kind: String) -> void:
 	cells[index.y * SIZE + index.x] = Cell.FLOOR
+	if objects.get(index) != kind:
+		radii.erase(index)
 	objects[index] = kind
+
+static func has_radius(kind: String) -> bool:
+	return kind in DETECTING_KINDS
+
+# Detection radius of the goblin or knight on `index`.
+func radius_at(index: Vector2i) -> float:
+	return radii.get(index, MeleeEnemy.DEFAULT_DETECTION_RADIUS)
+
+# Whole pixels; the default isn't stored, so it doesn't show up in the export.
+func set_radius(index: Vector2i, radius: float) -> void:
+	radius = clampf(roundf(radius), RADIUS_MIN, RADIUS_MAX)
+	if radius == MeleeEnemy.DEFAULT_DETECTION_RADIUS:
+		radii.erase(index)
+	else:
+		radii[index] = radius
 
 # Removes the object on `index` if there is one, otherwise turns the cell back to floor.
 func erase(index: Vector2i) -> void:
 	if objects.has(index):
 		objects.erase(index)
+		radii.erase(index)
 	else:
 		set_cell(index, Cell.FLOOR)
 
 func clear() -> void:
 	cells.fill(Cell.FLOOR)
 	objects.clear()
+	radii.clear()
 
 # Removes every goblin, knight and wizard; switches stay.
 func clear_enemies() -> void:
 	for index: Vector2i in objects.keys():
 		if objects[index] != "switch":
 			objects.erase(index)
+			radii.erase(index)
 
 # Turns every pitfall and stalagmite back to floor; enemies and switches stay.
 func clear_tiles() -> void:
@@ -102,11 +136,14 @@ var _undo_steps: Array[Dictionary] = []
 var _redo_steps: Array[Dictionary] = []
 
 func snapshot() -> Dictionary:
-	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "clear_by": clear_by}
+	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "radii": radii.duplicate(),
+		"clear_by": clear_by, "floors": floors}
 
 func restore(state: Dictionary) -> void:
 	cells = (state.cells as PackedByteArray).duplicate()
 	objects = (state.objects as Dictionary).duplicate()
+	radii = (state.radii as Dictionary).duplicate()
+	floors = state.floors
 	clear_by = state.clear_by
 
 # Records a change made since `before` (a snapshot()) as one undo step. Does nothing if
@@ -146,12 +183,44 @@ func enemy_count() -> int:
 func completion() -> String:
 	return clear_by
 
+# The floors the room can appear on, in words: "Every floor", "Floor 1", "Floors 1-3, 5".
+func floors_text() -> String:
+	var ticked := floor_list()
+	if ticked.size() == Room.FLOOR_CHOICES:
+		return "Every floor"
+	if ticked.is_empty():
+		return "No floors"
+	# Runs of floors in a row read as ranges: 1-3, 5.
+	var parts: PackedStringArray = []
+	var start: int = ticked[0]
+	for i in range(1, ticked.size() + 1):
+		if i == ticked.size() || ticked[i] != ticked[i - 1] + 1:
+			var last: int = ticked[i - 1]
+			parts.append(str(start) if last == start else "%d-%d" % [start, last])
+			if i < ticked.size():
+				start = ticked[i]
+	return ("Floor " if ticked.size() == 1 else "Floors ") + ", ".join(parts)
+
+# The ticked floors, lowest first.
+func floor_list() -> Array[int]:
+	var ticked: Array[int] = []
+	for n in range(1, Room.FLOOR_CHOICES + 1):
+		if Room.allowed_on(n, floors):
+			ticked.append(n)
+	return ticked
+
+func set_floor(floor_number: int, on: bool) -> void:
+	var bit := 1 << (floor_number - 1)
+	floors = (floors | bit) if on else (floors & ~bit)
+
 # Why the room would open the moment the player walks in, or "" if it wouldn't.
 func clear_problem() -> String:
 	if clear_by == "switches" && count("switch") == 0:
 		return "No switches: the room opens straight away"
 	if clear_by == "enemies" && enemy_count() == 0:
 		return "No enemies: the room opens straight away"
+	if floors == 0:
+		return "No floors ticked: the room never appears"
 	return ""
 
 # Where the play-test puts the player: the free floor cell nearest the middle of the left
@@ -227,12 +296,15 @@ func build_room() -> Room:
 		var kind: String = objects[index]
 		var node: Node2D = (load(OBJECT_SCENES[kind]) as PackedScene).instantiate()
 		node.position = object_origin(kind, index)
+		if has_radius(kind):
+			node.set("detection_radius", radius_at(index))
 		if kind == "switch":
 			switches.add_child(node, true)
 		else:
 			room.add_child(node, true)
 	room.completion_criteria = completion()
 	room.enemy_count = enemy_count()
+	room.floors = floors
 	return room
 
 # --- Export ---
@@ -241,10 +313,12 @@ func to_text() -> String:
 	var lines: PackedStringArray = [
 		"# Infinite Labyrinth room design, made with the room creator.",
 		"# Give this file to Claude to add the room to src/world/rooms/.",
-		"version: 1",
+		"version: 2",
 		"floor_size: %d" % SIZE,
 		"completion: %s" % completion(),
 		"enemy_count: %d" % enemy_count(),
+		"# Floors the room can appear on (Room.floors, 1-10; later floors follow floor 10):",
+		"floors: %s" % ",".join(PackedStringArray(floor_list().map(func(n: int) -> String: return str(n)))),
 		"# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):",
 		"#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)",
 		"#   G  goblin   K  knight     W  wizard     O  switch",
@@ -257,4 +331,12 @@ func to_text() -> String:
 			var index := Vector2i(x, y)
 			row += OBJECT_CHARS[objects[index]] if objects.has(index) else CELL_CHARS[get_cell(index)]
 		lines.append(row)
+	lines.append("# Detection radius in pixels of each goblin and knight (MeleeEnemy.detection_radius),")
+	lines.append("# by floor cell as column,row. Any not listed use the default, %d."
+		% MeleeEnemy.DEFAULT_DETECTION_RADIUS)
+	lines.append("detection_radius:")
+	var listed: Array = radii.keys()
+	listed.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y || (a.y == b.y && a.x < b.x))
+	for index: Vector2i in listed:
+		lines.append("%d,%d %d" % [index.x, index.y, radii[index]])
 	return "\n".join(lines) + "\n"

@@ -5,6 +5,10 @@ extends Node2D
 # erase. Play builds the room on its own to test it (F1 there comes back here); Export
 # writes it to a text file (and the clipboard) that can be turned into a room scene, and
 # Open folder shows where the files went. Ctrl+Z undoes; Ctrl+Y or Ctrl+Shift+Z redo.
+#
+# A goblin or knight that's just been placed, or clicked with the Select tool, shows its
+# detection radius as a circle; dragging the circle's edge (with any tool) resizes it. The
+# filled half is the side it watches: it can't see behind itself.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const PLAY_SCENE := "res://src/world/Overworld.tscn"
@@ -15,12 +19,20 @@ const EXPORT_FOLDER := "room_designs"
 const EXPORT_DIR_FALLBACK := "user://room_designs"
 
 const ZOOM := 2.5
-const PANEL_WIDTH := 420.0 # Screen pixels; the room is centred in the space right of it
+const PANEL_WIDTH := 500.0 # Screen pixels; the room is centred in the space right of it
 const FONT_SIZE := 26
 const GRID_COLOR := Color(1, 1, 1, 0.08)
 const HOVER_COLOR := Color(1, 0.9, 0.3, 0.9)
 const ERASE_COLOR := Color(1, 0.3, 0.3, 0.9)
 const SELECTED_COLOR := Color(0.95, 0.8, 0.35) # Background of the selected tool and clear condition
+const RADIUS_LINE := Color(0.4, 0.85, 1.0, 0.8) # The selected enemy's detection circle
+const RADIUS_LINE_HOT := Color(0.75, 0.95, 1.0, 1.0) # Its edge under the mouse, or being dragged
+const RADIUS_FILL := Color(0.4, 0.85, 1.0, 0.12) # The half in front, where it can see
+const RADIUS_GRAB := 4.0 # Room pixels either side of the circle's edge that grab it
+const NO_CELL := Vector2i(-1, -1)
+# Floors dropdown items other than the floors themselves (whose ids are 1-10).
+const FLOORS_ALL_ID := 100
+const FLOORS_NONE_ID := 101
 
 # The Clear menu's items, and what each says it cleared.
 enum ClearWhat { EVERYTHING, ENEMIES, TILES }
@@ -45,6 +57,7 @@ const TOOLS := [
 	["Wizard", "object", "wizard"],
 	["Switch", "object", "switch"],
 	["Eraser", "erase", null],
+	["Select", "select", null],
 ]
 
 var design: RoomDesign
@@ -55,6 +68,10 @@ var _overlay: Node2D # Grid lines and the hovered cell
 var _hover := Vector2i(-1, -1) # Floor index under the mouse, or off the floor
 var _painting := 0 # Mouse button held down over the floor (MOUSE_BUTTON_LEFT/RIGHT), or 0
 var _stroke_before := {} # The design as the current click-and-drag began, for its undo step
+var _selected := NO_CELL # Floor index of the selected object, or NO_CELL
+var _dragging_radius := false # Resizing the selected enemy's detection circle
+var _edge_hot := false # The mouse is over the selected circle's edge
+var _facing_cache := {} # Object kind -> the direction its scene starts facing
 var _undo_button: Button
 var _redo_button: Button
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
@@ -62,6 +79,8 @@ var _tool_buttons: Array[Button] = []
 var _info: Label
 var _warning: Label
 var _clear_buttons := {} # "none"/"enemies"/"switches" -> its Button
+var _tileset_buttons: Array[Button] = [] # One per FloorTheme.ART_FLOORS, floor 1 first
+var _floors_menu: MenuButton # Checklist of the floors the room can appear on
 var _status: Label
 var _open_folder: Button
 var _export_dir := "" # Absolute folder the last export went to
@@ -79,7 +98,7 @@ func _ready() -> void:
 	for unwanted in ["Void", "RoomDetection", "GoblinDeath", "KnightDeath"]:
 		_preview.get_node(unwanted).free()
 	add_child(_preview)
-	FloorTheme.apply(_preview, SaveData.floor_number)
+	FloorTheme.apply(_preview, design.preview_floor)
 	design.paint_all(_preview)
 
 	_objects = Node2D.new()
@@ -108,12 +127,17 @@ func _exit_tree() -> void:
 	for sprite: AnimatedSprite2D in _sprite_cache.values():
 		sprite.free()
 	_sprite_cache.clear()
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 # --- Input ---
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
+		if button.pressed:
+			get_viewport().gui_release_focus() # Out of a floor box, so number keys pick tools again
+		if button.button_index == MOUSE_BUTTON_LEFT && _drag_radius_button(button):
+			return
 		if button.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 			if button.pressed:
 				_painting = button.button_index
@@ -127,8 +151,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				_refresh_history()
 	elif event is InputEventMouseMotion:
 		_update_hover()
-		if _painting != 0:
+		if _dragging_radius:
+			_resize_radius()
+		elif _painting != 0:
 			_apply(_hover, false)
+		_update_edge_hot()
 	elif event is InputEventKey && event.pressed && !event.echo:
 		var key_event := event as InputEventKey
 		var key := key_event.keycode
@@ -156,31 +183,127 @@ func _update_hover() -> void:
 # Paints the current tool (or erases, while the right button is held) on `index`.
 # Objects go down on a click only, so a drag doesn't fill the floor with goblins.
 func _apply(index: Vector2i, clicked: bool) -> void:
+	var what: String = TOOLS[tool][1]
+	if what == "select" && _painting == MOUSE_BUTTON_LEFT:
+		if clicked: # Clicking off the floor, or on empty floor, drops the selection
+			_select(index if design.objects.has(index) else NO_CELL)
+		return
 	if !RoomDesign.in_floor(index):
 		return
-	var what: String = TOOLS[tool][1]
 	if _painting == MOUSE_BUTTON_RIGHT || what == "erase":
 		design.erase(index)
 	elif what == "cell":
 		design.set_cell(index, TOOLS[tool][2])
 	elif clicked:
 		design.set_object(index, TOOLS[tool][2])
+		_selected = index # A new enemy shows its circle straight away
 	else:
 		return
 	design.paint(_preview, index)
 	_refresh_objects()
 	_refresh_info()
 
+# --- Detection radius ---
+
+func _select(index: Vector2i) -> void:
+	_selected = index
+	_update_edge_hot()
+	_overlay.queue_redraw()
+	_refresh_info()
+
+# The selected object's cell, if it's a goblin or knight (which have a radius), else NO_CELL.
+func _radius_owner() -> Vector2i:
+	if design.objects.has(_selected) && RoomDesign.has_radius(design.objects[_selected]):
+		return _selected
+	return NO_CELL
+
+# Room-local centre of the circle: the enemy's origin, which is what it measures from.
+func _radius_centre(index: Vector2i) -> Vector2:
+	return RoomDesign.object_origin(design.objects[index], index)
+
+func _mouse_on_edge() -> bool:
+	var enemy_cell := _radius_owner()
+	if enemy_cell == NO_CELL:
+		return false
+	var distance := _overlay.get_local_mouse_position().distance_to(_radius_centre(enemy_cell))
+	return absf(distance - design.radius_at(enemy_cell)) <= RADIUS_GRAB
+
+# Starts or ends a drag of the circle's edge. True if `button` was used for that, so it
+# doesn't also paint.
+func _drag_radius_button(button: InputEventMouseButton) -> bool:
+	if button.pressed && _painting == 0 && _mouse_on_edge():
+		_dragging_radius = true
+		_stroke_before = design.snapshot()
+		return true
+	if !button.pressed && _dragging_radius:
+		_dragging_radius = false
+		design.record(_stroke_before) # The whole drag is one undo step
+		_refresh_history()
+		_update_edge_hot()
+		return true
+	return false
+
+func _resize_radius() -> void:
+	var enemy_cell := _radius_owner()
+	if enemy_cell == NO_CELL:
+		return
+	design.set_radius(enemy_cell, _overlay.get_local_mouse_position().distance_to(_radius_centre(enemy_cell)))
+	_overlay.queue_redraw()
+	_refresh_info()
+
+# Lights up the edge and shows a resize cursor while the mouse is over it.
+func _update_edge_hot() -> void:
+	var hot := _dragging_radius || (_painting == 0 && _mouse_on_edge())
+	if hot != _edge_hot:
+		_edge_hot = hot
+		Input.set_default_cursor_shape(Input.CURSOR_DRAG if hot else Input.CURSOR_ARROW)
+		_overlay.queue_redraw()
+
+# Drops the selection if what was selected has gone (erased, undone, cleared).
+func _check_selection() -> void:
+	if _selected != NO_CELL && !design.objects.has(_selected):
+		_selected = NO_CELL
+	_update_edge_hot()
+
+# The direction `kind`'s scene starts out facing, as in the play-test.
+func _facing(kind: String) -> String:
+	if !_facing_cache.has(kind):
+		var scene: Node = (load(RoomDesign.OBJECT_SCENES[kind]) as PackedScene).instantiate()
+		_facing_cache[kind] = scene.get("starting_direction") if "starting_direction" in scene else Direction.RIGHT
+		scene.free()
+	return _facing_cache[kind]
+
+func _draw_radius() -> void:
+	if design.objects.has(_selected):
+		var rect := Rect2(Vector2(RoomDesign.tile_cell(_selected)) * Room.CELL_SIZE, Vector2.ONE * Room.CELL_SIZE)
+		_overlay.draw_rect(rect, RADIUS_LINE_HOT, false, 1.0)
+	var enemy_cell := _radius_owner()
+	if enemy_cell == NO_CELL:
+		return
+	var centre := _radius_centre(enemy_cell)
+	var radius := design.radius_at(enemy_cell)
+	if radius <= 0:
+		_overlay.draw_circle(centre, 1.5, RADIUS_LINE_HOT)
+		return
+	# The half it watches, facing the way it starts out.
+	var ahead := Direction.to_vector(_facing(design.objects[enemy_cell])).angle()
+	var points := PackedVector2Array([centre])
+	for i in range(33):
+		points.append(centre + Vector2.from_angle(ahead - PI / 2 + PI * i / 32.0) * radius)
+	_overlay.draw_colored_polygon(points, RADIUS_FILL)
+	var line := RADIUS_LINE_HOT if _edge_hot else RADIUS_LINE
+	_overlay.draw_arc(centre, radius, 0, TAU, 96, line, 1.5 if _edge_hot else 1.0)
+
 # --- Actions ---
 
 func _undo() -> void:
-	if _painting == 0 && design.can_undo():
+	if _painting == 0 && !_dragging_radius && design.can_undo():
 		design.undo()
 		_redraw_design()
 		_status.text = "Undone"
 
 func _redo() -> void:
-	if _painting == 0 && design.can_redo():
+	if _painting == 0 && !_dragging_radius && design.can_redo():
 		design.redo()
 		_redraw_design()
 		_status.text = "Redone"
@@ -264,6 +387,24 @@ func _set_clear_by(condition: String) -> void:
 	_refresh_info()
 	_refresh_history()
 
+# Draws the room with `floor_number`'s tileset (and play-tests with it).
+func _set_tileset(floor_number: int) -> void:
+	design.preview_floor = floor_number
+	FloorTheme.apply(_preview, floor_number)
+	_refresh_info()
+	_status.text = "Showing the floor %d tileset" % floor_number
+
+# An item in the floors dropdown: a floor's checkbox (its id is the floor), or tick all/none.
+func _on_floor_item(id: int) -> void:
+	var before := design.snapshot()
+	match id:
+		FLOORS_ALL_ID: design.floors = Room.ALL_FLOORS
+		FLOORS_NONE_ID: design.floors = 0
+		_: design.set_floor(id, !Room.allowed_on(id, design.floors))
+	design.record(before)
+	_refresh_info()
+	_refresh_history()
+
 # --- Drawing ---
 
 func _draw_overlay() -> void:
@@ -277,8 +418,11 @@ func _draw_overlay() -> void:
 		var colour := ERASE_COLOR if TOOLS[tool][1] == "erase" else HOVER_COLOR
 		var rect := Rect2(Vector2(RoomDesign.tile_cell(_hover)) * size, Vector2.ONE * size)
 		_overlay.draw_rect(rect, colour, false, 1.0)
+	_draw_radius()
 
 func _refresh_objects() -> void:
+	_check_selection()
+	_overlay.queue_redraw()
 	for child in _objects.get_children():
 		child.free()
 	for index: Vector2i in design.objects:
@@ -309,8 +453,21 @@ func _sprite_for(kind: String) -> AnimatedSprite2D:
 
 func _refresh_info() -> void:
 	_info.text = "Enemies: %d\nSwitches: %d" % [design.enemy_count(), design.count("switch")]
+	if design.objects.has(_selected):
+		var kind: String = design.objects[_selected]
+		if RoomDesign.has_radius(kind):
+			_info.text += "\nSelected %s: detection %d px\n(drag the circle's edge)" \
+				% [kind, design.radius_at(_selected)]
+		elif kind == "wizard":
+			_info.text += "\nSelected wizard: no detection\nradius (sees the whole room)"
 	for condition: String in _clear_buttons:
 		_clear_buttons[condition].button_pressed = condition == design.clear_by
+	for i in range(_tileset_buttons.size()):
+		_tileset_buttons[i].set_pressed_no_signal(design.preview_floor == i + 1)
+	_floors_menu.text = design.floors_text() + "  ▾"
+	var popup := _floors_menu.get_popup()
+	for n in range(1, Room.FLOOR_CHOICES + 1):
+		popup.set_item_checked(popup.get_item_index(n), Room.allowed_on(n, design.floors))
 	_warning.text = design.clear_problem()
 	_warning.visible = _warning.text != ""
 
@@ -340,13 +497,21 @@ func _build_ui() -> void:
 	title.add_theme_font_size_override("font_size", 36)
 	column.add_child(title)
 
+	# Two columns, so everything fits down the panel.
+	var tool_grid := GridContainer.new()
+	tool_grid.columns = 2
+	column.add_child(tool_grid)
 	var group := ButtonGroup.new()
 	for i in range(TOOLS.size()):
-		var button := _add_button(column, "%d  %s" % [i + 1, TOOLS[i][0]], _select_tool.bind(i))
+		var button := _add_button(tool_grid, "%d  %s" % [i + 1, TOOLS[i][0]], _select_tool.bind(i))
 		button.toggle_mode = true
 		button.button_group = group
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_tool_buttons.append(button)
 
+	column.add_child(HSeparator.new())
+	column.add_child(_tileset_row())
+	column.add_child(_floors_row())
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
@@ -396,6 +561,49 @@ func _build_ui() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.size = Vector2(1920 - PANEL_WIDTH - 64, 48)
 	layer.add_child(_status)
+
+# "Tileset" and a button per floor with its own art.
+func _tileset_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = "Tileset"
+	row.add_child(label)
+	var group := ButtonGroup.new()
+	for floor_number in range(1, FloorTheme.ART_FLOORS + 1):
+		var button := _add_button(row, "Floor %d" % floor_number, _set_tileset.bind(floor_number))
+		button.toggle_mode = true
+		button.button_group = group
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.tooltip_text = "Draw the room with floor %d's art (the play-test uses it too)" % floor_number
+		_tileset_buttons.append(button)
+	return row
+
+# "Floors [Every floor ▾]": a dropdown of checkboxes, one per floor, for the floors the room
+# can appear on. It stays open while ticking, so several can be changed in one go.
+func _floors_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = "Floors"
+	row.add_child(label)
+	_floors_menu = MenuButton.new()
+	_floors_menu.flat = false # Drawn like the other buttons
+	_floors_menu.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_floors_menu.focus_mode = Control.FOCUS_NONE
+	_floors_menu.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_floors_menu.tooltip_text = "Floors this room can appear on (later floors follow Floor %d)" \
+		% Room.FLOOR_CHOICES
+	var popup := _floors_menu.get_popup()
+	popup.add_theme_font_size_override("font_size", FONT_SIZE)
+	popup.hide_on_checkable_item_selection = false
+	popup.add_item("Every floor", FLOORS_ALL_ID)
+	popup.add_item("No floors", FLOORS_NONE_ID)
+	popup.add_separator()
+	for n in range(1, Room.FLOOR_CHOICES + 1):
+		popup.add_check_item("Floor %d" % n, n)
+	popup.id_pressed.connect(_on_floor_item)
+	row.add_child(_floors_menu)
+	return row
 
 # The Clear button, which opens a menu: clear everything, just the enemies, or just the tiles.
 func _clear_menu() -> MenuButton:

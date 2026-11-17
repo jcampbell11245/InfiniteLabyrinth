@@ -67,7 +67,6 @@ var pack_turn_gap_max := 0.6
 var pack_turn_timeout := 3.0 # Seconds an attacker gets to reach the player before giving up its turn
 var pack_ring_radius := 70.0 # Pixels from the player that waiting enemies circle at
 var pack_circle_speed := 0.6 # Times the enemy's speed while circling
-var notice_radius := 64.0 # Pixels: notices a player this close anywhere but behind it, detection zone or not
 var alert_radius := 100.0 # Pixels: noticing the player alerts the rest of the room this close
 var threat_reach := 28.0 # Pixels past its swing distance at which a player closing in sets off its windup
 var counter_attack := true # A hit outside a parry makes it swing back at once, cooldown or not
@@ -167,7 +166,6 @@ const FIELDS := [
 	["AI", "pack_turn_timeout", "Turn timeout (s)", 0.5, 10, 0.1, "new (AttackCoordinator)"],
 	["AI", "pack_ring_radius", "Circle radius (px)", 20, 150, 1, "new (MeleeEnemy)"],
 	["AI", "pack_circle_speed", "Circle speed multiplier", 0, 2, 0.05, "new (MeleeEnemy)"],
-	["AI", "notice_radius", "Notice radius (px, not behind)", 0, 200, 1, "new (MeleeEnemy.is_detected)"],
 	["AI", "alert_radius", "Alert others radius (px)", 0, 300, 1, "new (MeleeEnemy._alert_pack)"],
 	["AI", "threat_reach", "Windup on approach reach (px)", 0, 80, 1, "new (MeleeEnemy._player_in_threat_range)"],
 	["AI", "counter_attack", "Counter-attack when hit", 0, 0, 0, "new (MeleeEnemy._after_hit)"],

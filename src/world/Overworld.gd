@@ -33,7 +33,7 @@ func _ready() -> void:
 	else:
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
-		_build(WorldGenerator.generate(rng))
+		_build(WorldGenerator.generate(rng, floor_number))
 	Game.room_entered.emit(Game.player.current_room) # Fades the start room in
 	
 	Music.start_floor()

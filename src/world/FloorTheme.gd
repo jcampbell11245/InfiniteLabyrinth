@@ -14,6 +14,9 @@ const TILESET_DIR := "res://assets/sprites/tileset/"
 const FLOOR2_DIR := TILESET_DIR + "floor2/"
 const BASE_TEXTURE_META := &"floor1_texture"
 const BASE_FRAMES_META := &"floor1_frames" # On SpriteFrames: "animation/index" -> floor-1 texture
+# Floors with art of their own; every floor after the last uses its art. The room creator
+# offers one tileset per entry here.
+const ART_FLOORS := 2
 
 # The folder holding a floor's art, or "" for the textures the rooms were made with.
 static func art_dir(floor_number: int) -> String:

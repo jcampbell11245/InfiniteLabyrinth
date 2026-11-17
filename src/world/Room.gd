@@ -68,6 +68,23 @@ const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.ts
 @export var floor_size := STANDARD_FLOOR_SIZE
 ## Camera zoom while the player is in this room.
 @export var camera_zoom := 2.5
+const FLOOR_CHOICES := 10 # Floors the checklist covers; later floors follow the last one
+const ALL_FLOORS := (1 << FLOOR_CHOICES) - 1
+
+## Floors this room can appear on (WorldGenerator reads it). Floors after 10 follow Floor 10.
+@export_flags("Floor 1", "Floor 2", "Floor 3", "Floor 4", "Floor 5", "Floor 6", "Floor 7",
+	"Floor 8", "Floor 9", "Floor 10") var floors := ALL_FLOORS
+
+# True if a room with the `floors` flags `mask` can appear on `floor_number`.
+static func allowed_on(floor_number: int, mask: int) -> bool:
+	return mask & (1 << (clampi(floor_number, 1, FLOOR_CHOICES) - 1)) != 0
+
+# The floor whose art rooms are drawn with: the floor being played, or while play-testing
+# from the room creator, the tileset picked there.
+static func art_floor() -> int:
+	if Overworld.test_design != null:
+		return Overworld.test_design.preview_floor
+	return SaveData.floor_number
 
 # Room geometry, all worked out from floor_size. Points are room-local pixels.
 var floor_last: int: # Last floor cell on both axes
@@ -144,11 +161,11 @@ func _ready() -> void:
 	_add_transition_detectors()
 	_add_door_blockers()
 	_split_top_wall()
-	_floor2_doors = FloorTheme.uses_floor2_art(SaveData.floor_number)
+	_floor2_doors = FloorTheme.uses_floor2_art(art_floor())
 	if _floor2_doors:
 		_open_side_doorways()
 	# Last, so the layers added above get the floor's art too.
-	FloorTheme.apply(self, SaveData.floor_number)
+	FloorTheme.apply(self, art_floor())
 
 func close_door(door: Door) -> void:
 	doors[door] = false

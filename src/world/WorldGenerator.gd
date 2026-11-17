@@ -14,9 +14,15 @@ const END_ROOM := "res://src/world/special/EndRoom.tscn"
 const ROOMS_DIR := "res://src/world/rooms/"
 const KEYROOMS_DIR := "res://src/world/keyrooms/"
 
-# Returns layout[row][col], a scene path or "" for no room.
-static func generate(rng: RandomNumberGenerator) -> Array[PackedStringArray]:
-	var rooms := list_scenes(ROOMS_DIR)
+# Returns layout[row][col], a scene path or "" for no room. Generated rooms are picked from
+# those allowed on `floor_number` (Room.floors). If there are too few to fill the floor,
+# some appear twice; if none are allowed, any room can appear.
+static func generate(rng: RandomNumberGenerator, floor_number := 1) -> Array[PackedStringArray]:
+	var allowed := rooms_for_floor(list_scenes(ROOMS_DIR), floor_number)
+	if allowed.is_empty():
+		push_warning("No rooms allowed on floor %d; using every room" % floor_number)
+		allowed = list_scenes(ROOMS_DIR)
+	var rooms := allowed.duplicate()
 	var keyrooms := list_scenes(KEYROOMS_DIR)
 	
 	# Three key rooms in distinct generated columns and distinct rows.
@@ -34,6 +40,8 @@ static func generate(rng: RandomNumberGenerator) -> Array[PackedStringArray]:
 				scene = END_ROOM if row == MIDDLE_ROW else ""
 			else:
 				var key := _key_at(key_rows, key_cols, row, col)
+				if key == -1 && rooms.is_empty(): # Every allowed room used; start again
+					rooms = allowed.duplicate()
 				scene = keyrooms[key] if key != -1 else _take_random(rng, rooms)
 			cells.append(scene)
 		layout.append(cells)
@@ -45,6 +53,22 @@ static func list_scenes(dir: String) -> Array[String]:
 		if file_name.ends_with(".tscn"):
 			scenes.append(dir + file_name)
 	return scenes
+
+# The scenes in `scenes` whose room can appear on `floor_number`.
+static func rooms_for_floor(scenes: Array[String], floor_number: int) -> Array[String]:
+	var allowed: Array[String] = []
+	for path in scenes:
+		if Room.allowed_on(floor_number, floor_mask(path)):
+			allowed.append(path)
+	return allowed
+
+# A room scene's Room.floors flags, read from the scene file without instancing it.
+static func floor_mask(path: String) -> int:
+	var state := (load(path) as PackedScene).get_state()
+	for i in range(state.get_node_property_count(0)):
+		if state.get_node_property_name(0, i) == &"floors":
+			return state.get_node_property_value(0, i)
+	return Room.ALL_FLOORS # Room.gd's default, which the scene file leaves out
 
 static func _distinct_rolls(rng: RandomNumberGenerator, count: int, low: int, high: int) -> PackedInt32Array:
 	var rolls := PackedInt32Array()

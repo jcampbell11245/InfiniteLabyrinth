@@ -90,7 +90,7 @@ frame = 1
 
 [node name="ProjectileHitbox" type="Area2D" parent="." unique_id=942260687]
 collision_layer = 16
-collision_mask = 260
+collision_mask = 261
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ProjectileHitbox" unique_id=896603710]
 position = Vector2(0.5, 0.5)

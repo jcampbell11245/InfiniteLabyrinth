@@ -1,9 +1,11 @@
+class_name MeleeEnemy
 extends Enemy
 
 # Goblin and Knight. Once the player enters its detection zone, or hits it from anywhere
 # (an arrow from across the room), it fights until the player leaves the room. A knight
-# (only_hit_during_attack) blocks any hit that lands outside its slash. Blocking an arrow
-# leaves it stunned for Tuning.knight_block_stun; blocking a sword it counters (see Guarding).
+# (only_hit_during_attack) blocks any hit that lands outside its slash and is stunned for
+# Tuning.knight_block_stun afterwards. Knights sit out guarding, chip damage and the
+# per-facing slash reach (see below), which are goblins only.
 #
 # Fighting: the enemy whose turn it is (see AttackCoordinator) walks to a spot beside the
 # player, straight left, right, above or below, at a distance where its slash and the
@@ -32,7 +34,7 @@ extends Enemy
 # second swing staggers it. A first swing that isn't parried is just a single attack.
 #
 # Pressure, so the player can't rush in swinging (no knockback stops it being pushed out of
-# range either): it notices a player within Tuning.notice_radius anywhere but behind it,
+# range either): it notices a player within its detection_radius anywhere but behind it,
 # and alerts the rest of the room nearby. It starts its windup as soon as a player closing
 # in gets within Tuning.threat_reach of its swing distance, rather than waiting for them to
 # line up, and keeps re-aiming during the windup if they step round to its side. A hit
@@ -40,10 +42,10 @@ extends Enemy
 # straight back, cooldown or not, so a second swing meets its windup and is blocked unless
 # timed as a parry. One free hit, then the player has to parry.
 #
-# Guarding: a sword hit that lands before the enemy has started a swing is blocked, not
-# taken, as long as it's seen the player coming and isn't hit from behind (a knight blocks
-# from any side). A block still takes Tuning.chip_damage off it, like every other blocked
-# hit (see Enemy._chip), and it swings straight back, cooldown or not (the same counter as
+# Guarding (not knights, which block their own way): a sword hit that lands before the
+# enemy has started a swing is blocked, not taken, as long as it's seen the player coming
+# and isn't hit from behind. A block still takes Tuning.chip_damage off it, like every
+# other blocked hit (see Enemy._chip), and it swings straight back, cooldown or not (the same counter as
 # above, but with no flinch if it can't), so a chip can't be followed by another: the next
 # swing meets the counter's windup and is blocked, staggering the player, unless timed as a
 # parry. Hits in a swing's recovery, from behind or from arrows aren't blocked this way.
@@ -74,7 +76,15 @@ const FOLLOW_UP_FLASH := Color(1, 0.6, 0.3) # Shown as a parried double attack s
 const RUSH_SPEED := 20.0 # Pixels/sec towards the enemy that counts as the player closing in
 const SLASH_COVER_MARGIN := 3.0 # Pixels the slash reaches past the player's sword; see _cover_player_reach
 
+const DEFAULT_DETECTION_RADIUS := 64.0
+
 @export var only_hit_during_attack: bool
+# Pixels: notices a player this close anywhere but behind it (see _sees_player_nearby).
+# Set per enemy in each room; the room creator draws it as a circle you can drag.
+@export_range(0, 400, 1) var detection_radius := DEFAULT_DETECTION_RADIUS
+# Slash length worked out for each facing (true), or one length that covers the worst
+# facing, used every way (false). See _cover_player_reach.
+@export var per_facing_reach := true
 @export var starting_direction := Direction.RIGHT
 @export var double_attack := false # Some swings follow up when parried; see above
 @export var unparryable_attack := false # Some swings can't be parried; see above
@@ -209,11 +219,11 @@ func is_detected() -> bool:
 	return room.player_active && is_player_in_room() \
 		&& (noticed || _sees_player_nearby() || detection_zone.get_overlapping_bodies().has(player))
 
-# Within Tuning.notice_radius, in front or to the side. Only the detection zone covers
+# Within detection_radius, in front or to the side. Only the detection zone covers
 # behind, so the player can still sneak up for a hit.
 func _sees_player_nearby() -> bool:
 	var offset := _to_player()
-	return offset.length() <= Tuning.notice_radius && Direction.to_vector(direction).dot(offset) >= 0
+	return offset.length() <= detection_radius && Direction.to_vector(direction).dot(offset) >= 0
 
 # Noticed the player: so does everyone else in the room within Tuning.alert_radius.
 func _alert_pack() -> void:
@@ -489,6 +499,10 @@ func _parried_follow_up() -> bool:
 # enemy's hurtbox); the shorter side wins, less Tuning.engage_margin, so both sides' hits
 # connect. Measured from the scenes' shapes.
 func _engage_distance(horizontal: bool) -> float:
+	if !_reach_cache.has(horizontal) && !per_facing_reach: # Hurtbox offsets ignored
+		var mine := _forward_reach(hitbox, self) + _half_extent(player.hurtbox, player, horizontal)
+		var theirs := _forward_reach(player.hitbox, player) + _half_extent(hurtbox, self, horizontal)
+		_reach_cache[horizontal] = minf(mine, theirs)
 	if !_reach_cache.has(horizontal):
 		var best := INF
 		for dir: String in ([Direction.LEFT, Direction.RIGHT] if horizontal else [Direction.UP, Direction.DOWN]):
@@ -538,10 +552,20 @@ func _cover_player_reach() -> void:
 	var rect := (hitbox.shape as RectangleShape2D).duplicate() as RectangleShape2D
 	var s := absf(scale.x)
 	_slash_near = hitbox.position.x - rect.size.x / 2 # Local units, like the shape
-	var scene_reach := _forward_reach(hitbox, self)
-	for dir: String in [Direction.RIGHT, Direction.LEFT, Direction.UP, Direction.DOWN]:
-		var need := _sword_gap(dir) - _slash_gap(dir, 0.0) + SLASH_COVER_MARGIN
-		_reach_by_dir[dir] = maxf(scene_reach, need)
+	if per_facing_reach:
+		var scene_reach := _forward_reach(hitbox, self)
+		for dir: String in [Direction.RIGHT, Direction.LEFT, Direction.UP, Direction.DOWN]:
+			var need := _sword_gap(dir) - _slash_gap(dir, 0.0) + SLASH_COVER_MARGIN
+			_reach_by_dir[dir] = maxf(scene_reach, need)
+	else: # One length, the longest either axis needs, hurtbox offsets ignored
+		var need_reach := 0.0
+		for horizontal: bool in [true, false]:
+			need_reach = maxf(need_reach, sword_reach + _half_extent(hurtbox, self, horizontal)
+				- _half_extent(player.hurtbox, player, horizontal))
+		var far := (need_reach + SLASH_COVER_MARGIN) / s
+		if far > _slash_near + rect.size.x:
+			rect.size.x = far - _slash_near
+			hitbox.position.x = (_slash_near + far) / 2
 	rect.size.y = maxf(rect.size.y, 2 * (need_half_width + SLASH_COVER_MARGIN) / s)
 	hitbox.shape = rect
 	_reach_cache.clear()
@@ -620,18 +644,16 @@ func _on_player_sword(from_direction: String) -> void:
 	else:
 		super(from_direction)
 
-# Not swinging (or recovering from one), not dazed, and either a knight or facing a player
-# it has already noticed. A swing the player started before this enemy's attack began
-# counts as landing before it too, even if the windup has started by the time it connects.
+# Not a knight, not swinging (or recovering from one), not dazed, and facing a player it
+# has already noticed. A swing the player started before this enemy's attack began counts
+# as landing before it too, even if the windup has started by the time it connects.
 func _can_guard(from_direction: String) -> bool:
-	if invincibility_cooldown.time_left != 0:
+	if only_hit_during_attack || invincibility_cooldown.time_left != 0:
 		return false
 	if _animation_is("slash") && !_in_windup_swung_first():
 		return false
 	if is_stunned() || is_vulnerable() || in_end_lag():
 		return false
-	if only_hit_during_attack:
-		return true
 	return noticed && from_direction != direction # The sword travelling its way is from behind
 
 func _in_windup_swung_first() -> bool:
@@ -652,14 +674,15 @@ func _block_sword(from_direction: String) -> void:
 	Juice.burst(room, global_position - hit_dir * 6, GUARD_SPARK, 6, 70.0, -hit_dir, 1.5, 0.25)
 	Juice.hitstop(HITSTOP_BLOCK)
 	Juice.shake(Juice.SHAKE_LIGHT)
-	if only_hit_during_attack:
-		Juice.play($Block)
-		_play_reaction("block")
-	else:
-		Juice.clank(true)
-		Juice.flash(animator, 0.1, GUARD_FLASH)
+	Juice.clank(true)
+	Juice.flash(animator, 0.1, GUARD_FLASH)
 	_chip(hit_dir)
 	_block_counter_pending = Tuning.counter_attack # Swings back next physics frame
+
+# Knights take no chip damage; their blocks are the old, free kind.
+func _chip(hit_dir: Vector2) -> void:
+	if !only_hit_during_attack:
+		super(hit_dir)
 
 # Any hit, even one a knight blocks, gives the player away.
 func take_damage(from_direction: String, amount: float) -> void:

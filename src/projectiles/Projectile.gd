@@ -65,13 +65,15 @@ func deflect(new_direction: String) -> void:
 
 # Enemy shots sit on the enemy projectile layer and look for the player; deflected ones
 # move to the arrow layer and look for enemies, like the player's arrows. Walls (top
-# tiles) stop both. Deferred, since deflecting happens inside collision callbacks.
+# tiles) and stalagmites (general) stop both. Deferred, since deflecting happens inside
+# collision callbacks.
 func _set_hostile_to_player(hostile: bool) -> void:
 	hostile_to_player = hostile
 	var hitbox: Area2D = $ProjectileHitbox
 	var layer := Constants.Layer.ENEMY_PROJECTILE if hostile else Constants.Layer.ARROW
 	var target := Constants.Layer.PLAYER if hostile else Constants.Layer.ENEMY
-	var mask := (1 << (target - 1)) | (1 << (Constants.Layer.TOP_TILES - 1))
+	var mask := (1 << (target - 1)) | (1 << (Constants.Layer.TOP_TILES - 1)) \
+		| (1 << (Constants.Layer.GENERAL - 1))
 	hitbox.set_deferred("collision_layer", 1 << (layer - 1))
 	hitbox.set_deferred("collision_mask", mask)
 	set_deferred("collision_layer", 1 << (layer - 1))

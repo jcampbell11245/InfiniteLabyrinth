@@ -275,8 +275,8 @@ func _handle_input(input: FrameInput) -> void:
 			velocity += input.move
 	velocity = velocity.normalized() * speed
 
-	# Decided once, here: _update_animation can drop a swing back to idle (on its last frame,
-	# or when a direction key is let go), which mustn't let a new one start that same frame
+	# Decided once, here: _update_animation can drop a swing back to idle (on its last
+	# frame), which mustn't let a new one start that same frame
 	# before the cooldown has begun.
 	input.melee = input.melee && can_swing()
 	if input.melee:
@@ -355,7 +355,8 @@ func _update_animation(input: FrameInput) -> void:
 	if _charging:
 		_show_drawn_bow(input)
 		return
-	if input.released != "":
+	# Letting go of a direction stops a walk, but never cuts short a swing, shot or flinch.
+	if input.released != "" && _action() not in ACTION_END_FRAME:
 		direction = input.released
 		_play(Action.IDLE)
 	var action := _action()
@@ -482,6 +483,9 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 		if from_direction != "" && is_vulnerable():
 			damage *= Tuning.stagger_damage_multiplier
 			_set_vulnerable(false)
+		# Hearts only show halves, so round up to the next half heart. Otherwise multipliers
+		# can leave a sliver (0.25) that shows as empty hearts but still keeps the player alive.
+		damage = ceilf(damage * 2.0 - 0.001) / 2.0
 		if !Tuning.god_mode:
 			health -= damage
 		Game.health_changed.emit(health)
@@ -609,8 +613,13 @@ func _show_dizzy(on: bool) -> void:
 func _on_invincibility_cooldown_timeout() -> void:
 	animator.modulate.a = 1
 
-# Fell down a pitfall
+# Stepped onto a pitfall. A roll carries the player over it; they only fall if the roll
+# ends with their feet still over a pit (see _on_rolling_timeout).
 func _on_feet_box_body_entered(_body: Node2D) -> void:
+	if rolling.time_left == 0:
+		_fall()
+
+func _fall() -> void:
 	if respawn_cooldown.time_left == 0:
 		$Fall.play()
 		visible = false
@@ -641,6 +650,9 @@ func _on_rolling_timeout() -> void:
 	hitbox.disabled = false
 	hurtbox.disabled = false
 	roll_cooldown.start(Tuning.roll_cooldown)
+	# Came up short of the far side of a gap
+	if $FeetBox.has_overlapping_bodies():
+		_fall()
 
 # --- Room transitions ---
 
