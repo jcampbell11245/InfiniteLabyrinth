@@ -15,7 +15,7 @@ var roll_cooldown := 0.5 # Seconds after a roll ends before the next
 var hurt_invincibility := 1.0 # Seconds after being hit before the next hit counts
 var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
 var shoot_cooldown := 0.5 # Seconds between arrows
-var sword_cooldown := 0.2 # Seconds after a swing ends before the next can start
+var sword_cooldown := 0.3 # Seconds after a swing ends before the next can start
 var shoot_recoil := 45.0 # Knockback speed pushed back from each shot
 var blocked_daze_time := 0.6 # Seconds the player can't act after a swing is blocked
 var pitfall_damage := 0.5 # Hearts lost falling down a pitfall
@@ -30,6 +30,7 @@ var parry_window := 0.25 # Seconds from the twinkle to the strike; a sword hit i
 var parried_stun_time := 1.0 # Seconds a parried enemy stands helpless
 var instant_finisher := true # While a parried enemy is stunned, swings skip the sword cooldown
 var parried_knockback := 0.5 # Times the enemy's knockback_speed for being parried
+var hit_knockback := 0.0 # Times the enemy's knockback_speed for an ordinary hit; 0 so a rush can't stunlock
 var stagger_damage_multiplier := 2.5 # Next hit taken while vulnerable
 var stagger_vulnerable_time := 3.0 # Seconds the vulnerability lasts
 var crit_roll_max := 30 # A hit crits when randi_range(0, crit_roll_max) < damage upgrade level
@@ -65,6 +66,10 @@ var pack_turn_gap_max := 1.2
 var pack_turn_timeout := 3.0 # Seconds an attacker gets to reach the player before giving up its turn
 var pack_ring_radius := 70.0 # Pixels from the player that waiting enemies circle at
 var pack_circle_speed := 0.6 # Times the enemy's speed while circling
+var notice_radius := 64.0 # Pixels: notices a player this close anywhere but behind it, detection zone or not
+var alert_radius := 100.0 # Pixels: noticing the player alerts the rest of the room this close
+var threat_reach := 20.0 # Pixels past its swing distance at which a player closing in sets off its windup
+var counter_attack := true # A hit outside a parry makes it swing back at once, cooldown or not
 
 # --- Projectiles ---
 var arrow_speed := 200.0
@@ -125,6 +130,7 @@ const FIELDS := [
 	["Combat", "parried_stun_time", "Parried stun (s)", 0, 5, 0.05, "Enemy.gd PARRIED_STUN_TIME"],
 	["Combat", "instant_finisher", "Instant swings on stunned enemy", 0, 0, 0, "new (Player.in_finisher)"],
 	["Combat", "parried_knockback", "Parried knockback multiplier", 0, 5, 0.05, "Enemy.gd PARRIED_KNOCKBACK"],
+	["Combat", "hit_knockback", "Hit knockback multiplier", 0, 5, 0.05, "Enemy.take_damage (was 1x knockback_speed)"],
 	["Combat", "stagger_damage_multiplier", "Stagger damage multiplier", 1, 10, 0.1, "Constants.gd STAGGER_DAMAGE_MULTIPLIER"],
 	["Combat", "stagger_vulnerable_time", "Stagger vulnerable time (s)", 0, 10, 0.1, "Constants.gd STAGGER_VULNERABLE_TIME"],
 	["Combat", "crit_roll_max", "Crit roll max (lower = more crits)", 0, 100, 1, "Enemy.gd CRIT_ROLL_MAX"],
@@ -158,6 +164,10 @@ const FIELDS := [
 	["AI", "pack_turn_timeout", "Turn timeout (s)", 0.5, 10, 0.1, "new (AttackCoordinator)"],
 	["AI", "pack_ring_radius", "Circle radius (px)", 20, 150, 1, "new (MeleeEnemy)"],
 	["AI", "pack_circle_speed", "Circle speed multiplier", 0, 2, 0.05, "new (MeleeEnemy)"],
+	["AI", "notice_radius", "Notice radius (px, not behind)", 0, 200, 1, "new (MeleeEnemy.is_detected)"],
+	["AI", "alert_radius", "Alert others radius (px)", 0, 300, 1, "new (MeleeEnemy._alert_pack)"],
+	["AI", "threat_reach", "Windup on approach reach (px)", 0, 80, 1, "new (MeleeEnemy._player_in_threat_range)"],
+	["AI", "counter_attack", "Counter-attack when hit", 0, 0, 0, "new (MeleeEnemy._after_hit)"],
 
 	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
 	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],

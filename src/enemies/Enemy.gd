@@ -160,7 +160,7 @@ func _add_timer(on_timeout := Callable()) -> Timer:
 func take_damage(from_direction: String, amount: float) -> void:
 	if invincibility_cooldown.time_left != 0:
 		return
-	knockback = Direction.to_vector(from_direction) * knockback_speed
+	knockback = Direction.to_vector(from_direction) * knockback_speed * Tuning.hit_knockback
 	var hit_dir := Direction.to_vector(from_direction)
 	if !is_vulnerable() && _blocks_hit():
 		# Sparks fly back towards the attacker.
@@ -217,7 +217,7 @@ func is_player_in_room() -> bool:
 
 # --- Overridable hooks ---
 
-# True when a hit should be shrugged off (knockback still applies).
+# True when a hit should be shrugged off (any Tuning.hit_knockback still applies).
 func _blocks_hit() -> bool:
 	return false
 

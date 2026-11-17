@@ -387,12 +387,20 @@ func _add_pitfall_spikes(rng: RandomNumberGenerator) -> void:
 	add_child(spikes)
 
 # Detector tiles in each doorway that start the walk into the next room. close_door()
-# removes the ones in doorways that get closed.
+# removes the ones in doorways that get closed. Each spans the doorway's whole width, so
+# feet that come in along one edge of the opening (walking in at an angle) still set it
+# off instead of leaving the player standing in the doorway; the side doors use a copy
+# turned on its side.
+const DETECTOR_ACROSS_X := 0 # Tile alternative for the top and bottom doors
+const DETECTOR_ACROSS_Y := 8 # For the side doors
+
 func _add_transition_detectors() -> void:
 	_detectors = TransitionDetector.instantiate()
 	var cells := door_cells
 	for door: Door in cells:
-		_detectors.set_cell(0, cells[door], 0, Vector2i.ZERO)
+		var side := door == Door.LEFT || door == Door.RIGHT
+		_detectors.set_cell(0, cells[door], 0, Vector2i.ZERO,
+			DETECTOR_ACROSS_Y if side else DETECTOR_ACROSS_X)
 	add_child(_detectors)
 
 # Fills every doorway with a block on the top-tiles layer, which enemies (and enemy

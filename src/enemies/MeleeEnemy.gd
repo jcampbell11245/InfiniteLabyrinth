@@ -31,6 +31,15 @@ extends Enemy
 # straight away, glinting Tuning.double_attack_hold after the parry, and only parrying that
 # second swing staggers it. A first swing that isn't parried is just a single attack.
 #
+# Pressure, so the player can't rush in swinging (no knockback stops it being pushed out of
+# range either): it notices a player within Tuning.notice_radius anywhere but behind it,
+# and alerts the rest of the room nearby. It starts its windup as soon as a player closing
+# in gets within Tuning.threat_reach of its swing distance, rather than waiting for them to
+# line up, and keeps re-aiming during the windup if they step round to its side. A hit
+# that isn't a parry (sneaking up, or catching it recovering) gets a counter: it swings
+# straight back, cooldown or not, so a second swing meets its windup and is blocked unless
+# timed as a parry. One free hit, then the player has to parry.
+#
 # Enemies whose sprites have them also react to hits: "block" plays once when a hit is
 # shrugged off, and "vuln" flashes while invincible after a hit lands. The enemy stands
 # still until the reaction is over.
@@ -50,6 +59,8 @@ const RING_CRAMPED := 0.8 # Share of the circle's radius a wall can squash it to
 const WALL_PUSH := 0.6 # Radians: how hard a cramped enemy slides round towards open floor
 const WALL_PROBE := 0.4 # Radians either side checked for more room
 const FOLLOW_UP_FLASH := Color(1, 0.6, 0.3) # Shown as a parried double attack swings again
+const RUSH_SPEED := 20.0 # Pixels/sec towards the enemy that counts as the player closing in
+const SLASH_COVER_MARGIN := 3.0 # Pixels the slash reaches past the player's sword; see _cover_player_reach
 
 @export var only_hit_during_attack: bool
 @export var starting_direction := Direction.RIGHT
@@ -71,6 +82,8 @@ var _follow_up_ready := false # This swing is the first of a double attack
 var _end_lag: Timer # Running while frozen at the end of an unparryable attack
 var _end_lagged := false # This swing has had its end lag
 var _turning := false # Swapping a swing's facing; its frame changes aren't real ones
+var _was_noticed := false # noticed, last physics frame
+var _counter_pending := false # Just hit; swing back on the next physics frame
 
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var detection_zone: Area2D = $DetectionZonePivot/DetectionZone
@@ -78,6 +91,7 @@ var _turning := false # Swapping a swing's facing; its frame changes aren't real
 func _ready() -> void:
 	super()
 	_end_lag = _add_timer(_on_end_lag_over)
+	_cover_player_reach.call_deferred() # Once the player's shapes are in place
 	direction = starting_direction
 	_play("idle")
 
@@ -101,16 +115,23 @@ func _physics_process(delta: float) -> void:
 	var engaged := is_detected()
 	if engaged:
 		noticed = true # Keeps fighting while circling outside the detection zone
+	if noticed && !_was_noticed:
+		_alert_pack()
+	_was_noticed = noticed
 	var coordinator := AttackCoordinator.for_room(room)
 	if engaged:
 		coordinator.check_in(self)
 	var attacker := engaged && coordinator.is_attacker(self)
 	_update_turn(coordinator, attacker)
 
+	if _counter_pending:
+		_counter_pending = false
+		_counter(coordinator)
+
 	if !_animation_is("slash"): # Committed to a swing's facing until it ends
 		_update_facing()
 		_point_pivots()
-	elif !_unparryable && _is_player_behind():
+	elif !_unparryable && (_is_player_behind() || _windup_off_target()):
 		_turn_mid_attack()
 
 	if _is_reacting() || _animation_is("slash"):
@@ -157,7 +178,22 @@ func attack() -> void:
 # through the shared wall.
 func is_detected() -> bool:
 	return room.player_active && is_player_in_room() \
-		&& (noticed || detection_zone.get_overlapping_bodies().has(player))
+		&& (noticed || _sees_player_nearby() || detection_zone.get_overlapping_bodies().has(player))
+
+# Within Tuning.notice_radius, in front or to the side. Only the detection zone covers
+# behind, so the player can still sneak up for a hit.
+func _sees_player_nearby() -> bool:
+	var offset := _to_player()
+	return offset.length() <= Tuning.notice_radius && Direction.to_vector(direction).dot(offset) >= 0
+
+# Noticed the player: so does everyone else in the room within Tuning.alert_radius.
+func _alert_pack() -> void:
+	if !is_player_in_room():
+		return
+	for other in get_tree().get_nodes_in_group("enemies"):
+		if other != self && "noticed" in other && other.room == room \
+				&& other.position.distance_to(position) <= Tuning.alert_radius:
+			other.noticed = true
 
 # --- Taking turns (AttackCoordinator) ---
 
@@ -188,6 +224,9 @@ func _fight(coordinator: AttackCoordinator, delta: float) -> void:
 	if _in_strike_position(_slot_horizontal):
 		if _can_start_swing(coordinator):
 			_start_swing(_slot_horizontal)
+		return
+	if _player_rushing_in() && _can_start_swing(coordinator):
+		_start_swing(_is_player_mostly_horizontal())
 		return
 	_walk_to(_pick_slot(), speed, delta, SLOT_ARRIVE)
 
@@ -225,6 +264,9 @@ func _circle(coordinator: AttackCoordinator, delta: float) -> void:
 		if _in_strike_position(horizontal) && _can_start_swing(coordinator):
 			_start_swing(horizontal)
 			return
+	if _player_rushing_in() && _can_start_swing(coordinator):
+		_start_swing(_is_player_mostly_horizontal())
+		return
 
 	var centre := _player_position()
 	var offset := position - centre
@@ -282,6 +324,41 @@ func _in_strike_position(horizontal: bool) -> bool:
 	var across := absf(from_player.y) if horizontal else absf(from_player.x)
 	return along <= _engage_distance(horizontal) + SLOT_ARRIVE && across <= SLOT_TOLERANCE
 
+# Within Tuning.threat_reach of the distance it swings from, along whichever axis the
+# player is mostly off it on.
+func _player_in_threat_range() -> bool:
+	var horizontal := _is_player_mostly_horizontal()
+	var offset := _to_player().abs()
+	return (offset.x if horizontal else offset.y) <= _engage_distance(horizontal) + Tuning.threat_reach
+
+# In threat range and moving (walking or rolling) towards it: they'll be in reach by the
+# time the windup is, so it starts now instead of letting them swing first.
+func _player_rushing_in() -> bool:
+	if !_player_in_threat_range():
+		return false
+	var towards_me := -_to_player()
+	return towards_me.length() > 0.01 && player.velocity.dot(towards_me.normalized()) > RUSH_SPEED
+
+# A hit that wasn't a parry: swing straight back, ignoring the attack cooldown, if the
+# player is close and nobody else is mid-swing. Otherwise just flinch.
+func _counter(coordinator: AttackCoordinator) -> void:
+	if is_stunned() || in_end_lag() || _animation_is("slash") || !is_detected() \
+			|| coordinator.other_is_swinging(self) || !_player_in_threat_range() \
+			|| (only_hit_during_attack && $BlockStun.time_left != 0):
+		_play_reaction("vuln")
+		return
+	_start_swing(_is_player_mostly_horizontal())
+
+# Mid-windup with the player stepped round to its side: worth turning to keep them in
+# front. Sticky, like the attack spot, so a diagonal doesn't make it spin.
+func _windup_off_target() -> bool:
+	if animator.frame >= attack_frame:
+		return false
+	var offset := _to_player().abs()
+	if direction == Direction.LEFT || direction == Direction.RIGHT:
+		return offset.y > offset.x * AXIS_STICKINESS
+	return offset.x > offset.y * AXIS_STICKINESS
+
 func _can_start_swing(coordinator: AttackCoordinator) -> bool:
 	if attack_cooldown.time_left != 0 || coordinator.other_is_swinging(self):
 		return false
@@ -293,8 +370,14 @@ func _start_swing(horizontal: bool) -> void:
 	else:
 		_face_player_vertically()
 	_point_pivots()
+	# Fresh windup, even straight out of an interrupted one that _update_windup hasn't
+	# seen end yet (a counter).
+	_end_windup_hold()
+	_windup_held = false
+	_twinkled_at = -1
 	_mark_attack_start()
 	_play("slash")
+	animator.frame = 0
 	attack()
 	_unparryable = unparryable_attack && randf() < Tuning.unparryable_chance
 	_end_lagged = false
@@ -361,6 +444,40 @@ func _engage_distance(horizontal: bool) -> float:
 		_reach_cache[horizontal] = minf(mine, theirs)
 	return maxf(_reach_cache[horizontal] - Tuning.engage_margin, MIN_ENGAGE)
 
+# The player's sword is broad: standing off on a diagonal, the player could catch a corner
+# of this enemy's hurtbox from somewhere its own slash, aimed one of four ways, can't reach
+# back. So the slash hitbox grows (forward and across, never shrinking) until, from anywhere
+# the player's sword reaches this enemy, facing either axis, the slash reaches the player.
+# Across, it only has to cover as far off-axis as the player can be before the enemy would
+# face the other way (about as far off as they are along).
+func _cover_player_reach() -> void:
+	if !is_instance_valid(player):
+		return
+	var sword_reach := _forward_reach(player.hitbox, player)
+	var sword_half_width := _half_extent(player.hitbox, player, false) # Across the blade
+	var need_reach := 0.0
+	var need_half_width := 0.0
+	for horizontal: bool in [true, false]:
+		var mine_along := _half_extent(hurtbox, self, horizontal)
+		var mine_across := _half_extent(hurtbox, self, !horizontal)
+		var theirs_along := _half_extent(player.hurtbox, player, horizontal)
+		var theirs_across := _half_extent(player.hurtbox, player, !horizontal)
+		var furthest_along := sword_reach + mine_along
+		var furthest_across := minf(sword_half_width + mine_across, furthest_along)
+		need_reach = maxf(need_reach, furthest_along - theirs_along)
+		need_half_width = maxf(need_half_width, furthest_across - theirs_across)
+
+	var rect := (hitbox.shape as RectangleShape2D).duplicate() as RectangleShape2D
+	var s := absf(scale.x)
+	var far := (need_reach + SLASH_COVER_MARGIN) / s # Local units, like the shape
+	var near := hitbox.position.x - rect.size.x / 2
+	if far > near + rect.size.x:
+		rect.size.x = far - near
+		hitbox.position.x = (near + far) / 2
+	rect.size.y = maxf(rect.size.y, 2 * (need_half_width + SLASH_COVER_MARGIN) / s)
+	hitbox.shape = rect
+	_reach_cache.clear()
+
 # How far in front of its owner a hitbox reaches (hitboxes point right before their pivot
 # turns them).
 static func _forward_reach(shape: CollisionShape2D, owner_body: Node2D) -> float:
@@ -404,6 +521,8 @@ func _on_reset() -> void:
 	_swings_left = 0
 	_moving = false
 	_follow_up_ready = false
+	_counter_pending = false
+	_was_noticed = false
 	_end_lag.stop()
 	var block_stun: Timer = get_node_or_null("BlockStun")
 	if block_stun != null:
@@ -426,7 +545,11 @@ func _blocks_hit() -> bool:
 	return false
 
 func _after_hit() -> void:
-	if !in_end_lag(): # Stays in the pose; the hit flash still shows
+	if in_end_lag(): # Stays in the pose; the hit flash still shows
+		return
+	if Tuning.counter_attack && !is_stunned():
+		_counter_pending = true # Swings back next physics frame, or flinches; see _counter
+	else:
 		_play_reaction("vuln")
 
 # Plays a hit reaction if this enemy's sprites have one. It uses the enemy's own facing,

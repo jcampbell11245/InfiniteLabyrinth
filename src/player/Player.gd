@@ -299,7 +299,8 @@ func _handle_input(input: FrameInput) -> void:
 # Losing the button any other way (dazed, falling, a room transition) lowers it unfired.
 func _update_charge(input: FrameInput) -> void:
 	if !_charging:
-		if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0:
+		if input.ranged && _action() != Action.DAMAGE && shoot_cooldown.time_left == 0 \
+				&& !is_invincible():
 			_charging = true
 			_charge_time = 0.0
 			_charged = false
@@ -405,13 +406,18 @@ func _update_hitboxes() -> void:
 
 # Not rolling, mid-swing or flinching, and the cooldown after the last swing has run out
 # (or a parried enemy is still stunned). No swinging out of a roll: its invincibility would
-# let the player hit from behind an enemy that's turning round to strike them.
+# let the player hit from behind an enemy that's turning round to strike them. None while
+# invincible after a hit either, or the player could trade into an enemy for free.
 func can_swing() -> bool:
-	if rolling.time_left > 0:
+	if rolling.time_left > 0 || is_invincible():
 		return false
 	if _instant_swing && _action() != Action.DAMAGE:
 		return true
 	return _action() not in [Action.SLASH, Action.DAMAGE] && (_sword_cooldown.is_stopped() || in_finisher())
+
+# In the invincibility after being hit (or falling down a pitfall); no attacking till it ends.
+func is_invincible() -> bool:
+	return invincibility_cooldown.time_left > 0
 
 # Called when the player parries `enemy`: until its stun wears off (or it dies), swings
 # come out with no cooldown between them.
