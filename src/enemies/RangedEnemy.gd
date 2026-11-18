@@ -37,6 +37,9 @@ const RETREAT_LIMIT_DOWN := 406
 
 var retreat_blocked := false # Backing away ran into something; shoot instead until the next cast
 var _judged: Dictionary = {} # Fireball -> its deflections when last swung at, so each return gets one try
+# Its fireball still in the room (flying, rallying or breaking). It won't cast another until
+# this one is gone.
+var _fireball: Projectile
 var _hitbox_pivot: Marker2D
 var _hitbox: CollisionShape2D
 var _swipe_sound: AudioStreamPlayer
@@ -82,7 +85,7 @@ func _physics_process(delta: float) -> void:
 			var collision := move_and_collide(motion)
 			# Grazing something still counts as moving; only a near-stop means it's stuck.
 			retreat_blocked = collision != null && collision.get_travel().length() < motion.length() / 2
-		elif attack_cooldown.time_left == 0:
+		elif _can_cast():
 			animate()
 			attack()
 
@@ -101,7 +104,7 @@ func animate() -> void:
 			_play("idle")
 	elif _is_retreating():
 		_play("walk")
-	elif !_animation_is("shoot") && attack_cooldown.time_left == 0:
+	elif !_animation_is("shoot") && _can_cast():
 		_play("shoot")
 	elif !_animation_is("shoot"):
 		_play("idle")
@@ -116,6 +119,7 @@ func shoot_fireball() -> void:
 		return
 	Juice.play($Attack)
 	var fireball: Projectile = Fireball.instantiate()
+	_fireball = fireball
 	room.add_child(fireball)
 	fireball.position = room.clamp_to_floor(position, Projectile.SPAWN_MARGIN)
 	fireball.direction = direction
@@ -124,6 +128,10 @@ func shoot_fireball() -> void:
 	fireball.shooter = self # Hit back, it homes on this wizard
 	fireball.launch_at(player)
 	attack_cooldown.start(Tuning.wizard_burst_cooldown)
+
+# Off cooldown, with no fireball of its own still out.
+func _can_cast() -> bool:
+	return attack_cooldown.time_left == 0 && !is_instance_valid(_fireball)
 
 # The animation whose windup can be parried: the staff swipe. Casting can't be.
 func _attack_action() -> String:
