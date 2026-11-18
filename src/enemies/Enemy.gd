@@ -247,10 +247,12 @@ func die() -> void:
 	died.emit(self)
 	queue_free()
 
-# Caught by the player's spin attack: an ordinary hit, outward from the player, that no
-# guard or parry timing gets in the way of (only blocking that ignores swings, like a
-# knight's shield, still stops it). If it lands and doesn't kill, it stuns like a parry
-# (Tuning.spin_staggers), so a crowd that rushed in can't all swing back.
+# Caught by the player's spin attack: an ordinary hit, outward from the player, with no
+# parry timing. It has to catch the enemy already attacking, though: one that's ready and
+# facing the player but hasn't started (a group rush still gathering, say) guards it like
+# an early sword hit (_guards_spin), and a knight's shield blocks it outside an attack as
+# usual. If it lands and doesn't kill, it stuns like a parry (Tuning.spin_staggers), so a
+# crowd that rushed in can't all swing back.
 func spin_hit() -> void:
 	var away := global_position - player.global_position
 	var from_direction: String
@@ -258,11 +260,18 @@ func spin_hit() -> void:
 		from_direction = Direction.RIGHT if away.x >= 0 else Direction.LEFT
 	else:
 		from_direction = Direction.DOWN if away.y > 0 else Direction.UP
+	if _guards_spin(from_direction):
+		return
 	var stun := _spin_stun_time() # Asked first: the hit can end its part in a group rush
 	var before := health
 	take_damage(from_direction, player.spin_damage())
 	if Tuning.spin_staggers && health < before && health > 0:
 		stagger(from_direction, stun)
+
+# Blocks a spin coming from `from_direction` (the way the blade travels), if it can; true
+# if it did. Only enemies that guard do (see MeleeEnemy).
+func _guards_spin(_from_direction: String) -> bool:
+	return false
 
 # Seconds a spin hit stuns it for; -1 for the usual Tuning.parried_stun_time. Longer for
 # an enemy caught in a group rush (see MeleeEnemy).

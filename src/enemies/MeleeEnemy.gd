@@ -849,6 +849,18 @@ func _can_guard(from_direction: String) -> bool:
 		return false
 	return noticed && from_direction != direction # The sword travelling its way is from behind
 
+# A spin caught it before it started attacking: it guards, as against an early sword hit
+# (clank, chip, counter). Once it's in its attack (windup or swing) the spin lands, as it
+# does from behind, or while it's dazed, flinching or stuck in end lag. Knights block with
+# their shield in take_damage instead.
+func _guards_spin(from_direction: String) -> bool:
+	if only_hit_during_attack || invincibility_cooldown.time_left != 0 || _animation_is("slash"):
+		return false
+	if is_stunned() || is_vulnerable() || in_end_lag() || !noticed || from_direction == direction:
+		return false
+	_block_sword(from_direction)
+	return true
+
 func _in_windup_swung_first() -> bool:
 	return _animation_is("slash") && animator.frame <= attack_frame && _swung_first()
 
