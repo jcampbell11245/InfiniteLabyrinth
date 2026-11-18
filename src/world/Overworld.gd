@@ -131,6 +131,7 @@ func _attach_left_of(room: Room, neighbour: Room) -> void:
 
 func _add_room(scene: PackedScene, id: int, row: int, col: int) -> Room:
 	var room: Room = scene.instantiate()
+	EnemyFamilies.roll_variants(room)
 	add_child(room)
 	room.position = grid_position(row, col)
 	room.room_id = id

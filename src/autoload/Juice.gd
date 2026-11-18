@@ -42,12 +42,15 @@ const COIN_PITCH_STEP := 0.05
 const COIN_PITCH_MAX_STEPS := 6
 const COIN_VOLUME_DB := -4.0
 const COIN_VOICES := 4 # Players taken in turn, so a new coin doesn't cut off the last
+# The coin sound pitched down and run backwards: a troll stealing coins.
+const COIN_BAD := preload("res://assets/sfx/coin_bad.wav")
 
 var _hitstop_until := 0 # Ticks (ms) when the current hit-stop ends; 0 when none
 var _coin_players: Array[AudioStreamPlayer] = []
 var _clank_player: AudioStreamPlayer
 var _bad_clank_player: AudioStreamPlayer
 var _deflect_player: AudioStreamPlayer
+var _coin_bad_player: AudioStreamPlayer
 var _next_coin_player := 0
 var _last_coin := -100000 # Ticks (ms) of the last coin sound
 var _coin_chain := 0 # Coins in the current chain
@@ -69,6 +72,10 @@ func _ready() -> void:
 	_deflect_player = AudioStreamPlayer.new()
 	_deflect_player.stream = DEFLECT
 	add_child(_deflect_player)
+	_coin_bad_player = AudioStreamPlayer.new()
+	_coin_bad_player.stream = COIN_BAD
+	_coin_bad_player.volume_db = COIN_VOLUME_DB
+	add_child(_coin_bad_player)
 
 # Ends hit-stop by the real-time clock, since timers run slow while it's on.
 func _process(_delta: float) -> void:
@@ -130,6 +137,10 @@ func coin_sound() -> void:
 	_next_coin_player = (_next_coin_player + 1) % COIN_VOICES
 	voice.stream = COIN_SOUNDS.pick_random()
 	play(voice, 0.03, 1.0 + COIN_PITCH_STEP * mini(_coin_chain, COIN_PITCH_MAX_STEPS))
+
+# Coins taken from the player (a troll's hit): the bad version of the pickup sound.
+func coin_stolen_sound() -> void:
+	play(_coin_bad_player, 0.04)
 
 # Gives a sprite the flash shader. Call once, then flash() whenever it's hit.
 func add_flash(sprite: CanvasItem) -> void:

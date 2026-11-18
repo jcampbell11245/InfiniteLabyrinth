@@ -55,6 +55,11 @@ var double_attack_hold := 0.35 # Seconds from parrying the first swing to the se
 var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
 var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
+# Goblin family (see EnemyFamilies): chance each goblin placed in a floor's rooms turns
+# into a troll or an orc instead. Rooms made in the room creator can place them directly.
+var troll_chance := 0.2
+var orc_chance := 0.15
+var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
 var boss_laser_cooldown := 1.0
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
@@ -158,6 +163,9 @@ const FIELDS := [
 	["Enemies", "wizard_burst_cooldown", "Wizard burst cooldown (s)", 0.1, 10, 0.1, "RangedEnemy.gd BURST_COOLDOWN"],
 	["Enemies", "wizard_shot_delay", "Wizard shot delay (s)", 0.05, 3, 0.05, "RangedEnemy.gd BURST_SHOT_DELAY"],
 	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
+	["Enemies", "troll_chance", "Goblin becomes troll chance", 0, 1, 0.05, "new (EnemyFamilies)"],
+	["Enemies", "orc_chance", "Goblin becomes orc chance", 0, 1, 0.05, "new (EnemyFamilies)"],
+	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],

@@ -75,6 +75,9 @@ const TOOLS := [
 	["Switch", "object", "switch"],
 	["Eraser", "erase", null],
 	["Select", "select", null],
+	# After the rest so the number keys for the others stay put; past 9 they have none.
+	["Troll", "object", "troll"],
+	["Orc", "object", "orc"],
 ]
 
 var design: RoomDesign
@@ -195,7 +198,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().change_scene_to_file(TITLE_SCENE)
 		elif key == KEY_F5:
 			_play()
-		elif key >= KEY_1 && key < KEY_1 + TOOLS.size():
+		elif key >= KEY_1 && key < KEY_1 + mini(TOOLS.size(), 9):
 			_select_tool(key - KEY_1)
 
 func _update_hover() -> void:
@@ -635,6 +638,7 @@ func _sprite_for(kind: String) -> AnimatedSprite2D:
 		sprite.scale = source.scale * root_scale
 		sprite.centered = source.centered
 		sprite.flip_h = source.flip_h
+		sprite.self_modulate = source.self_modulate # A troll's gold tint
 		_sprite_cache[kind] = sprite
 		scene.free()
 	return (_sprite_cache[kind] as AnimatedSprite2D).duplicate()
@@ -702,7 +706,8 @@ func _build_ui() -> void:
 	column.add_child(tool_grid)
 	var group := ButtonGroup.new()
 	for i in range(TOOLS.size()):
-		var button := _add_button(tool_grid, "%d  %s" % [i + 1, TOOLS[i][0]], _select_tool.bind(i))
+		var key_hint := str(i + 1) if i < 9 else " " # Only 1-9 have keys
+		var button := _add_button(tool_grid, "%s  %s" % [key_hint, TOOLS[i][0]], _select_tool.bind(i))
 		button.toggle_mode = true
 		button.button_group = group
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -760,7 +765,7 @@ func _build_ui() -> void:
 
 	var help := Label.new()
 	help.theme = theme
-	help.text = "Left click: paint    Right click: erase    1-%d: pick a tool    Ctrl+Z: undo    Ctrl+Y: redo" % TOOLS.size()
+	help.text = "Left click: paint    Right click: erase    1-%d: pick a tool    Ctrl+Z: undo    Ctrl+Y: redo" % mini(TOOLS.size(), 9)
 	help.position = Vector2(PANEL_WIDTH + 32, 24)
 	layer.add_child(help)
 	_status = Label.new()

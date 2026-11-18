@@ -17,6 +17,8 @@ const SWITCHES_SCRIPT := "res://src/objects/Switches.gd"
 const OBJECT_SCENES := {
 	"goblin": "res://src/enemies/Goblin.tscn",
 	"knight": "res://src/enemies/Knight.tscn",
+	"troll": "res://src/enemies/Troll.tscn",
+	"orc": "res://src/enemies/Orc.tscn",
 	"wizard": "res://src/enemies/Wizard.tscn",
 	"switch": "res://src/objects/Switch.tscn",
 }
@@ -25,10 +27,10 @@ const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relat
 
 # Characters in the exported grid.
 const CELL_CHARS := {Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S"}
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O"}
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
 # in the room, so they have none.
-const DETECTING_KINDS: Array[String] = ["goblin", "knight"]
+const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc"]
 const RADIUS_MIN := 0.0
 const RADIUS_MAX := 400.0
 # Roaming (MeleeEnemy.roam_mode), for the same kinds: "none", "path" or "area".
@@ -447,7 +449,8 @@ func to_text() -> String:
 		"# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):",
 		"#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)",
 		"#   G  goblin   K  knight     W  wizard     O  switch",
-		"# Goblins, knights, wizards and switches stand on floor.",
+		"#   T  troll    R  orc        (goblin family; see EnemyFamilies)",
+		"# Enemies and switches stand on floor.",
 		"grid:",
 	]
 	for y in range(SIZE):

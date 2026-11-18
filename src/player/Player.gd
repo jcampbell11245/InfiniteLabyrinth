@@ -462,7 +462,8 @@ func _play(action: Action, dir := "") -> void:
 
 # from_direction is the direction the hit travels in, which picks the flinch animation and
 # the knockback. Pass "" for damage with no flinch or knockback (falling down a pitfall).
-func take_damage(damage: float, from_direction: String, mute: bool) -> void:
+# Returns whether the hit landed (false while invincible).
+func take_damage(damage: float, from_direction: String, mute: bool) -> bool:
 	if invincibility_cooldown.time_left == 0:
 		invincibility_cooldown.start(Tuning.hurt_invincibility)
 		animator.modulate.a = 0.5
@@ -492,6 +493,8 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> void:
 		Game.health_changed.emit(health)
 		if health <= 0:
 			die()
+		return true
+	return false
 
 # GameOver takes it from here.
 func die() -> void:
@@ -561,7 +564,9 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 	if respawn_cooldown.time_left > 0: # Down a pitfall
 		return
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
-		take_damage(area.get_parent().get_parent().damage, area.get_parent().get_parent().direction, false)
+		var attacker: Node = area.get_parent().get_parent()
+		if take_damage(attacker.damage, attacker.direction, false) && attacker.has_method("landed_hit"):
+			attacker.landed_hit() # A troll's hit steals coins
 	elif area.get_name() == "ProjectileHitbox":
 		var shot: Projectile = area.get_parent()
 		if shot.deflectable:

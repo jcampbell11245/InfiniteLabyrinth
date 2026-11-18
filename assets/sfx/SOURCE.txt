@@ -13,3 +13,6 @@ arrow_charged.wav: shoot1.wav run through ffmpeg for this project (pitched to 1.
 deflect.wav: magic1.wav (the wizard's fireball) run through ffmpeg for this project: a
 reversed blip pitched to 1.7x leading into the shot pitched to 1.35x, 250 Hz high-pass,
 short echo. Plays when a fireball is batted back, by the player or a wizard.
+coin_bad.wav: coin/coin1.wav reworked in Python for this project (pitched to 0.7x, then a
+reversed copy pitched to 0.55x, 1800 Hz low-pass, light 6-bit crush): the "bad" coin sound
+when a troll steals coins.
