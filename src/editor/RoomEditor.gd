@@ -89,6 +89,7 @@ const TOOLS := [
 	["Orc", "object", "orc"],
 	["Dual Knight", "object", "dual_knight"],
 	["Warlock", "object", "warlock"],
+	["Necromancer", "object", "necromancer"],
 ]
 
 var design: RoomDesign
@@ -700,7 +701,7 @@ func _refresh_info() -> void:
 		if RoomDesign.has_radius(kind):
 			_info.text += "\nSelected %s: detection %d px\n(drag the circle's edge)" \
 				% [kind, design.radius_at(_selected)]
-		elif kind == "wizard" || kind == "warlock":
+		elif kind in ["wizard", "warlock", "necromancer"]:
 			_info.text += "\nSelected %s: no detection\nradius (sees the whole room)" % kind
 		match design.roam_mode(_selected):
 			"path":

@@ -58,10 +58,13 @@ var wizard_melee_range := 32.0 # Pixels: a player this close gets the staff inst
 var wizard_melee_cooldown := 1.2 # Seconds between staff swipes
 var wizard_melee_damage := 0.5 # Before the enemy damage multiplier
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
-# Warlock (Warlock.gd) and the curses it casts on the player (Curses.gd).
+# Support casters (Caster.gd): the warlock and the curses it casts (Curses.gd), and the
+# necromancer, which raises the room's dead (Room.raise_fallen).
 var warlock_curse_cooldown_min := 3.0 # Seconds between curses, rolled each time
 var warlock_curse_cooldown_max := 5.0
-var warlock_keep_away := 80.0 # Pixels: backs away from a player closer than this
+var caster_keep_away := 80.0 # Pixels: warlocks and necromancers back away from a player closer than this
+var necromancer_raise_cooldown_min := 4.0 # Seconds between raising the dead, rolled each time
+var necromancer_raise_cooldown_max := 7.0
 var curse_duration := 4.0 # Seconds each curse lasts
 var curse_daze_time := 1.2 # Seconds the daze curse leaves the player unable to act
 var curse_defense_multiplier := 2.0 # Damage taken while defense is lowered
@@ -178,7 +181,9 @@ const FIELDS := [
 	["Enemies", "wizard_melee_damage", "Wizard melee damage", 0, 5, 0.25, "new (RangedEnemy.melee_damage)"],
 	["Enemies", "warlock_curse_cooldown_min", "Warlock curse cooldown min (s)", 0.1, 20, 0.1, "new (Warlock)"],
 	["Enemies", "warlock_curse_cooldown_max", "Warlock curse cooldown max (s)", 0.1, 20, 0.1, "new (Warlock)"],
-	["Enemies", "warlock_keep_away", "Warlock keep-away distance (px)", 0, 300, 1, "new (Warlock)"],
+	["Enemies", "caster_keep_away", "Warlock/necromancer keep-away (px)", 0, 300, 1, "new (Caster)"],
+	["Enemies", "necromancer_raise_cooldown_min", "Necromancer raise cooldown min (s)", 0.1, 30, 0.1, "new (Necromancer)"],
+	["Enemies", "necromancer_raise_cooldown_max", "Necromancer raise cooldown max (s)", 0.1, 30, 0.1, "new (Necromancer)"],
 	["Enemies", "curse_duration", "Curse duration (s)", 0.1, 20, 0.1, "new (Curses)"],
 	["Enemies", "curse_daze_time", "Daze curse duration (s)", 0, 5, 0.05, "new (Curses)"],
 	["Enemies", "curse_defense_multiplier", "Lowered defense: damage taken x", 1, 5, 0.25, "new (Curses)"],

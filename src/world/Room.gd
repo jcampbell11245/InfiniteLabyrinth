@@ -130,6 +130,9 @@ var _floor2_doors := false # Doors use the floor-2 art and lock drawing
 var _top_back: TileMap # The top wall's cells from Top, drawn below everything on the floor
 var _top_arch: TileMap # The top door's column of them, raised while the player walks through
 var _nav: RoomNav # Enemy pathfinding; see nav()
+# Enemies killed in this room, for a necromancer to raise (see raise_fallen): each the
+# scene it came from, where it fell (room-local) and what the room had set on it.
+var fallen: Array[Dictionary] = []
 
 @onready var goblin_death: AudioStreamPlayer = $GoblinDeath
 @onready var knight_death: AudioStreamPlayer = $KnightDeath
@@ -632,6 +635,7 @@ func _on_keys_changed(_keys: int) -> void:
 # the last pitches the sound up, like a combo; a slower kill starts again at normal pitch.
 func _on_enemy_died(enemy: Enemy) -> void:
 	enemy_count -= 1
+	_remember_fallen(enemy)
 	var now := Time.get_ticks_msec() # Real time, so hit-stop doesn't stretch the window
 	if now - _last_kill_at > Tuning.kill_combo_window * 1000:
 		_kill_streak = 0
@@ -643,6 +647,46 @@ func _on_enemy_died(enemy: Enemy) -> void:
 		"Goblin", "Troll", "Orc": Juice.play(goblin_death, 0.04, pitch * enemy.voice_pitch)
 		"Knight", "DualKnight": Juice.play(knight_death, 0.04, pitch)
 	_refresh_doors()
+
+# --- The fallen (see Necromancer) ---
+
+# What a room sets on the enemies it places, carried over to one raised again.
+# Never raised: necromancers (by each other or anyone) and the boss.
+const NECROMANCER_SCENE := "res://src/enemies/Necromancer.tscn"
+const BOSS_SCENE := "res://src/enemies/Boss.tscn"
+const RAISED_KEEPS: Array[String] = ["starting_direction", "detection_radius", "roam_mode", "roam_path", "roam_area"]
+
+func _remember_fallen(enemy: Enemy) -> void:
+	if enemy.scene_file_path in ["", NECROMANCER_SCENE, BOSS_SCENE]:
+		return
+	var kept := {}
+	for property in RAISED_KEEPS:
+		if property in enemy:
+			kept[property] = enemy.get(property)
+	fallen.append({scene = enemy.scene_file_path, position = enemy.position, kept = kept})
+
+# Brings fallen[index] back to life where it fell, or on the nearest open floor cell if
+# that spot is a pit, rock or wall (it was knocked over a pit edge, say). It knows the
+# player is there and joins the fight at once, and counts towards clearing the room
+# again. Returns it, or null if there was nowhere to put it.
+func raise_fallen(index: int) -> Enemy:
+	var record: Dictionary = fallen[index]
+	var enemy: Enemy = (load(record.scene) as PackedScene).instantiate()
+	for property: String in record.kept:
+		enemy.set(property, record.kept[property])
+	var feet := Enemy.FEET_OFFSET
+	var spot: Variant = nav().nearest_open(record.position + feet)
+	if spot == null:
+		return null
+	fallen.remove_at(index)
+	enemy.position = (spot as Vector2) - feet
+	add_child(enemy, true)
+	enemy.died.connect(_on_enemy_died)
+	enemy_count += 1
+	if "noticed" in enemy:
+		enemy.noticed = true
+	_refresh_doors()
+	return enemy
 
 func _on_next_floor_area_entered(_area: Area2D) -> void:
 	Game.finish_floor()

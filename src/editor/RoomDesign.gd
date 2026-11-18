@@ -21,6 +21,7 @@ const OBJECT_SCENES := {
 	"orc": "res://src/enemies/Orc.tscn",
 	"dual_knight": "res://src/enemies/DualKnight.tscn",
 	"warlock": "res://src/enemies/Warlock.tscn",
+	"necromancer": "res://src/enemies/Necromancer.tscn",
 	"wizard": "res://src/enemies/Wizard.tscn",
 	"switch": "res://src/objects/Switch.tscn",
 }
@@ -29,7 +30,7 @@ const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relat
 
 # Characters in the exported grid.
 const CELL_CHARS := {Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S"}
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L"}
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
 # in the room, so they have none.
 const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight"]
@@ -484,7 +485,7 @@ func to_text() -> String:
 		"#   G  goblin   K  knight     W  wizard     O  switch",
 		"#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)",
 		"#   D  dual knight             (knight family: DualKnight.tscn)",
-		"#   L  warlock                 (wizard family: Warlock.tscn)",
+		"#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)",
 		"# Enemies and switches stand on floor.",
 		"grid:",
 	]

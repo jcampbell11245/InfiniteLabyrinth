@@ -80,6 +80,14 @@ func is_clear_line(from: Vector2, to: Vector2) -> bool:
 				return false
 	return true
 
+# `point` if it's on open floor, otherwise the centre of the nearest open cell, or null if
+# the whole floor is blocked.
+func nearest_open(point: Vector2) -> Variant:
+	if is_open(point):
+		return point
+	var cell: Variant = _open_near(_cell_of(point), maxi(_region.size.x, _region.size.y))
+	return null if cell == null else _cell_centre(cell)
+
 func _cell_of(point: Vector2) -> Vector2i:
 	return Vector2i((point / Room.CELL_SIZE).floor())
 
@@ -88,8 +96,8 @@ func _cell_centre(cell: Vector2i) -> Vector2:
 
 # `cell` if it's open floor, otherwise the nearest open cell (an enemy brushing a pit edge,
 # or a target over a rock), or null if there's none close by.
-func _open_near(cell: Vector2i) -> Variant:
-	for radius in range(0, 4):
+func _open_near(cell: Vector2i, max_radius := 3) -> Variant:
+	for radius in range(0, max_radius + 1):
 		var best: Variant = null
 		var best_distance := INF
 		for y in range(cell.y - radius, cell.y + radius + 1):
