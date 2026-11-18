@@ -364,6 +364,7 @@ blood_color = Color(0.45, 0.2, 0.6, 1)
 attack_end_frame = 4
 attack_cooldown_length = 1.0
 coin_reward = 20
+weapon_tips = {"right": Vector2(16.5, 9.5), "left": Vector2(-17.6, 9.6), "up": Vector2(11.0, 9.6), "down": Vector2(-13.0, 11.0)}
 windup_hold_min = 0.1
 windup_hold_max = 0.35
 twinkle_offset = Vector2(12, -10)

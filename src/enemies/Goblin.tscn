@@ -613,6 +613,7 @@ attack_cooldown_length = 0.55
 windup_hold_min = 0.05
 windup_hold_max = 0.3
 coin_reward = 10
+weapon_tips = {"right": Vector2(12.9, -19.05), "left": Vector2(-12.75, -18.75), "up": Vector2(19.5, -13.1), "down": Vector2(-19.65, 9.9)}
 double_attack = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=675152598]

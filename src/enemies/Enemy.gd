@@ -26,8 +26,12 @@ const CLOSE_RANGE := 25 # Pixels on either axis
 # after it is too late (see _on_player_sword). Both 0 means no hold, twinkle or parrying.
 @export var windup_hold_min := 0.0
 @export var windup_hold_max := 0.0
-# Where the twinkle appears: x pixels out in the facing direction, y pixels down
-# (negative is up). Relative to the enemy's origin, before its scale.
+# Where the twinkle appears: at the tip of its weapon in the windup pose (the frame it holds
+# while the twinkle shows), per facing, as "right"/"left"/"up"/"down" -> Vector2 relative
+# to the enemy's origin, before its scale. Measured from each scene's sprites.
+@export var weapon_tips := {}
+# A facing with no weapon tip: x pixels out in the facing direction, y pixels down
+# (negative is up).
 @export var twinkle_offset := Vector2(10, -8)
 # Where the dizzy stars circle while stunned after being parried.
 @export var dizzy_offset := Vector2(0, -20)
@@ -508,14 +512,19 @@ func _update_windup() -> void:
 	else:
 		_twinkle()
 
-# The "about to strike" glint, out in front of the enemy's face. Opens the parry window,
+# The "about to strike" glint, on the tip of the enemy's weapon. Opens the parry window,
 # or for an unparryable attack the longer Tuning.unparryable_window to roll behind in.
 func _twinkle() -> void:
 	_twinkled_at = Time.get_ticks_msec()
 	_parry_timer.start(Tuning.unparryable_window if _unparryable else Tuning.parry_window)
-	var forward := Direction.to_vector(direction) * twinkle_offset.x
-	Juice.twinkle(self, forward + Vector2(0, twinkle_offset.y),
+	Juice.twinkle(self, _twinkle_position(),
 		UNPARRYABLE_TWINKLE_COLOR if _unparryable else Color(0, 0, 0, 0))
+
+# The weapon tip for the way it faces (weapon_tips), or twinkle_offset out in front.
+func _twinkle_position() -> Vector2:
+	if weapon_tips.has(direction):
+		return weapon_tips[direction]
+	return Direction.to_vector(direction) * twinkle_offset.x + Vector2(0, twinkle_offset.y)
 
 # Carries the attack through, unless something (like a hit) already replaced it.
 func _end_windup_hold() -> void:

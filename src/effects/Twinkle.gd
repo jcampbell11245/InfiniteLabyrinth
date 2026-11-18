@@ -7,7 +7,7 @@ extends Node2D
 
 const LIFETIME := 0.3 # Seconds
 const POP_IN := 0.25 # Fraction of LIFETIME spent growing; the rest is shrinking
-const SIZE := 12.0 # Pixels across at full size, in the owner's units
+const SIZE := 16.0 # Pixels across at full size, in the owner's units
 const SHEET_CELL := 1 # Its cell in StatusBars.ICON_SHEET
 
 var solid := Color(0, 0, 0, 0) # Transparent: the art's own colours

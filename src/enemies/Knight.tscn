@@ -1281,6 +1281,7 @@ only_hit_during_attack = true
 per_facing_reach = false
 unparryable_attack = true
 coin_reward = 30
+weapon_tips = {"right": Vector2(-16.5, -11.6), "left": Vector2(15.75, -11.6), "up": Vector2(-24.75, -27.6), "down": Vector2(13.5, -27.6)}
 side_wall_margin = 22.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=922099642]
