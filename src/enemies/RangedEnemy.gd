@@ -3,8 +3,8 @@ extends Enemy
 # Wizard: backs away while the player is lined up with it on either axis, otherwise casts
 # one fireball at a time, launched straight at the player and homing on them (see
 # Projectile.launch_at). It can't turn on a dime, so a hard enough dodge gets out of its
-# way, and it still breaks on stalagmites and walls. A fireball the player hits back flies
-# straight and is batted back again just before it lands, unless the wizard fumbles it
+# way, and it still breaks on stalagmites and walls. A fireball the player hits back homes
+# on the wizard and is batted back again (homing on the player) just before it lands, unless the wizard fumbles it
 # (Tuning.wizard_deflect_miss_chance each time). The two can rally a fireball back and
 # forth, stronger and faster each time.
 #
@@ -121,6 +121,7 @@ func shoot_fireball() -> void:
 	fireball.direction = direction
 	fireball.damage = damage
 	fireball.speed = Tuning.fireball_speed
+	fireball.shooter = self # Hit back, it homes on this wizard
 	fireball.launch_at(player)
 	attack_cooldown.start(Tuning.wizard_burst_cooldown)
 
@@ -228,9 +229,11 @@ func _try_deflect() -> void:
 		if !is_instance_valid(shot):
 			_judged.erase(shot)
 
-# Heading straight at the wizard and about to arrive.
+# Heading straight at the wizard and about to arrive. Measured along its real path, since a
+# homing fireball comes in on a diagonal.
 func _is_incoming(shot: Projectile) -> bool:
-	var heading := Direction.to_vector(shot.direction)
+	var heading := shot.velocity.normalized() if shot.velocity != Vector2.ZERO \
+		else Direction.to_vector(shot.direction)
 	var to_me := global_position - shot.global_position
 	var ahead := to_me.dot(heading)
 	return ahead > 0 && ahead < DEFLECT_REACH && absf(to_me.cross(heading)) < DEFLECT_WIDTH

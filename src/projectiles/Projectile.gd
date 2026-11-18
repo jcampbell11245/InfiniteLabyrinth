@@ -30,9 +30,11 @@ var _contacts: Array[Node2D] = [] # Deflectable shots: touched this frame, resol
 
 # Homing (wizard fireballs; see launch_at): steers towards homing_target at up to
 # Tuning.fireball_turn_rate radians/sec, so a hard enough dodge outturns it. Once it has
-# passed its target (the target is behind it) it gives up and flies straight on. Hit back,
-# it stops homing for good and flies along `direction` like any other shot.
+# passed its target (the target is behind it) it gives up and flies straight on. Hit back
+# by the player it homes on the wizard that cast it (`shooter`); batted back by the wizard
+# it homes on the player again, the same way each time.
 var homing_target: Node2D
+var shooter: Node2D # The wizard that cast it, homed on once the player hits it back
 var _heading := Vector2.ZERO # Free direction of travel while homing or after; ZERO uses `direction`
 
 func _ready() -> void:
@@ -58,7 +60,7 @@ func launch_at(target: Node2D) -> void:
 	_update_direction_from_heading()
 
 func _steer(delta: float) -> void:
-	if !is_instance_valid(homing_target) || !hostile_to_player:
+	if !is_instance_valid(homing_target):
 		return
 	var to_target := homing_target.global_position - global_position
 	if to_target.dot(_heading) <= 0: # Overshot: it was dodged
@@ -95,12 +97,19 @@ func _set_direction(value: String) -> void:
 # can hurt. Called for the player's sword and for a wizard batting it back.
 func deflect(new_direction: String) -> void:
 	deflections += 1
-	homing_target = null
-	_heading = Vector2.ZERO
 	direction = new_direction
 	damage *= Tuning.deflect_damage_multiplier
 	speed = minf(speed * Tuning.deflect_speed_multiplier, Tuning.deflect_max_speed)
 	_set_hostile_to_player(!hostile_to_player)
+	# A homing shot is relaunched at the other side, whichever way it was hit; with no one
+	# left to home on (the wizard is dead) it flies straight off the way it was hit.
+	if _heading != Vector2.ZERO:
+		var target: Node2D = Game.player if hostile_to_player else shooter
+		if is_instance_valid(target):
+			launch_at(target)
+		else:
+			homing_target = null
+			_heading = Direction.to_vector(new_direction)
 	$ExistenceTime.start(Tuning.projectile_lifetime)
 	Juice.burst(get_parent(), global_position, Color(1, 0.95, 0.7), 8, 80.0,
 		Direction.to_vector(new_direction), 1.5, 0.2)
