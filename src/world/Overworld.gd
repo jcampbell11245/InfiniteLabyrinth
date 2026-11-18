@@ -10,7 +10,6 @@ extends Node2D
 # Top-left offset of the room grid; a room at (row, col) sits at GRID_ORIGIN + ROOM_SIZE * (col, row).
 # Column 0 holds the start room, columns 1..COLUMNS the generated rooms, then the end room.
 const GRID_ORIGIN := Vector2(-191, -168)
-const BossRoom := preload("res://src/world/special/BossRoom.tscn")
 const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 const TEST_ROOM_ID := 0
 
@@ -69,17 +68,17 @@ func reset_world() -> void:
 func _build(layout: Array[PackedStringArray]) -> void:
 	var middle := WorldGenerator.MIDDLE_ROW
 	var last_col := WorldGenerator.LAYOUT_COLUMNS - 1
-	var start := _add_room(load(layout[middle][0]), Constants.START_ROOM, middle, 0)
+	var start := _add_room(WorldGenerator.scene(layout[middle][0]), Constants.START_ROOM, middle, 0)
 	start.close_door(Room.Door.TOP)
 	start.close_door(Room.Door.BOTTOM)
 	
-	var boss := _add_room(BossRoom, Constants.BOSS_ROOM, middle, -1)
+	var boss := _add_room(WorldGenerator.scene(WorldGenerator.BOSS_ROOM), Constants.BOSS_ROOM, middle, -1)
 	_attach_left_of(boss, start)
 	boss.close_door(Room.Door.TOP)
 	boss.close_door(Room.Door.BOTTOM)
 	boss.close_door(Room.Door.LEFT)
 	
-	var end := _add_room(load(layout[middle][last_col]), Constants.END_ROOM, middle, last_col)
+	var end := _add_room(WorldGenerator.scene(layout[middle][last_col]), Constants.END_ROOM, middle, last_col)
 	end.close_door(Room.Door.TOP)
 	end.close_door(Room.Door.RIGHT)
 	end.close_door(Room.Door.BOTTOM)
@@ -87,7 +86,7 @@ func _build(layout: Array[PackedStringArray]) -> void:
 	
 	for row in range(WorldGenerator.LAYOUT_ROWS):
 		for col in range(1, last_col):
-			var room := _add_room(load(layout[row][col]), Constants.COLUMNS * row + (col - 1), row, col)
+			var room := _add_room(WorldGenerator.scene(layout[row][col]), Constants.COLUMNS * row + (col - 1), row, col)
 			# The middle row's outer doors lead to the start and end rooms.
 			if row == middle:
 				continue

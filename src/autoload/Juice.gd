@@ -11,6 +11,8 @@ const Splat := preload("res://src/effects/Splat.gd")
 const Twinkle := preload("res://src/effects/Twinkle.gd")
 const TWINKLE_SOUND := preload("res://assets/sfx/twinkle.wav")
 const TWINKLE_VOLUME_DB := -6.0
+const UNPARRYABLE_TWINKLE_PITCH := 0.7 # The red, unparryable twinkle's sound, pitched down
+const UNPARRYABLE_TWINKLE_DETUNE := 1.06 # Its second voice, a little sharper, so the two beat
 const Dizzy := preload("res://src/effects/Dizzy.gd")
 const CLANK := preload("res://assets/sfx/clank1.wav")
 # The clank pitched down, muffled and crushed: the player's swing was blocked.
@@ -46,6 +48,7 @@ const COIN_VOICES := 4 # Players taken in turn, so a new coin doesn't cut off th
 const COIN_BAD := preload("res://assets/sfx/coin_bad.wav")
 
 var _hitstop_until := 0 # Ticks (ms) when the current hit-stop ends; 0 when none
+var _slow_motion := 1.0 # Time scale outside hit-stop, under Tuning.game_speed
 var _coin_players: Array[AudioStreamPlayer] = []
 var _clank_player: AudioStreamPlayer
 var _bad_clank_player: AudioStreamPlayer
@@ -82,7 +85,21 @@ func _process(_delta: float) -> void:
 	if _hitstop_until != 0 && Time.get_ticks_msec() >= _hitstop_until:
 		_hitstop_until = 0
 	if _hitstop_until == 0:
-		Engine.time_scale = Tuning.game_speed # Set every frame so debug menu changes apply at once
+		# Set every frame so debug menu changes apply at once
+		Engine.time_scale = Tuning.game_speed * _slow_motion
+
+# Runs the game at `time_scale` of normal speed until end_time_effects. Hit-stop still
+# freezes it further.
+func slow_motion(time_scale: float) -> void:
+	_slow_motion = time_scale
+	if _hitstop_until == 0:
+		Engine.time_scale = Tuning.game_speed * _slow_motion
+
+# Back to normal speed at once: slow motion and any hit-stop end.
+func end_time_effects() -> void:
+	_slow_motion = 1.0
+	_hitstop_until = 0
+	Engine.time_scale = Tuning.game_speed
 
 # Freezes the game for `seconds` of real time. Overlapping calls extend, never shorten.
 func hitstop(seconds: float) -> void:
@@ -218,12 +235,20 @@ func twinkle(parent: Node2D, offset: Vector2, solid := Color(0, 0, 0, 0)) -> voi
 	t.z_index = 5
 	parent.add_child(t)
 	# Rides on the twinkle node, which outlives the sound, so overlapping twinkles from
-	# several enemies don't cut each other off.
+	# several enemies don't cut each other off. An unparryable (solid) twinkle sounds lower
+	# and harsher: pitched down, with a slightly detuned second voice beating against it.
+	if solid.a == 0:
+		_twinkle_voice(t, 1.0, TWINKLE_VOLUME_DB)
+	else:
+		_twinkle_voice(t, UNPARRYABLE_TWINKLE_PITCH, TWINKLE_VOLUME_DB)
+		_twinkle_voice(t, UNPARRYABLE_TWINKLE_PITCH * UNPARRYABLE_TWINKLE_DETUNE, TWINKLE_VOLUME_DB - 3.0)
+
+func _twinkle_voice(t: Node2D, pitch: float, volume_db: float) -> void:
 	var sound := AudioStreamPlayer.new()
 	sound.stream = TWINKLE_SOUND
-	sound.volume_db = TWINKLE_VOLUME_DB
+	sound.volume_db = volume_db
 	t.add_child(sound)
-	play(sound, 0.05)
+	play(sound, 0.05, pitch)
 
 # Stars circling at `offset` from `parent` (over its head). Stays until the caller frees it.
 func dizzy(parent: Node2D, offset: Vector2) -> Node2D:

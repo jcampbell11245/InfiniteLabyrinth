@@ -3,17 +3,51 @@ extends RichTextLabel
 # Shows the time left on the player's level countdown, as m:ss, rounded up so it reads
 # 0:00 exactly when time runs out.
 #
-# For the last FINAL_SECONDS the timer slides from its corner to the middle of the
-# screen, grows and turns red, and every second ticks with a rising blip and a punch.
+# It sits at the top middle of the HUD. There's no health: damage takes time off instead
+# (Player.lose_time), and the timer shows it: it flashes red, jolts and drains quickly down
+# to the new time with a run of fast, falling ticks, while the time lost floats off below.
+#
+# For the last FINAL_SECONDS the timer slides down to the middle of the screen, grows and
+# turns red, and every second ticks with a rising blip and a punch.
+#
+# A hit that takes more time than is left is shown in full (the game runs in slow motion
+# meanwhile; see Player.lose_time): the timer slides to the middle, ticks rapidly down to
+# 0:00, lands with a punch, and holds there with the game frozen before the game over.
 
 const FINAL_SECONDS := 5
-const FINAL_SCALE := 3.0 # Size in the middle, relative to its corner size
+const FINAL_SCALE := 3.5 # Size in the middle, relative to its size at the top
 const FINAL_COLOR := Color(1, 0.15, 0.15)
 const SLIDE_TIME := 0.5
 const PUNCH_SCALE := 1.25 # Extra growth on each tick, settling back over PUNCH_TIME
 const PUNCH_TIME := 0.25
 const TickSound := preload("res://assets/sfx/countdown_tick.wav")
 const TICK_PITCH_STEP := 0.1 # Each tick is this much higher than the one before
+# Losing time to damage (see the top of the file). Times are real seconds, so hit-stop
+# doesn't hold the animation up.
+const HURT_COLOR := Color(1, 0.2, 0.2)
+const DRAIN_TIME_PER_SECOND := 0.03 # The drain takes longer the more time is lost...
+const DRAIN_TIME_MIN := 0.25
+const DRAIN_TIME_MAX := 0.8 # ...within these
+const DRAIN_TICK_GAP := 0.035 # Least time between drain ticks
+const DRAIN_TICK_PITCH_START := 1.9 # The ticks fall from this pitch...
+const DRAIN_TICK_PITCH_END := 1.2 # ...to this as the drain finishes
+const DRAIN_TICK_DB := -4.0
+const DRAIN_TICK_VOICES := 3 # Tick players to rotate through, so quick ticks don't cut off
+const HURT_PUNCH := 1.25 # Extra size the timer jumps to when hit
+const HURT_SHAKE := 1.5 # HUD pixels it jolts
+const HURT_SHAKE_STEPS := 5
+const LOSS_OFFSET := Vector2(0, 17) # Where the floating "-0:10" starts, below the timer
+const LOSS_SCALE := 0.5 # Its size, relative to the timer's
+const LOSS_DRIFT := Vector2(0, 8) # How far it drifts down as it fades
+const LOSS_HOLD := 0.35 # Seconds before it starts to fade...
+const LOSS_FADE := 0.6 # ...and how long it takes
+# A killing hit (see the top of the file).
+const FATAL_DRAIN := 1.0 # Seconds to tick down to 0:00
+const FATAL_TICK_PITCH_START := 1.7
+const FATAL_TICK_PITCH_END := 0.8 # Lower than a hurt's drain, sinking as it lands
+const FATAL_LAND_PUNCH := 1.45 # Extra size it jumps to on reaching 0:00
+const FATAL_LAND_PITCH := 0.55 # The landing tick, low and heavy
+const FATAL_HOLD := 1.0 # Seconds frozen on 0:00 before the game over
 
 @onready var holder: Node2D = get_parent() # Marker the label hangs off; moved and scaled
 @onready var corner_position := holder.position
@@ -23,6 +57,19 @@ var _shown := -1 # Seconds currently displayed
 var _final := false # In the last-seconds display
 var _tick: AudioStreamPlayer
 var _tween: Tween
+var _hurt_tween: Tween # The flash and punch of losing time
+var _jolt_tween: Tween # ...and the jolt
+var _drain_voices: Array[AudioStreamPlayer] = []
+var _next_voice := 0
+var _draining := false
+var _drain_from := 0.0 # Seconds shown when the drain started
+var _drain_start_ms := 0
+var _drain_length := 0.0
+var _last_drain_tick_ms := 0
+var _losses: Array[Node2D] = [] # Floating "-0:10"s still on screen
+var _fatal := false # Showing a killing hit
+var _drain_pitch_start := DRAIN_TICK_PITCH_START
+var _drain_pitch_end := DRAIN_TICK_PITCH_END
 
 func _ready() -> void:
 	# Running out of time pauses the game, so keep updating to show 0:00 under it.
@@ -30,18 +77,40 @@ func _ready() -> void:
 	_tick = AudioStreamPlayer.new()
 	_tick.stream = TickSound
 	add_child(_tick)
+	for i in DRAIN_TICK_VOICES:
+		var voice := AudioStreamPlayer.new()
+		voice.stream = TickSound
+		voice.volume_db = DRAIN_TICK_DB
+		add_child(voice)
+		_drain_voices.append(voice)
 	Game.player_died.connect(_on_player_died)
+	Game.time_lost.connect(_on_time_lost)
 
 func _process(_delta: float) -> void:
 	if Game.player == null:
 		return
+	if _fatal && !_draining:
+		return # Holding: the old time while sliding to the middle, then 0:00
 	var countdown: Timer = Game.player.level_countdown
-	var seconds := ceili(countdown.time_left)
+	var value := countdown.time_left
+	var draining := _draining
+	if draining:
+		var t := _drain_progress()
+		value = lerpf(_drain_from, countdown.time_left, ease(t, 0.6)) # Fast, then settling
+		if t >= 1.0:
+			_draining = false
+	var seconds := ceili(value)
 	if seconds == _shown:
 		return
 	_shown = seconds
 	@warning_ignore("integer_division")
 	set_text("%d:%02d" % [seconds / 60, seconds % 60])
+	if draining:
+		_drain_tick()
+		if _draining:
+			return # The final-seconds display waits for the drain to land
+	if _fatal:
+		return # _show_fatal runs the display from here
 
 	var in_final := !countdown.is_stopped() && seconds > 0 && seconds <= FINAL_SECONDS
 	if in_final && !_final:
@@ -55,6 +124,7 @@ func _process(_delta: float) -> void:
 # alignment first (moving the holder so nothing jumps), so narrower times like 0:01
 # stay centred instead of drifting right.
 func _enter_final() -> void:
+	_kill_hurt_tweens()
 	_final = true
 	_set_alignment(HORIZONTAL_ALIGNMENT_CENTER)
 	_restart_tween()
@@ -66,8 +136,9 @@ func _enter_final() -> void:
 
 # Back to normal, in case time is ever added back during the final seconds.
 func _leave_final() -> void:
+	_kill_hurt_tweens()
 	_final = false
-	_set_alignment(HORIZONTAL_ALIGNMENT_RIGHT)
+	_set_alignment(HORIZONTAL_ALIGNMENT_CENTER)
 	_restart_tween()
 	_tween.tween_property(holder, "position", corner_position, SLIDE_TIME)
 	_tween.tween_property(holder, "scale", corner_scale, SLIDE_TIME)
@@ -91,12 +162,142 @@ func _tick_second(seconds: int) -> void:
 func _on_player_died() -> void:
 	if _tween != null:
 		_tween.kill()
+	_kill_hurt_tweens()
+	_fatal = false
+	_draining = false
 	holder.visible = false
+	# A killing blow's "-0:10" would hang frozen over the game over and upgrade menu.
+	for loss in _losses:
+		if is_instance_valid(loss):
+			loss.queue_free()
+	_losses.clear()
+
+# --- Losing time to damage ---
+
+# Called just before the time comes off, so the drain starts from what's on screen now.
+func _on_time_lost(seconds: float, fatal: bool) -> void:
+	if fatal:
+		_show_fatal()
+		return
+	_start_drain(clampf(seconds * DRAIN_TIME_PER_SECOND, DRAIN_TIME_MIN, DRAIN_TIME_MAX),
+		DRAIN_TICK_PITCH_START, DRAIN_TICK_PITCH_END)
+	_float_loss(roundi(seconds))
+
+	_kill_hurt_tweens()
+	var settle := _drain_length + 0.15
+	_hurt_tween = create_tween().set_ignore_time_scale().set_parallel()
+	# Red, fading back to its usual colour as the drain lands.
+	modulate = HURT_COLOR
+	_hurt_tween.tween_property(self, "modulate", FINAL_COLOR if _final else Color.WHITE, settle) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	if _final:
+		return # The final-seconds display owns the timer's size and place
+	holder.scale = corner_scale * HURT_PUNCH
+	_hurt_tween.tween_property(holder, "scale", corner_scale, settle) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_jolt_tween = create_tween().set_ignore_time_scale()
+	var step_time := settle / (HURT_SHAKE_STEPS + 1)
+	for i in HURT_SHAKE_STEPS:
+		var size := HURT_SHAKE * (1.0 - float(i) / HURT_SHAKE_STEPS) # Dying down
+		var offset := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * size
+		_jolt_tween.tween_property(holder, "position", corner_position + offset, step_time)
+	_jolt_tween.tween_property(holder, "position", corner_position, step_time)
+
+# Counts the display down from what it shows now to the countdown's time, over `length`
+# real seconds, ticking from `pitch_start` to `pitch_end` (see _process and _drain_tick).
+func _start_drain(length: float, pitch_start: float, pitch_end: float) -> void:
+	_drain_from = float(_shown) if _draining else Game.player.level_countdown.time_left
+	_drain_start_ms = Time.get_ticks_msec()
+	_drain_length = length
+	_drain_pitch_start = pitch_start
+	_drain_pitch_end = pitch_end
+	_draining = true
+
+# A killing hit, start to finish: to the middle, tick down to 0:00, land, hold frozen,
+# then tell the player to die (Game.fatal_countdown_finished).
+func _show_fatal() -> void:
+	_fatal = true
+	var from := float(_shown) if _shown >= 0 else Game.player.level_countdown.time_left
+	if !_final:
+		_enter_final()
+		await _tween.finished
+	_draining = false
+	_shown = ceili(from)
+	_start_drain(FATAL_DRAIN, FATAL_TICK_PITCH_START, FATAL_TICK_PITCH_END)
+	_drain_from = from
+	while _draining:
+		await get_tree().process_frame
+	_land_fatal()
+	Juice.hitstop(FATAL_HOLD) # The world freezes with it
+	await get_tree().create_timer(FATAL_HOLD, true, false, true).timeout
+	Game.fatal_countdown_finished.emit()
+
+# 0:00: a heavy tick, a punch in size, a flash and a shake.
+func _land_fatal() -> void:
+	Juice.play(_tick, 0.0, FATAL_LAND_PITCH)
+	Juice.shake(Juice.SHAKE_HEAVY)
+	var punch := create_tween().set_ignore_time_scale()
+	punch.tween_method(_set_final_size, FATAL_LAND_PUNCH, 1.0, PUNCH_TIME * 2) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	modulate = Color.WHITE
+	punch.parallel().tween_property(self, "modulate", FINAL_COLOR, PUNCH_TIME * 2)
+
+# How far through the drain, 0 to 1, in real time.
+func _drain_progress() -> float:
+	return clampf((Time.get_ticks_msec() - _drain_start_ms) / 1000.0 / _drain_length, 0.0, 1.0)
+
+# One fast tick of the drain, falling in pitch as it goes. Kept a little apart, however
+# many seconds go by in a frame.
+func _drain_tick() -> void:
+	var now := Time.get_ticks_msec()
+	if now - _last_drain_tick_ms < DRAIN_TICK_GAP * 1000.0:
+		return
+	_last_drain_tick_ms = now
+	var voice := _drain_voices[_next_voice]
+	_next_voice = (_next_voice + 1) % _drain_voices.size()
+	Juice.play(voice, 0.03, lerpf(_drain_pitch_start, _drain_pitch_end, _drain_progress()))
+
+# "-0:10" in red, just under the timer, drifting down and fading.
+func _float_loss(seconds: int) -> void:
+	var marker := Node2D.new()
+	marker.position = corner_position + LOSS_OFFSET
+	marker.scale = corner_scale * LOSS_SCALE
+	var label := Label.new()
+	label.add_theme_font_override("font", get_theme_font("normal_font"))
+	label.add_theme_color_override("font_color", HURT_COLOR)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.size = Vector2(160, 30)
+	label.position = Vector2(-80, 0)
+	@warning_ignore("integer_division")
+	label.text = "-%d:%02d" % [seconds / 60, seconds % 60]
+	marker.add_child(label)
+	holder.get_parent().add_child(marker)
+	_losses.append(marker)
+	marker.tree_exited.connect(_losses.erase.bind(marker))
+	var fade := marker.create_tween().set_ignore_time_scale()
+	fade.tween_interval(LOSS_HOLD)
+	fade.tween_property(marker, "position", marker.position + LOSS_DRIFT, LOSS_FADE) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	fade.parallel().tween_property(marker, "modulate:a", 0.0, LOSS_FADE)
+	fade.tween_callback(marker.queue_free)
+
+# Stops the hurt animation, putting the timer back in its place unless the final-seconds
+# display has it.
+func _kill_hurt_tweens() -> void:
+	for tween in [_hurt_tween, _jolt_tween]:
+		if tween != null && tween.is_valid():
+			tween.kill()
+	_hurt_tween = null
+	_jolt_tween = null
+	if !_final:
+		holder.position = corner_position
+		holder.scale = corner_scale
 
 func _restart_tween() -> void:
 	if _tween != null:
 		_tween.kill()
-	_tween = create_tween().set_parallel()
+	# Real time, so slow motion and hit-stop don't drag the slides out.
+	_tween = create_tween().set_parallel().set_ignore_time_scale()
 
 # Changes the text alignment and moves the holder by the same amount the other way,
 # so the text stays exactly where it was on screen.

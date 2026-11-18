@@ -1,8 +1,8 @@
 extends CanvasLayer
 
 # Debug menu, debug builds only. F2 opens it over the game (pausing it) and closes it
-# again. Tabs hold the Tuning values plus a Progress tab for the running floor (health,
-# coins, keys, arrows, time, upgrade levels). Every row has its own Reset; Reset all
+# again. Tabs hold the Tuning values plus a Progress tab for the running floor (coins,
+# keys, arrows, time, upgrade levels). Every row has its own Reset; Reset all
 # resets every row. Tuning rows reset to the shipped value, Progress rows to what they
 # were when the menu was opened. Export writes every Tuning value, changed ones marked,
 # to a tuning_exports folder (like the room creator's export) and copies it to the
@@ -192,8 +192,6 @@ func _refresh(row: Row) -> void:
 func _on_tuning_changed(key: String) -> void:
 	if _rows_by_key.has(key):
 		_refresh(_rows_by_key[key])
-	if key == "base_health":
-		_sync_hearts()
 
 static func _same(a: Variant, b: Variant) -> bool:
 	if typeof(a) == TYPE_FLOAT || typeof(b) == TYPE_FLOAT:
@@ -220,7 +218,7 @@ func _build_progress() -> void:
 	var player := Game.player
 	if player == null || !is_instance_valid(player):
 		var note := Label.new()
-		note.text = "Start a run to edit health, coins, keys, arrows and time."
+		note.text = "Start a run to edit coins, keys, arrows and time."
 		note.add_theme_color_override("font_color", DIM)
 		_progress_box.add_child(note)
 		return
@@ -228,15 +226,10 @@ func _build_progress() -> void:
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 16)
 	_progress_box.add_child(actions)
-	_button(actions, "Full heal", _full_heal)
+	_button(actions, "Refill time", _refill_time)
 	_button(actions, "Kill enemies in this room", _kill_room_enemies)
 	_button(actions, "Next floor", _next_floor)
 
-	_progress_row("Health", TYPE_FLOAT, player.max_health(), 0.5, false,
-		func() -> float: return Game.player.health,
-		func(value: float) -> void:
-			Game.player.health = value
-			Game.health_changed.emit(value))
 	_progress_row("Coins (this floor)", TYPE_INT, 10000, 1, true,
 		func() -> int: return Game.coins,
 		func(value: int) -> void: Game.add_coins(value - Game.coins))
@@ -257,7 +250,7 @@ func _build_progress() -> void:
 			Game.overworld.floor_number = maxi(value, 1)
 			SaveData.floor_number = maxi(value, 1)
 			SaveData.save())
-	for upgrade: Array in [["health_level", "Health upgrade"], ["damage_level", "Damage (crit) upgrade"],
+	for upgrade: Array in [["damage_level", "Damage (crit) upgrade"],
 			["time_level", "Time upgrade (next floor)"], ["looting_level", "Looting upgrade"]]:
 		var field: String = upgrade[0]
 		_progress_row(upgrade[1], TYPE_INT, UpgradeMenu.MAX_LEVEL, 1, false,
@@ -269,30 +262,15 @@ func _set_upgrade(field: String, value: int) -> void:
 	SaveData.set(field, clampi(value, 0, UpgradeMenu.MAX_LEVEL))
 	SaveData.save()
 	match field:
-		"health_level": _sync_hearts()
 		"damage_level":
 			for enemy: Enemy in get_tree().get_nodes_in_group("enemies"):
 				enemy.critical_chance = SaveData.damage_level
 
-# Max health changed: resize the heart row and keep health within it.
-func _sync_hearts() -> void:
-	var player := Game.player
-	if player == null || !is_instance_valid(player):
-		return
-	for hearts: Node in get_tree().get_nodes_in_group("hearts"):
-		hearts.set_max_hearts(player.max_health())
-	player.health = minf(player.health, player.max_health())
-	Game.health_changed.emit(player.health)
-	for row in _progress_rows:
-		if row.name_label.text == "Health":
-			row.spin.max_value = player.max_health()
-			_refresh(row)
-
-func _full_heal() -> void:
-	Game.player.health = Game.player.max_health()
-	Game.health_changed.emit(Game.player.health)
+# Back to the full time limit, the debug stand-in for a full heal.
+func _refill_time() -> void:
+	Game.player.level_countdown.start(Tuning.time_limit())
 	_refresh_progress()
-	_status.text = "Healed to %s hearts" % Game.player.max_health()
+	_status.text = "Timer refilled to %d s" % Tuning.time_limit()
 
 func _kill_room_enemies() -> void:
 	var killed := 0

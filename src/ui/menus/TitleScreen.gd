@@ -22,6 +22,7 @@ func _ready() -> void:
 	quit_button.pressed.connect(get_tree().quit)
 	start_button.grab_focus()
 	Music.play_title()
+	WorldGenerator.preload_rooms() # In the background, so Start doesn't wait on them
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey && event.pressed && (event as InputEventKey).keycode == KEY_F1:

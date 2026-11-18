@@ -10,7 +10,7 @@ extends Control
 # It's painted pixel by pixel into a small image and drawn PIXEL times bigger with no
 # filtering, so every edge lands on the same chunky pixel grid as the rest of the HUD art
 # (HudLayer draws its sprites 5x). The backing gets a black outer line and a grey inner
-# one, like the hearts, with its corners notched off.
+# one, with its corners notched off.
 #
 # Rooms are placed by where they sit in the world, not by id, so the room creator's single
 # test room lands in the right cell too. Visited rooms are remembered per floor: the
@@ -24,7 +24,7 @@ const SCREEN_MARGIN := Vector2(40, 40) # From the bottom-right corner of the scr
 const FLASH_TIME := 0.35 # Seconds the outline spends on, then off
 
 const BACKING := Color(0.1, 0.1, 0.12, 0.7)
-const BORDER := Color8(124, 124, 124) # Like the hearts' grey rim
+const BORDER := Color8(124, 124, 124) # Grey rim
 const OUTER := Color8(0, 0, 0)
 const UNLIT := Color8(64, 64, 72)
 const LANDMARK := Color8(88, 216, 84) # Start and end rooms

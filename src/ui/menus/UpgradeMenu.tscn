@@ -201,33 +201,12 @@ position = Vector2(325.81, 192.426)
 scale = Vector2(4, 4)
 texture = ExtResource("2")
 
-[node name="Plus1Control" type="Control" parent="Control" unique_id=2017457984]
-anchors_preset = 0
-offset_left = 636.0
-offset_top = 109.0
-offset_right = 677.0
-offset_bottom = 146.0
-
-[node name="Plus1" type="AnimatedSprite2D" parent="Control/Plus1Control" unique_id=1734506303]
-position = Vector2(22.3586, 18.5406)
-scale = Vector2(1.99905, 1.99905)
-sprite_frames = SubResource("5")
-
-[node name="Button" type="Button" parent="Control/Plus1Control" unique_id=579722809]
-focus_mode = 0
-modulate = Color(1, 1, 1, 0)
-layout_mode = 0
-offset_left = 4.0
-offset_right = 41.0
-offset_bottom = 37.0
-mouse_filter = 1
-
 [node name="Plus2Control" type="Control" parent="Control" unique_id=669702528]
 anchors_preset = 0
 offset_left = 641.401
-offset_top = 151.332
+offset_top = 111.332
 offset_right = 677.401
-offset_bottom = 188.332
+offset_bottom = 148.332
 
 [node name="Plus2" type="AnimatedSprite2D" parent="Control/Plus2Control" unique_id=679830771]
 position = Vector2(18.2758, 19.3352)
@@ -247,9 +226,9 @@ mouse_filter = 1
 [node name="Plus3Control" type="Control" parent="Control" unique_id=1419660622]
 anchors_preset = 0
 offset_left = 641.487
-offset_top = 192.468
+offset_top = 152.468
 offset_right = 677.487
-offset_bottom = 229.468
+offset_bottom = 189.468
 
 [node name="Plus3" type="AnimatedSprite2D" parent="Control/Plus3Control" unique_id=1005962554]
 position = Vector2(18.2758, 19.3352)
@@ -269,9 +248,9 @@ mouse_filter = 1
 [node name="Plus4Control" type="Control" parent="Control" unique_id=1139840891]
 anchors_preset = 0
 offset_left = 641.0
-offset_top = 232.0
+offset_top = 192.0
 offset_right = 678.0
-offset_bottom = 269.0
+offset_bottom = 229.0
 
 [node name="Plus4" type="AnimatedSprite2D" parent="Control/Plus4Control" unique_id=631545209]
 position = Vector2(18.2758, 19.3352)
@@ -287,36 +266,12 @@ offset_right = 36.0
 offset_bottom = 37.3326
 mouse_filter = 1
 
-[node name="Description" type="Label" parent="Control" unique_id=1533084820]
-layout_mode = 0
-offset_left = -28.0
-offset_top = 120.456
-offset_right = 579.0
-offset_bottom = 140.456
-theme_override_fonts/font = SubResource("2")
-theme_override_font_sizes/font_size = 11
-text = "Health"
-vertical_alignment = 1
-
-[node name="Coins" type="Label" parent="Control" unique_id=709607130]
-layout_mode = 0
-offset_left = -1.0
-offset_top = 120.456
-offset_right = 104.0
-offset_bottom = 140.456
-pivot_offset = Vector2(32.1923, 18.5501)
-theme_override_fonts/font = SubResource("4")
-theme_override_font_sizes/font_size = 11
-text = "10"
-horizontal_alignment = 2
-vertical_alignment = 1
-
 [node name="Description2" type="Label" parent="Control" unique_id=1644805765]
 layout_mode = 0
 offset_left = -27.7018
-offset_top = 160.413
+offset_top = 120.413
 offset_right = 86.2982
-offset_bottom = 180.413
+offset_bottom = 140.413
 theme_override_fonts/font = SubResource("2")
 theme_override_font_sizes/font_size = 11
 text = "Luck"
@@ -325,9 +280,9 @@ vertical_alignment = 1
 [node name="Coins2" type="Label" parent="Control" unique_id=328347788]
 layout_mode = 0
 offset_left = 26.0
-offset_top = 160.413
+offset_top = 120.413
 offset_right = 104.0
-offset_bottom = 180.413
+offset_bottom = 140.413
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
 theme_override_font_sizes/font_size = 11
@@ -338,9 +293,9 @@ vertical_alignment = 1
 [node name="Description3" type="Label" parent="Control" unique_id=996202922]
 layout_mode = 0
 offset_left = -29.0
-offset_top = 200.42
+offset_top = 160.42
 offset_right = 523.0
-offset_bottom = 220.42
+offset_bottom = 180.42
 theme_override_fonts/font = SubResource("2")
 theme_override_font_sizes/font_size = 11
 text = "Time"
@@ -349,9 +304,9 @@ vertical_alignment = 1
 [node name="Coins3" type="Label" parent="Control" unique_id=1101393191]
 layout_mode = 0
 offset_left = -32.5166
-offset_top = 200.42
+offset_top = 160.42
 offset_right = 103.483
-offset_bottom = 220.42
+offset_bottom = 180.42
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
 theme_override_font_sizes/font_size = 11
@@ -362,9 +317,9 @@ vertical_alignment = 1
 [node name="Description4" type="Label" parent="Control" unique_id=1376115968]
 layout_mode = 0
 offset_left = -29.6332
-offset_top = 240.272
+offset_top = 200.272
 offset_right = 83.3668
-offset_bottom = 260.272
+offset_bottom = 220.272
 theme_override_fonts/font = SubResource("2")
 theme_override_font_sizes/font_size = 11
 text = "Looting"
@@ -373,9 +328,9 @@ vertical_alignment = 1
 [node name="Coins4" type="Label" parent="Control" unique_id=1518478272]
 layout_mode = 0
 offset_left = 38.0
-offset_top = 240.272
+offset_top = 200.272
 offset_right = 104.0
-offset_bottom = 260.272
+offset_bottom = 220.272
 pivot_offset = Vector2(32.1923, 18.5501)
 theme_override_fonts/font = SubResource("4")
 theme_override_font_sizes/font_size = 11
@@ -383,26 +338,20 @@ text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Meter1" type="AnimatedSprite2D" parent="Control" unique_id=704085953]
-position = Vector2(369.966, 130.456)
-scale = Vector2(3.99884, 3.99184)
-sprite_frames = SubResource("6")
-animation = &"1"
-
 [node name="Meter2" type="AnimatedSprite2D" parent="Control" unique_id=835222782]
-position = Vector2(369.966, 170.413)
+position = Vector2(369.966, 130.413)
 scale = Vector2(3.99884, 3.99184)
 sprite_frames = SubResource("6")
 animation = &"1"
 
 [node name="Meter3" type="AnimatedSprite2D" parent="Control" unique_id=62670811]
-position = Vector2(369.966, 210.42)
+position = Vector2(369.966, 170.42)
 scale = Vector2(3.99884, 3.99184)
 sprite_frames = SubResource("6")
 animation = &"1"
 
 [node name="Meter4" type="AnimatedSprite2D" parent="Control" unique_id=594160924]
-position = Vector2(369.966, 250.272)
+position = Vector2(369.966, 210.272)
 scale = Vector2(3.99884, 3.99184)
 sprite_frames = SubResource("6")
 animation = &"1"

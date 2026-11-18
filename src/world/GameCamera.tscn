@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://cy38p6g037vu7"]
 
 [ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="1"]
-[ext_resource type="PackedScene" path="res://src/ui/hud/Hearts.tscn" id="2"]
 [ext_resource type="Texture2D" uid="uid://bcivym1l1l323" path="res://assets/sprites/hud/coin.png" id="3"]
 [ext_resource type="Script" uid="uid://dfraswj8yhq6m" path="res://src/ui/hud/Coins.gd" id="4"]
 [ext_resource type="Texture2D" uid="uid://c687csk36kl3" path="res://assets/sprites/hud/key.png" id="5"]
@@ -259,19 +258,17 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="Timer" type="Marker2D" parent="HudLayer/Hud" unique_id=1898364893]
-position = Vector2(350, -4.8)
+position = Vector2(184, -8.74)
+scale = Vector2(0.85, 0.85)
 
 [node name="TimerText" type="RichTextLabel" parent="HudLayer/Hud/Timer" unique_id=310979149]
-offset_left = -53.0
-offset_right = 27.0
+offset_left = -40.0
+offset_right = 40.0
 autowrap_mode = 0
-horizontal_alignment = 2
+horizontal_alignment = 1
 offset_bottom = 40.0
 theme_override_fonts/normal_font = SubResource("1")
 script = ExtResource("level_timer")
-
-[node name="Hearts" parent="HudLayer/Hud" unique_id=434210798 instance=ExtResource("2")]
-layout_mode = 2
 
 [node name="Coins" type="HBoxContainer" parent="HudLayer/Hud" unique_id=344684867]
 layout_mode = 2
@@ -279,12 +276,12 @@ script = ExtResource("4")
 
 [node name="Coin" type="AnimatedSprite2D" parent="HudLayer/Hud/Coins" unique_id=447280007]
 autoplay = "default"
-position = Vector2(235.594, -0.845496)
+position = Vector2(330, -0.845)
 sprite_frames = SubResource("6")
 frame = 1
 
 [node name="Counter" type="Marker2D" parent="HudLayer/Hud/Coins" unique_id=837693581]
-position = Vector2(241.605, -5.17272)
+position = Vector2(336, -5.173)
 scale = Vector2(0.5, 0.5)
 
 [node name="CoinText" type="RichTextLabel" parent="HudLayer/Hud/Coins/Counter" unique_id=932630601]
@@ -299,18 +296,18 @@ script = ExtResource("6")
 
 [node name="Key" type="AnimatedSprite2D" parent="HudLayer/Hud/Keys" unique_id=1490835463]
 autoplay = "default"
-position = Vector2(178.275, -0.693974)
+position = Vector2(3, -0.694)
 sprite_frames = SubResource("18")
 
 [node name="Counter" type="Marker2D" parent="HudLayer/Hud/Keys" unique_id=1808274417]
-position = Vector2(84.4359, -0.693975)
+position = Vector2(8.5, -5.173)
 scale = Vector2(0.5, 0.5)
 
 [node name="KeyText" type="RichTextLabel" parent="HudLayer/Hud/Keys/Counter" unique_id=157281994]
-offset_left = 197.789
-offset_top = -9.0
-offset_right = 237.789
-offset_bottom = 31.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 80.0
+offset_bottom = 40.0
 theme_override_fonts/normal_font = SubResource("19")
 bbcode_enabled = true
 text = "0"
@@ -320,12 +317,12 @@ layout_mode = 2
 script = ExtResource("arrows_script")
 
 [node name="Icon" type="Sprite2D" parent="HudLayer/Hud/Arrows"]
-position = Vector2(292, -0.8)
+position = Vector2(35, -0.8)
 scale = Vector2(0.45, 0.45)
 texture = ExtResource("arrows_icon")
 
 [node name="Counter" type="Marker2D" parent="HudLayer/Hud/Arrows"]
-position = Vector2(298.5, -5.17272)
+position = Vector2(41.5, -5.173)
 scale = Vector2(0.5, 0.5)
 
 [node name="ArrowText" type="RichTextLabel" parent="HudLayer/Hud/Arrows/Counter"]

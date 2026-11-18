@@ -18,8 +18,10 @@ var shoot_cooldown := 0.5 # Seconds between arrows
 var sword_cooldown := 0.3 # Seconds after a swing ends before the next can start
 var shoot_recoil := 45.0 # Knockback speed pushed back from each shot
 var blocked_daze_time := 0.6 # Seconds the player can't act after a swing is blocked
-var pitfall_damage := 0.5 # Hearts lost falling down a pitfall
-var base_health := 5 # Hearts before the health upgrade
+var pitfall_damage := 0.5 # Damage from falling down a pitfall, like a hit
+# There's no health: damage comes off the level timer, this many seconds per point of
+# damage (after multipliers), and the run ends when it runs out.
+var seconds_per_damage := 10.0
 
 # --- Combat ---
 var sword_damage := 1.0
@@ -65,6 +67,7 @@ var wizard_melee_range := 32.0 # Pixels: a player this close gets the staff inst
 var wizard_melee_cooldown := 1.2 # Seconds between staff swipes
 var wizard_melee_damage := 0.5 # Before the enemy damage multiplier
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
+var wizard_volley_reaction_time := 0.1 # Seconds the player needs on top of the sword cooldown to return a fireball; less and the wizard takes the hit
 # Support casters (Caster.gd): the warlock and the curses it casts (Curses.gd), and the
 # necromancer, which raises the room's dead (Room.raise_fallen).
 var warlock_curse_cooldown_min := 3.0 # Seconds between curses, rolled each time
@@ -104,6 +107,8 @@ var group_rush_interval_min := 6.0 # Seconds of fighting between rushes, rolled 
 var group_rush_interval_max := 10.0
 var group_rush_min := 2 # Fewest enemies in a rush (and in the fight, for one to happen)
 var group_rush_max := 3
+var group_rush_crowd_size := 3 # Enemies circling at once that count as a crowd...
+var group_rush_crowd_speedup := 2.0 # ...and how many times faster the countdown to the next rush runs then
 var group_rush_speed := 1.4 # Times their speed as they rush in
 var group_rush_gather_time := 1.5 # Seconds to get into place; anyone not there by then drops out
 var group_rush_hold := 0.9 # Seconds of windup hold before the glint; covers charging a spin
@@ -127,7 +132,7 @@ var start_arrows := 10 # Arrows at the start of each floor
 var start_keys := 0 # Keys given at the start of each floor, on top of any carried over
 var keys_to_finish := 2 # Keys that open the end room; any spare carry over to the next floor
 var start_floor := 1 # Floor a new run starts on
-var arrow_drop_chance := 0.2
+var arrow_drop_chance := 0.1
 var arrow_drop_max := 2
 var coin_multiplier := 1.0 # On top of the floor and looting multiplier
 var upgrade_cost_multiplier := 1.0
@@ -142,7 +147,7 @@ var shake_multiplier := 1.0
 var kill_combo_window := 1.0 # Seconds between kills for the death sound to keep pitching up
 
 # --- Cheats ---
-var god_mode := false # Hits and falls take no health
+var god_mode := false # Hits and falls take no time
 var infinite_arrows := false
 var one_hit_kills := false
 var freeze_enemies := false
@@ -162,7 +167,7 @@ const FIELDS := [
 	["Player", "shoot_recoil", "Shoot recoil", 0, 300, 5, "Player.gd SHOOT_RECOIL"],
 	["Player", "blocked_daze_time", "Daze when blocked (s)", 0, 3, 0.05, "Player.gd BLOCKED_DAZE_TIME"],
 	["Player", "pitfall_damage", "Pitfall damage", 0, 5, 0.5, "Player.gd take_damage(0.5, ...)"],
-	["Player", "base_health", "Base hearts", 1, 5, 1, "Constants.gd BASE_HEALTH"],
+	["Player", "seconds_per_damage", "Seconds lost per damage", 0, 60, 0.5, "new (Player.lose_time; replaced health)"],
 
 	["Combat", "sword_damage", "Sword damage", 0, 20, 0.5, "Enemy.gd SWORD_DAMAGE"],
 	["Combat", "arrow_damage", "Arrow damage", 0, 20, 0.25, "Player.gd ARROW_DAMAGE"],
@@ -215,6 +220,7 @@ const FIELDS := [
 	["Enemies", "curse_attack_multiplier", "Lowered attack: damage dealt x", 0, 1, 0.05, "new (Curses)"],
 	["Enemies", "curse_speed_multiplier", "Slowed: speed x", 0.1, 1, 0.05, "new (Curses)"],
 	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
+	["Enemies", "wizard_volley_reaction_time", "Wizard volley reaction time (s)", 0, 2, 0.05, "new (RangedEnemy._player_could_return)"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
@@ -238,6 +244,8 @@ const FIELDS := [
 	["AI", "group_rush_interval_max", "Group rush every max (s)", 0.5, 60, 0.5, "new (AttackCoordinator)"],
 	["AI", "group_rush_min", "Group rush size min", 2, 6, 1, "new (AttackCoordinator)"],
 	["AI", "group_rush_max", "Group rush size max", 2, 6, 1, "new (AttackCoordinator)"],
+	["AI", "group_rush_crowd_size", "Group rush: crowd size", 2, 8, 1, "new (AttackCoordinator._circling_count)"],
+	["AI", "group_rush_crowd_speedup", "Group rush: crowd speedup", 1, 5, 0.1, "new (AttackCoordinator._update_rush_countdown)"],
 	["AI", "group_rush_speed", "Group rush speed multiplier", 0.5, 3, 0.05, "new (MeleeEnemy._group_rush)"],
 	["AI", "group_rush_gather_time", "Group rush gather time (s)", 0.2, 5, 0.1, "new (AttackCoordinator)"],
 	["AI", "group_rush_hold", "Group rush windup hold (s)", 0, 3, 0.05, "new (MeleeEnemy.rush_strike)"],

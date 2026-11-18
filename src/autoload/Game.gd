@@ -9,7 +9,8 @@ signal coins_changed(coins: int)
 signal keys_changed(keys: int)
 signal arrows_changed(arrows: int)
 signal arrows_empty # Tried to shoot with no arrows left
-signal health_changed(health: float)
+signal time_lost(seconds: float, fatal: bool) # Taken off the level timer by damage
+signal fatal_countdown_finished # The timer has shown a killing hit draining it to 0:00
 signal player_died
 
 var coins := 0 # Banked into SaveData when the floor ends

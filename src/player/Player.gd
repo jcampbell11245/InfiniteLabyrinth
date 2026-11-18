@@ -49,6 +49,11 @@ const CHARGED_ARROW_TINT := Color(1.5, 1.25, 0.6)
 
 # Game feel
 const HURT_HITSTOP := 0.08
+# A hit that runs the timer out: the game drops to this speed while the timer drains to
+# 0:00 (LevelTimer), then the game over starts. FATAL_FALLBACK real seconds is the most
+# it waits for the timer.
+const FATAL_SLOW_MOTION := 0.2
+const FATAL_FALLBACK := 5.0
 const HURT_FLASH := Color(1, 0.35, 0.35)
 const GHOST_INTERVAL := 0.04 # Seconds between afterimages while rolling
 const GHOST_FADE := 0.2
@@ -106,7 +111,6 @@ class FrameInput:
 
 # Pixels/sec. Tuning values (roll, damage, cooldowns and more) are read from Tuning.
 var speed: float = Tuning.player_speed
-var health: float = Tuning.base_health # In hearts; halves happen
 var current_room := Constants.START_ROOM
 var direction := Direction.RIGHT # Direction the player is facing
 
@@ -167,6 +171,8 @@ var _door_lane: Variant = null
 @onready var hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
 @onready var shoot_cooldown: Timer = $ShootCooldown
 @onready var invincibility_cooldown: Timer = $InvincibilityCooldown
+# Hit with too little time left: frozen out of acting while the timer drains (lose_time).
+var _dying := false
 @onready var level_countdown: Timer = $LevelCountdown # Time left to clear the floor
 @onready var respawn_cooldown: Timer = $RespawnCooldown # Time spent falling down a pitfall
 @onready var rolling: Timer = $Rolling
@@ -174,7 +180,6 @@ var _door_lane: Variant = null
 
 func _ready() -> void:
 	z_index = 2
-	health = max_health()
 	Tuning.changed.connect(_on_tuning_changed)
 	Juice.add_flash(animator)
 	_roll_sound = _add_sound(ROLL_DB)
@@ -227,7 +232,8 @@ func _physics_process(delta: float) -> void:
 		# Dazed, down a pitfall, or while the screen is still moving to a new room (the
 		# room isn't fully in view yet, so they could walk into a pit they can't see), the
 		# player can't move, roll or attack.
-		var can_act := _daze_timer.is_stopped() && respawn_cooldown.is_stopped() && !in_transition
+		var can_act := _daze_timer.is_stopped() && respawn_cooldown.is_stopped() && !in_transition \
+			&& !_dying
 		var input := _read_input() if can_act else FrameInput.new()
 		_handle_input(input)
 		_update_animation(input)
@@ -486,6 +492,18 @@ func can_swing() -> bool:
 		return false
 	return _action() not in [Action.SLASH, Action.DAMAGE] && (_sword_cooldown.is_stopped() || in_finisher())
 
+# Roughly how long until the sword can be out again: what's left of a swing under way plus
+# the cooldown after it. A new swing's hitbox is on from its first frame. Wizards use it to
+# tell whether a fireball they bat back could be returned in time (RangedEnemy._try_deflect).
+func seconds_until_can_swing() -> float:
+	var cooldown := 0.0 if in_finisher() else _sword_cooldown.time_left
+	if _action() == Action.SLASH:
+		var fps := animator.sprite_frames.get_animation_speed(animator.animation) * absf(animator.speed_scale)
+		var frames_left := maxi(ACTION_END_FRAME[Action.SLASH] - animator.frame, 0)
+		var swing_left := frames_left / fps if fps > 0 else 0.0
+		cooldown = swing_left + (0.0 if in_finisher() else Tuning.sword_cooldown)
+	return cooldown
+
 # In the invincibility after being hit (or falling down a pitfall); no attacking till it ends.
 func is_invincible() -> bool:
 	return invincibility_cooldown.time_left > 0
@@ -523,6 +541,8 @@ func _play(action: Action, dir := "") -> void:
 # the knockback. Pass "" for damage with no flinch or knockback (falling down a pitfall).
 # Returns whether the hit landed (false while invincible).
 func take_damage(damage: float, from_direction: String, mute: bool) -> bool:
+	if _dying:
+		return false # Already done for; the timer is showing it
 	if invincibility_cooldown.time_left == 0:
 		invincibility_cooldown.start(Tuning.hurt_invincibility)
 		animator.modulate.a = 0.5
@@ -547,16 +567,38 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> bool:
 			damage *= Tuning.stagger_damage_multiplier
 			_set_vulnerable(false)
 		damage *= curses.damage_taken_multiplier() # Lowered defense
-		# Hearts only show halves, so round up to the next half heart. Otherwise multipliers
-		# can leave a sliver (0.25) that shows as empty hearts but still keeps the player alive.
-		damage = ceilf(damage * 2.0 - 0.001) / 2.0
-		if !Tuning.god_mode:
-			health -= damage
-		Game.health_changed.emit(health)
-		if health <= 0:
-			die()
+		lose_time(damage * Tuning.seconds_per_damage)
 		return true
 	return false
+
+# Damage comes off the level timer, in whole seconds (at least one). Running it out ends
+# the run, as the timer reaching zero on its own does.
+func lose_time(seconds: float) -> void:
+	if Tuning.god_mode || level_countdown.is_stopped():
+		return
+	var lost := maxf(ceilf(seconds - 0.001), 1.0)
+	var left := level_countdown.time_left - lost
+	if left > 0:
+		Game.time_lost.emit(lost, false)
+		level_countdown.start(left)
+		return
+	# A killing hit: slow motion while the timer drains to 0:00, then the game over.
+	_dying = true
+	Juice.slow_motion(FATAL_SLOW_MOTION)
+	Game.time_lost.emit(lost, true) # Before stopping, so the timer drains from the old time
+	level_countdown.stop()
+	Game.fatal_countdown_finished.connect(_finish_dying, CONNECT_ONE_SHOT)
+	get_tree().create_timer(FATAL_FALLBACK, true, false, true).timeout.connect(_finish_dying)
+
+# The timer has landed on 0:00 (or it took too long): normal speed, and game over.
+func _finish_dying() -> void:
+	if !_dying:
+		return
+	_dying = false
+	if Game.fatal_countdown_finished.is_connected(_finish_dying):
+		Game.fatal_countdown_finished.disconnect(_finish_dying)
+	Juice.end_time_effects() # Or the game over's timers would run slow
+	die()
 
 # GameOver takes it from here.
 func die() -> void:
@@ -609,10 +651,6 @@ func _update_roll_ghosts(delta: float) -> void:
 	var tween := ghost.create_tween()
 	tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE)
 	tween.tween_callback(ghost.queue_free)
-
-# Hearts at full health, with the health upgrade.
-func max_health() -> int:
-	return SaveData.health_level + Tuning.base_health
 
 # Walk speed changes apply at once, unless mid-roll (the roll's end eases back to it).
 func _on_tuning_changed(key: String) -> void:

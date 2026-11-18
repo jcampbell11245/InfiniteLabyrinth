@@ -57,7 +57,7 @@ can't be written to). **Open folder** opens it.
 
 In debug builds (running from the editor or a debug export), **F2** opens the debug menu over
 the game and pauses it; F2 or **Close** shuts it again. The **Progress** tab edits the running
-floor (health, coins, keys, arrows, time left, floor, upgrade levels) and has Full heal, Kill
+floor (coins, keys, arrows, time left, floor, upgrade levels) and has Refill time, Kill
 enemies in this room and Next floor buttons. The other tabs edit the gameplay numbers in
 `src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, timer, loot, hit-stop,
 cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back

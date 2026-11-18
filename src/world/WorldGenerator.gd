@@ -5,6 +5,11 @@ class_name WorldGenerator
 # row; columns 1..6 are the generated rooms, three of them key rooms
 # (Tuning.keys_to_finish of their keys open the end room; a spare carries over). Empty cells are "".
 # Pure: it only reads the scene lists and the RNG, and instances nothing.
+#
+# Room scenes are loaded once and kept (see scene). Godot drops a resource as soon as
+# nothing references it, so without the cache every load also reloaded everything the rooms
+# share (tile maps, enemies, their textures): about 3 seconds per floor. The title screen
+# starts loading them in the background (preload_rooms), so a run usually starts at once.
 
 const LAYOUT_ROWS := 5
 const LAYOUT_COLUMNS := 8
@@ -13,6 +18,10 @@ const START_ROOM := "res://src/world/special/StartRoom.tscn"
 const END_ROOM := "res://src/world/special/EndRoom.tscn"
 const ROOMS_DIR := "res://src/world/rooms/"
 const KEYROOMS_DIR := "res://src/world/keyrooms/"
+const BOSS_ROOM := "res://src/world/special/BossRoom.tscn"
+
+static var _scenes := {} # Scene path -> its PackedScene, kept loaded for the whole session
+static var _loading := {} # Scene paths requested in the background and not yet collected
 
 # Returns layout[row][col], a scene path or "" for no room. Generated rooms are picked from
 # those allowed on `floor_number` (Room.floors). If there are too few to fill the floor,
@@ -47,6 +56,35 @@ static func generate(rng: RandomNumberGenerator, floor_number := 1) -> Array[Pac
 		layout.append(cells)
 	return layout
 
+# The room scene at `path`, loaded once and then kept. One still loading in the background
+# is waited for.
+static func scene(path: String) -> PackedScene:
+	if _scenes.has(path):
+		return _scenes[path]
+	var packed: PackedScene = null
+	if _loading.has(path):
+		_loading.erase(path)
+		packed = ResourceLoader.load_threaded_get(path) as PackedScene
+	if packed == null:
+		packed = load(path) as PackedScene
+	_scenes[path] = packed
+	return packed
+
+# Starts loading every room scene a floor can use on background threads, so they're ready
+# by the time a run starts. Safe to call again; scenes already loaded or loading are skipped.
+# Skipped headless (the smoke test, exports' --headless runs): the dummy renderer there
+# isn't safe to create textures on from several threads at once, and logs errors.
+static func preload_rooms() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	var paths := list_scenes(ROOMS_DIR) + list_scenes(KEYROOMS_DIR)
+	paths.append_array([START_ROOM, END_ROOM, BOSS_ROOM])
+	for path in paths:
+		if _scenes.has(path) || _loading.has(path):
+			continue
+		if ResourceLoader.load_threaded_request(path, "PackedScene", true) == OK:
+			_loading[path] = true
+
 static func list_scenes(dir: String) -> Array[String]:
 	var scenes: Array[String] = []
 	for file_name in ResourceLoader.list_directory(dir):
@@ -64,7 +102,7 @@ static func rooms_for_floor(scenes: Array[String], floor_number: int) -> Array[S
 
 # A room scene's Room.floors flags, read from the scene file without instancing it.
 static func floor_mask(path: String) -> int:
-	var state := (load(path) as PackedScene).get_state()
+	var state := scene(path).get_state()
 	for i in range(state.get_node_property_count(0)):
 		if state.get_node_property_name(0, i) == &"floors":
 			return state.get_node_property_value(0, i)

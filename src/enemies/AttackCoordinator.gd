@@ -142,7 +142,9 @@ static func _alive(enemy: Variant) -> bool:
 	return is_instance_valid(enemy) && !(enemy as Node).is_queued_for_deletion()
 
 # --- Group rushes ---
-# Every Tuning.group_rush_interval_min/max seconds of fighting, with at least
+# Every Tuning.group_rush_interval_min/max seconds of fighting (counted
+# Tuning.group_rush_crowd_speedup times faster while Tuning.group_rush_crowd_size or more
+# are circling), with at least
 # Tuning.group_rush_min members in and nobody mid-swing, up to Tuning.group_rush_max of
 # them (nearest first) are each given a different side of the player (left, right, above,
 # below) and rush to it. Once all are in place (or Tuning.group_rush_gather_time runs out,
@@ -166,11 +168,25 @@ func _update_rush_countdown(delta: float) -> bool:
 	if _next_rush < 0:
 		_next_rush = randf_range(Tuning.group_rush_interval_min,
 			maxf(Tuning.group_rush_interval_min, Tuning.group_rush_interval_max))
-	_next_rush -= delta
+	# A crowd waiting on the circle brings the next rush on sooner.
+	var crowded := _circling_count() >= Tuning.group_rush_crowd_size
+	_next_rush -= delta * (Tuning.group_rush_crowd_speedup if crowded else 1.0)
 	if _next_rush > 0 || _anyone_swinging():
 		return false
 	_next_rush = -1.0
 	return _start_rush()
+
+# Members waiting their turn on the circle round the player: not attacking, not stunned,
+# able to rush, and near enough the player to be circling rather than still on their way.
+func _circling_count() -> int:
+	var player_at: Vector2 = Game.player.global_position
+	var count := 0
+	for enemy in _last_seen:
+		if !_alive(enemy) || _attackers.has(enemy) || !enemy.can_take_turn() 				|| !enemy.has_method("begin_group_rush"):
+			continue
+		if enemy.global_position.distance_to(player_at) <= Tuning.pack_ring_radius * TURN_RANGE:
+			count += 1
+	return count
 
 func _anyone_swinging() -> bool:
 	for enemy in _last_seen:

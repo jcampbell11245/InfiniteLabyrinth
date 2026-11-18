@@ -1,7 +1,7 @@
 class_name UpgradeMenu
 extends Control
 
-# Between floors (and after dying) the player spends coins on four upgrades, each with
+# Between floors (and after dying) the player spends coins on three upgrades, each with
 # MAX_LEVEL levels, then continues to a new floor. Rows are picked with up/down or the
 # mouse; the row after the upgrades is Continue.
 
@@ -11,12 +11,11 @@ const COSTS := [150, 250, 350, 550, 850, 1350, 2100, 3200, 5000, "MAX"]
 
 # One row per upgrade: its SaveData field and the nodes that show it.
 const UPGRADES := [
-	{level = "health_level", meter = "Meter1", cost = "Coins", option = "Plus1Control", plus = "Plus1Control/Plus1", button = "Plus1Control/Button"},
 	{level = "damage_level", meter = "Meter2", cost = "Coins2", option = "Plus2Control", plus = "Plus2Control/Plus2", button = "Plus2Control/Button2"},
 	{level = "time_level", meter = "Meter3", cost = "Coins3", option = "Plus3Control", plus = "Plus3Control/Plus3", button = "Plus3Control/Button3"},
 	{level = "looting_level", meter = "Meter4", cost = "Coins4", option = "Plus4Control", plus = "Plus4Control/Plus4", button = "Plus4Control/Button4"},
 ]
-const CONTINUE := 4 # Row index of the Continue button
+const CONTINUE := 3 # Row index of the Continue button
 
 var selected := 0
 
