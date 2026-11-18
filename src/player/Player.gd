@@ -64,6 +64,8 @@ const SWORD_BAR := Color(0.95, 0.25, 0.25)
 const ROLL_BAR := Color(0.4, 0.9, 0.5)
 const ARROW_BAR := Color(1, 0.7, 0.25)
 const DAZE_BAR := Color(0.75, 0.5, 1)
+const CURSE_BAR := Color(0.55, 0.85, 0.3) # A warlock's curses (see Curses)
+const CURSE_ICON := Color(0.75, 1, 0.5)
 
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
@@ -123,6 +125,8 @@ var _was_slashing := false # The last physics frame ended mid-swing
 # The enemy the player last parried. While it stays stunned, swings skip the sword
 # cooldown so the player can finish it off (Tuning.instant_finisher).
 var _finisher_target: Enemy
+# Status effects from warlocks: inverted controls, lowered stats, daze, a jammed bow.
+var curses: Curses
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -166,6 +170,9 @@ func _ready() -> void:
 	_sword_cooldown = Timer.new()
 	_sword_cooldown.one_shot = true
 	add_child(_sword_cooldown)
+	curses = Curses.new()
+	curses.player = self
+	add_child(curses)
 	_add_status_bars()
 
 # Each cooldown counts down in its own bar over the head while it runs.
@@ -176,6 +183,16 @@ func _add_status_bars() -> void:
 	bars.add_bar(StatusBars.Icon.SWORD, SWORD_BAR, StatusBars.timer_left.bind(_sword_cooldown))
 	bars.add_bar(StatusBars.Icon.ROLL, ROLL_BAR, StatusBars.timer_left.bind(roll_cooldown))
 	bars.add_bar(StatusBars.Icon.ARROW, ARROW_BAR, StatusBars.timer_left.bind(shoot_cooldown))
+	# Curses on top, each with its own icon (daze shows in the daze bar above).
+	var curse_icons := {
+		Curses.Effect.INVERTED: StatusBars.Icon.INVERTED,
+		Curses.Effect.DEFENSE_DOWN: StatusBars.Icon.DEFENSE_DOWN,
+		Curses.Effect.ATTACK_DOWN: StatusBars.Icon.ATTACK_DOWN,
+		Curses.Effect.SLOW: StatusBars.Icon.SLOW,
+		Curses.Effect.JAM: StatusBars.Icon.JAM,
+	}
+	for effect: Curses.Effect in curse_icons:
+		bars.add_bar(curse_icons[effect], CURSE_BAR, curses.left.bind(effect), CURSE_ICON)
 	add_child(bars)
 
 func _physics_process(delta: float) -> void:
@@ -243,12 +260,13 @@ func _would_trigger(motion: Vector2) -> bool:
 
 func _read_input() -> FrameInput:
 	var input := FrameInput.new()
-	for dir in [Direction.RIGHT, Direction.LEFT, Direction.DOWN, Direction.UP]:
-		if Input.is_action_pressed(dir):
+	for key in [Direction.RIGHT, Direction.LEFT, Direction.DOWN, Direction.UP]:
+		var dir := curses.steer(key) # Swapped while the controls are inverted
+		if Input.is_action_pressed(key):
 			input.move += Direction.to_vector(dir)
 			if input.held == "":
 				input.held = dir
-		if input.released == "" && Input.is_action_just_released(dir):
+		if input.released == "" && Input.is_action_just_released(key):
 			input.released = dir
 	input.roll = Input.is_action_just_pressed("roll")
 	input.melee = Input.is_action_just_pressed("melee_attack")
@@ -260,6 +278,10 @@ func _read_input() -> FrameInput:
 # Movement, rolling, attacks and arrows. Runs before _update_animation, so the checks
 # here see the animation from the previous frame.
 func _handle_input(input: FrameInput) -> void:
+	# A jammed bow won't draw; it clicks instead, and no arrow is spent.
+	if input.ranged && curses.has(Curses.Effect.JAM):
+		input.ranged = false
+		curses.jam_feedback()
 	# Out of arrows, the shot never happens; the HUD counter shakes instead.
 	if input.ranged && Game.arrows <= 0 && !Tuning.infinite_arrows:
 		input.ranged = false
@@ -287,7 +309,7 @@ func _handle_input(input: FrameInput) -> void:
 		var rooted := _action() in [Action.SLASH, Action.SHOOT, Action.DAMAGE] && !_charging
 		if !rooted && respawn_cooldown.time_left == 0:
 			velocity += input.move
-	velocity = velocity.normalized() * speed
+	velocity = velocity.normalized() * speed * curses.speed_multiplier()
 
 	# Decided once, here: _update_animation can drop a swing back to idle (on its last
 	# frame), which mustn't let a new one start that same frame
@@ -344,7 +366,8 @@ func _fire_arrow(charged: bool) -> void:
 	get_parent().add_child(arrow)
 	arrow.position = position
 	arrow.direction = direction
-	arrow.damage = Tuning.arrow_damage * (Tuning.arrow_charge_multiplier if charged else 1.0)
+	arrow.damage = Tuning.arrow_damage * (Tuning.arrow_charge_multiplier if charged else 1.0) \
+		* curses.damage_dealt_multiplier()
 	arrow.speed = Tuning.arrow_speed
 	if charged:
 		arrow.modulate = CHARGED_ARROW_TINT
@@ -484,6 +507,7 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> bool:
 		if from_direction != "" && is_vulnerable():
 			damage *= Tuning.stagger_damage_multiplier
 			_set_vulnerable(false)
+		damage *= curses.damage_taken_multiplier() # Lowered defense
 		# Hearts only show halves, so round up to the next half heart. Otherwise multipliers
 		# can leave a sliver (0.25) that shows as empty hearts but still keeps the player alive.
 		damage = ceilf(damage * 2.0 - 0.001) / 2.0
@@ -601,13 +625,21 @@ func swing_parried(swing_frame: int) -> bool:
 # An enemy blocked a swing made too early, before its twinkle: the swing ends, the
 # player is dazed (can't act) for a moment, and their next hit taken is multiplied.
 func stagger() -> void:
+	daze(Tuning.blocked_daze_time)
+	_set_vulnerable(true)
+
+# Can't act for `seconds` (or longer, if already dazed for longer): greyed out, with stars.
+func daze(seconds: float) -> void:
 	_play(Action.IDLE)
 	hitbox.set_deferred("disabled", true) # Called from a collision callback
 	velocity = Vector2.ZERO
-	_daze_timer.start(Tuning.blocked_daze_time)
+	_daze_timer.start(maxf(seconds, _daze_timer.time_left))
 	Juice.set_grey(animator, true) # Greyed out while dazed, to show the player can't act
-	_set_vulnerable(true)
 	_show_dizzy(true)
+
+# What a sword hit does, after any lowered-attack curse.
+func sword_damage() -> float:
+	return Tuning.sword_damage * curses.damage_dealt_multiplier()
 
 func is_dazed() -> bool:
 	return !_daze_timer.is_stopped()

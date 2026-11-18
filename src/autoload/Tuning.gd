@@ -58,6 +58,15 @@ var wizard_melee_range := 32.0 # Pixels: a player this close gets the staff inst
 var wizard_melee_cooldown := 1.2 # Seconds between staff swipes
 var wizard_melee_damage := 0.5 # Before the enemy damage multiplier
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
+# Warlock (Warlock.gd) and the curses it casts on the player (Curses.gd).
+var warlock_curse_cooldown_min := 3.0 # Seconds between curses, rolled each time
+var warlock_curse_cooldown_max := 5.0
+var warlock_keep_away := 80.0 # Pixels: backs away from a player closer than this
+var curse_duration := 4.0 # Seconds each curse lasts
+var curse_daze_time := 1.2 # Seconds the daze curse leaves the player unable to act
+var curse_defense_multiplier := 2.0 # Damage taken while defense is lowered
+var curse_attack_multiplier := 0.5 # Damage dealt while attack is lowered
+var curse_speed_multiplier := 0.55 # Walk and roll speed while slowed
 # Goblin family: trolls (Troll.gd) and orcs (Orc.tscn), placed with the room creator.
 var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
 var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back when the troll dies
@@ -167,6 +176,14 @@ const FIELDS := [
 	["Enemies", "wizard_melee_range", "Wizard melee range (px)", 0, 150, 1, "new (RangedEnemy._in_melee_range)"],
 	["Enemies", "wizard_melee_cooldown", "Wizard melee cooldown (s)", 0.1, 5, 0.05, "new (RangedEnemy._start_melee)"],
 	["Enemies", "wizard_melee_damage", "Wizard melee damage", 0, 5, 0.25, "new (RangedEnemy.melee_damage)"],
+	["Enemies", "warlock_curse_cooldown_min", "Warlock curse cooldown min (s)", 0.1, 20, 0.1, "new (Warlock)"],
+	["Enemies", "warlock_curse_cooldown_max", "Warlock curse cooldown max (s)", 0.1, 20, 0.1, "new (Warlock)"],
+	["Enemies", "warlock_keep_away", "Warlock keep-away distance (px)", 0, 300, 1, "new (Warlock)"],
+	["Enemies", "curse_duration", "Curse duration (s)", 0.1, 20, 0.1, "new (Curses)"],
+	["Enemies", "curse_daze_time", "Daze curse duration (s)", 0, 5, 0.05, "new (Curses)"],
+	["Enemies", "curse_defense_multiplier", "Lowered defense: damage taken x", 1, 5, 0.25, "new (Curses)"],
+	["Enemies", "curse_attack_multiplier", "Lowered attack: damage dealt x", 0, 1, 0.05, "new (Curses)"],
+	["Enemies", "curse_speed_multiplier", "Slowed: speed x", 0.1, 1, 0.05, "new (Curses)"],
 	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],

@@ -351,13 +351,13 @@ func _on_player_sword(from_direction: String) -> void:
 	if _unparryable && _animation_is(_attack_action()) && animator.frame <= attack_frame \
 			&& !_swung_first():
 		if from_direction == direction:
-			take_damage(from_direction, Tuning.sword_damage)
+			take_damage(from_direction, player.sword_damage())
 		else:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
 		return
 	match _parry_timing():
 		Parry.NONE:
-			take_damage(from_direction, Tuning.sword_damage)
+			take_damage(from_direction, player.sword_damage())
 		Parry.IN_WINDOW:
 			player.mark_swing_parried()
 			_parry_feedback()
