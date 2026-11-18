@@ -392,8 +392,8 @@ func _on_player_sword(from_direction: String) -> void:
 # stagger. Called deferred, at the end of the physics frame, so a parry the same swing lands
 # on another enemy in the same frame counts whichever contact the engine reported first.
 func _block_player_swing(from_direction: String, swing_frame: int) -> void:
-	if player.swing_parried(swing_frame):
-		return
+	if player.swing_parried(swing_frame) || player.is_spin_opener(swing_frame):
+		return # Passes through (a spin being charged against a group rush: Player.is_spin_opener)
 	_parry_feedback(true)
 	player.stagger()
 	_chip(Direction.to_vector(from_direction))

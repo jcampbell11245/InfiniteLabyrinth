@@ -147,6 +147,9 @@ var _spin_ready := false # Held for at least Tuning.spin_charge_time
 var _spin_timer: Timer # Running while spinning
 var _spin_shape: CollisionShape2D # SpinHitbox's circle, live only while spinning
 var _spin_tween: Tween
+# swing_started_frame of the last swing begun while a group rush was on in this room; see
+# is_spin_opener.
+var _rush_swing := -2
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -347,6 +350,8 @@ func _handle_input(input: FrameInput) -> void:
 		hitbox.disabled = false
 		swing_started_at = Time.get_ticks_msec()
 		swing_started_frame = Engine.get_physics_frames()
+		if _group_rush_on():
+			_rush_swing = swing_started_frame
 		Juice.play($Slash)
 
 	_update_spin_charge(input)
@@ -653,6 +658,21 @@ func mark_swing_parried() -> void:
 # The swing that began on physics frame `swing_frame` parried an enemy.
 func swing_parried(swing_frame: int) -> bool:
 	return _parried_swing == swing_frame
+
+# The swing begun on `swing_frame` is the start of a spin against a group rush: it began
+# while enemies were rushing in together (AttackCoordinator), and the button is still
+# held, charging. Such a swing isn't blocked or guarded against (see
+# Enemy._block_player_swing, MeleeEnemy._guard): it passes through, no stagger, chip or
+# counter, so the charge carries on. A tap let go of before it lands is judged as usual.
+func is_spin_opener(swing_frame: int) -> bool:
+	return swing_frame == _rush_swing && _spin_charging
+
+func _group_rush_on() -> bool:
+	var room := Game.room_by_id(current_room)
+	if room == null:
+		return false
+	var coordinator := room.get_node_or_null(AttackCoordinator.NODE_NAME) as AttackCoordinator
+	return coordinator != null && coordinator.rush_active()
 
 # An enemy blocked a swing made too early, before its twinkle: the swing ends, the
 # player is dazed (can't act) for a moment, and their next hit taken is multiplied.

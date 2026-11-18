@@ -834,7 +834,7 @@ func _on_player_sword(from_direction: String) -> void:
 # Guards against the swing begun on physics frame `swing_frame`, unless it parried another
 # enemy, in which case it passes through untouched (see Enemy._block_player_swing).
 func _guard(from_direction: String, swing_frame: int) -> void:
-	if !player.swing_parried(swing_frame):
+	if !player.swing_parried(swing_frame) && !player.is_spin_opener(swing_frame):
 		_block_sword(from_direction)
 
 # Not a knight, not swinging (or recovering from one), not dazed, and facing a player it
