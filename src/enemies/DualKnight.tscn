@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" uid="uid://bb226ffelhus6" path="res://src/enemies/Knight.tscn" id="1"]
+
+[node name="DualKnight" instance=ExtResource("1")]
+unparryable_attack = false
+double_attack = true
+always_double_attack = true
+has_shield = false

@@ -87,6 +87,7 @@ const TOOLS := [
 	# After the rest so the number keys for the others stay put; past 9 they have none.
 	["Troll", "object", "troll"],
 	["Orc", "object", "orc"],
+	["Dual Knight", "object", "dual_knight"],
 ]
 
 var design: RoomDesign

@@ -28,8 +28,9 @@ extends Enemy
 # strike, so a player who rolls through gets caught by it. Rolling through only beats
 # unparryable attacks.
 #
-# Double attacks (double_attack, goblins): some swings, Tuning.double_attack_chance of them,
-# come with a follow-up. Parrying the first doesn't stagger the enemy; it swings again
+# Double attacks (double_attack, goblins and dual knights): some swings,
+# Tuning.double_attack_chance of them (every one with always_double_attack), come with a
+# follow-up. Parrying the first doesn't stagger the enemy; it swings again
 # straight away, glinting Tuning.double_attack_hold after the parry, and only parrying that
 # second swing staggers it. A first swing that isn't parried is just a single attack. The
 # first parry doesn't lift the player's sword cooldown (only a stagger does; see
@@ -112,6 +113,10 @@ const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting a
 @export var starting_direction := Direction.RIGHT
 @export var double_attack := false # Some swings follow up when parried; see above
 @export var unparryable_attack := false # Some swings can't be parried; see above
+@export var always_double_attack := false # Every swing is a double attack (dual knight)
+# Knights (only_hit_during_attack) block with a shield, so their blocks cost them nothing.
+# One without (the dual knight, two swords) still blocks but takes chip damage like a goblin.
+@export var has_shield := true
 # Pitch of its attack and death sounds, so a family member sharing a base enemy's sounds
 # (trolls higher, orcs deeper than goblins) can sound like itself.
 @export var voice_pitch := 1.0
@@ -504,7 +509,8 @@ func _start_swing(horizontal: bool) -> void:
 	attack()
 	_unparryable = unparryable_attack && randf() < Tuning.unparryable_chance
 	_end_lagged = false
-	_follow_up_ready = !_unparryable && double_attack && randf() < Tuning.double_attack_chance
+	_follow_up_ready = !_unparryable && double_attack \
+			&& (always_double_attack || randf() < Tuning.double_attack_chance)
 
 func in_end_lag() -> bool:
 	return !_end_lag.is_stopped()
@@ -858,9 +864,9 @@ func _block_sword(from_direction: String) -> void:
 	_chip(hit_dir)
 	_block_counter_pending = Tuning.counter_attack # Swings back next physics frame
 
-# Knights take no chip damage; their blocks are the old, free kind.
+# Knights with a shield take no chip damage; their blocks are the old, free kind.
 func _chip(hit_dir: Vector2) -> void:
-	if !only_hit_during_attack:
+	if !only_hit_during_attack || !has_shield:
 		super(hit_dir)
 
 # Any hit, even one a knight blocks, gives the player away.

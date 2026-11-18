@@ -641,7 +641,7 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	match enemy.scene_file_path.get_file().get_basename():
 		# The rest of the goblin family share its death sound, at their own voice_pitch.
 		"Goblin", "Troll", "Orc": Juice.play(goblin_death, 0.04, pitch * enemy.voice_pitch)
-		"Knight": Juice.play(knight_death, 0.04, pitch)
+		"Knight", "DualKnight": Juice.play(knight_death, 0.04, pitch)
 	_refresh_doors()
 
 func _on_next_floor_area_entered(_area: Area2D) -> void:
