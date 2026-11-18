@@ -1,8 +1,9 @@
 extends Node2D
 
 # The room creator, opened with F1 on the title screen. Shows a blank 13x13 room to paint:
-# pick a tool on the left, left-click or drag on the floor to paint it, right-click to
-# erase. Play builds the room on its own to test it (F1 there comes back here); Export
+# pick a tool on the left (Eraser and Select on top, then tiles and enemies in their own
+# tabs, as scrolling grids of icons), left-click or drag on the floor to paint it,
+# right-click to erase. Play builds the room on its own to test it (F1 there comes back here); Export
 # writes it to a text file (and the clipboard) that can be turned into a room scene, and
 # Open folder shows where the files went. Ctrl+Z undoes; Ctrl+Y or Ctrl+Shift+Z redo.
 #
@@ -50,6 +51,13 @@ const AUTO_MARK := Color(1, 0.9, 0.4, 0.95) # The "auto" over an enemy that turn
 const AUTO_MARK_SIZE := 9 # Room pixels
 const AUTO_MARK_RISE := 27.0 # Room pixels above the enemy's origin
 const SELECT_TOOL := 8 # Index of Select in TOOLS
+# The tool picker (see _build_tool_picker).
+const TOOL_TAB_NAMES: Array[String] = ["Tiles", "Enemies"]
+const TOOL_TABS_HEIGHT := 300.0 # Screen pixels, tabs included; each tab scrolls inside it
+const TOOL_GRID_COLUMNS := 4
+const TOOL_ICON_BUTTON := Vector2(100, 112)
+const TOOL_ICON_SIZE := 72 # Widest the picture on a tool button gets
+const TOOL_ICON_FONT_SIZE := 14
 # Edges of a roaming area, as bits, for dragging them.
 const EDGE_LEFT := 1
 const EDGE_RIGHT := 2
@@ -110,7 +118,8 @@ var _facing_buttons := {} # One of RoomDesign.FACINGS -> its Button
 var _undo_button: Button
 var _redo_button: Button
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
-var _tool_buttons: Array[Button] = []
+var _tool_buttons: Array[Button] = [] # One per TOOLS entry, in its order
+var _tool_tabs: TabContainer # The Tiles and Enemies tabs
 var _info: Label
 var _warning: Label
 var _clear_buttons := {} # "none"/"enemies"/"switches" -> its Button
@@ -597,6 +606,11 @@ func _select_tool(index: int) -> void:
 	tool = index
 	for i in range(_tool_buttons.size()):
 		_tool_buttons[i].button_pressed = i == index
+	# Picked with a number key, its tab comes to the front.
+	var tab := _tool_tab(index)
+	if tab != "":
+		_tool_tabs.current_tab = TOOL_TAB_NAMES.find(tab)
+		(_tool_tabs.get_current_tab_control() as ScrollContainer).ensure_control_visible(_tool_buttons[index])
 	_overlay.queue_redraw()
 
 func _set_clear_by(condition: String) -> void:
@@ -610,6 +624,7 @@ func _set_clear_by(condition: String) -> void:
 func _set_tileset(floor_number: int) -> void:
 	design.preview_floor = floor_number
 	FloorTheme.apply(_preview, floor_number)
+	_refresh_tool_icons()
 	_refresh_info()
 	_status.text = "Showing the floor %d tileset" % floor_number
 
@@ -756,18 +771,7 @@ func _build_ui() -> void:
 	title.add_theme_font_size_override("font_size", 36)
 	column.add_child(title)
 
-	# Two columns, so everything fits down the panel.
-	var tool_grid := GridContainer.new()
-	tool_grid.columns = 2
-	column.add_child(tool_grid)
-	var group := ButtonGroup.new()
-	for i in range(TOOLS.size()):
-		var key_hint := str(i + 1) if i < 9 else " " # Only 1-9 have keys
-		var button := _add_button(tool_grid, "%s  %s" % [key_hint, TOOLS[i][0]], _select_tool.bind(i))
-		button.toggle_mode = true
-		button.button_group = group
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_tool_buttons.append(button)
+	_build_tool_picker(column)
 
 	column.add_child(HSeparator.new())
 	column.add_child(_tileset_row())
@@ -831,6 +835,121 @@ func _build_ui() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.size = Vector2(1920 - PANEL_WIDTH - 64, 48)
 	layer.add_child(_status)
+
+# The tools: Eraser and Select in a row on top, then a tab each for tiles and enemies (see
+# _tool_tab), each a scrolling grid of icons. The number in a tool's label is its key.
+func _build_tool_picker(column: VBoxContainer) -> void:
+	_tool_buttons.resize(TOOLS.size())
+	var group := ButtonGroup.new()
+	var always := HBoxContainer.new()
+	column.add_child(always)
+	_tool_tabs = TabContainer.new()
+	_tool_tabs.custom_minimum_size = Vector2(0, TOOL_TABS_HEIGHT)
+	_tool_tabs.focus_mode = Control.FOCUS_NONE
+	column.add_child(_tool_tabs)
+	var grids := {}
+	for tab: String in TOOL_TAB_NAMES:
+		var scroll := ScrollContainer.new()
+		scroll.name = tab
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		_tool_tabs.add_child(scroll)
+		var grid := GridContainer.new()
+		grid.columns = TOOL_GRID_COLUMNS
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_theme_constant_override("h_separation", 6)
+		grid.add_theme_constant_override("v_separation", 6)
+		scroll.add_child(grid)
+		grids[tab] = grid
+	for i in range(TOOLS.size()):
+		var tab := _tool_tab(i)
+		var button: Button
+		if tab == "":
+			button = _add_button(always, "%s  %s" % [_key_hint(i), TOOLS[i][0]], _select_tool.bind(i))
+			button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		else:
+			button = _icon_button(grids[tab], i)
+		button.toggle_mode = true
+		button.button_group = group
+		_tool_buttons[i] = button
+	_refresh_tool_icons()
+
+# Which tab tool `i` sits in: "Tiles" for ground and switches, "Enemies" for enemies, or ""
+# for the tools that aren't things to place (Eraser, Select), which sit above the tabs. New
+# cell kinds and objects land in the right tab without listing them here.
+func _tool_tab(i: int) -> String:
+	match TOOLS[i][1]:
+		"cell":
+			return "Tiles"
+		"object":
+			return "Tiles" if TOOLS[i][2] == "switch" else "Enemies"
+	return ""
+
+func _key_hint(i: int) -> String:
+	return str(i + 1) if i < 9 else "" # Only 1-9 have keys
+
+# A square button with the tool's picture over its name. The picture is filled in by
+# _refresh_tool_icons.
+func _icon_button(grid: GridContainer, i: int) -> Button:
+	var hint := _key_hint(i)
+	var button := _add_button(grid, ("%s  %s" % [hint, TOOLS[i][0]]) if hint != "" else TOOLS[i][0],
+		_select_tool.bind(i))
+	button.custom_minimum_size = TOOL_ICON_BUTTON
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	button.expand_icon = true
+	button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST # Pixel art stays crisp
+	button.add_theme_font_size_override("font_size", TOOL_ICON_FONT_SIZE)
+	button.add_theme_constant_override("icon_max_width", TOOL_ICON_SIZE)
+	button.clip_text = true
+	button.tooltip_text = TOOLS[i][0]
+	return button
+
+# Puts each tile and enemy's picture on its button: the tile as the current tileset draws
+# it (so it follows the Tileset buttons), or the first frame the enemy's scene shows, with
+# its tint.
+func _refresh_tool_icons() -> void:
+	for i in range(TOOLS.size()):
+		if _tool_tab(i) == "":
+			continue
+		var button := _tool_buttons[i]
+		var tint := Color.WHITE
+		if TOOLS[i][1] == "cell":
+			button.icon = _tile_icon(TOOLS[i][2])
+		else:
+			var sprite := _sprite_for(TOOLS[i][2])
+			var animation := sprite.animation
+			if sprite.sprite_frames.has_animation("idle_down"): # Facing out of the button
+				animation = "idle_down"
+			button.icon = sprite.sprite_frames.get_frame_texture(animation, 0)
+			tint = sprite.self_modulate
+			sprite.free()
+		for state in ["icon_normal_color", "icon_hover_color", "icon_pressed_color",
+				"icon_hover_pressed_color", "icon_focus_color"]:
+			button.add_theme_color_override(state, tint)
+
+# One tile of `kind` cut from the preview room's tileset: a plain floor tile, a pit, or a
+# stalagmite standing on its own.
+func _tile_icon(kind: RoomDesign.Cell) -> Texture2D:
+	var map_name := "Tiles"
+	var source_id := Room.FLOOR
+	match kind:
+		RoomDesign.Cell.PIT:
+			map_name = "Pitfalls"
+			source_id = 0
+		RoomDesign.Cell.STALAGMITE:
+			map_name = "Stalagmites"
+			source_id = Room.STALAGMITE_SOURCES[0]
+	var tile_set: TileSet = (_preview.get_node(map_name) as TileMap).tile_set
+	var source := tile_set.get_source(source_id) as TileSetAtlasSource
+	if source == null || source.texture == null:
+		return null
+	var icon := AtlasTexture.new()
+	icon.atlas = source.texture
+	icon.region = source.get_tile_texture_region(Vector2i.ZERO)
+	return icon
 
 # "Tileset" and a button per floor with its own art.
 func _tileset_row() -> HBoxContainer:
