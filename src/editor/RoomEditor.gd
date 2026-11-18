@@ -50,7 +50,7 @@ const ROAM_UNSELECTED := 0.35 # Alpha multiplier for the paths and areas of enem
 const AUTO_MARK := Color(1, 0.9, 0.4, 0.95) # The "auto" over an enemy that turns to face the player
 const AUTO_MARK_SIZE := 9 # Room pixels
 const AUTO_MARK_RISE := 27.0 # Room pixels above the enemy's origin
-const SELECT_TOOL := 8 # Index of Select in TOOLS
+const SELECT_TOOL := 1 # Index of Select in TOOLS
 # The tool picker (see _build_tool_picker).
 const TOOL_TAB_NAMES: Array[String] = ["Tiles", "Enemies"]
 const TOOL_TABS_HEIGHT := 300.0 # Screen pixels, tabs included; each tab scrolls inside it
@@ -82,26 +82,26 @@ const CLEAR_HINTS := {
 }
 
 # Each tool: [label, what it paints ("cell", "object" or "erase"), value].
+# The order is the order in each tab's grid; enemies are grouped by family.
 const TOOLS := [
+	["Eraser", "erase", null],
+	["Select", "select", null],
 	["Floor", "cell", RoomDesign.Cell.FLOOR],
 	["Pitfall", "cell", RoomDesign.Cell.PIT],
 	["Stalagmite", "cell", RoomDesign.Cell.STALAGMITE],
-	["Goblin", "object", "goblin"],
-	["Knight", "object", "knight"],
-	["Wizard", "object", "wizard"],
 	["Switch", "object", "switch"],
-	["Eraser", "erase", null],
-	["Select", "select", null],
-	# After the rest so the number keys for the others stay put; past 9 they have none.
+	["Goblin", "object", "goblin"],
 	["Troll", "object", "troll"],
 	["Orc", "object", "orc"],
+	["Knight", "object", "knight"],
 	["Dual Knight", "object", "dual_knight"],
+	["Wizard", "object", "wizard"],
 	["Warlock", "object", "warlock"],
 	["Necromancer", "object", "necromancer"],
 ]
 
 var design: RoomDesign
-var tool := 1 # Index into TOOLS; starts on Pitfall
+var tool := 3 # Index into TOOLS; starts on Pitfall
 var _preview: Node2D # A blank room the design is painted onto
 var _objects: Node2D # Sprites standing in for the design's enemies and switches
 var _overlay: Node2D # Grid lines and the hovered cell
@@ -179,7 +179,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
 		if button.pressed:
-			get_viewport().gui_release_focus() # Out of a floor box, so number keys pick tools again
+			get_viewport().gui_release_focus() # Out of a floor box, so keys reach the editor again
 		if button.button_index == MOUSE_BUTTON_LEFT \
 				&& (_drag_radius_button(button) || _drag_area_button(button)):
 			return
@@ -219,8 +219,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().change_scene_to_file(TITLE_SCENE)
 		elif key == KEY_F5:
 			_play()
-		elif key >= KEY_1 && key < KEY_1 + mini(TOOLS.size(), 9):
-			_select_tool(key - KEY_1)
 
 func _update_hover() -> void:
 	var tiles: TileMap = _preview.get_node("Tiles")
@@ -606,7 +604,7 @@ func _select_tool(index: int) -> void:
 	tool = index
 	for i in range(_tool_buttons.size()):
 		_tool_buttons[i].button_pressed = i == index
-	# Picked with a number key, its tab comes to the front.
+	# Its tab comes to the front (the starting tool, as the editor opens).
 	var tab := _tool_tab(index)
 	if tab != "":
 		_tool_tabs.current_tab = TOOL_TAB_NAMES.find(tab)
@@ -826,7 +824,7 @@ func _build_ui() -> void:
 
 	var help := Label.new()
 	help.theme = theme
-	help.text = "Left click: paint    Right click: erase    1-%d: pick a tool    Ctrl+Z: undo    Ctrl+Y: redo" % mini(TOOLS.size(), 9)
+	help.text = "Left click: paint    Right click: erase    Ctrl+Z: undo    Ctrl+Y: redo"
 	help.position = Vector2(PANEL_WIDTH + 32, 24)
 	layer.add_child(help)
 	_status = Label.new()
@@ -837,7 +835,7 @@ func _build_ui() -> void:
 	layer.add_child(_status)
 
 # The tools: Eraser and Select in a row on top, then a tab each for tiles and enemies (see
-# _tool_tab), each a scrolling grid of icons. The number in a tool's label is its key.
+# _tool_tab), each a scrolling grid of icons.
 func _build_tool_picker(column: VBoxContainer) -> void:
 	_tool_buttons.resize(TOOLS.size())
 	var group := ButtonGroup.new()
@@ -864,7 +862,7 @@ func _build_tool_picker(column: VBoxContainer) -> void:
 		var tab := _tool_tab(i)
 		var button: Button
 		if tab == "":
-			button = _add_button(always, "%s  %s" % [_key_hint(i), TOOLS[i][0]], _select_tool.bind(i))
+			button = _add_button(always, TOOLS[i][0], _select_tool.bind(i))
 			button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		else:
@@ -885,15 +883,10 @@ func _tool_tab(i: int) -> String:
 			return "Tiles" if TOOLS[i][2] == "switch" else "Enemies"
 	return ""
 
-func _key_hint(i: int) -> String:
-	return str(i + 1) if i < 9 else "" # Only 1-9 have keys
-
 # A square button with the tool's picture over its name. The picture is filled in by
 # _refresh_tool_icons.
 func _icon_button(grid: GridContainer, i: int) -> Button:
-	var hint := _key_hint(i)
-	var button := _add_button(grid, ("%s  %s" % [hint, TOOLS[i][0]]) if hint != "" else TOOLS[i][0],
-		_select_tool.bind(i))
+	var button := _add_button(grid, TOOLS[i][0], _select_tool.bind(i))
 	button.custom_minimum_size = TOOL_ICON_BUTTON
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
