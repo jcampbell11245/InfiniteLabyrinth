@@ -449,7 +449,7 @@ func to_text() -> String:
 		"# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):",
 		"#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)",
 		"#   G  goblin   K  knight     W  wizard     O  switch",
-		"#   T  troll    R  orc        (goblin family; see EnemyFamilies)",
+		"#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)",
 		"# Enemies and switches stand on floor.",
 		"grid:",
 	]
