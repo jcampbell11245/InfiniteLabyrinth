@@ -981,6 +981,13 @@ func rush_strike() -> void:
 	_follow_up_ready = false
 	_rush_striking = true
 
+# Spun while rushing in with a group: stunned long enough for the player to finish off the
+# whole rush, longer the more there were (Player.spin_rush_size).
+func _spin_stun_time() -> float:
+	if _rush_side == Vector2.ZERO || player.spin_rush_size <= 0:
+		return -1.0
+	return Tuning.parried_stun_time + Tuning.group_rush_stun_per_enemy * player.spin_rush_size
+
 func is_rush_striking() -> bool:
 	return _rush_striking && _animation_is("slash")
 

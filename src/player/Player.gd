@@ -150,6 +150,9 @@ var _spin_tween: Tween
 # swing_started_frame of the last swing begun while a group rush was on in this room; see
 # is_spin_opener.
 var _rush_swing := -2
+# Enemies in the group rush under way when the current spin started, 0 if none: a spin
+# that catches a rush stuns longer the bigger it was (MeleeEnemy._spin_stun_time).
+var spin_rush_size := 0
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -668,11 +671,15 @@ func is_spin_opener(swing_frame: int) -> bool:
 	return swing_frame == _rush_swing && _spin_charging
 
 func _group_rush_on() -> bool:
+	return _group_rush_size() > 0
+
+# Enemies in the group rush under way in this room, 0 if none.
+func _group_rush_size() -> int:
 	var room := Game.room_by_id(current_room)
 	if room == null:
-		return false
+		return 0
 	var coordinator := room.get_node_or_null(AttackCoordinator.NODE_NAME) as AttackCoordinator
-	return coordinator != null && coordinator.rush_active()
+	return coordinator.rusher_count() if coordinator != null else 0
 
 # An enemy blocked a swing made too early, before its twinkle: the swing ends, the
 # player is dazed (can't act) for a moment, and their next hit taken is multiplied.
@@ -759,6 +766,7 @@ func _spin_charge_shown() -> float:
 
 # Round once with the sword out: a temporary look, the slash's extended frame spun whole.
 func _start_spin() -> void:
+	spin_rush_size = _group_rush_size()
 	_spin_timer.start(Tuning.spin_duration)
 	hitbox.set_deferred("disabled", true)
 	_play(Action.SLASH)

@@ -258,10 +258,16 @@ func spin_hit() -> void:
 		from_direction = Direction.RIGHT if away.x >= 0 else Direction.LEFT
 	else:
 		from_direction = Direction.DOWN if away.y > 0 else Direction.UP
+	var stun := _spin_stun_time() # Asked first: the hit can end its part in a group rush
 	var before := health
 	take_damage(from_direction, player.spin_damage())
 	if Tuning.spin_staggers && health < before && health > 0:
-		stagger(from_direction)
+		stagger(from_direction, stun)
+
+# Seconds a spin hit stuns it for; -1 for the usual Tuning.parried_stun_time. Longer for
+# an enemy caught in a group rush (see MeleeEnemy).
+func _spin_stun_time() -> float:
+	return -1.0
 
 func is_player_in_room() -> bool:
 	return player.current_room == room.room_id
@@ -445,10 +451,10 @@ func is_vulnerable() -> bool:
 # Parried: the attack is cancelled, the enemy is knocked back the way the player's sword
 # travels and stunned for a moment, and its next hit taken (within
 # Tuning.stagger_vulnerable_time) is multiplied.
-func stagger(from_direction: String) -> void:
+func stagger(from_direction: String, stun_time := -1.0) -> void:
 	_end_windup_hold()
 	knockback = Direction.to_vector(from_direction) * knockback_speed * Tuning.parried_knockback
-	_stun_timer.start(Tuning.parried_stun_time)
+	_stun_timer.start(stun_time if stun_time > 0 else Tuning.parried_stun_time)
 	_set_vulnerable(true)
 	_show_dizzy(true)
 	_play("idle")

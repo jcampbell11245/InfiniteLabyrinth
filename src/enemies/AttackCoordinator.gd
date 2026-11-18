@@ -154,6 +154,10 @@ static func _alive(enemy: Variant) -> bool:
 func rush_active() -> bool:
 	return !_rushers.is_empty()
 
+# Enemies in the group rush under way; 0 when there's none.
+func rusher_count() -> int:
+	return _rushers.size()
+
 # Counts down to the next rush and starts it. True if one started.
 func _update_rush_countdown(delta: float) -> bool:
 	if _last_seen.size() < Tuning.group_rush_min:

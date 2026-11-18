@@ -107,6 +107,9 @@ var group_rush_max := 3
 var group_rush_speed := 1.4 # Times their speed as they rush in
 var group_rush_gather_time := 1.5 # Seconds to get into place; anyone not there by then drops out
 var group_rush_hold := 0.9 # Seconds of windup hold before the glint; covers charging a spin
+# A spin that catches a group rush stuns each rusher it hits for parried_stun_time plus
+# this much per enemy in the rush, so there's time to finish them all off.
+var group_rush_stun_per_enemy := 0.6
 
 # --- Projectiles ---
 var arrow_speed := 200.0
@@ -238,6 +241,7 @@ const FIELDS := [
 	["AI", "group_rush_speed", "Group rush speed multiplier", 0.5, 3, 0.05, "new (MeleeEnemy._group_rush)"],
 	["AI", "group_rush_gather_time", "Group rush gather time (s)", 0.2, 5, 0.1, "new (AttackCoordinator)"],
 	["AI", "group_rush_hold", "Group rush windup hold (s)", 0, 3, 0.05, "new (MeleeEnemy.rush_strike)"],
+	["AI", "group_rush_stun_per_enemy", "Spun rush: extra stun per rusher (s)", 0, 3, 0.05, "new (MeleeEnemy._spin_stun_time)"],
 
 	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
 	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],
