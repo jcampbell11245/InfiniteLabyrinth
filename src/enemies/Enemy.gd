@@ -247,6 +247,22 @@ func die() -> void:
 	died.emit(self)
 	queue_free()
 
+# Caught by the player's spin attack: an ordinary hit, outward from the player, that no
+# guard or parry timing gets in the way of (only blocking that ignores swings, like a
+# knight's shield, still stops it). If it lands and doesn't kill, it stuns like a parry
+# (Tuning.spin_staggers), so a crowd that rushed in can't all swing back.
+func spin_hit() -> void:
+	var away := global_position - player.global_position
+	var from_direction: String
+	if absf(away.x) >= absf(away.y):
+		from_direction = Direction.RIGHT if away.x >= 0 else Direction.LEFT
+	else:
+		from_direction = Direction.DOWN if away.y > 0 else Direction.UP
+	var before := health
+	take_damage(from_direction, player.spin_damage())
+	if Tuning.spin_staggers && health < before && health > 0:
+		stagger(from_direction)
+
 func is_player_in_room() -> bool:
 	return player.current_room == room.room_id
 
@@ -519,6 +535,8 @@ func _on_invincibility_cooldown_timeout() -> void:
 func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: int, _self_shape: int) -> void:
 	if area.get_name() == "Hitbox":
 		_on_player_sword(area.get_parent().get_parent().direction)
+	elif area.get_name() == "SpinHitbox":
+		spin_hit()
 	elif area.get_name() == "ArrowHitbox":
 		var arrow: Projectile = area.get_parent()
 		take_damage(arrow.direction, arrow.damage)

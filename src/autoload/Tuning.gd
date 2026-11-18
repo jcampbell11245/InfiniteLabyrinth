@@ -39,6 +39,13 @@ var deflect_speed_multiplier := 1.15
 var deflect_max_speed := 450.0 # Pixels/sec
 var knight_block_stun := 1.0 # Seconds a knight stands after blocking an arrow
 var chip_damage := 0.1 # Health a blocked hit still takes off the enemy that blocked it
+# Spin attack: hold the sword button after a swing, let go once charged (see Player).
+var spin_charge_time := 0.5 # Seconds of holding before a release spins
+var spin_duration := 0.3 # Seconds the spin takes, all the way round
+var spin_radius := 30.0 # Pixels from the player's centre that the spin reaches
+var spin_damage := 1.0
+var spin_staggers := true # A spin hit stuns the enemy like a parry (so a crowd can't all counter)
+var spin_charge_move := 0.5 # Times walk speed while holding a charge
 
 # --- Enemies (multipliers on each enemy's own scene values) ---
 var enemy_health_multiplier := 1.0
@@ -91,6 +98,15 @@ var counter_attack := true # A hit outside a parry makes it swing back at once, 
 var roam_speed := 0.5 # Times the enemy's speed while roaming, before it notices the player
 var roam_pause_min := 0.5 # Seconds it stands at each end of its path, or between wanders in its area
 var roam_pause_max := 1.5
+# Group rushes (AttackCoordinator): now and then a few circling enemies rush in together
+# from different sides and swing at once, a moment for the spin attack.
+var group_rush_interval_min := 6.0 # Seconds of fighting between rushes, rolled each time
+var group_rush_interval_max := 10.0
+var group_rush_min := 2 # Fewest enemies in a rush (and in the fight, for one to happen)
+var group_rush_max := 3
+var group_rush_speed := 1.4 # Times their speed as they rush in
+var group_rush_gather_time := 1.5 # Seconds to get into place; anyone not there by then drops out
+var group_rush_hold := 0.9 # Seconds of windup hold before the glint; covers charging a spin
 
 # --- Projectiles ---
 var arrow_speed := 200.0
@@ -162,6 +178,12 @@ const FIELDS := [
 	["Combat", "deflect_max_speed", "Deflect max speed", 50, 1000, 10, "Constants.gd DEFLECT_MAX_SPEED"],
 	["Combat", "knight_block_stun", "Knight block stun (s)", 0, 5, 0.05, "MeleeEnemy.gd BLOCK_STUN_TIME"],
 	["Combat", "chip_damage", "Chip damage on a block", 0, 5, 0.05, "new (Enemy._chip)"],
+	["Combat", "spin_charge_time", "Spin charge time (s)", 0.05, 3, 0.05, "new (Player spin)"],
+	["Combat", "spin_duration", "Spin duration (s)", 0.05, 2, 0.05, "new (Player spin)"],
+	["Combat", "spin_radius", "Spin radius (px)", 5, 100, 1, "new (Player spin)"],
+	["Combat", "spin_damage", "Spin damage", 0, 20, 0.5, "new (Player spin)"],
+	["Combat", "spin_staggers", "Spin hits stun enemies", 0, 0, 0, "new (Enemy.spin_hit)"],
+	["Combat", "spin_charge_move", "Walk speed while charging spin", 0, 1, 0.05, "new (Player spin)"],
 
 	["Enemies", "enemy_health_multiplier", "Health multiplier", 0.1, 10, 0.1, "new (enemy .tscn health)"],
 	["Enemies", "enemy_damage_multiplier", "Damage multiplier", 0, 10, 0.1, "new (enemy .tscn damage)"],
@@ -209,6 +231,13 @@ const FIELDS := [
 	["AI", "roam_speed", "Roam speed multiplier", 0, 2, 0.05, "new (MeleeEnemy._roam)"],
 	["AI", "roam_pause_min", "Roam pause min (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],
 	["AI", "roam_pause_max", "Roam pause max (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],
+	["AI", "group_rush_interval_min", "Group rush every min (s)", 0.5, 60, 0.5, "new (AttackCoordinator)"],
+	["AI", "group_rush_interval_max", "Group rush every max (s)", 0.5, 60, 0.5, "new (AttackCoordinator)"],
+	["AI", "group_rush_min", "Group rush size min", 2, 6, 1, "new (AttackCoordinator)"],
+	["AI", "group_rush_max", "Group rush size max", 2, 6, 1, "new (AttackCoordinator)"],
+	["AI", "group_rush_speed", "Group rush speed multiplier", 0.5, 3, 0.05, "new (MeleeEnemy._group_rush)"],
+	["AI", "group_rush_gather_time", "Group rush gather time (s)", 0.2, 5, 0.1, "new (AttackCoordinator)"],
+	["AI", "group_rush_hold", "Group rush windup hold (s)", 0, 3, 0.05, "new (MeleeEnemy.rush_strike)"],
 
 	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
 	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],

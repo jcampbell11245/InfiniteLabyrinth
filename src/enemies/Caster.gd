@@ -31,6 +31,9 @@ func _physics_process(delta: float) -> void:
 	_moving = false
 	if player.in_transition || !room.player_active || !is_player_in_room():
 		return
+	if is_stunned(): # Spun into (see Enemy.spin_hit)
+		_apply_knockback(delta)
+		return
 	if !_engaged: # Just arrived: a full cooldown before the first cast
 		_engaged = true
 		_restart_cooldown()

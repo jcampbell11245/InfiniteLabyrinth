@@ -7,6 +7,8 @@ extends Node
 # and the rest circle at a distance. When a turn ends there's a random gap, then a random
 # enemy (preferably not the one that just went) gets the next.
 #
+# Now and then several rush in at once instead; see Group rushes below.
+#
 # Lives as a child of its Room, made by the first enemy that asks (for_room). Members that
 # stop checking in (dead, reset, gave up the chase) drop out on their own.
 
@@ -19,6 +21,10 @@ var _attackers: Array[Enemy] = []
 var _turn_time := {} # Attacker -> seconds into its turn
 var _last_attacker: Variant # Enemy, or null; may have been freed
 var _gap := 0.0 # Seconds before the next turn can be handed out
+var _rushers: Array[Enemy] = [] # In the group rush under way; see Group rushes
+var _rush_time := 0.0 # Seconds since it started
+var _rush_launched := false # Its swings have started
+var _next_rush := -1.0 # Seconds of fighting until the next; -1 until rolled
 
 # The coordinator for `room`, made on first use.
 static func for_room(room: Node) -> AttackCoordinator:
@@ -67,6 +73,11 @@ func other_is_swinging(enemy: Enemy) -> bool:
 func _physics_process(delta: float) -> void:
 	_prune()
 	_gap = maxf(_gap - delta, 0.0)
+	if rush_active():
+		_update_rush(delta)
+		return
+	if _update_rush_countdown(delta):
+		return
 
 	# A lone enemy always has the turn; there's no one to take over.
 	if _last_seen.size() == 1:
@@ -129,3 +140,102 @@ func _prune() -> void:
 
 static func _alive(enemy: Variant) -> bool:
 	return is_instance_valid(enemy) && !(enemy as Node).is_queued_for_deletion()
+
+# --- Group rushes ---
+# Every Tuning.group_rush_interval_min/max seconds of fighting, with at least
+# Tuning.group_rush_min members in and nobody mid-swing, up to Tuning.group_rush_max of
+# them (nearest first) are each given a different side of the player (left, right, above,
+# below) and rush to it. Once all are in place (or Tuning.group_rush_gather_time runs out,
+# dropping anyone not there yet) they start their swings together, each holding its windup
+# for Tuning.group_rush_hold so the player has time to charge a spin attack. Turns are
+# paused meanwhile, and nobody else starts a swing; once the rush's swings are over, turns
+# pick up again after a gap. A rusher that's stunned (spun into, parried) drops out.
+
+func rush_active() -> bool:
+	return !_rushers.is_empty()
+
+# Counts down to the next rush and starts it. True if one started.
+func _update_rush_countdown(delta: float) -> bool:
+	if _last_seen.size() < Tuning.group_rush_min:
+		_next_rush = -1.0 # Starts again when there's a pack
+		return false
+	if _next_rush < 0:
+		_next_rush = randf_range(Tuning.group_rush_interval_min,
+			maxf(Tuning.group_rush_interval_min, Tuning.group_rush_interval_max))
+	_next_rush -= delta
+	if _next_rush > 0 || _anyone_swinging():
+		return false
+	_next_rush = -1.0
+	return _start_rush()
+
+func _anyone_swinging() -> bool:
+	for enemy in _last_seen:
+		if _alive(enemy) && enemy.is_swinging():
+			return true
+	return false
+
+func _start_rush() -> bool:
+	var player_at: Vector2 = Game.player.global_position
+	var candidates: Array[Enemy] = []
+	for enemy in _last_seen:
+		if _alive(enemy) && enemy.can_take_turn() && enemy.has_method("begin_group_rush"):
+			candidates.append(enemy)
+	candidates.sort_custom(func(a: Enemy, b: Enemy) -> bool:
+		return a.global_position.distance_squared_to(player_at) < b.global_position.distance_squared_to(player_at))
+	var free_sides: Array = [Vector2.RIGHT, Vector2.LEFT, Vector2.DOWN, Vector2.UP]
+	var sides := {}
+	for enemy in candidates:
+		if sides.size() >= Tuning.group_rush_max:
+			break
+		var side: Vector2 = enemy.pick_rush_side(free_sides)
+		if side != Vector2.ZERO:
+			free_sides.erase(side)
+			sides[enemy] = side
+	if sides.size() < Tuning.group_rush_min:
+		return false
+	_attackers.clear()
+	_turn_time.clear()
+	for enemy: Enemy in sides:
+		enemy.begin_group_rush(sides[enemy])
+		_rushers.append(enemy)
+	_rush_time = 0.0
+	_rush_launched = false
+	return true
+
+func _update_rush(delta: float) -> void:
+	for enemy in _rushers.duplicate():
+		if !_alive(enemy) || !_last_seen.has(enemy) || enemy.is_stunned():
+			if _alive(enemy):
+				enemy.end_group_rush()
+			_rushers.erase(enemy)
+	if _rushers.is_empty():
+		_end_rush()
+		return
+	_rush_time += delta
+	if !_rush_launched:
+		var all_ready := true
+		for enemy in _rushers:
+			if !enemy.is_rush_ready():
+				all_ready = false
+		if all_ready || _rush_time >= Tuning.group_rush_gather_time:
+			for enemy in _rushers.duplicate():
+				if enemy.is_rush_ready():
+					enemy.rush_strike()
+				else:
+					enemy.end_group_rush()
+					_rushers.erase(enemy)
+			_rush_launched = true
+		return
+	for enemy in _rushers:
+		if enemy.is_rush_striking():
+			return
+	_end_rush()
+
+func _end_rush() -> void:
+	for enemy in _rushers:
+		if _alive(enemy):
+			enemy.end_group_rush()
+	_rushers.clear()
+	_rush_launched = false
+	_next_rush = -1.0
+	_gap = randf_range(Tuning.pack_turn_gap_min, maxf(Tuning.pack_turn_gap_min, Tuning.pack_turn_gap_max))

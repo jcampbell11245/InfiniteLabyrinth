@@ -8,7 +8,7 @@ extends Node2D
 # scale. Add one as a child and give it bars with add_bar().
 
 # PARRY on down are the player's curses from a warlock (see Curses).
-enum Icon { SWORD, ROLL, ARROW, DAZE, PARRY, INVERTED, DEFENSE_DOWN, ATTACK_DOWN, SLOW, JAM }
+enum Icon { SWORD, ROLL, ARROW, DAZE, PARRY, INVERTED, DEFENSE_DOWN, ATTACK_DOWN, SLOW, JAM, SPIN }
 
 const BAR_SIZE := Vector2(14, 2)
 const ICON_SIZE := 5.0 # Width of the icon's box, left of the bar
@@ -109,3 +109,6 @@ func _draw_icon(icon: Icon, at: Vector2) -> void:
 			draw_line(at + Vector2(2.5, 0), at + Vector2(1, -1.5), _ink, 1.0)
 			draw_line(at + Vector2(2.5, 0), at + Vector2(1, 1.5), _ink, 1.0)
 			draw_line(at + Vector2(-2.2, -2.5), at + Vector2(2.2, 2.5), Color(1, 0.3, 0.3), 1.0)
+		Icon.SPIN: # A blade with a sweep curling round behind it
+			draw_line(at, at + Vector2(2.5, -2.5), _ink, 1.0)
+			draw_arc(at, 2.6, PI * 0.25, PI * 1.6, 8, _ink, 1.0)

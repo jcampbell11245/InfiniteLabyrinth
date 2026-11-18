@@ -55,6 +55,16 @@ const GHOST_FADE := 0.2
 const FEET := Vector2(0, 13) # From the origin to the player's feet
 const DUST := Color(0.75, 0.7, 0.6)
 
+# Spin attack. Pressing the sword button swings as usual; holding it on charges a spin
+# (a bar fills over Tuning.spin_charge_time, then a ping and a flash), walking at
+# Tuning.spin_charge_move of full speed. Letting go once charged spins the whole sprite
+# round with the sword out (frame SPIN_FRAME of the slash) over Tuning.spin_duration,
+# rooted, hitting every enemy within Tuning.spin_radius (see Enemy.spin_hit). Letting go
+# sooner does nothing; a roll, a hit, a daze or drawing the bow drops the charge.
+const SPIN_FRAME := 6 # Slash frame with the sword fully out and no swoosh trail
+const SPIN_CHARGED_FLASH := Color(1, 0.9, 0.5)
+const SPIN_PITCH := 0.8
+
 # Parrying: see Enemy._on_player_sword.
 const DIZZY_OFFSET := Vector2(0, -24) # Over the player's head
 
@@ -64,6 +74,7 @@ const SWORD_BAR := Color(0.95, 0.25, 0.25)
 const ROLL_BAR := Color(0.4, 0.9, 0.5)
 const ARROW_BAR := Color(1, 0.7, 0.25)
 const DAZE_BAR := Color(0.75, 0.5, 1)
+const SPIN_BAR := Color(1, 0.85, 0.3)
 const CURSE_BAR := Color(0.55, 0.85, 0.3) # A warlock's curses (see Curses)
 const CURSE_ICON := Color(0.75, 1, 0.5)
 
@@ -88,6 +99,7 @@ class FrameInput:
 	var released := "" # First released direction, same order
 	var roll := false # Rolls trigger on press
 	var melee := false
+	var melee_held := false # Sword button down: charging a spin (see _update_spin_charge)
 	var ranged := false # Shoot pressed this frame: starts drawing the bow
 	var ranged_held := false # Letting go while able to act looses a drawn arrow
 	var acting := false # Read from the controls; false while the player can't act
@@ -127,6 +139,14 @@ var _was_slashing := false # The last physics frame ended mid-swing
 var _finisher_target: Enemy
 # Status effects from warlocks: inverted controls, lowered stats, daze, a jammed bow.
 var curses: Curses
+
+# Spin attack; see SPIN_FRAME.
+var _spin_charging := false # Sword button held since a swing
+var _spin_charge := 0.0 # Seconds held
+var _spin_ready := false # Held for at least Tuning.spin_charge_time
+var _spin_timer: Timer # Running while spinning
+var _spin_shape: CollisionShape2D # SpinHitbox's circle, live only while spinning
+var _spin_tween: Tween
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -173,6 +193,7 @@ func _ready() -> void:
 	curses = Curses.new()
 	curses.player = self
 	add_child(curses)
+	_add_spin_hitbox()
 	_add_status_bars()
 
 # Each cooldown counts down in its own bar over the head while it runs.
@@ -182,6 +203,7 @@ func _add_status_bars() -> void:
 	bars.add_bar(StatusBars.Icon.DAZE, DAZE_BAR, StatusBars.timer_left.bind(_daze_timer))
 	bars.add_bar(StatusBars.Icon.SWORD, SWORD_BAR, StatusBars.timer_left.bind(_sword_cooldown))
 	bars.add_bar(StatusBars.Icon.ROLL, ROLL_BAR, StatusBars.timer_left.bind(roll_cooldown))
+	bars.add_bar(StatusBars.Icon.SPIN, SPIN_BAR, _spin_charge_shown)
 	bars.add_bar(StatusBars.Icon.ARROW, ARROW_BAR, StatusBars.timer_left.bind(shoot_cooldown))
 	# Curses on top, each with its own icon (daze shows in the daze bar above).
 	var curse_icons := {
@@ -270,6 +292,7 @@ func _read_input() -> FrameInput:
 			input.released = dir
 	input.roll = Input.is_action_just_pressed("roll")
 	input.melee = Input.is_action_just_pressed("melee_attack")
+	input.melee_held = Input.is_action_pressed("melee_attack")
 	input.ranged = Input.is_action_just_pressed("ranged_attack")
 	input.ranged_held = Input.is_action_pressed("ranged_attack")
 	input.acting = true
@@ -293,6 +316,8 @@ func _handle_input(input: FrameInput) -> void:
 		velocity = Vector2.ZERO
 
 	if input.roll && rolling.time_left == 0 && roll_cooldown.time_left == 0:
+		_end_spin()
+		_cancel_spin_charge()
 		velocity += Direction.to_vector(direction)
 		speed = Tuning.player_speed * Tuning.roll_speed_multiplier
 		rolling.start(Tuning.roll_duration)
@@ -310,6 +335,8 @@ func _handle_input(input: FrameInput) -> void:
 		if !rooted && respawn_cooldown.time_left == 0:
 			velocity += input.move
 	velocity = velocity.normalized() * speed * curses.speed_multiplier()
+	if _spin_charging && rolling.time_left == 0:
+		velocity *= Tuning.spin_charge_move
 
 	# Decided once, here: _update_animation can drop a swing back to idle (on its last
 	# frame), which mustn't let a new one start that same frame
@@ -322,6 +349,7 @@ func _handle_input(input: FrameInput) -> void:
 		swing_started_frame = Engine.get_physics_frames()
 		Juice.play($Slash)
 
+	_update_spin_charge(input)
 	_update_charge(input)
 
 # Draws the bow on a press, charges it while held and looses the arrow on release.
@@ -382,6 +410,8 @@ func _fire_arrow(charged: bool) -> void:
 
 # Each check reads the action again, since earlier lines may have changed the animation.
 func _update_animation(input: FrameInput) -> void:
+	if is_spinning():
+		return # The spin holds its own pose
 	if _charging:
 		_show_drawn_bow(input)
 		return
@@ -493,6 +523,8 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> bool:
 
 		if from_direction != "":
 			_cancel_charge()
+			_end_spin()
+			_cancel_spin_charge()
 			_play(Action.DAMAGE, from_direction)
 			knockback = Direction.to_vector(from_direction) * Tuning.player_knockback
 			Juice.hitstop(HURT_HITSTOP)
@@ -630,12 +662,108 @@ func stagger() -> void:
 
 # Can't act for `seconds` (or longer, if already dazed for longer): greyed out, with stars.
 func daze(seconds: float) -> void:
+	_end_spin()
+	_cancel_spin_charge()
 	_play(Action.IDLE)
 	hitbox.set_deferred("disabled", true) # Called from a collision callback
 	velocity = Vector2.ZERO
 	_daze_timer.start(maxf(seconds, _daze_timer.time_left))
 	Juice.set_grey(animator, true) # Greyed out while dazed, to show the player can't act
 	_show_dizzy(true)
+
+# --- Spin attack (see SPIN_FRAME) ---
+
+func is_spinning() -> bool:
+	return !_spin_timer.is_stopped()
+
+# What a spin hit does, after any lowered-attack curse.
+func spin_damage() -> float:
+	return Tuning.spin_damage * curses.damage_dealt_multiplier()
+
+# A circle round the player named SpinHitbox, on the player's layer looking for enemies;
+# an enemy's hurtbox takes it as a spin hit (Enemy._on_hurtbox_area_shape_entered).
+func _add_spin_hitbox() -> void:
+	var area := Area2D.new()
+	area.name = "SpinHitbox"
+	area.collision_layer = 1 << (Constants.Layer.PLAYER - 1)
+	area.collision_mask = 1 << (Constants.Layer.ENEMY - 1)
+	area.monitoring = false # Enemies' hurtboxes do the noticing
+	add_child(area)
+	_spin_shape = CollisionShape2D.new()
+	_spin_shape.shape = CircleShape2D.new()
+	_spin_shape.disabled = true
+	area.add_child(_spin_shape)
+	_spin_timer = Timer.new()
+	_spin_timer.one_shot = true
+	_spin_timer.timeout.connect(_end_spin)
+	add_child(_spin_timer)
+
+# Charging starts with a swing and goes on while the button stays down; letting go
+# charged spins.
+func _update_spin_charge(input: FrameInput) -> void:
+	if is_spinning():
+		return
+	if input.melee:
+		_spin_charging = true
+		_spin_charge = 0.0
+		_spin_ready = false
+		return
+	if !_spin_charging:
+		return
+	if !input.melee_held:
+		var spin := input.acting && _spin_ready
+		_cancel_spin_charge()
+		if spin:
+			_start_spin()
+		return
+	if rolling.time_left > 0 || _action() == Action.DAMAGE || _charging:
+		_cancel_spin_charge()
+		return
+	_spin_charge += get_physics_process_delta_time()
+	if !_spin_ready && _spin_charge >= Tuning.spin_charge_time:
+		_spin_ready = true
+		Juice.play(_charged_sound, 0.02, 1.2)
+		Juice.flash(animator, 0.15, SPIN_CHARGED_FLASH)
+		Juice.burst(get_parent(), global_position, SPIN_CHARGED_FLASH, 8, 50.0, Vector2.ZERO, 1.5, 0.25)
+
+func _cancel_spin_charge() -> void:
+	_spin_charging = false
+	_spin_charge = 0.0
+	_spin_ready = false
+
+# How full the charge bar over the head is; empty unless charging.
+func _spin_charge_shown() -> float:
+	if !_spin_charging || Tuning.spin_charge_time <= 0:
+		return 0.0
+	return minf(_spin_charge / Tuning.spin_charge_time, 1.0)
+
+# Round once with the sword out: a temporary look, the slash's extended frame spun whole.
+func _start_spin() -> void:
+	_spin_timer.start(Tuning.spin_duration)
+	hitbox.set_deferred("disabled", true)
+	_play(Action.SLASH)
+	animator.pause()
+	animator.frame = mini(SPIN_FRAME, animator.sprite_frames.get_frame_count(animator.animation) - 1)
+	(_spin_shape.shape as CircleShape2D).radius = Tuning.spin_radius / absf(scale.x)
+	_spin_shape.set_deferred("disabled", false)
+	Juice.play($Slash, 0.05, SPIN_PITCH)
+	Juice.burst(get_parent(), global_position, Color(1, 0.95, 0.7), 12, 90.0, Vector2.ZERO, 1.5, 0.25)
+	var turn := -TAU if direction == Direction.LEFT else TAU # Sweeping the way the blade points
+	animator.rotation = 0.0
+	_spin_tween = create_tween()
+	_spin_tween.tween_property(animator, "rotation", turn, Tuning.spin_duration)
+
+# The spin is over, or cut short (a hit, a roll, a daze): upright, blade put away.
+func _end_spin() -> void:
+	var was_spinning := _spin_tween != null
+	_spin_timer.stop()
+	if _spin_tween != null:
+		_spin_tween.kill()
+		_spin_tween = null
+	animator.rotation = 0.0
+	_spin_shape.set_deferred("disabled", true)
+	if was_spinning && _action() == Action.SLASH:
+		_play(Action.IDLE) # The sword cooldown starts from here (_update_sword_cooldown)
 
 # What a sword hit does, after any lowered-attack curse.
 func sword_damage() -> float:

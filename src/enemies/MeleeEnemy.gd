@@ -135,6 +135,7 @@ const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting a
 
 const AUTO_FACING := "auto" # starting_direction: face the player as they walk in
 const GUARD_FLASH := Color(0.75, 0.85, 1) # A goblin catching a hit on its blade
+const RUSH_FLASH := Color(1, 0.45, 0.3) # Joining a group rush
 const GUARD_SPARK := Color(1, 0.9, 0.5)
 
 # Hit by the player, or saw them, while they're in this room: it fights even outside its
@@ -155,6 +156,8 @@ var _end_lag: Timer # Running while frozen at the end of an unparryable attack
 var _end_lagged := false # This swing has had its end lag
 var _turning := false # Swapping a swing's facing; its frame changes aren't real ones
 var _was_noticed := false # noticed, last physics frame
+var _rush_side := Vector2.ZERO # In a group rush: the side of the player it's taking; else ZERO
+var _rush_striking := false # Its group-rush swing has started
 var _counter_pending := false # Just hit; swing back on the next physics frame
 var _block_counter_pending := false # Just blocked a sword; swing back on the next physics frame
 var _hesitation_left := -1.0 # Seconds before swinging; -1 until rolled for this swing
@@ -238,6 +241,8 @@ func _physics_process(delta: float) -> void:
 
 	if _is_reacting() || _animation_is("slash"):
 		pass # Rooted while staggered, flinching or swinging
+	elif engaged && _rush_side != Vector2.ZERO:
+		_group_rush(delta)
 	elif engaged && attacker:
 		_fight(coordinator, delta)
 	elif engaged:
@@ -488,6 +493,8 @@ func _windup_off_target() -> bool:
 func _can_start_swing(coordinator: AttackCoordinator) -> bool:
 	if attack_cooldown.time_left != 0 || coordinator.other_is_swinging(self):
 		return false
+	if coordinator.rush_active(): # Rushers swing on the coordinator's word; the rest hold off
+		return false
 	return !only_hit_during_attack || $BlockStun.time_left == 0
 
 func _start_swing(horizontal: bool) -> void:
@@ -707,6 +714,7 @@ func _on_reset() -> void:
 	_has_roam_target = false
 	_roam_wait = 0.0
 	_roam_stuck = 0.0
+	end_group_rush()
 
 # --- Roaming (see the top of the file) ---
 
@@ -929,3 +937,57 @@ func _on_animated_sprite_2d_frame_changed() -> void:
 		hitbox.disabled = false
 	elif _animation_is("slash") && _unparryable && !_end_lagged && animator.frame == attack_end_frame - 1:
 		_start_end_lag()
+
+# --- Group rushes (see AttackCoordinator) ---
+
+# The side of `sides` (unit vectors) it would rush to: whichever it's already most on, of
+# those with open floor at the spot it would swing from. ZERO if none.
+func pick_rush_side(sides: Array) -> Vector2:
+	var centre := _player_position()
+	var from_player := (position - centre).normalized()
+	var nav := room.nav()
+	var best := Vector2.ZERO
+	var best_score := -INF
+	for side: Vector2 in sides:
+		if !nav.is_open(centre + side * _engage_distance(side.y == 0) + _feet()):
+			continue
+		var score := from_player.dot(side)
+		if score > best_score:
+			best = side
+			best_score = score
+	return best
+
+func begin_group_rush(side: Vector2) -> void:
+	_rush_side = side
+	_rush_striking = false
+	_hesitation_left = -1.0
+	Juice.flash(animator, 0.25, RUSH_FLASH) # The tell: they're all coming
+
+func end_group_rush() -> void:
+	_rush_side = Vector2.ZERO
+	_rush_striking = false
+
+# In place on its side, ready to swing with the others.
+func is_rush_ready() -> bool:
+	return _rush_side != Vector2.ZERO && !_rush_striking && !_is_reacting() \
+		&& !_animation_is("slash") && _in_strike_position(_rush_side.y == 0)
+
+# Swings with the rest, holding its windup long enough for a spin to be charged. No
+# unparryable or double attacks in a rush.
+func rush_strike() -> void:
+	_next_hold = Tuning.group_rush_hold
+	_start_swing(_rush_side.y == 0)
+	_unparryable = false
+	_follow_up_ready = false
+	_rush_striking = true
+
+func is_rush_striking() -> bool:
+	return _rush_striking && _animation_is("slash")
+
+# Heading for its side, fast; once there it waits for the go.
+func _group_rush(delta: float) -> void:
+	if _rush_striking || is_rush_ready():
+		return
+	var horizontal := _rush_side.y == 0
+	var slot := _player_position() + _rush_side * _engage_distance(horizontal)
+	_walk_to(slot, speed * Tuning.group_rush_speed, delta, SLOT_ARRIVE)
