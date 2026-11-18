@@ -60,6 +60,7 @@ var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a w
 var troll_chance := 0.2
 var orc_chance := 0.15
 var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
+var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back when the troll dies
 var boss_laser_cooldown := 1.0
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
@@ -166,6 +167,7 @@ const FIELDS := [
 	["Enemies", "troll_chance", "Goblin becomes troll chance", 0, 1, 0.05, "new (EnemyFamilies)"],
 	["Enemies", "orc_chance", "Goblin becomes orc chance", 0, 1, 0.05, "new (EnemyFamilies)"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
+	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],

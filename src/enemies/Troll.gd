@@ -4,7 +4,8 @@ extends MeleeEnemy
 # A goblin that goes for the player's purse. Its slash does half a goblin's damage, but
 # every hit that lands takes Tuning.troll_steal coins (per floor number) from the player:
 # the "bad" coin sound plays and the coins fly out of the HUD's coin icon into the troll.
-# It keeps what it steals and drops it all back, on top of its own reward, when it dies.
+# It keeps what it steals and drops it back, on top of its own reward, when it dies, all
+# but a few coins (Tuning.troll_coin_loss_chance each) that are lost for good.
 
 const StolenCoin := preload("res://src/effects/StolenCoin.gd")
 const MAX_FLYING_COINS := 4 # Coins drawn flying per theft, however many are taken
@@ -41,7 +42,12 @@ func _hud_coin_position() -> Vector2:
 	var on_screen := icon.get_global_transform_with_canvas().origin
 	return get_viewport().get_canvas_transform().affine_inverse() * on_screen
 
+# Each stolen coin has Tuning.troll_coin_loss_chance of being gone for good.
 func die() -> void:
-	Juice.drop_coins(room, global_position, stolen)
+	var recovered := 0
+	for i in stolen:
+		if randf() >= Tuning.troll_coin_loss_chance:
+			recovered += 1
+	Juice.drop_coins(room, global_position, recovered)
 	stolen = 0
 	super()
