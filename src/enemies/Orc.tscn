@@ -10,3 +10,4 @@ damage = 1.0
 health = 3.0
 attack_cooldown_length = 0.8
 coin_reward = 20
+voice_pitch = 0.7

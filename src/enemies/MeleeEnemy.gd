@@ -103,6 +103,9 @@ const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting a
 @export var starting_direction := Direction.RIGHT
 @export var double_attack := false # Some swings follow up when parried; see above
 @export var unparryable_attack := false # Some swings can't be parried; see above
+# Pitch of its attack and death sounds, so a family member sharing a base enemy's sounds
+# (trolls higher, orcs deeper than goblins) can sound like itself.
+@export var voice_pitch := 1.0
 # Seconds it waits, lined up and ready, before swinging; rolled again for each swing.
 @export var engage_hesitation_min := 0.0
 @export var engage_hesitation_max := 0.0
@@ -879,7 +882,7 @@ func _on_animated_sprite_2d_frame_changed() -> void:
 	if _turning:
 		return
 	if _animation_is("slash") && animator.frame == attack_frame:
-		Juice.play($Attack)
+		Juice.play($Attack, 0.08, voice_pitch)
 		hitbox.disabled = false
 	elif _animation_is("slash") && _unparryable && !_end_lagged && animator.frame == attack_end_frame - 1:
 		_start_end_lag()

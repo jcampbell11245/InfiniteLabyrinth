@@ -639,10 +639,8 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	var pitch := 1.0 + KILL_PITCH_STEP * mini(_kill_streak, KILL_PITCH_MAX_STEPS)
 	_kill_streak += 1
 	match enemy.scene_file_path.get_file().get_basename():
-		"Goblin": Juice.play(goblin_death, 0.04, pitch)
-		# The rest of the goblin family share its death sound, higher or deeper.
-		"Troll": Juice.play(goblin_death, 0.04, pitch * 1.5)
-		"Orc": Juice.play(goblin_death, 0.04, pitch * 0.7)
+		# The rest of the goblin family share its death sound, at their own voice_pitch.
+		"Goblin", "Troll", "Orc": Juice.play(goblin_death, 0.04, pitch * enemy.voice_pitch)
 		"Knight": Juice.play(knight_death, 0.04, pitch)
 	_refresh_doors()
 
