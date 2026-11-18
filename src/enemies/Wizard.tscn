@@ -364,6 +364,10 @@ blood_color = Color(0.45, 0.2, 0.6, 1)
 attack_end_frame = 4
 attack_cooldown_length = 1.0
 coin_reward = 20
+windup_hold_min = 0.1
+windup_hold_max = 0.35
+twinkle_offset = Vector2(12, -10)
+dizzy_offset = Vector2(0, -32)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1305928878]
 autoplay = "idle_right"
@@ -391,14 +395,6 @@ one_shot = true
 [node name="Attack" type="AudioStreamPlayer" parent="." unique_id=1551740441]
 stream = ExtResource("14")
 
-[node name="SecondShotCountdown" type="Timer" parent="." unique_id=2138599034]
-one_shot = true
-
-[node name="ThirdShotCountdown" type="Timer" parent="." unique_id=2142177607]
-one_shot = true
-
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_invincibility_cooldown_timeout"]
-[connection signal="timeout" from="SecondShotCountdown" to="." method="_on_second_shot_countdown_timeout"]
-[connection signal="timeout" from="ThirdShotCountdown" to="." method="_on_third_shot_countdown_timeout"]

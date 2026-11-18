@@ -53,8 +53,10 @@ var heavy_end_lag := 1.0 # Seconds a knight stays frozen at the end of an unparr
 var knight_counter_hold := 0.45 # Seconds of windup hold on a knight's counter, so its glint comes after the sword cooldown
 var double_attack_chance := 0.35 # Goblin swings that follow up with a second when parried
 var double_attack_hold := 0.65 # Seconds from parrying the first swing to the second's glint; outlasts the sword cooldown
-var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
-var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
+var wizard_burst_cooldown := 2.5 # Seconds after each fireball
+var wizard_melee_range := 32.0 # Pixels: a player this close gets the staff instead of fireballs
+var wizard_melee_cooldown := 1.2 # Seconds between staff swipes
+var wizard_melee_damage := 0.5 # Before the enemy damage multiplier
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
 # Goblin family: trolls (Troll.gd) and orcs (Orc.tscn), placed with the room creator.
 var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
@@ -81,6 +83,7 @@ var roam_pause_max := 1.5
 # --- Projectiles ---
 var arrow_speed := 200.0
 var fireball_speed := 150.0
+var fireball_turn_rate := 2.5 # Radians/sec a wizard's fireball can turn towards the player
 var laser_speed := 300.0
 var projectile_lifetime := 5.0 # Seconds before a shot vanishes
 
@@ -160,8 +163,10 @@ const FIELDS := [
 	["Enemies", "knight_counter_hold", "Knight counter windup hold (s)", 0, 2, 0.05, "new (MeleeEnemy._counter)"],
 	["Enemies", "double_attack_chance", "Goblin double attack chance", 0, 1, 0.05, "new (MeleeEnemy double_attack)"],
 	["Enemies", "double_attack_hold", "Double attack follow-up hold (s)", 0, 2, 0.05, "new (MeleeEnemy._parried_follow_up)"],
-	["Enemies", "wizard_burst_cooldown", "Wizard burst cooldown (s)", 0.1, 10, 0.1, "RangedEnemy.gd BURST_COOLDOWN"],
-	["Enemies", "wizard_shot_delay", "Wizard shot delay (s)", 0.05, 3, 0.05, "RangedEnemy.gd BURST_SHOT_DELAY"],
+	["Enemies", "wizard_burst_cooldown", "Wizard fireball cooldown (s)", 0.1, 10, 0.1, "RangedEnemy.gd BURST_COOLDOWN"],
+	["Enemies", "wizard_melee_range", "Wizard melee range (px)", 0, 150, 1, "new (RangedEnemy._in_melee_range)"],
+	["Enemies", "wizard_melee_cooldown", "Wizard melee cooldown (s)", 0.1, 5, 0.05, "new (RangedEnemy._start_melee)"],
+	["Enemies", "wizard_melee_damage", "Wizard melee damage", 0, 5, 0.25, "new (RangedEnemy.melee_damage)"],
 	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],
@@ -185,6 +190,7 @@ const FIELDS := [
 
 	["Projectiles", "arrow_speed", "Arrow speed", 10, 1000, 10, "Arrow.tscn speed"],
 	["Projectiles", "fireball_speed", "Fireball speed", 10, 1000, 10, "Fireball.tscn speed"],
+	["Projectiles", "fireball_turn_rate", "Fireball homing turn rate (rad/s)", 0, 20, 0.1, "new (Projectile._steer)"],
 	["Projectiles", "laser_speed", "Laser speed", 10, 1000, 10, "Laser.tscn speed"],
 	["Projectiles", "projectile_lifetime", "Lifetime (s)", 0.5, 30, 0.5, "Projectile.gd LIFETIME"],
 

@@ -564,7 +564,9 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 		return
 	if (area.get_name() == "Hitbox" && area.get_parent().get_parent().animator.visible == true):
 		var attacker: Node = area.get_parent().get_parent()
-		if take_damage(attacker.damage, attacker.direction, false) && attacker.has_method("landed_hit"):
+		# A wizard's staff hits for its own melee damage; `damage` is its fireballs'.
+		var amount: float = attacker.melee_damage() if attacker.has_method("melee_damage") else attacker.damage
+		if take_damage(amount, attacker.direction, false) && attacker.has_method("landed_hit"):
 			attacker.landed_hit() # A troll's hit steals coins
 	elif area.get_name() == "ProjectileHitbox":
 		var shot: Projectile = area.get_parent()

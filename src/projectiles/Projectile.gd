@@ -1,8 +1,8 @@
 class_name Projectile
 extends CharacterBody2D
 
-# A straight-flying shot: the player's arrows, wizard fireballs and boss lasers. Set
-# `direction` and `damage` after instancing it. The player reads `damage` and `direction`
+# A shot: the player's arrows, wizard fireballs and boss lasers. Set `direction` and
+# `damage` after instancing it; it flies straight, unless launch_at makes it home (below). The player reads `damage` and `direction`
 # when a ProjectileHitbox touches it.
 #
 # A deflectable shot (fireballs) can be hit back by the player's sword, and batted back
@@ -28,23 +28,63 @@ var deflections := 0 # Times it has been hit back, by either side
 var _hit := false # Impact effects play once, though area and body signals can both fire
 var _contacts: Array[Node2D] = [] # Deflectable shots: touched this frame, resolved at its end
 
+# Homing (wizard fireballs; see launch_at): steers towards homing_target at up to
+# Tuning.fireball_turn_rate radians/sec, so a hard enough dodge outturns it. Once it has
+# passed its target (the target is behind it) it gives up and flies straight on. Hit back,
+# it stops homing for good and flies along `direction` like any other shot.
+var homing_target: Node2D
+var _heading := Vector2.ZERO # Free direction of travel while homing or after; ZERO uses `direction`
+
 func _ready() -> void:
 	$ExistenceTime.start(Tuning.projectile_lifetime)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if free_in_end_room && Game.player.current_room == Constants.END_ROOM:
 		queue_free()
-	
-	velocity = Direction.to_vector(direction) * speed
+
+	if _heading == Vector2.ZERO:
+		velocity = Direction.to_vector(direction) * speed
+	else:
+		_steer(delta)
+		velocity = _heading * speed
 	move_and_slide()
+
+# Fires it straight at `target`, homing on it from then on.
+func launch_at(target: Node2D) -> void:
+	homing_target = target
+	_heading = global_position.direction_to(target.global_position)
+	if _heading == Vector2.ZERO:
+		_heading = Direction.to_vector(direction)
+	_update_direction_from_heading()
+
+func _steer(delta: float) -> void:
+	if !is_instance_valid(homing_target) || !hostile_to_player:
+		return
+	var to_target := homing_target.global_position - global_position
+	if to_target.dot(_heading) <= 0: # Overshot: it was dodged
+		homing_target = null
+		return
+	var turn := clampf(_heading.angle_to(to_target), -Tuning.fireball_turn_rate * delta,
+		Tuning.fireball_turn_rate * delta)
+	_heading = _heading.rotated(turn)
+	_update_direction_from_heading()
+
+# `direction` (read for the player's flinch and knockback, and impact sparks) follows the
+# heading's nearest of the four directions.
+func _update_direction_from_heading() -> void:
+	if absf(_heading.x) >= absf(_heading.y):
+		direction = Direction.RIGHT if _heading.x > 0 else Direction.LEFT
+	else:
+		direction = Direction.DOWN if _heading.y > 0 else Direction.UP
 
 func _set_direction(value: String) -> void:
 	direction = value
 	if !rotates:
 		return
 	var degrees := 0.0
+	$SpritePivot/Sprite2D.flip_h = direction == Direction.RIGHT
 	match direction:
-		Direction.RIGHT: $SpritePivot/Sprite2D.flip_h = true
+		Direction.RIGHT: pass
 		Direction.UP: degrees = 90.0
 		Direction.DOWN: degrees = 270.0
 	$SpritePivot.rotation_degrees = degrees
@@ -55,6 +95,8 @@ func _set_direction(value: String) -> void:
 # can hurt. Called for the player's sword and for a wizard batting it back.
 func deflect(new_direction: String) -> void:
 	deflections += 1
+	homing_target = null
+	_heading = Vector2.ZERO
 	direction = new_direction
 	damage *= Tuning.deflect_damage_multiplier
 	speed = minf(speed * Tuning.deflect_speed_multiplier, Tuning.deflect_max_speed)
