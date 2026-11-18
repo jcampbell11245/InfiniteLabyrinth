@@ -1,18 +1,24 @@
 extends Node2D
 
-# A four-pointed star glint that pops in, spins a quarter turn and shrinks away, then
-# frees itself. Drawn in code like the other effects, so it needs no sprite. Made by
-# Juice.twinkle().
+# The "about to strike" glint (cell 1 of status_icons.png) that pops in, spins a quarter
+# turn and shrinks away, then frees itself. Made by Juice.twinkle(). Normally drawn as the
+# art is; with `solid` set (a knight's unparryable swing) it's that colour all over, its
+# shape kept, through the flash shader.
 
 const LIFETIME := 0.3 # Seconds
 const POP_IN := 0.25 # Fraction of LIFETIME spent growing; the rest is shrinking
-const POINT_LENGTH := 6.0 # Pixels from the centre to the tip of each long point
-const POINT_WIDTH := 1.5 # Pixels from the centre to the side of each point
-const DIAGONAL_SCALE := 0.45 # Size of the short diagonal points against the long ones
+const SIZE := 12.0 # Pixels across at full size, in the owner's units
+const SHEET_CELL := 1 # Its cell in StatusBars.ICON_SHEET
 
-var color := Color(1, 0.95, 0.7)
+var solid := Color(0, 0, 0, 0) # Transparent: the art's own colours
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if solid.a > 0:
+		Juice.add_flash(self)
+		var flash := material as ShaderMaterial
+		flash.set_shader_parameter("flash_color", solid)
+		flash.set_shader_parameter("flash", 1.0)
 	scale = Vector2.ZERO
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ONE, LIFETIME * POP_IN) \
@@ -23,17 +29,5 @@ func _ready() -> void:
 	tween.finished.connect(queue_free)
 
 func _draw() -> void:
-	_draw_star(POINT_LENGTH * DIAGONAL_SCALE, POINT_WIDTH * DIAGONAL_SCALE, PI / 4,
-		Color(color, 0.7))
-	_draw_star(POINT_LENGTH, POINT_WIDTH, 0.0, color)
-	draw_circle(Vector2.ZERO, POINT_WIDTH, Color.WHITE)
-
-# Four thin points (up, right, down, left), turned by `angle`.
-func _draw_star(length: float, width: float, angle: float, star_color: Color) -> void:
-	var points := PackedVector2Array()
-	for i in 4:
-		var tip := Vector2.from_angle(angle + i * PI / 2) * length
-		var side := Vector2.from_angle(angle + i * PI / 2 + PI / 4) * width
-		points.append(tip)
-		points.append(side)
-	draw_colored_polygon(points, star_color)
+	draw_texture_rect_region(StatusBars.ICON_SHEET, Rect2(Vector2.ONE * -SIZE / 2, Vector2.ONE * SIZE),
+		StatusBars.cell_region(SHEET_CELL))

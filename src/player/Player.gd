@@ -76,7 +76,6 @@ const ARROW_BAR := Color(1, 0.7, 0.25)
 const DAZE_BAR := Color(0.75, 0.5, 1)
 const SPIN_BAR := Color(1, 0.85, 0.3)
 const CURSE_BAR := Color(0.55, 0.85, 0.3) # A warlock's curses (see Curses)
-const CURSE_ICON := Color(0.75, 1, 0.5)
 
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
@@ -220,7 +219,7 @@ func _add_status_bars() -> void:
 		Curses.Effect.JAM: StatusBars.Icon.JAM,
 	}
 	for effect: Curses.Effect in curse_icons:
-		bars.add_bar(curse_icons[effect], CURSE_BAR, curses.left.bind(effect), CURSE_ICON)
+		bars.add_bar(curse_icons[effect], CURSE_BAR, curses.left.bind(effect))
 	add_child(bars)
 
 func _physics_process(delta: float) -> void:

@@ -78,8 +78,7 @@ const HITSTOP_CRIT := 0.12
 const HITSTOP_BLOCK := 0.03
 # The parry window, parried stun and knockback, sword damage and crit roll are in Tuning.
 const PARRY_SPARK := Color(1, 0.95, 0.7)
-const TWINKLE_COLOR := Color(1, 0.95, 0.7)
-const UNPARRYABLE_TWINKLE_COLOR := Color(1, 0.2, 0.15) # Warns that the attack can't be parried
+const UNPARRYABLE_TWINKLE_COLOR := Color(0.9, 0.05, 0.05) # Solid red: warns that the attack can't be parried
 const PARRY_HITSTOP := 0.1
 const FEET_OFFSET := Vector2(0, 8) # From the origin down to where the enemy stands
 # Bars over the head (see StatusBars): how far the player is through parrying the attack
@@ -516,7 +515,7 @@ func _twinkle() -> void:
 	_parry_timer.start(Tuning.unparryable_window if _unparryable else Tuning.parry_window)
 	var forward := Direction.to_vector(direction) * twinkle_offset.x
 	Juice.twinkle(self, forward + Vector2(0, twinkle_offset.y),
-		UNPARRYABLE_TWINKLE_COLOR if _unparryable else TWINKLE_COLOR)
+		UNPARRYABLE_TWINKLE_COLOR if _unparryable else Color(0, 0, 0, 0))
 
 # Carries the attack through, unless something (like a hit) already replaced it.
 func _end_windup_hold() -> void:

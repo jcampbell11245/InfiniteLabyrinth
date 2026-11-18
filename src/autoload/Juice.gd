@@ -209,9 +209,11 @@ func burst(parent: Node, at: Vector2, color: Color, amount := 10, speed := 60.0,
 
 # A quick star glint at `offset` from `parent`, which it follows. Enemies flash one just
 # before they strike so the player can see it coming.
-func twinkle(parent: Node2D, offset: Vector2, color := Color(1, 0.95, 0.7)) -> void:
+# `solid` colours it all over (a knight's unparryable swing); left transparent it's drawn
+# as the art is.
+func twinkle(parent: Node2D, offset: Vector2, solid := Color(0, 0, 0, 0)) -> void:
 	var t: Node2D = Twinkle.new()
-	t.color = color
+	t.solid = solid
 	t.position = offset
 	t.z_index = 5
 	parent.add_child(t)
