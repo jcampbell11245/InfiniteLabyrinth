@@ -36,6 +36,10 @@ const RADIUS_MAX := 400.0
 # Roaming (MeleeEnemy.roam_mode), for the same kinds: "none", "path" or "area".
 const ROAM_MODES: Array[String] = ["none", "path", "area"]
 const AREA_DEFAULT_REACH := 2 # Cells either side of the enemy a new roaming area covers
+# Spawn facing (MeleeEnemy.starting_direction), for the same kinds: a direction, or "auto" to
+# turn to the player as they come into the room. Right, the scenes' own, isn't stored.
+const FACINGS: Array[String] = [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT, MeleeEnemy.AUTO_FACING]
+const DEFAULT_FACING := Direction.RIGHT
 
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 
@@ -53,6 +57,9 @@ var radii := {}
 # and back again; or {"mode": "area", "rect": Rect2i}, the cells it wanders in (always
 # including its own).
 var roams := {}
+# Vector2i floor index -> spawn facing (one of FACINGS) of goblins and knights not facing
+# DEFAULT_FACING.
+var facings := {}
 var clear_by := "none" # What opens the room's doors: "none" (never locked), "enemies" or "switches"
 var floors := Room.ALL_FLOORS # Room.floors: bit n - 1 set if it can appear on floor n
 # Which floor's tileset the room creator and its play-test draw with. Only for looking at;
@@ -100,6 +107,7 @@ func set_object(index: Vector2i, kind: String) -> void:
 	if objects.get(index) != kind:
 		radii.erase(index)
 		roams.erase(index)
+		facings.erase(index)
 	objects[index] = kind
 
 # Removes the object on `index` and everything set for it.
@@ -107,6 +115,7 @@ func _forget(index: Vector2i) -> void:
 	objects.erase(index)
 	radii.erase(index)
 	roams.erase(index)
+	facings.erase(index)
 
 static func has_radius(kind: String) -> bool:
 	return kind in DETECTING_KINDS
@@ -135,6 +144,7 @@ func clear() -> void:
 	objects.clear()
 	radii.clear()
 	roams.clear()
+	facings.clear()
 
 # Removes every goblin, knight and wizard; switches stay.
 func clear_enemies() -> void:
@@ -145,6 +155,23 @@ func clear_enemies() -> void:
 # Turns every pitfall and stalagmite back to floor; enemies and switches stay.
 func clear_tiles() -> void:
 	cells.fill(Cell.FLOOR)
+
+# --- Facing ---
+
+static func can_face(kind: String) -> bool:
+	return has_radius(kind)
+
+# Which way the goblin or knight on `index` faces when the room starts (one of FACINGS).
+func facing_at(index: Vector2i) -> String:
+	return facings.get(index, DEFAULT_FACING)
+
+func set_facing(index: Vector2i, facing: String) -> void:
+	if !objects.has(index) || !can_face(objects[index]) || !(facing in FACINGS):
+		return
+	if facing == DEFAULT_FACING:
+		facings.erase(index)
+	else:
+		facings[index] = facing
 
 # --- Roaming ---
 
@@ -253,13 +280,15 @@ var _redo_steps: Array[Dictionary] = []
 
 func snapshot() -> Dictionary:
 	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "radii": radii.duplicate(),
-		"roams": roams.duplicate(true), "clear_by": clear_by, "floors": floors}
+		"roams": roams.duplicate(true), "facings": facings.duplicate(), "clear_by": clear_by,
+		"floors": floors}
 
 func restore(state: Dictionary) -> void:
 	cells = (state.cells as PackedByteArray).duplicate()
 	objects = (state.objects as Dictionary).duplicate()
 	radii = (state.radii as Dictionary).duplicate()
 	roams = (state.roams as Dictionary).duplicate(true)
+	facings = (state.get("facings", {}) as Dictionary).duplicate()
 	floors = state.floors
 	clear_by = state.clear_by
 
@@ -415,6 +444,8 @@ func build_room() -> Room:
 		node.position = object_origin(kind, index)
 		if has_radius(kind):
 			node.set("detection_radius", radius_at(index))
+		if can_face(kind):
+			node.set("starting_direction", facing_at(index))
 		match roam_mode(index):
 			"path":
 				var path := PackedVector2Array()
@@ -440,7 +471,7 @@ func to_text() -> String:
 	var lines: PackedStringArray = [
 		"# Infinite Labyrinth room design, made with the room creator.",
 		"# Give this file to Claude to add the room to src/world/rooms/.",
-		"version: 3",
+		"version: 4",
 		"floor_size: %d" % SIZE,
 		"completion: %s" % completion(),
 		"enemy_count: %d" % enemy_count(),
@@ -471,6 +502,12 @@ func to_text() -> String:
 	lines.append("#         MeleeEnemy.roam_path holds where the enemy stands on each (RoomDesign.object_origin).")
 	lines.append("#   area: wanders the cells from the first corner to the second, inclusive.")
 	lines.append("#         MeleeEnemy.roam_area holds the pixels those cells cover (RoomDesign.area_pixels).")
+	lines.append("# Which way each goblin and knight faces when the room starts (MeleeEnemy.starting_direction),")
+	lines.append("# by floor cell as column,row: up, down, left, right, or auto (turns to face the player as")
+	lines.append("# they come into the room). Any not listed face %s." % DEFAULT_FACING)
+	lines.append("facing:")
+	for index: Vector2i in _sorted(facings.keys()):
+		lines.append("%d,%d %s" % [index.x, index.y, facings[index]])
 	lines.append("roaming:")
 	for index: Vector2i in _sorted(roams.keys()):
 		var words: PackedStringArray = ["%d,%d" % [index.x, index.y], roam_mode(index)]

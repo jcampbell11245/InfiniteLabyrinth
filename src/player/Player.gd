@@ -14,6 +14,7 @@ enum Action { IDLE, WALK, ROLL, SLASH, SHOOT, WALKSHOOT, DAMAGE }
 const ACTION_NAMES: Array[String] = ["idle", "walk", "roll", "slash", "shoot", "walkshoot", "damage"]
 # Frame on which a one-shot action hands back to idle.
 const ACTION_END_FRAME := {Action.SLASH: 7, Action.SHOOT: 1, Action.DAMAGE: 4}
+const WALK_FIRST_STEP := 1 # Walk frame a walk starts on; frame 0 is the standing pose
 
 # Respawn points sit on the room's floor (Room.floor_rect, in cells of its Tiles map).
 const RESPAWN_PROBE := Vector2(0, 14) # Point below the player's origin that picks the tile
@@ -24,6 +25,9 @@ const RESPAWN_OFFSET := Vector2(0, -5) # Player's origin relative to the respawn
 const DOOR_PULL := 10.0 # Per second: how hard the auto-walk centres the player in a doorway
 
 const TRANSITION_PAUSE := {Direction.RIGHT: 1.0, Direction.LEFT: 1.0, Direction.DOWN: 1.2, Direction.UP: 1.15}
+
+const PUSH_OUT_TRIES := 4 # Enemies a roll can be nudged out of, one after another
+const PUSH_OUT_GAP := 0.5 # Pixels left between the player's feet and the enemy's after a nudge
 
 const HURTBOX_Y := -2.0 # Hurtbox centre; the sprite spans about -19.5..15
 const HURTBOX_SIDE_OFFSET := 1.5 # Facing right the sprite sits this far left of centre
@@ -53,6 +57,13 @@ const DUST := Color(0.75, 0.7, 0.6)
 
 # Parrying: see Enemy._on_player_sword.
 const DIZZY_OFFSET := Vector2(0, -24) # Over the player's head
+
+# Cooldown bars over the head (see StatusBars), above the dizzy stars.
+const BARS_OFFSET := Vector2(0, -32)
+const SWORD_BAR := Color(0.95, 0.25, 0.25)
+const ROLL_BAR := Color(0.4, 0.9, 0.5)
+const ARROW_BAR := Color(1, 0.7, 0.25)
+const DAZE_BAR := Color(0.75, 0.5, 1)
 
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
@@ -112,9 +123,6 @@ var _was_slashing := false # The last physics frame ended mid-swing
 # The enemy the player last parried. While it stays stunned, swings skip the sword
 # cooldown so the player can finish it off (Tuning.instant_finisher).
 var _finisher_target: Enemy
-var _skip_sword_cooldown := false # The swing under way ends without the cooldown (double attacks)
-var _instant_swing := false # The next swing can start at once, cutting short the one under way
-var _rearm_hitbox := false # A swing was cut short; switch the sword back on next physics frame
 
 # Room transitions have two overlapping phases. While auto_walking the player ignores
 # input and walks through the doorway until it enters the next room. in_transition lasts
@@ -158,14 +166,19 @@ func _ready() -> void:
 	_sword_cooldown = Timer.new()
 	_sword_cooldown.one_shot = true
 	add_child(_sword_cooldown)
+	_add_status_bars()
+
+# Each cooldown counts down in its own bar over the head while it runs.
+func _add_status_bars() -> void:
+	var bars := StatusBars.new()
+	bars.position = BARS_OFFSET
+	bars.add_bar(StatusBars.Icon.DAZE, DAZE_BAR, StatusBars.timer_left.bind(_daze_timer))
+	bars.add_bar(StatusBars.Icon.SWORD, SWORD_BAR, StatusBars.timer_left.bind(_sword_cooldown))
+	bars.add_bar(StatusBars.Icon.ROLL, ROLL_BAR, StatusBars.timer_left.bind(roll_cooldown))
+	bars.add_bar(StatusBars.Icon.ARROW, ARROW_BAR, StatusBars.timer_left.bind(shoot_cooldown))
+	add_child(bars)
 
 func _physics_process(delta: float) -> void:
-	# Off for one physics step, so an enemy the old swing was already touching registers
-	# the new one as a fresh hit.
-	if _rearm_hitbox:
-		_rearm_hitbox = false
-		if _action() == Action.SLASH:
-			hitbox.disabled = false
 	if !auto_walking:
 		# Dazed, down a pitfall, or while the screen is still moving to a new room (the
 		# room isn't fully in view yet, so they could walk into a pit they can't see), the
@@ -282,14 +295,7 @@ func _handle_input(input: FrameInput) -> void:
 	input.melee = input.melee && can_swing()
 	if input.melee:
 		_cancel_charge() # A swing (say, to parry) puts the bow down
-		if _action() == Action.SLASH: # Cutting short a parried swing; see allow_instant_swing
-			animator.frame = 0
-			hitbox.disabled = true
-			_rearm_hitbox = true
-		else:
-			hitbox.disabled = false
-		_instant_swing = false
-		_skip_sword_cooldown = false
+		hitbox.disabled = false
 		swing_started_at = Time.get_ticks_msec()
 		swing_started_frame = Engine.get_physics_frames()
 		Juice.play($Slash)
@@ -369,7 +375,12 @@ func _update_animation(input: FrameInput) -> void:
 	elif rolling.time_left == 0:
 		if _action() not in [Action.SLASH, Action.SHOOT, Action.DAMAGE, Action.WALKSHOOT] && input.held != "":
 			direction = input.held
+			var before := animator.animation
 			_play(Action.WALK)
+			# A walk's first frame is the standing pose, so a new walk (or a turn) starts on
+			# its first step: even a tap shows a step, and letting go stands back up.
+			if animator.animation != before:
+				animator.frame = WALK_FIRST_STEP
 
 	if input.melee: # Already checked against can_swing() in _handle_input
 		_play(Action.SLASH)
@@ -413,8 +424,6 @@ func _update_hitboxes() -> void:
 func can_swing() -> bool:
 	if rolling.time_left > 0 || is_invincible():
 		return false
-	if _instant_swing && _action() != Action.DAMAGE:
-		return true
 	return _action() not in [Action.SLASH, Action.DAMAGE] && (_sword_cooldown.is_stopped() || in_finisher())
 
 # In the invincibility after being hit (or falling down a pitfall); no attacking till it ends.
@@ -428,14 +437,6 @@ func start_finisher(enemy: Enemy) -> void:
 		_finisher_target = enemy
 		_sword_cooldown.stop()
 
-# An enemy is following up a parried swing with another: the player can swing again at
-# once, cutting this swing short, and if they don't, it ends with no cooldown. Swinging
-# before the follow-up's glint is as early (and blocked) as ever.
-func allow_instant_swing() -> void:
-	_instant_swing = true
-	_skip_sword_cooldown = true
-	_sword_cooldown.stop()
-
 func in_finisher() -> bool:
 	return Tuning.instant_finisher && is_instance_valid(_finisher_target) && _finisher_target.is_stunned()
 
@@ -444,10 +445,8 @@ func in_finisher() -> bool:
 func _update_sword_cooldown() -> void:
 	var slashing := _action() == Action.SLASH
 	if _was_slashing && !slashing:
-		if Tuning.sword_cooldown > 0 && !in_finisher() && !_skip_sword_cooldown:
+		if Tuning.sword_cooldown > 0 && !in_finisher():
 			_sword_cooldown.start(Tuning.sword_cooldown)
-		_skip_sword_cooldown = false
-		_instant_swing = false
 	_was_slashing = slashing
 
 func _action() -> Action:
@@ -663,12 +662,73 @@ func _on_rolling_timeout() -> void:
 	_land_sound.volume_db = ROLL_LAND_DB
 	_play_random(_land_sound, LANDINGS, 0.08, 1.15)
 	set_collision_mask_value(Constants.Layer.ENEMY, true)
+	_push_out_of_enemies()
 	hitbox.disabled = false
 	hurtbox.disabled = false
 	roll_cooldown.start(Tuning.roll_cooldown)
 	# Came up short of the far side of a gap
 	if $FeetBox.has_overlapping_bodies():
 		_fall()
+
+# Rolls pass through enemies, so one can end with the player's feet inside an enemy's,
+# where turning enemy collision back on wouldn't move them. Nudges them out the shortest
+# way that's clear (no wall, enemy, pit or doorway), one enemy at a time, since a nudge out
+# of one can land in another. If no way out is clear they stay put.
+func _push_out_of_enemies() -> void:
+	for i in PUSH_OUT_TRIES:
+		var push := _enemy_push()
+		if push == Vector2.ZERO:
+			return
+		global_position += push
+
+# The nudge out of the first enemy the player's feet overlap, or ZERO if none (or no clear
+# way out).
+func _enemy_push() -> Vector2:
+	var feet: CollisionShape2D = $CollisionShape2D
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = feet.shape
+	query.transform = feet.global_transform
+	query.collision_mask = 1 << (Constants.Layer.ENEMY - 1)
+	var mine := _shape_rect(feet)
+	for hit in get_world_2d().direct_space_state.intersect_shape(query):
+		var body := hit.collider as CollisionObject2D
+		if body == null:
+			continue
+		var theirs_shape := body.shape_owner_get_owner(body.shape_find_owner(hit.shape)) as CollisionShape2D
+		if theirs_shape == null || !(theirs_shape.shape is RectangleShape2D):
+			continue
+		var theirs := _shape_rect(theirs_shape)
+		if !mine.intersects(theirs):
+			continue
+		var ways: Array[Vector2] = [
+			Vector2(theirs.end.x - mine.position.x + PUSH_OUT_GAP, 0),
+			Vector2(theirs.position.x - mine.end.x - PUSH_OUT_GAP, 0),
+			Vector2(0, theirs.end.y - mine.position.y + PUSH_OUT_GAP),
+			Vector2(0, theirs.position.y - mine.end.y - PUSH_OUT_GAP),
+		]
+		ways.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.length() < b.length())
+		for way in ways:
+			if _clear_at(way):
+				return way
+		return Vector2.ZERO
+	return Vector2.ZERO
+
+# The player could stand `offset` from here: their feet touch no wall or enemy, and they
+# wouldn't step onto a pit or into a doorway.
+func _clear_at(offset: Vector2) -> bool:
+	var feet: CollisionShape2D = $CollisionShape2D
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = feet.shape
+	query.transform = feet.global_transform.translated(offset)
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	var space := get_world_2d().direct_space_state
+	return space.intersect_shape(query, 1).is_empty() && !_would_trigger(offset)
+
+# Global rectangle a RectangleShape2D covers (shapes here are never rotated).
+static func _shape_rect(shape: CollisionShape2D) -> Rect2:
+	var size := (shape.shape as RectangleShape2D).size * shape.global_scale.abs()
+	return Rect2(shape.global_position - size / 2, size)
 
 # --- Room transitions ---
 
