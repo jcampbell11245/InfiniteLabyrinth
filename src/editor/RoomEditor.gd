@@ -13,9 +13,14 @@ extends Node2D
 # The Roaming buttons set what the selected goblin or knight does before it notices the
 # player: None (stands still), Path or Area. Picking Path or Area switches to the Select
 # tool. With a Path enemy selected, clicking or dragging on the floor draws its path (it
-# walks there and back); right-click a point to take it off. With an Area enemy selected,
+# walks there and back; finish on the enemy itself to make a loop it walks round);
+# right-click a point to take it off. With an Area enemy selected,
 # drag the box's edges or corners to grow or shrink it. Every roaming enemy's path or area
 # shows faintly; the selected one's brightly.
+#
+# The Facing buttons set which way the selected goblin or knight faces when the room
+# starts: Up, Down, Left, Right, or Auto, which turns it to face the player as they come
+# into the room. Its sprite shows the facing; an Auto one is marked "auto".
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const PLAY_SCENE := "res://src/world/Overworld.tscn"
@@ -28,6 +33,7 @@ const EXPORT_DIR_FALLBACK := "user://room_designs"
 const ZOOM := 2.5
 const PANEL_WIDTH := 500.0 # Screen pixels; the room is centred in the space right of it
 const FONT_SIZE := 26
+const FACING_FONT_SIZE := 22 # Five buttons share the Facing row
 const GRID_COLOR := Color(1, 1, 1, 0.08)
 const HOVER_COLOR := Color(1, 0.9, 0.3, 0.9)
 const ERASE_COLOR := Color(1, 0.3, 0.3, 0.9)
@@ -40,6 +46,9 @@ const ROAM_LINE := Color(0.55, 1.0, 0.45, 0.9) # The selected enemy's path or ar
 const ROAM_LINE_HOT := Color(0.85, 1.0, 0.75, 1.0) # An area edge under the mouse, or being dragged
 const ROAM_FILL := Color(0.55, 1.0, 0.45, 0.12)
 const ROAM_UNSELECTED := 0.35 # Alpha multiplier for the paths and areas of enemies not selected
+const AUTO_MARK := Color(1, 0.9, 0.4, 0.95) # The "auto" over an enemy that turns to face the player
+const AUTO_MARK_SIZE := 9 # Room pixels
+const AUTO_MARK_RISE := 27.0 # Room pixels above the enemy's origin
 const SELECT_TOOL := 8 # Index of Select in TOOLS
 # Edges of a roaming area, as bits, for dragging them.
 const EDGE_LEFT := 1
@@ -91,7 +100,7 @@ var _edge_hot := false # The mouse is over the selected circle's edge
 var _area_drag := 0 # EDGE_ bits of the selected roaming area being dragged, or 0
 var _area_hot := 0 # EDGE_ bits of the selected roaming area under the mouse (or being dragged)
 var _roam_buttons := {} # "none"/"path"/"area" -> its Button
-var _facing_cache := {} # Object kind -> the direction its scene starts facing
+var _facing_buttons := {} # One of RoomDesign.FACINGS -> its Button
 var _undo_button: Button
 var _redo_button: Button
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
@@ -213,7 +222,10 @@ func _apply(index: Vector2i, clicked: bool) -> void:
 	var what: String = TOOLS[tool][1]
 	var path_owner := _path_owner()
 	if what == "select" && _painting == MOUSE_BUTTON_LEFT:
-		if clicked && design.objects.has(index):
+		# Clicking the path's own enemy closes the loop back to where it starts, rather than
+		# selecting it again.
+		var closing := path_owner != NO_CELL && index == path_owner
+		if clicked && design.objects.has(index) && !closing:
 			_select(index)
 		elif path_owner != NO_CELL && RoomDesign.in_floor(index):
 			# Drawing the selected enemy's path.
@@ -310,6 +322,25 @@ func _set_roam(mode: String) -> void:
 		_: _status.text = "It stands still until it notices the player"
 	_overlay.queue_redraw()
 	_update_edge_hot()
+	_refresh_info()
+	_refresh_history()
+
+# --- Facing ---
+
+# Sets which way the selected goblin or knight faces when the room starts (one of
+# RoomDesign.FACINGS).
+func _set_facing(facing: String) -> void:
+	if !design.objects.has(_selected) || !RoomDesign.can_face(design.objects[_selected]):
+		_refresh_info()
+		return
+	var before := design.snapshot()
+	design.set_facing(_selected, facing)
+	design.record(before)
+	if facing == MeleeEnemy.AUTO_FACING:
+		_status.text = "It turns to face the player as they come into the room"
+	else:
+		_status.text = "It faces %s when the room starts" % facing
+	_refresh_objects()
 	_refresh_info()
 	_refresh_history()
 
@@ -452,14 +483,6 @@ func _check_selection() -> void:
 		_selected = NO_CELL
 	_update_edge_hot()
 
-# The direction `kind`'s scene starts out facing, as in the play-test.
-func _facing(kind: String) -> String:
-	if !_facing_cache.has(kind):
-		var scene: Node = (load(RoomDesign.OBJECT_SCENES[kind]) as PackedScene).instantiate()
-		_facing_cache[kind] = scene.get("starting_direction") if "starting_direction" in scene else Direction.RIGHT
-		scene.free()
-	return _facing_cache[kind]
-
 func _draw_radius() -> void:
 	if design.objects.has(_selected):
 		var rect := Rect2(Vector2(RoomDesign.tile_cell(_selected)) * Room.CELL_SIZE, Vector2.ONE * Room.CELL_SIZE)
@@ -472,12 +495,15 @@ func _draw_radius() -> void:
 	if radius <= 0:
 		_overlay.draw_circle(centre, 1.5, RADIUS_LINE_HOT)
 		return
-	# The half it watches, facing the way it starts out.
-	var ahead := Direction.to_vector(_facing(design.objects[enemy_cell])).angle()
-	var points := PackedVector2Array([centre])
-	for i in range(33):
-		points.append(centre + Vector2.from_angle(ahead - PI / 2 + PI * i / 32.0) * radius)
-	_overlay.draw_colored_polygon(points, RADIUS_FILL)
+	# The half it watches, facing the way it starts out. An Auto one's depends on the door
+	# the player comes in by, so none is shaded.
+	var facing := design.facing_at(enemy_cell)
+	if facing != MeleeEnemy.AUTO_FACING:
+		var ahead := Direction.to_vector(facing).angle()
+		var points := PackedVector2Array([centre])
+		for i in range(33):
+			points.append(centre + Vector2.from_angle(ahead - PI / 2 + PI * i / 32.0) * radius)
+		_overlay.draw_colored_polygon(points, RADIUS_FILL)
 	var line := RADIUS_LINE_HOT if _edge_hot else RADIUS_LINE
 	_overlay.draw_arc(centre, radius, 0, TAU, 96, line, 1.5 if _edge_hot else 1.0)
 
@@ -607,6 +633,20 @@ func _draw_overlay() -> void:
 		_overlay.draw_rect(rect, colour, false, 1.0)
 	_draw_roams()
 	_draw_radius()
+	_draw_auto_marks()
+
+# "auto" over each enemy that turns to face the player as they come in.
+func _draw_auto_marks() -> void:
+	var font := ThemeDB.fallback_font
+	for index: Vector2i in design.facings:
+		if design.facings[index] != MeleeEnemy.AUTO_FACING:
+			continue
+		var at := RoomDesign.object_origin(design.objects[index], index) - Vector2(0, AUTO_MARK_RISE)
+		var width := font.get_string_size("auto", HORIZONTAL_ALIGNMENT_LEFT, -1, AUTO_MARK_SIZE).x
+		_overlay.draw_string_outline(font, at - Vector2(width / 2, 0), "auto", HORIZONTAL_ALIGNMENT_LEFT,
+			-1, AUTO_MARK_SIZE, 2, Color(0, 0, 0, 0.8))
+		_overlay.draw_string(font, at - Vector2(width / 2, 0), "auto", HORIZONTAL_ALIGNMENT_LEFT,
+			-1, AUTO_MARK_SIZE, AUTO_MARK)
 
 func _refresh_objects() -> void:
 	_check_selection()
@@ -617,7 +657,15 @@ func _refresh_objects() -> void:
 		var kind: String = design.objects[index]
 		var marker := Node2D.new()
 		marker.position = RoomDesign.object_origin(kind, index)
-		marker.add_child(_sprite_for(kind))
+		var sprite := _sprite_for(kind)
+		if RoomDesign.can_face(kind):
+			# Standing the way it starts out; an Auto one as it waits before the player comes in.
+			var facing := design.facing_at(index)
+			if facing == MeleeEnemy.AUTO_FACING:
+				facing = Direction.RIGHT
+			if sprite.sprite_frames.has_animation("idle_" + facing):
+				sprite.animation = "idle_" + facing
+		marker.add_child(sprite)
 		_objects.add_child(marker)
 
 # A still copy of the first frame `kind`'s scene shows, placed as it is in the scene.
@@ -654,6 +702,11 @@ func _refresh_info() -> void:
 			"area":
 				var area := design.area_rect(_selected)
 				_info.text += "\nRoams an area of %dx%d cells" % [area.size.x, area.size.y]
+	var can_face := design.objects.has(_selected) && RoomDesign.can_face(design.objects[_selected])
+	for facing: String in _facing_buttons:
+		var button: Button = _facing_buttons[facing]
+		button.disabled = !can_face
+		button.set_pressed_no_signal(can_face && facing == design.facing_at(_selected))
 	var can_roam := design.objects.has(_selected) && RoomDesign.can_roam(design.objects[_selected])
 	for mode: String in _roam_buttons:
 		var button: Button = _roam_buttons[mode]
@@ -714,6 +767,7 @@ func _build_ui() -> void:
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
+	column.add_child(_facing_row())
 	column.add_child(_roam_row())
 	var clear_label := Label.new()
 	clear_label.text = "Room clears by:"
@@ -785,6 +839,29 @@ func _tileset_row() -> HBoxContainer:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.tooltip_text = "Draw the room with floor %d's art (the play-test uses it too)" % floor_number
 		_tileset_buttons.append(button)
+	return row
+
+# "Facing" and a button per spawn facing, for the selected goblin or knight (disabled
+# otherwise).
+func _facing_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = "Facing"
+	row.add_child(label)
+	var group := ButtonGroup.new()
+	for facing: String in RoomDesign.FACINGS:
+		var button := _add_button(row, facing.capitalize(), _set_facing.bind(facing))
+		button.toggle_mode = true
+		button.button_group = group
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", FACING_FONT_SIZE)
+		if facing == MeleeEnemy.AUTO_FACING:
+			button.tooltip_text = "Turns to face the player as they come into the room"
+		else:
+			button.tooltip_text = "Faces %s when the room starts" % facing
+		button.tooltip_text += " (select a goblin or knight first)"
+		_facing_buttons[facing] = button
 	return row
 
 # "Roaming" and a button per mode, for the selected goblin or knight (disabled otherwise).

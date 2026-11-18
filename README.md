@@ -21,11 +21,20 @@ the side it watches, since enemies can't see behind themselves. Wizards have no 
 react to the player anywhere in the room. In room scenes the value is each enemy's
 `detection_radius`.
 
+**Facing** sets which way the selected goblin or knight faces when the room starts: **Up**,
+**Down**, **Left**, **Right** (the default) or **Auto**, which turns it to face the player as
+they come into the room, so it looks at the door they used (unless it has already noticed
+them). The editor sprite turns to match, an Auto enemy is marked "auto", and the shaded half
+of its detection circle follows the facing. In room scenes this is each enemy's
+`starting_direction` (`"auto"` for Auto).
+
 **Roaming** sets what the selected goblin or knight does before it notices the player:
 **None** (stands still, the default and what every existing room uses), **Path** or **Area**.
 Picking Path or Area switches to the Select tool. For a path, click or drag on the floor to
 draw it from the enemy outwards (dragging back over the last point takes it off), and
 right-click a point to remove it; the enemy walks it there and back, pausing at each end.
+Click the enemy itself to finish the path back where it started: a closed path is a loop
+the enemy walks round the same way, pausing each time it's back at the start.
 For an area, drag the box's edges or corners to resize it; the enemy wanders between random
 spots inside it. Seeing the player, being hit (arrows included) or being alerted by another
 enemy ends roaming and it fights as usual. Wizards can't roam, since they react to the

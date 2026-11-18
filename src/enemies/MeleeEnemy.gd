@@ -31,7 +31,10 @@ extends Enemy
 # Double attacks (double_attack, goblins): some swings, Tuning.double_attack_chance of them,
 # come with a follow-up. Parrying the first doesn't stagger the enemy; it swings again
 # straight away, glinting Tuning.double_attack_hold after the parry, and only parrying that
-# second swing staggers it. A first swing that isn't parried is just a single attack.
+# second swing staggers it. A first swing that isn't parried is just a single attack. The
+# first parry doesn't lift the player's sword cooldown (only a stagger does; see
+# Player.start_finisher), and the hold outlasts it, so swinging again as soon as the
+# player can is too early and gets blocked: the second glint has to be waited for.
 #
 # Pressure, so the player can't rush in swinging (no knockback stops it being pushed out of
 # range either): it notices a player within its detection_radius anywhere but behind it,
@@ -40,7 +43,10 @@ extends Enemy
 # line up, and keeps re-aiming during the windup if they step round to its side. A hit
 # that isn't a parry (sneaking up, or catching it recovering) gets a counter: it swings
 # straight back, cooldown or not, so a second swing meets its windup and is blocked unless
-# timed as a parry. One free hit, then the player has to parry.
+# timed as a parry. One free hit, then the player has to parry. A knight's counter holds
+# its windup for Tuning.knight_counter_hold, so its glint comes after the player's sword
+# cooldown: swinging again as soon as they can meets the windup (blocked), instead of
+# happening to land in the parry window.
 #
 # Guarding (not knights, which block their own way): a sword hit that lands before the
 # enemy has started a swing is blocked, not taken, as long as it's seen the player coming
@@ -61,7 +67,8 @@ extends Enemy
 # Roaming (roam_mode, off unless a room sets it): until it notices the player, the enemy
 # walks instead of standing still, at Tuning.roam_speed, facing the way it walks (so its
 # detection half-circle sweeps with it). PATH walks from where it starts through each
-# point of roam_path and back again, over and over, pausing at each end. AREA wanders
+# point of roam_path and back again, over and over, pausing at each end; a path that ends
+# back where it starts is a loop, walked round the same way each time. AREA wanders
 # between random spots inside roam_area, pausing at each. Noticing the player (seeing them,
 # being hit by anything, an arrow included, or being alerted by another enemy) ends it, and
 # it fights as usual. It only roams while the player is in its room; leaving resets it to
@@ -100,6 +107,8 @@ const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting a
 # Slash length worked out for each facing (true), or one length that covers the worst
 # facing, used every way (false). See _cover_player_reach.
 @export var per_facing_reach := true
+# The way it faces when the room starts: a Direction, or AUTO_FACING to turn to the player
+# as they come into the room (see _on_room_entered). Set per enemy with the room creator.
 @export var starting_direction := Direction.RIGHT
 @export var double_attack := false # Some swings follow up when parried; see above
 @export var unparryable_attack := false # Some swings can't be parried; see above
@@ -116,6 +125,7 @@ const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting a
 # AREA: room-local rectangle its feet wander in.
 @export var roam_area := Rect2()
 
+const AUTO_FACING := "auto" # starting_direction: face the player as they walk in
 const GUARD_FLASH := Color(0.75, 0.85, 1) # A goblin catching a hit on its blade
 const GUARD_SPARK := Color(1, 0.9, 0.5)
 
@@ -157,7 +167,23 @@ func _ready() -> void:
 	_end_lag = _add_timer(_on_end_lag_over)
 	_cover_player_reach.call_deferred() # Once the player's shapes are in place
 	_roam_home = position
-	direction = starting_direction
+	if starting_direction == AUTO_FACING:
+		direction = Direction.RIGHT # Until the player comes in
+		Game.room_entered.connect(_on_room_entered)
+	else:
+		direction = starting_direction
+	_play("idle")
+
+# AUTO_FACING: the player has just come into this room, through a door (or spawned in it).
+# Unless it's already noticed them, it turns to face them, and so the way they came in.
+func _on_room_entered(id: int) -> void:
+	if id != room.room_id || noticed || _animation_is("slash"):
+		return
+	if _is_player_mostly_horizontal():
+		_face_player_horizontally()
+	else:
+		_face_player_vertically()
+	_point_pivots()
 	_play("idle")
 
 func _process(_delta: float) -> void:
@@ -437,6 +463,8 @@ func _counter(coordinator: AttackCoordinator, flinch := true) -> void:
 		if flinch:
 			_play_reaction("vuln")
 		return
+	if only_hit_during_attack:
+		_next_hold = Tuning.knight_counter_hold
 	_start_swing(_is_player_mostly_horizontal())
 
 # Mid-windup with the player stepped round to its side: worth turning to keep them in
@@ -513,9 +541,8 @@ func _turn_mid_attack() -> void:
 	if held:
 		animator.pause()
 
-# The first swing of a double attack was parried: swing again at once. The player can
-# swing again straight away too, cutting their parrying swing short, to meet it (or, too
-# soon, to be blocked by it).
+# The first swing of a double attack was parried: swing again at once. The player's sword
+# cooldown still runs, and the follow-up glints after it, so they have to wait for it.
 func _parried_follow_up() -> bool:
 	if !_follow_up_ready:
 		return false
@@ -523,7 +550,6 @@ func _parried_follow_up() -> bool:
 	Juice.flash(animator, 0.12, FOLLOW_UP_FLASH)
 	_restart_attack(Tuning.double_attack_hold)
 	attack()
-	player.allow_instant_swing()
 	return true
 
 # Where to stand to fight: on each side of the player along that axis, the shorter of this
@@ -739,11 +765,18 @@ func _roam_point(i: int) -> Vector2:
 	return _roam_home if i == 0 else roam_path[i - 1]
 
 # Reached its target (or gave up on it). On a PATH, moves on to the next point, turning
-# round at each end and pausing there; in an AREA, pauses before picking a new spot.
+# round at each end and pausing there, or, on a closed path (one that ends back where it
+# starts), going round again the same way, pausing each time it's back at the start. In an
+# AREA, pauses before picking a new spot.
 func _roam_arrived() -> void:
 	_has_roam_target = false
 	if roam_mode == Roam.PATH:
 		var last := roam_path.size() # Index of the far end; 0 is the near one
+		if _path_is_closed():
+			_roam_index = _roam_index % last + 1 # The last point is the start; on to the first
+			if _roam_index == 1:
+				_roam_wait = randf_range(Tuning.roam_pause_min, maxf(Tuning.roam_pause_min, Tuning.roam_pause_max))
+			return
 		var at_end := _roam_index == 0 || _roam_index == last
 		if _roam_index + _roam_step < 0 || _roam_index + _roam_step > last:
 			_roam_step = -_roam_step
@@ -751,6 +784,10 @@ func _roam_arrived() -> void:
 		if !at_end:
 			return
 	_roam_wait = randf_range(Tuning.roam_pause_min, maxf(Tuning.roam_pause_min, Tuning.roam_pause_max))
+
+# A PATH of at least two points that ends back where it starts: walked round as a loop.
+func _path_is_closed() -> bool:
+	return roam_path.size() >= 2 && roam_path[-1].distance_to(_roam_home) < 0.5
 
 # Faces the way it's heading (sticky near a diagonal, so it doesn't flicker), drawn in front
 # of the player when below them.

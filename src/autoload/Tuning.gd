@@ -31,7 +31,7 @@ var parried_stun_time := 1.0 # Seconds a parried enemy stands helpless
 var instant_finisher := true # While a parried enemy is stunned, swings skip the sword cooldown
 var parried_knockback := 0.5 # Times the enemy's knockback_speed for being parried
 var hit_knockback := 0.0 # Times the enemy's knockback_speed for an ordinary hit; 0 so a rush can't stunlock
-var stagger_damage_multiplier := 2.5 # Next hit taken while vulnerable
+var stagger_damage_multiplier := 2.0 # Next hit taken while vulnerable
 var stagger_vulnerable_time := 3.0 # Seconds the vulnerability lasts
 var crit_roll_max := 30 # A hit crits when randi_range(0, crit_roll_max) < damage upgrade level
 var deflect_damage_multiplier := 1.5
@@ -50,8 +50,9 @@ var enemy_windup_multiplier := 1.0 # Random windup hold before the twinkle
 var unparryable_chance := 0.3 # Knight swings that glint red and can't be parried
 var unparryable_window := 0.5 # Seconds from the red twinkle to the strike, to roll behind in
 var heavy_end_lag := 1.0 # Seconds a knight stays frozen at the end of an unparryable attack
+var knight_counter_hold := 0.45 # Seconds of windup hold on a knight's counter, so its glint comes after the sword cooldown
 var double_attack_chance := 0.35 # Goblin swings that follow up with a second when parried
-var double_attack_hold := 0.35 # Seconds from parrying the first swing to the second's glint
+var double_attack_hold := 0.65 # Seconds from parrying the first swing to the second's glint; outlasts the sword cooldown
 var wizard_burst_cooldown := 2.5 # Seconds after a burst of fireballs
 var wizard_shot_delay := 0.5 # Seconds between each fireball in a burst
 var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
@@ -153,6 +154,7 @@ const FIELDS := [
 	["Enemies", "unparryable_chance", "Knight unparryable attack chance", 0, 1, 0.05, "new (MeleeEnemy unparryable_attack)"],
 	["Enemies", "unparryable_window", "Knight unparryable: red star to strike (s)", 0.05, 2, 0.05, "new (Enemy._twinkle)"],
 	["Enemies", "heavy_end_lag", "Knight unparryable end lag (s)", 0, 5, 0.05, "new (MeleeEnemy._start_end_lag)"],
+	["Enemies", "knight_counter_hold", "Knight counter windup hold (s)", 0, 2, 0.05, "new (MeleeEnemy._counter)"],
 	["Enemies", "double_attack_chance", "Goblin double attack chance", 0, 1, 0.05, "new (MeleeEnemy double_attack)"],
 	["Enemies", "double_attack_hold", "Double attack follow-up hold (s)", 0, 2, 0.05, "new (MeleeEnemy._parried_follow_up)"],
 	["Enemies", "wizard_burst_cooldown", "Wizard burst cooldown (s)", 0.1, 10, 0.1, "RangedEnemy.gd BURST_COOLDOWN"],

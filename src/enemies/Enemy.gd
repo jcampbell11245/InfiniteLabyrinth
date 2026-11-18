@@ -56,6 +56,10 @@ var _parry_timer: Timer # Running while the parry window is open
 var _stun_timer: Timer # Running while stunned from being parried
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
 var _dizzy: Node2D # Stars shown while stunned
+# Parries landed on the attack under way, as a share of those needed to stagger it: 1 after
+# a single attack's parry, 0.5 then 1 for a double attack's two. Back to 0 once the attack
+# ends unstaggered, or the stun wears off.
+var _parry_progress := 0.0
 # The scene's own values, before Tuning's enemy multipliers.
 var _base := {}
 var _health_multiplier := 1.0 # Tuning.enemy_health_multiplier last applied to health
@@ -78,6 +82,11 @@ const TWINKLE_COLOR := Color(1, 0.95, 0.7)
 const UNPARRYABLE_TWINKLE_COLOR := Color(1, 0.2, 0.15) # Warns that the attack can't be parried
 const PARRY_HITSTOP := 0.1
 const FEET_OFFSET := Vector2(0, 8) # From the origin down to where the enemy stands
+# Bars over the head (see StatusBars): how far the player is through parrying the attack
+# under way, and once parried, the stun counting down.
+const BARS_ABOVE_DIZZY := Vector2(0, -8)
+const PARRY_BAR := Color(1, 0.85, 0.2)
+const STUN_BAR := Color(0.75, 0.5, 1)
 
 func _ready() -> void:
 	critical_chance = SaveData.damage_level
@@ -90,8 +99,20 @@ func _ready() -> void:
 	_twinkle_timer = _add_timer(_twinkle)
 	_parry_timer = _add_timer(_end_windup_hold)
 	_stun_timer = _add_timer(_show_dizzy.bind(false))
+	_stun_timer.timeout.connect(_reset_parry_progress)
 	_vulnerable_timer = _add_timer(_set_vulnerable.bind(false))
+	_add_status_bars()
 	_remember_spawn.call_deferred() # After subclasses' _ready have set their facing
+
+func _add_status_bars() -> void:
+	var bars := StatusBars.new()
+	bars.position = dizzy_offset + BARS_ABOVE_DIZZY
+	bars.add_bar(StatusBars.Icon.DAZE, STUN_BAR, StatusBars.timer_left.bind(_stun_timer))
+	bars.add_bar(StatusBars.Icon.PARRY, PARRY_BAR, func() -> float: return _parry_progress)
+	add_child(bars)
+
+func _reset_parry_progress() -> void:
+	_parry_progress = 0.0
 
 # Where and how the enemy started, for reset_to_spawn.
 var _spawn_position: Vector2
@@ -119,6 +140,7 @@ func reset_to_spawn() -> void:
 	_unparryable = false
 	_stun_timer.stop()
 	_show_dizzy(false)
+	_reset_parry_progress()
 	_set_vulnerable(false)
 	attack_cooldown.stop()
 	_on_reset()
@@ -339,7 +361,10 @@ func _on_player_sword(from_direction: String) -> void:
 		Parry.IN_WINDOW:
 			player.mark_swing_parried()
 			_parry_feedback()
-			if !_parried_follow_up():
+			if _parried_follow_up():
+				_parry_progress = 0.5 # Half way: the follow-up still has to be parried
+			else:
+				_parry_progress = 1.0
 				stagger(from_direction)
 		Parry.EARLY:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
@@ -432,6 +457,8 @@ func _show_dizzy(on: bool) -> void:
 # instead of eating into it.
 func _update_windup() -> void:
 	if !_animation_is(_attack_action()):
+		if !is_stunned():
+			_parry_progress = 0.0 # The attack ended without the parries to stagger it
 		_windup_held = false
 		_twinkled_at = -1
 		_unparryable = false
