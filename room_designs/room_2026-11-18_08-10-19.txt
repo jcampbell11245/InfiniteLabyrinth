@@ -1,0 +1,43 @@
+# Infinite Labyrinth room design, made with the room creator.
+# Give this file to Claude to add the room to src/world/rooms/.
+version: 4
+floor_size: 13
+completion: none
+enemy_count: 0
+# Floors the room can appear on (Room.floors, 1-10; later floors follow floor 10):
+floors: 1,2,3,4,5,6,7,8,9,10
+# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):
+#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)
+#   G  goblin   K  knight     W  wizard     O  switch
+#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)
+#   D  dual knight             (knight family: DualKnight.tscn)
+#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)
+# Enemies and switches stand on floor.
+grid:
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+.............
+# Detection radius in pixels of each goblin and knight (MeleeEnemy.detection_radius),
+# by floor cell as column,row. Any not listed use the default, 64.
+detection_radius:
+# How each goblin and knight that roams does so (MeleeEnemy.roam_mode), by floor cell as
+# column,row. Any not listed stand still until they notice the player.
+#   path: walks from its own cell through each listed cell in turn, then back again.
+#         MeleeEnemy.roam_path holds where the enemy stands on each (RoomDesign.object_origin).
+#   area: wanders the cells from the first corner to the second, inclusive.
+#         MeleeEnemy.roam_area holds the pixels those cells cover (RoomDesign.area_pixels).
+# Which way each goblin and knight faces when the room starts (MeleeEnemy.starting_direction),
+# by floor cell as column,row: up, down, left, right, or auto (turns to face the player as
+# they come into the room). Any not listed face right.
+facing:
+roaming:
