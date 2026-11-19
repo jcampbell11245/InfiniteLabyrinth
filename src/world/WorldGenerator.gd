@@ -85,6 +85,13 @@ static func preload_rooms() -> void:
 		if ResourceLoader.load_threaded_request(path, "PackedScene", true) == OK:
 			_loading[path] = true
 
+# Waits for every background load preload_rooms started and keeps the scenes. Call it
+# before anything else loads scenes the rooms use (enemies, tiles): Godot can hang if the
+# main thread loads a scene a background load still holds uncollected.
+static func finish_preload() -> void:
+	for path: String in _loading.keys():
+		scene(path)
+
 static func list_scenes(dir: String) -> Array[String]:
 	var scenes: Array[String] = []
 	for file_name in ResourceLoader.list_directory(dir):

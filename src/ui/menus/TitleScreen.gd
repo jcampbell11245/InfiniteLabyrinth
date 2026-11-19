@@ -29,6 +29,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Handled first: changing scene takes this screen out of the tree, viewport and all.
 		get_viewport().set_input_as_handled()
 		Music.stop_title()
+		# The room creator loads enemy and tile scenes the room preload may still hold.
+		WorldGenerator.finish_preload()
 		get_tree().change_scene_to_file(ROOM_EDITOR)
 		return
 	# If focus was lost (e.g. a click on the background), the next up/down/accept
