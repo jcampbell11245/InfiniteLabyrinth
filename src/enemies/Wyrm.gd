@@ -3,9 +3,18 @@ extends Enemy
 
 # Dragons: the wyrm and the wyvern (Wyvern.tscn, the same script with bigger numbers). They
 # fly, so pits and special tiles leave them alone (see Enemy.flies), though stalagmites and
-# walls still stop them. While the player is in the room they circle at
-# Tuning.wyrm_orbit_radius, now and then turning round to circle the other way, and every
-# few seconds (Tuning.wyrm_attack_cooldown_min/max) stop to attack, one of two ways:
+# walls still stop them.
+#
+# Noticing the player works as it does for goblins and knights (MeleeEnemy): until then it
+# hovers where it started, facing starting_direction (or turning to the door the player came
+# in by, for AUTO_FACING). It notices a player within detection_radius anywhere but behind
+# it, or anything hitting it, and alerts the rest of the room within Tuning.alert_radius;
+# then it fights until the player leaves the room. Both are set per dragon in the room
+# creator.
+#
+# Fighting, it circles at Tuning.wyrm_orbit_radius, now and then turning round to circle the
+# other way, and every so often (Tuning.wyrm_attack_cooldown_min/max) stops to attack, one of
+# two ways:
 #
 # Fireball (the "shoot" animation): it rears back, glows, and breathes a fireball at the
 # player. A wyrm's flies straight; a wyvern's homes like a wizard's (homing_fireball). Either
@@ -23,6 +32,9 @@ extends Enemy
 # Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
 # so the player rolls through and hits it from behind, and it hangs in the air open for
 # Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
+#
+# A charge that slams into a wall or stalagmite dazes it exactly as a parry would (stars,
+# Tuning.parried_stun_time, the next hit multiplied, the player's sword cooldown skipped).
 #
 # Dragons check in with the room's AttackCoordinator, so a goblin won't start a swing while
 # a dragon is mid-charge (and the other way round), but never take melee turns. Dragons in
@@ -42,11 +54,25 @@ const BREATH_FRAME := 1 # "shoot" frame it draws breath on
 # faces, and MOUTH_HEIGHT above its origin.
 const MOUTH_REACH := 16.0
 const MOUTH_HEIGHT := -8.0
+# Slamming into a wall mid-charge.
+const WALL_HIT_SOUND := preload("res://assets/sfx/hit1.wav")
+const WALL_HIT_PITCH := 0.7
+const WALL_DUST := Color(0.75, 0.68, 0.55)
 
 @export var homing_fireball := false # Wyverns: the fireball homes on the player
 @export var has_heavy_charge := false # Wyverns: some charges glint red and can't be parried
 @export var voice_pitch := 1.0 # Pitch of its sounds (wyverns deeper)
+# Pixels: notices a player this close anywhere but behind it. Set per dragon in each room;
+# the room creator draws it as a circle you can drag, as for goblins and knights.
+@export_range(0, 400, 1) var detection_radius := MeleeEnemy.DEFAULT_DETECTION_RADIUS
+# The way it faces when the room starts: a Direction, or MeleeEnemy.AUTO_FACING to turn to
+# the player as they come into the room. Set per dragon with the room creator.
+@export var starting_direction := Direction.RIGHT
 
+# Seen the player (or been hit, or alerted by another enemy); fights until they leave the
+# room. Named as in MeleeEnemy, whose _alert_pack sets it on anything that has it.
+var noticed := false
+var _was_noticed := false # noticed, last physics frame
 var _orbit_dir := 1.0 # 1 circles clockwise, -1 anticlockwise
 var _orbit_flip_in := 0.0 # Seconds until it may turn round
 var _stuck_for := 0.0 # Seconds its circling has been pressed against something
@@ -56,6 +82,7 @@ var _dashing := false # The charge under way has set off
 var _dash_left := 0.0 # Pixels of the charge still to fly
 var _recover: Timer # Running while it hovers after an attack, before circling again
 var _charge_sound: AudioStreamPlayer
+var _wall_sound: AudioStreamPlayer
 
 @onready var _hitbox_pivot: Node2D = $HitboxPivot
 @onready var _hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
@@ -63,17 +90,54 @@ var _charge_sound: AudioStreamPlayer
 func _ready() -> void:
 	super()
 	_recover = _add_timer()
-	_charge_sound = AudioStreamPlayer.new()
-	_charge_sound.bus = &"SFX"
-	_charge_sound.stream = CHARGE_SOUND
-	add_child(_charge_sound)
-	direction = Direction.RIGHT
+	_charge_sound = _add_sound(CHARGE_SOUND)
+	_wall_sound = _add_sound(WALL_HIT_SOUND)
+	if starting_direction == MeleeEnemy.AUTO_FACING:
+		direction = Direction.RIGHT # Until the player comes in
+		Game.room_entered.connect(_on_room_entered)
+	else:
+		direction = starting_direction
 	_orbit_dir = [-1.0, 1.0].pick_random()
 	_roll_cooldown()
 	_play("idle")
 
+func _add_sound(stream: AudioStream) -> AudioStreamPlayer:
+	var sound := AudioStreamPlayer.new()
+	sound.bus = &"SFX"
+	sound.stream = stream
+	add_child(sound)
+	return sound
+
 func flies() -> bool:
 	return true
+
+# AUTO_FACING: the player has just come into this room. Unless it's already noticed them,
+# it turns to face them, and so the way they came in.
+func _on_room_entered(id: int) -> void:
+	if id != room.room_id || noticed:
+		return
+	_face_player()
+	_play("idle")
+
+# --- Noticing the player (as MeleeEnemy) ---
+
+# Within detection_radius, in front or to the side.
+func _sees_player_nearby() -> bool:
+	var offset := _to_player()
+	return offset.length() <= detection_radius && Direction.to_vector(direction).dot(offset) >= 0
+
+# Noticed the player: so does everyone else in the room within Tuning.alert_radius.
+func _alert_pack() -> void:
+	for other in get_tree().get_nodes_in_group("enemies"):
+		if other != self && "noticed" in other && other.room == room \
+				&& other.position.distance_to(position) <= Tuning.alert_radius:
+			other.noticed = true
+
+# Any hit gives the player away.
+func take_damage(from_direction: String, amount: float) -> void:
+	if is_player_in_room():
+		noticed = true
+	super(from_direction, amount)
 
 func _process(_delta: float) -> void:
 	if player.in_transition:
@@ -86,9 +150,21 @@ func _process(_delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_moving = false
-	if player.in_transition || !room.player_active || !is_player_in_room():
+	if player.in_transition:
 		return
-	if is_stunned(): # Parried
+	if !room.player_active || !is_player_in_room():
+		noticed = false
+		_was_noticed = false
+		return
+	if !noticed && _sees_player_nearby():
+		noticed = true
+	if noticed && !_was_noticed:
+		_alert_pack()
+	_was_noticed = noticed
+	if !noticed: # Hovers where it started until it sees the player
+		_apply_knockback(delta)
+		return
+	if is_stunned(): # Parried, or slammed into a wall
 		_apply_knockback(delta)
 		return
 	var coordinator := AttackCoordinator.for_room(room)
@@ -107,6 +183,8 @@ func _physics_process(delta: float) -> void:
 	_apply_knockback(delta)
 
 func _on_reset() -> void:
+	noticed = false
+	_was_noticed = false
 	_dashing = false
 	_dash_left = 0.0
 	_stuck_for = 0.0
@@ -256,20 +334,33 @@ func _charge(delta: float) -> void:
 			step = minf(step, maxf(_ahead_of_strike(), 0.0))
 		var collision := move_and_collide(_charge_dir * step)
 		_dash_left -= step
-		if collision != null: # Flew into a rock or wall
-			_dash_left = 0.0
+		# The side walls hold it back by margin rather than by collision (see
+		# Enemy._keep_off_side_walls), so being pushed back off one counts as hitting it too.
+		var before_clamp := position.x
 		_keep_off_side_walls()
+		if collision != null || !is_equal_approx(position.x, before_clamp):
+			_slam_into_wall()
+			return
 	if _dashing && _twinkled_at < 0 && _due_to_glint():
 		super._twinkle()
 	if _animation_done() && _dash_left <= 0:
 		_end_attack(Tuning.wyvern_heavy_end_lag if _unparryable else Tuning.wyrm_charge_recovery)
+
+# Flew into a wall or rock mid-charge: dazed just as if parried, bounced back off it.
+func _slam_into_wall() -> void:
+	var dust_at := global_position + _charge_dir * 10.0 * scale.x
+	Juice.burst(room, dust_at, WALL_DUST, 14, 70.0, -_charge_dir, 2.0, 0.4)
+	Juice.play(_wall_sound, 0.08, WALL_HIT_PITCH * voice_pitch)
+	Juice.hitstop(PARRY_HITSTOP)
+	Juice.shake(Juice.SHAKE_MEDIUM)
+	stagger(_nearest_direction(-_charge_dir))
 
 # Pixels along the charge before it's within Tuning.wyrm_clash_reach of the player.
 func _ahead_of_strike() -> float:
 	return _to_player().dot(_charge_dir) - Tuning.wyrm_clash_reach
 
 # Glints half a window before reaching the player (so it hangs there for the other half),
-# or before running out of charge, or at once if it hit something.
+# or before running out of charge.
 func _due_to_glint() -> bool:
 	var window := Tuning.unparryable_window if _unparryable else Tuning.parry_window
 	var lead := Tuning.wyrm_charge_speed * window / 2.0
@@ -301,14 +392,17 @@ func _face_player() -> void:
 # Faces whichever of the four directions `heading` is nearest. Facing up draws it in front
 # of the player, as for every enemy.
 func _face_along(heading: Vector2) -> void:
-	if absf(heading.x) >= absf(heading.y):
-		direction = Direction.LEFT if heading.x < 0 else Direction.RIGHT
-	elif heading.y < 0:
-		direction = Direction.UP
+	direction = _nearest_direction(heading)
+	if direction == Direction.UP:
 		z_index = 10
-	else:
-		direction = Direction.DOWN
+	elif direction == Direction.DOWN:
 		z_index = 0
+
+# Whichever of the four directions `heading` is nearest.
+static func _nearest_direction(heading: Vector2) -> String:
+	if absf(heading.x) >= absf(heading.y):
+		return Direction.LEFT if heading.x < 0 else Direction.RIGHT
+	return Direction.UP if heading.y < 0 else Direction.DOWN
 
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("shoot") && animator.frame == BREATH_FRAME:

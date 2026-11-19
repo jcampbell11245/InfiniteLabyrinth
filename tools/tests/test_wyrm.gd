@@ -19,9 +19,13 @@ func physics_frames(count: int) -> void:
 	for i in count:
 		await tree.physics_frame
 
-# A room with one `kind` of dragon in it, and the dragon.
-func boot_dragon(kind: String, design := RoomDesign.new()) -> Wyrm:
+# A room with one `kind` of dragon in it, and the dragon. Unless `wary` is false it faces the
+# player's spawn and sees the whole room, so it notices them at once.
+func boot_dragon(kind: String, design := RoomDesign.new(), wary := true) -> Wyrm:
 	design.set_object(DRAGON_AT, kind)
+	if wary:
+		design.set_facing(DRAGON_AT, Direction.LEFT)
+		design.set_radius(DRAGON_AT, RoomDesign.RADIUS_MAX)
 	var room: Room = await boot_design(design)
 	for child in room.get_children():
 		if child is Wyrm:
@@ -61,6 +65,49 @@ func test_flies_over_pits_and_traps() -> void:
 	wyrm.global_position += room.to_global(RoomDesign.cell_centre(Vector2i(10, 2))) - wyrm.feet_position()
 	await physics_frames(10)
 	expect_equal(wyrm.health, health, "spikes under it don't hurt it")
+
+func test_waits_to_notice_the_player_before_attacking() -> void:
+	eager(true)
+	var wyrm := await boot_dragon("wyrm", RoomDesign.new(), false) # Faces right, default radius
+	var start := wyrm.global_position
+	await physics_frames(60)
+	expect(!wyrm.noticed, "doesn't notice a player behind it, out of range")
+	expect(!wyrm._animation_is("slash") && !wyrm._animation_is("shoot"), "and doesn't attack")
+	expect(wyrm.global_position.distance_to(start) < 1.0, "it hovers where it started")
+	# Behind it but within range still isn't seen...
+	player().global_position = wyrm.global_position + Vector2(-40, 0)
+	await physics_frames(5)
+	expect(!wyrm.noticed, "the player can sneak up behind it")
+	# ...in front of it is.
+	player().global_position = wyrm.global_position + Vector2(40, 0)
+	await physics_frames(5)
+	expect(wyrm.noticed, "notices a player in front, within its radius")
+
+func test_charging_into_a_rock_dazes_it() -> void:
+	eager(true)
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(7, 6), RoomDesign.Cell.STALAGMITE)
+	var wyrm := await boot_dragon("wyrm", design)
+	var room := wyrm.room
+	# It circles before charging, so wherever it sets off from, put it in line with the rock,
+	# just to its right, charging left at a player beyond it.
+	for i in 300:
+		if wyrm._dashing:
+			break
+		await tree.physics_frame
+	expect(wyrm._dashing, "it sets off on a charge")
+	player().global_position = room.to_global(RoomDesign.cell_centre(Vector2i(2, 6))) - Player.FEET
+	var beside_rock := room.to_global(RoomDesign.cell_centre(Vector2i(7, 6)) + Vector2(Room.CELL_SIZE * 1.5, 0))
+	wyrm.global_position += beside_rock - wyrm.feet_position()
+	wyrm._charge_dir = Vector2.LEFT
+	wyrm._dash_left = Room.CELL_SIZE * 4.0
+	for i in 60:
+		if wyrm.is_stunned():
+			break
+		await tree.physics_frame
+	expect(wyrm.is_stunned(), "slamming into the stalagmite stuns it")
+	expect(wyrm.is_vulnerable(), "and its next hit taken is multiplied, as after a parry")
+	expect(!wyrm._animation_is("slash"), "the charge is over")
 
 func test_circles_the_player() -> void:
 	calm()

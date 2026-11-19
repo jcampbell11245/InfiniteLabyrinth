@@ -61,12 +61,15 @@ const CELL_CHARS := {
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
 }
 const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V"}
-# Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
-# in the room, so they have none.
-const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight"]
+# Enemies with a detection radius (MeleeEnemy.detection_radius, Wyrm.detection_radius), which
+# also set which way they face at the start. Wizards engage anywhere in the room, so they
+# have none.
+const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "wyrm", "wyvern"]
+# Of those, the ones that can roam (MeleeEnemy.roam_mode): not the dragons, which hover.
+const ROAMING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight"]
 const RADIUS_MIN := 0.0
 const RADIUS_MAX := 400.0
-# Roaming (MeleeEnemy.roam_mode), for the same kinds: "none", "path" or "area".
+# Roaming (MeleeEnemy.roam_mode), for ROAMING_KINDS: "none", "path" or "area".
 const ROAM_MODES: Array[String] = ["none", "path", "area"]
 const AREA_DEFAULT_REACH := 2 # Cells either side of the enemy a new roaming area covers
 # Spawn facing (MeleeEnemy.starting_direction), for the same kinds: a direction, or "auto" to
@@ -217,7 +220,7 @@ func set_facing(index: Vector2i, facing: String) -> void:
 # --- Roaming ---
 
 static func can_roam(kind: String) -> bool:
-	return has_radius(kind)
+	return kind in ROAMING_KINDS
 
 # "none", "path" or "area" for the enemy on `index`.
 func roam_mode(index: Vector2i) -> String:
@@ -553,7 +556,7 @@ func to_text() -> String:
 			var index := Vector2i(x, y)
 			row += OBJECT_CHARS[objects[index]] if objects.has(index) else CELL_CHARS[get_cell(index)]
 		lines.append(row)
-	lines.append("# Detection radius in pixels of each goblin and knight (MeleeEnemy.detection_radius),")
+	lines.append("# Detection radius in pixels of each goblin, knight and dragon (MeleeEnemy.detection_radius),")
 	lines.append("# by floor cell as column,row. Any not listed use the default, %d."
 		% MeleeEnemy.DEFAULT_DETECTION_RADIUS)
 	lines.append("detection_radius:")
@@ -565,7 +568,7 @@ func to_text() -> String:
 	lines.append("#         MeleeEnemy.roam_path holds where the enemy stands on each (RoomDesign.object_origin).")
 	lines.append("#   area: wanders the cells from the first corner to the second, inclusive.")
 	lines.append("#         MeleeEnemy.roam_area holds the pixels those cells cover (RoomDesign.area_pixels).")
-	lines.append("# Which way each goblin and knight faces when the room starts (MeleeEnemy.starting_direction),")
+	lines.append("# Which way each goblin, knight and dragon faces when the room starts (starting_direction),")
 	lines.append("# by floor cell as column,row: up, down, left, right, or auto (turns to face the player as")
 	lines.append("# they come into the room). Any not listed face %s." % DEFAULT_FACING)
 	lines.append("facing:")
