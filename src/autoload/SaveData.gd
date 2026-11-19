@@ -19,6 +19,8 @@ var sfx_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
 # seconds instead of the upgrade-based limit. Set it by hand in the save file under
 # [debug] time_limit; it survives saves and is ignored by exported release builds.
 var debug_time_limit := 0
+# Tests turn this off so changing a slider never overwrites the developer's save file.
+var write_to_disk := true
 
 func _ready() -> void:
 	load_from_disk()
@@ -60,6 +62,8 @@ func _set_bus_volume(bus_name: StringName, volume: float) -> void:
 	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(volume, MIN_AUDIBLE_VOLUME)))
 
 func save() -> void:
+	if !write_to_disk:
+		return
 	var file := ConfigFile.new()
 	file.set_value("progress", "floor", floor_number)
 	file.set_value("progress", "coins", coins)
@@ -72,13 +76,11 @@ func save() -> void:
 		file.set_value("debug", "time_limit", debug_time_limit)
 	file.save(PATH)
 
+# Clears progress only. Audio levels are a preference, so they survive a run reset.
 func reset() -> void:
 	floor_number = 1
 	coins = 0
 	damage_level = 0
 	time_level = 0
 	looting_level = 0
-	music_volume = 1.0
-	sfx_volume = 1.0
-	apply_audio_settings()
 	save()

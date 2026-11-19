@@ -7,11 +7,9 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/title/quit.png" id="5"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/quit_selected.png" id="6"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/cursor.png" id="7"]
-[ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="8"]
-[ext_resource type="PackedScene" path="res://src/ui/menus/OptionsPanel.tscn" id="9"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_focus"]
-bg_color = Color(0.35, 0.28, 0.1, 0.8)
+[ext_resource type="PackedScene" uid="uid://copiiftk2y8fu" path="res://src/ui/menus/OptionsPanel.tscn" id="9"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/options.png" id="10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/options_selected.png" id="11"]
 
 [node name="TitleScreen" type="Control"]
 layout_mode = 3
@@ -68,23 +66,18 @@ focus_previous = NodePath("../Quit")
 texture_normal = ExtResource("3")
 texture_focused = ExtResource("4")
 
-[node name="Options" type="Button" parent="Canvas"]
+[node name="Options" type="TextureButton" parent="Canvas"]
 layout_mode = 0
-offset_left = 412.0
+offset_left = 388.0
 offset_top = 228.0
-offset_right = 532.0
+offset_right = 556.0
 offset_bottom = 260.0
 focus_neighbor_top = NodePath("../Start")
 focus_neighbor_bottom = NodePath("../Quit")
 focus_next = NodePath("../Quit")
 focus_previous = NodePath("../Start")
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
-theme_override_fonts/font = ExtResource("8")
-theme_override_font_sizes/font_size = 11
-theme_override_styles/focus = SubResource("StyleBoxFlat_focus")
-flat = true
-text = "OPTIONS"
+texture_normal = ExtResource("10")
+texture_focused = ExtResource("11")
 
 [node name="Quit" type="TextureButton" parent="Canvas"]
 layout_mode = 0

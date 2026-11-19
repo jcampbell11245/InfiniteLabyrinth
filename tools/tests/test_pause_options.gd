@@ -1,7 +1,7 @@
 extends "res://tools/tests/test_case.gd"
 
 # The pause menu uses the same audio settings panel as the title screen. Opening it must
-# leave the run paused, and the pause key must close the panel before it resumes the game.
+# leave the run paused, and the pause/cancel keys must close the panel before resuming.
 
 func test_pause_menu_has_shared_options_panel() -> void:
 	var menu := _add_pause_menu()
@@ -16,28 +16,43 @@ func test_options_panel_changes_settings_and_returns_to_buttons() -> void:
 	var save_data := autoload("SaveData")
 	var old_music: float = save_data.music_volume
 	var old_sfx: float = save_data.sfx_volume
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
 	var menu := _add_pause_menu()
 	if menu == null:
+		save_data.write_to_disk = old_write
 		return
 	save_data.set_music_volume(0.3)
 	save_data.set_sfx_volume(0.7)
 	menu.show_options()
-	expect(menu.options_panel.visible, "Options shows the panel")
-	expect(!menu.get_node("PauseVBox/ButtonVBox").visible, "Options hides the pause buttons")
-	expect_near(menu.options_panel.music_slider.value, 30.0, 0.01, "the music slider shows the saved value")
+	var shown: bool = menu.options_panel.visible
+	var buttons_hidden: bool = !menu.get_node("PauseVBox/ButtonVBox").visible
+	var shown_music: float = menu.options_panel.music_slider.value
 	menu.options_panel.sfx_slider.value = 25.0
-	expect_near(save_data.sfx_volume, 0.25, 0.01, "the panel writes the SFX volume through SaveData")
+	var sfx_after: float = save_data.sfx_volume
 	menu.options_panel.back_pressed.emit()
-	expect(!menu.options_panel.visible, "Back closes the panel")
-	expect(menu.get_node("PauseVBox/ButtonVBox").visible, "Back restores the pause buttons")
+	var closed: bool = !menu.options_panel.visible
+	var buttons_shown: bool = menu.get_node("PauseVBox/ButtonVBox").visible
+	# Restore before checking anything so a failed expectation can't leave the real
+	# volumes or save behaviour changed.
 	save_data.set_music_volume(old_music)
 	save_data.set_sfx_volume(old_sfx)
-	save_data.save()
+	save_data.write_to_disk = old_write
 	_free_menu(menu)
+	expect(shown, "Options shows the panel")
+	expect(buttons_hidden, "Options hides the pause buttons")
+	expect_near(shown_music, 30.0, 0.01, "the music slider shows the saved value")
+	expect_near(sfx_after, 0.25, 0.01, "the panel writes the SFX volume through SaveData")
+	expect(closed, "Back closes the panel")
+	expect(buttons_shown, "Back restores the pause buttons")
 
 func test_pause_key_closes_options_before_resuming() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
 	var menu := _add_pause_menu()
 	if menu == null:
+		save_data.write_to_disk = old_write
 		return
 	menu.pause()
 	expect(tree.paused, "pausing opens the menu")
@@ -52,6 +67,27 @@ func test_pause_key_closes_options_before_resuming() -> void:
 	menu._input(escape)
 	expect(!tree.paused, "a second pause press resumes the game")
 	expect(!menu.visible, "the pause menu hides on resume")
+	save_data.write_to_disk = old_write
+	_free_menu(menu)
+
+func test_ui_cancel_closes_options_without_resuming() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
+	var menu := _add_pause_menu()
+	if menu == null:
+		save_data.write_to_disk = old_write
+		return
+	menu.pause()
+	menu.show_options()
+	var back := InputEventJoypadButton.new()
+	back.button_index = JOY_BUTTON_B
+	back.pressed = true
+	menu._input(back)
+	expect(!menu.options_panel.visible, "the controller's cancel button closes the options panel")
+	expect(tree.paused, "closing options with cancel leaves the game paused")
+	expect(menu.visible, "the pause menu stays open after cancel")
+	save_data.write_to_disk = old_write
 	_free_menu(menu)
 
 func _add_pause_menu() -> PauseMenu:

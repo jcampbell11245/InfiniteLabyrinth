@@ -1,9 +1,9 @@
 extends Control
 class_name OptionsPanel
 
-# Shared audio settings panel for the title and pause menus. Sliders write through
-# SaveData, so a change made during a run is kept for the next one too. The parent menu
-# decides when to show the panel and handles Back through the signal.
+# Shared audio settings panel for the title and pause menus. Sliders change the buses
+# through SaveData as they move, but the disk write happens once when the parent closes
+# the panel. The parent decides when to show it and handles Back through the signal.
 
 signal back_pressed
 
@@ -19,6 +19,7 @@ func _ready() -> void:
 	back_button.pressed.connect(back_pressed.emit)
 
 # Reads the saved values each time so the panel matches settings changed elsewhere.
+# Setting .value emits value_changed, which only updates the buses, not the save file.
 func refresh() -> void:
 	music_slider.value = SaveData.music_volume * VOLUME_PERCENT
 	sfx_slider.value = SaveData.sfx_volume * VOLUME_PERCENT
@@ -26,10 +27,12 @@ func refresh() -> void:
 func focus_first() -> void:
 	music_slider.grab_focus()
 
+# Called by the menus when the panel closes, so all changes land in one disk write.
+func save_changes() -> void:
+	SaveData.save()
+
 func _on_music_volume_changed(value: float) -> void:
 	SaveData.set_music_volume(value / VOLUME_PERCENT)
-	SaveData.save()
 
 func _on_sfx_volume_changed(value: float) -> void:
 	SaveData.set_sfx_volume(value / VOLUME_PERCENT)
-	SaveData.save()

@@ -22,3 +22,16 @@ func test_volume_controls_apply_to_their_own_buses() -> void:
 	expect(!AudioServer.is_bus_mute(sfx_bus), "muting music leaves SFX audible")
 	save_data.set_music_volume(1.0)
 	save_data.set_sfx_volume(1.0)
+
+func test_reset_keeps_audio_preferences() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
+	save_data.set_music_volume(0.2)
+	save_data.set_sfx_volume(0.4)
+	save_data.reset()
+	expect_near(save_data.music_volume, 0.2, 0.01, "resetting progress keeps the music volume")
+	expect_near(save_data.sfx_volume, 0.4, 0.01, "resetting progress keeps the SFX volume")
+	save_data.set_music_volume(1.0)
+	save_data.set_sfx_volume(1.0)
+	save_data.write_to_disk = old_write

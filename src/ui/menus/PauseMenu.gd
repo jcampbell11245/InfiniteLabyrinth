@@ -2,8 +2,8 @@ extends Control
 class_name PauseMenu
 
 # Pause toggles on the pause key or the Resume button. Options opens the shared audio
-# settings panel; while it is open, pause or Back returns to the buttons instead of
-# ending the pause. The quit key exits the game while it isn't paused.
+# settings panel; while it is open, pause, ui_cancel or Back returns to the buttons
+# instead of ending the pause. The quit key exits the game while it isn't paused.
 
 @onready var resume_button: Button = $PauseVBox/ButtonVBox/Resume
 @onready var options_button: Button = $PauseVBox/ButtonVBox/Options
@@ -20,11 +20,12 @@ func _ready() -> void:
 	options_panel.back_pressed.connect(hide_options)
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause"):
+	# Escape is both pause and ui_cancel, so one branch handles both without a double toggle.
+	if event.is_action_pressed("pause") || event.is_action_pressed("ui_cancel"):
 		if options_panel.visible:
 			hide_options()
 			get_viewport().set_input_as_handled()
-		else:
+		elif event.is_action_pressed("pause"):
 			pause()
 	elif event.is_action_released("quit") && !get_tree().paused:
 		get_tree().quit()
@@ -61,5 +62,7 @@ func hide_options() -> void:
 	options_button.grab_focus()
 
 func _close_options() -> void:
+	if options_panel.visible:
+		options_panel.save_changes()
 	options_panel.hide()
 	button_vbox.show()

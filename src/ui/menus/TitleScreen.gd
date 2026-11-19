@@ -2,15 +2,15 @@ extends Control
 
 # First screen on launch. Start begins a run through Boot; Options opens the shared audio
 # settings panel; Quit closes the game. Works with the mouse (hovering selects, clicking
-# presses), the D-pad/stick/arrow keys and ui_accept (A, Enter, Space). F1 opens the room
-# creator.
+# presses), the D-pad/stick/arrow keys and ui_accept (A, Enter, Space). ui_cancel (Escape
+# or B) closes the options panel. F1 opens the room creator.
 
 const BOOT_SCENE := "res://src/ui/menus/Boot.tscn"
 const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected option's
 
 @onready var start_button: TextureButton = $Canvas/Start
-@onready var options_button: Button = $Canvas/Options
+@onready var options_button: TextureButton = $Canvas/Options
 @onready var quit_button: TextureButton = $Canvas/Quit
 @onready var cursor: TextureRect = $Canvas/Cursor
 @onready var options_panel: OptionsPanel = $Canvas/OptionsPanel
@@ -29,8 +29,8 @@ func _ready() -> void:
 	WorldGenerator.preload_rooms() # In the background, so Start doesn't wait on them
 
 func _unhandled_input(event: InputEvent) -> void:
-	if options_panel.visible && event is InputEventKey && event.pressed \
-			&& (event as InputEventKey).keycode == KEY_ESCAPE:
+	# ui_cancel covers Escape and the controller's B button, like the pause menu.
+	if options_panel.visible && event.is_action_pressed("ui_cancel"):
 		_hide_options()
 		get_viewport().set_input_as_handled()
 		return
@@ -43,11 +43,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().change_scene_to_file(ROOM_EDITOR)
 		return
 	# If focus was lost (e.g. a click on the background), the next up/down/accept
-	# selects Start again instead of doing nothing.
+	# selects the first control of whatever screen is showing instead of doing nothing.
 	if get_viewport().gui_get_focus_owner() == null && (
 			event.is_action_pressed("ui_up") || event.is_action_pressed("ui_down")
 			|| event.is_action_pressed("ui_accept")):
-		start_button.grab_focus()
+		if options_panel.visible:
+			options_panel.focus_first()
+		else:
+			start_button.grab_focus()
 		get_viewport().set_input_as_handled()
 
 func _move_cursor_to(button: BaseButton) -> void:
@@ -63,6 +66,7 @@ func _show_options() -> void:
 	options_panel.focus_first()
 
 func _hide_options() -> void:
+	options_panel.save_changes()
 	options_panel.hide()
 	start_button.show()
 	options_button.show()
