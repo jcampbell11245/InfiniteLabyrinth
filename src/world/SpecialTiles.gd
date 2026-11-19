@@ -20,7 +20,9 @@ extends TileMap
 #   Cracked   cracks when stood on, then opens into a pit, then mends.
 #   Paste     holds whoever steps in within Tuning.paste_reach of its edge, pulling them back
 #             when they stop; the player rolls out. It dissolves Tuning.paste_dissolve_time
-#             after first catching someone.
+#             after first catching someone, and a bar over whoever it holds counts that down
+#             (paste_left). It squelches on catching, creaks when pulled against, and snaps
+#             as it pulls back.
 #   Slick, Slow, Fast   change how things move while on them; the player and enemies ask
 #             speed_factor() and is_slick() themselves.
 #   Teleport  sends whoever steps on it, and any projectile flying over it, to the next
@@ -68,9 +70,17 @@ const CRUMBLE_SOUND := preload("res://assets/sfx/rumble1.wav")
 const CRUMBLE_DB := -8.0
 const TELEPORT_SOUND := preload("res://assets/sfx/magic1.wav")
 const TELEPORT_DB := -8.0
+const PASTE_STICK_SOUND := preload("res://assets/sfx/paste_stick.wav")
+const PASTE_STRETCH_SOUND := preload("res://assets/sfx/paste_stretch.wav")
+const PASTE_SNAP_SOUND := preload("res://assets/sfx/paste_snap.wav")
+const PASTE_DB := -6.0
+# Pulled back from at least this far past the paste's middle, the snap back is heard.
+const PASTE_SNAP_DISTANCE := 10.0
 const TELEPORT_GRACE := 5.0 # Pixels outside its square a teleporter still takes feet from
 # Projectiles fly at about chest height; this far below one is the floor it's over.
 const PROJECTILE_DROP := Vector2(0, 12)
+const PROJECTILE_SPAN_STEPS := 3 # Points checked from the shot down to the floor under it, less one
+const PROJECTILE_GRACE := 3.0 # Pixels outside a teleporter's square a shot still counts as over it
 const PROJECTILE_GROUP := &"projectiles" # Every Projectile joins it (Projectile._ready)
 const GLOW_PULSE := 7.0 # Radians/sec the destination glow pulses at
 const GLOW_ALPHA := Vector2(0.6, 1.0) # Its least and most strength
@@ -247,6 +257,9 @@ func _ready() -> void:
 		"shock": _add_sound(SHOCK_SOUND, SHOCK_DB),
 		"crumble": _add_sound(CRUMBLE_SOUND, CRUMBLE_DB),
 		"teleport": _add_sound(TELEPORT_SOUND, TELEPORT_DB),
+		"stick": _add_sound(PASTE_STICK_SOUND, PASTE_DB),
+		"stretch": _add_sound(PASTE_STRETCH_SOUND, PASTE_DB),
+		"snap": _add_sound(PASTE_SNAP_SOUND, PASTE_DB),
 	}
 	_glow = Sprite2D.new()
 	_glow.texture = TEXTURE
@@ -452,8 +465,25 @@ func _record(body: Node2D) -> Dictionary:
 	var id := body.get_instance_id()
 	if !_bodies.has(id):
 		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, shocked = {}, stuck = null,
-			paste_free_until = 0.0, arrived = null, last_position = body.global_position}
+			paste_free_until = 0.0, arrived = null, last_position = body.global_position,
+			stretching = false, snapped = false}
 	return _bodies[id]
+
+# How much longer the paste holding `body` lasts, 1 just caught to 0 dissolved, or 0 if
+# nothing holds it. Its status bar shows this (Player, Enemy).
+func paste_left(body: Node) -> float:
+	var record: Dictionary = _bodies.get(body.get_instance_id(), {})
+	if record.get("stuck") == null || Tuning.paste_dissolve_time <= 0:
+		return 0.0
+	var tile: Dictionary = _tiles[record.stuck]
+	if tile.phase == Phase.BROKEN:
+		return 0.0
+	return clampf((tile.dissolve_at - _time) / Tuning.paste_dissolve_time, 0.0, 1.0)
+
+# The same for a body in `room`, which may have no special tiles.
+static func paste_left_in(room: Node, body: Node) -> float:
+	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
+	return layer.paste_left(body) if layer != null else 0.0
 
 func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 	var record := _record(body)
@@ -494,21 +524,30 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 				if tile.phase == Phase.RESTING && record.stuck == null && !rolling \
 						&& _time >= record.paste_free_until:
 					record.stuck = cell
+					record.stretching = false
 					if tile.dissolve_at < 0:
 						tile.dissolve_at = _time + Tuning.paste_dissolve_time
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
+					Juice.play(_sounds.stick, 0.08)
 	_hold_in_paste(body, record, feet, moved, delta)
 
 # A projectile over a teleporter goes through it like anything else, flying on the same way
-# out of the far square. `point` is the floor under it.
+# out of the far square. It flies at chest height, so it's drawn PROJECTILE_DROP above the
+# floor it's over; it counts as over a teleporter if any of that span is, so a shot that
+# looks like it crosses the square does.
 func _carry_projectile(shot: Projectile) -> void:
 	var record := _record(shot)
-	var point := shot.global_position + PROJECTILE_DROP
-	var teleporter: Variant = teleporter_at(point, 0.0) # Squarely over it, not grazing past
+	var floor_point := shot.global_position + PROJECTILE_DROP
+	var teleporter: Variant = null
+	for step in PROJECTILE_SPAN_STEPS + 1:
+		var point := shot.global_position + PROJECTILE_DROP * step / PROJECTILE_SPAN_STEPS
+		teleporter = teleporter_at(point, PROJECTILE_GRACE)
+		if teleporter != null:
+			break
 	if record.arrived != null && record.arrived != teleporter:
 		record.arrived = null
 	if teleporter != null && record.arrived == null:
-		_teleport(shot, record, teleporter, point)
+		_teleport(shot, record, teleporter, floor_point)
 
 func _hurt(body: Node2D, amount: float) -> void:
 	if body is Player:
@@ -587,8 +626,21 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, mo
 	var half := Room.CELL_SIZE / 2.0 + Tuning.paste_reach
 	var held := offset.clamp(-Vector2.ONE * half, Vector2.ONE * half)
 	var walking := player.velocity.length() > MOVING_SPEED if player != null else moved > MOVING_SPEED
+	# A creak the moment it pulls against the paste's limit, and a snap as the paste pulls
+	# it back from out there.
+	var at_limit := held != offset
+	if at_limit && walking && !record.stretching:
+		record.stretching = true
+		Juice.play(_sounds.stretch, 0.08)
 	if !walking:
+		var pulled_back: bool = record.stretching || offset.length() >= PASTE_SNAP_DISTANCE
+		if pulled_back && !record.snapped:
+			Juice.play(_sounds.snap, 0.08)
+			record.snapped = true # Once per pull back; walking again re-arms it
+		record.stretching = false
 		held = held.move_toward(Vector2.ZERO, Tuning.paste_pull * delta)
+	else:
+		record.snapped = false
 	if held != offset:
 		body.move_and_collide(held - offset)
 

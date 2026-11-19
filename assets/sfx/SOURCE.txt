@@ -16,3 +16,13 @@ short echo. Plays when a fireball is batted back, by the player or a wizard.
 coin_bad.wav: coin/coin1.wav reworked in Python for this project (pitched to 0.7x, then a
 reversed copy pitched to 0.55x, 1800 Hz low-pass, light 6-bit crush): the "bad" coin sound
 when a troll steals coins.
+tile_speed_up.wav: synthesized for this project (8-bit pulse-wave arpeggio rising C5-E5-G5-C6):
+plays when the player steps onto a speed tile.
+tile_slow_down.wav: synthesized for this project (8-bit pulse-wave arpeggio falling, each note
+bending down): plays when the player steps onto a slow tile.
+paste_stick.wav: synthesized for this project (low-passed noise over a falling sine thump): a
+wet squelch when thermal paste first catches someone.
+paste_stretch.wav: synthesized for this project (rising sawtooth with vibrato and a little
+noise): a rubbery creak as someone caught in paste pulls against it.
+paste_snap.wav: synthesized for this project (fast falling sine sweep with a click): the
+elastic snap as paste pulls someone back.

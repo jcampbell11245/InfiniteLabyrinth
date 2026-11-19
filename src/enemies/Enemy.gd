@@ -112,6 +112,9 @@ func _add_status_bars() -> void:
 	bars.position = dizzy_offset + BARS_ABOVE_DIZZY
 	bars.add_bar(StatusBars.Icon.DAZE, STUN_BAR, StatusBars.timer_left.bind(_stun_timer))
 	bars.add_bar(StatusBars.Icon.PARRY, PARRY_BAR, func() -> float: return _parry_progress)
+	# Caught in thermal paste: how long until it dissolves (see SpecialTiles).
+	bars.add_bar(StatusBars.Icon.PASTE, Player.PASTE_BAR,
+		func() -> float: return SpecialTiles.paste_left_in(room, self))
 	add_child(bars)
 
 func _reset_parry_progress() -> void:

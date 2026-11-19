@@ -158,10 +158,10 @@ var slick_grip := 300.0 # Pixels/sec² of speed the player gains or loses on sli
 var enemy_slick_grip := 70.0
 var paste_reach := 12.0 # Pixels past thermal paste's edge something caught in it can walk
 var paste_pull := 60.0 # Pixels/sec it's pulled back to the middle while standing still
-var paste_dissolve_time := 4.0 # Seconds after first catching someone before the paste dissolves
+var paste_dissolve_time := 7.0 # Seconds after first catching someone before the paste dissolves
 var slow_tile_multiplier := 0.6 # Walk, roll and attack speed on a slow tile
 var fast_tile_multiplier := 1.4 # Walk, roll and attack speed on a speed tile
-var teleport_glow_range := 48.0 # Pixels from a teleporter at which its destination lights up
+var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its destination lights up
 
 # --- Game feel ---
 var game_speed := 1.0 # Engine.time_scale outside hit-stop

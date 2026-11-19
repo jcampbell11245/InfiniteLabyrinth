@@ -217,9 +217,9 @@ when there's a way round. A roll protects the player from spikes and shocks.
 | Spikes | Hurt on stepping on, and again every second while stood on. |
 | Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
 | Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
-| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Roll out of it; it dissolves a few seconds after catching someone. |
-| Slow / speed tile | Slower or faster walking, rolling and attacking while on it. |
-| Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Walking near one lights up the square it sends to. |
+| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Roll out of it; it dissolves 7 seconds after catching someone, counted down by a bar over their head. |
+| Slow / speed tile | Slower or faster walking, rolling and attacking while on it, with a sound on stepping on and a status icon while there. |
+| Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. |
 
 Their timings, damage and strengths are in the debug menu's **Tiles** tab (`Tuning.gd`). In a
 room scene they're a `SpecialTiles` layer (`src/world/tiles/SpecialTiles.tscn`), painted with

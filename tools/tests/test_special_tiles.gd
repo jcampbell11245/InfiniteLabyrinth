@@ -226,3 +226,61 @@ func test_enemies_keep_sliding_on_ice() -> void:
 		% (goblin.global_position.x - start.x))
 	await wait_real(2.0)
 	expect_equal(goblin.slide, Vector2.ZERO, "comes to a stop in the end")
+
+# An arrow flies at chest height: shot sideways from the row below a teleporter, it's drawn
+# right across the square though the floor under it isn't, and should still go through.
+func test_arrow_drawn_across_a_teleporter_goes_through() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.TELEPORT_1)
+	design.set_cell(Vector2i(1, 11), RoomDesign.Cell.TELEPORT_1)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(3, 7)) # The row below
+	player().global_position.y -= 6.0 # Arrow drawn about the square's middle
+	player().direction = Direction.RIGHT
+	await physics_frames(3)
+	Input.action_press("ranged_attack")
+	await physics_frames(2)
+	Input.action_release("ranged_attack")
+	var went := false
+	for i in 60:
+		await tree.physics_frame
+		for node in tree.get_nodes_in_group(SpecialTiles.PROJECTILE_GROUP):
+			var under := room.to_local((node as Node2D).global_position + SpecialTiles.PROJECTILE_DROP)
+			if RoomDesign.floor_index(Vector2i((under / Room.CELL_SIZE).floor())) == Vector2i(1, 11):
+				went = true
+		if went:
+			break
+	expect(went, "the arrow came out of the partner teleporter")
+
+func test_paste_bar_counts_down_until_it_dissolves() -> void:
+	var tuning := autoload("Tuning")
+	tuning.paste_dissolve_time = 1.0
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PASTE)
+	var room: Room = await boot_design(design)
+	expect_equal(SpecialTiles.paste_left_in(room, player()), 0.0, "no bar before it's caught")
+	stand_on(room, Vector2i(4, 6))
+	await physics_frames(3)
+	var first := SpecialTiles.paste_left_in(room, player())
+	expect(first > 0.8, "nearly full just after being caught (%.2f)" % first)
+	await wait_real(0.5)
+	var later := SpecialTiles.paste_left_in(room, player())
+	expect(later < first && later > 0.0, "counting down (%.2f)" % later)
+	await wait_real(0.8)
+	expect_equal(SpecialTiles.paste_left_in(room, player()), 0.0, "gone once the paste has dissolved")
+
+func test_speed_tile_speeds_up_and_shows_its_status() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(5, 6), RoomDesign.Cell.FAST)
+	design.set_cell(Vector2i(8, 6), RoomDesign.Cell.SLOW)
+	var room: Room = await boot_design(design)
+	var tuning := autoload("Tuning")
+	stand_on(room, Vector2i(5, 6))
+	await physics_frames(3)
+	expect_near(player()._ground_factor, tuning.fast_tile_multiplier, 0.001, "faster on a speed tile")
+	stand_on(room, Vector2i(8, 6))
+	await physics_frames(3)
+	expect_near(player()._ground_factor, tuning.slow_tile_multiplier, 0.001, "slower on a slow tile")
+	stand_on(room, Vector2i(2, 2))
+	await physics_frames(3)
+	expect_near(player()._ground_factor, 1.0, 0.001, "normal off them")

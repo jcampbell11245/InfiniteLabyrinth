@@ -81,6 +81,14 @@ const ARROW_BAR := Color(1, 0.7, 0.25)
 const DAZE_BAR := Color(0.75, 0.5, 1)
 const SPIN_BAR := Color(1, 0.85, 0.3)
 const CURSE_BAR := Color(0.55, 0.85, 0.3) # A warlock's curses (see Curses)
+# Special tiles (see SpecialTiles): a speed or slow tile shows a full bar while stood on;
+# thermal paste counts down until it dissolves.
+const FAST_TILE_BAR := Color(1.0, 0.7, 0.2)
+const SLOW_TILE_BAR := Color(0.5, 0.45, 1.0)
+const PASTE_BAR := Color(0.85, 0.5, 0.17)
+const SPEED_UP_SOUND := preload("res://assets/sfx/tile_speed_up.wav")
+const SLOW_DOWN_SOUND := preload("res://assets/sfx/tile_slow_down.wav")
+const GROUND_SOUND_DB := -8.0
 
 # 8-bit roll and landing sounds, each picked at random per play.
 const ROLL_BLIPS: Array[AudioStream] = [
@@ -117,6 +125,7 @@ var direction := Direction.RIGHT # Direction the player is facing
 var knockback := Vector2.ZERO
 var _slide := Vector2.ZERO # Last frame's walking velocity, carried on slick floor
 var _ground_factor := 1.0 # Speed and attack speed from the tile underfoot (_apply_ground)
+var _ground_sound: AudioStreamPlayer # Speeding up or slowing down on a tile
 var last_tile := Vector2.ZERO # Where the player respawns after falling down a pitfall
 var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene started
 var _ghost_timer := 0.0
@@ -190,6 +199,7 @@ func _ready() -> void:
 	_charge_sound.stream = CHARGE_SOUND
 	_charged_sound = _add_sound(CHARGED_DB)
 	_charged_sound.stream = CHARGED_SOUND
+	_ground_sound = _add_sound(GROUND_SOUND_DB)
 	_daze_timer = Timer.new()
 	_daze_timer.one_shot = true
 	_daze_timer.timeout.connect(Juice.set_grey.bind(animator, false))
@@ -227,6 +237,10 @@ func _add_status_bars() -> void:
 	}
 	for effect: Curses.Effect in curse_icons:
 		bars.add_bar(curse_icons[effect], CURSE_BAR, curses.left.bind(effect))
+	bars.add_bar(StatusBars.Icon.PASTE, PASTE_BAR,
+		func() -> float: return SpecialTiles.paste_left_in(Game.room_by_id(current_room), self))
+	bars.add_bar(StatusBars.Icon.FAST, FAST_TILE_BAR, func() -> float: return 1.0 if _ground_factor > 1.0 else 0.0)
+	bars.add_bar(StatusBars.Icon.SLOW, SLOW_TILE_BAR, func() -> float: return 1.0 if _ground_factor < 1.0 else 0.0)
 	add_child(bars)
 
 func _physics_process(delta: float) -> void:
@@ -376,7 +390,11 @@ func _handle_input(input: FrameInput) -> void:
 # slides. The sword and bow cooldowns started on such a tile are scaled too (_ground_factor).
 func _apply_ground() -> void:
 	var frame := SpecialTiles.frame_at(Game.room_by_id(current_room), global_position + FEET)
-	_ground_factor = SpecialTiles.speed_factor(frame)
+	var factor := SpecialTiles.speed_factor(frame)
+	if factor != _ground_factor && factor != 1.0: # Stepped onto a speed or slow tile
+		_ground_sound.stream = SPEED_UP_SOUND if factor > 1.0 else SLOW_DOWN_SOUND
+		Juice.play(_ground_sound, 0.04)
+	_ground_factor = factor
 	velocity *= _ground_factor
 	animator.speed_scale = _ground_factor
 	if SpecialTiles.is_slick(frame) && rolling.time_left == 0:
