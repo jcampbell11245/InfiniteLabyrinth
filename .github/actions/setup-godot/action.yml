@@ -1,0 +1,35 @@
+name: Set up Godot
+description: Downloads headless-capable Godot for Linux (cached), puts it in $GODOT and imports the project.
+
+inputs:
+  version:
+    description: Godot version, matching the one the project is made with
+    default: "4.7.2"
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Godot
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/godot
+        key: godot-${{ inputs.version }}-linux-x86_64
+
+    - name: Download Godot
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p ~/godot
+        curl -fsSL -o /tmp/godot.zip \
+          "https://github.com/godotengine/godot-builds/releases/download/${{ inputs.version }}-stable/Godot_v${{ inputs.version }}-stable_linux.x86_64.zip"
+        unzip -q /tmp/godot.zip -d ~/godot
+        mv ~/godot/Godot_v${{ inputs.version }}-stable_linux.x86_64 ~/godot/godot
+        chmod +x ~/godot/godot
+
+    - name: Import the project
+      shell: bash
+      run: |
+        echo "GODOT=$HOME/godot/godot" >> "$GITHUB_ENV"
+        # A fresh checkout has no .godot cache; scripts and scenes can't load without it.
+        "$HOME/godot/godot" --headless --path . --import || true

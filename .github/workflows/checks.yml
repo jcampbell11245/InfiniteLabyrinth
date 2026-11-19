@@ -1,0 +1,37 @@
+# Two of the checks a pull request must pass before it can merge into master (branch
+# protection requires these and Linked issue, in linked-issue.yml). Run them locally with
+# tools/check.sh.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-godot
+      - name: Headless smoke test
+        run: $GODOT --headless --path . -s res://tools/smoke_test.gd
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-godot
+      - name: Automated tests
+        run: $GODOT --headless --path . -s res://tools/run_tests.gd

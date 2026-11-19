@@ -1,21 +1,168 @@
 # Infinite Labyrinth
 
-A top-down dungeon crawler built with Godot 4.7 (Compatibility renderer).
+A top-down pixel-art dungeon crawler made with **Godot 4.7.2** (Compatibility renderer).
+Fight through a generated floor of rooms against the clock, collect three keys to open the
+end room, and spend your coins on upgrades between floors.
+
+- [Playing](#playing) · [Setup](#setup) · [Running](#running) · [Checks](#checks) ·
+  [Contributing](#contributing) · [Tools](#tools) · [Exporting builds](#exporting-builds) ·
+  [Layout](#layout)
+- Working on the code? Read [AGENTS.md](AGENTS.md) too: it's the guide for AI agents and
+  people alike.
+
+## Playing
+
+Each floor is a 5×6 grid of rooms between a start room and an end room. Three key rooms
+hold keys that open the end room; a boss waits behind a door in the start room.
+
+**There's no health: you have time.** Each floor starts with a time limit (longer with the
+Time upgrade). Getting hit takes time off it, more for harder hits, and the run ends when
+it reaches 0:00. Between floors, and after a game over, coins buy upgrades: **Luck**
+(critical hits), **Time** and **Looting** (coins per kill).
+
+Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
+strike. Swing as it glints to **parry** and stun it; swing too early and you're the one
+staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
+a **spin attack**, which also breaks up group rushes.
+
+| Action | Keyboard | Controller |
+|---|---|---|
+| Move | WASD or arrow keys | D-pad |
+| Sword (hold to charge a spin) | J or Z | X / Square |
+| Bow (hold to charge) | K or X | Y / Triangle |
+| Roll | Space | RB / R1 |
+| Pause | Esc | Start |
+| Room creator (title screen) | F1 | |
+| Debug menu (debug builds) | F2 | |
+
+## Setup
+
+Everything here can be run as written by a person or an agent. You need **Godot 4.7.2**
+exactly (a different version re-saves the scene files differently), **git**, and the
+**GitHub CLI** (`gh`) for issues and pull requests.
+
+### 1. Install Godot 4.7.2 and set `GODOT`
+
+The project's scripts and docs call Godot through the `GODOT` environment variable. On
+Windows point it at the **console** executable, so command-line runs print their output.
+
+**Windows** (PowerShell):
+
+```powershell
+$v = "4.7.2"
+Invoke-WebRequest "https://github.com/godotengine/godot-builds/releases/download/$v-stable/Godot_v$v-stable_win64.exe.zip" -OutFile "$env:TEMP\godot.zip"
+Expand-Archive "$env:TEMP\godot.zip" -DestinationPath "$env:LOCALAPPDATA\Godot" -Force
+[Environment]::SetEnvironmentVariable("GODOT", "$env:LOCALAPPDATA\Godot\Godot_v$v-stable_win64_console.exe", "User")
+```
+
+Open a new terminal afterwards so it sees `GODOT`. Use `Godot_v4.7.2-stable_win64.exe`
+(without `_console`) from the same folder to open the editor.
+
+**macOS**:
+
+```bash
+curl -fL -o /tmp/godot.zip https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_macos.universal.zip
+unzip -q /tmp/godot.zip -d /Applications
+echo 'export GODOT="/Applications/Godot.app/Contents/MacOS/Godot"' >> ~/.zshrc && source ~/.zshrc
+```
+
+**Linux** (x86-64):
+
+```bash
+mkdir -p ~/.local/godot && cd ~/.local/godot
+curl -fL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+unzip -q godot.zip && rm godot.zip && chmod +x Godot_v4.7.2-stable_linux.x86_64
+echo 'export GODOT="$HOME/.local/godot/Godot_v4.7.2-stable_linux.x86_64"' >> ~/.bashrc && source ~/.bashrc
+```
+
+Check it: `"$GODOT" --version` should print `4.7.2.stable.official...`. (In PowerShell:
+`& $env:GODOT --version`.)
+
+### 2. Install git and the GitHub CLI, and log in
+
+- Windows: `winget install --id Git.Git` and `winget install --id GitHub.cli`
+- macOS: `brew install git gh`
+- Linux: your package manager's `git`, and `gh` from <https://cli.github.com>
+
+Then log in (a person has to do this step; it opens a browser):
+
+```bash
+gh auth login
+```
+
+### 3. Clone and import
+
+```bash
+git clone https://github.com/jcampbell11245/InfiniteLabyrinth.git
+cd InfiniteLabyrinth
+"$GODOT" --headless --path . --import
+tools/check.sh
+```
+
+The import builds Godot's `.godot/` cache (it isn't committed); `tools/check.sh` should end
+with **All checks passed.** On Windows run `tools/check.sh` from Git Bash.
+
+To export builds you also need the export templates: in the editor, **Editor → Manage
+Export Templates → Download and Install** (they're also at
+`https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz`).
 
 ## Running
 
-Open `project.godot` in Godot 4.7 and press **Run**. The main scene is `src/ui/menus/Boot.tscn`,
-which starts a new run on floor 1 (coins and upgrades carry over) and loads the generated dungeon (`src/world/Overworld.tscn`).
+Open the project in the editor (`"$GODOT" --editor --path .`, or open `project.godot`
+from the Godot project manager) and press **Run** (F5). Or run it straight from a terminal:
+`"$GODOT" --path .`
 
-Progress (floor, coins, upgrade levels) lives in `user://save.cfg`, read and written through
-the `SaveData` autoload.
+The main scene is the title screen (`src/ui/menus/TitleScreen.tscn`). **Start** goes through
+`Boot`, which starts a run on floor 1, to the generated floor (`src/world/Overworld.tscn`).
+While the title screen is up, the room scenes load in the background so the run starts
+quickly.
 
-## Room creator
+Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through the
+`SaveData` autoload. Delete it to start over.
+
+## Checks
+
+Pull requests can only merge into `master` when three checks pass (see
+`.github/workflows/`). Run the first two yourself before pushing:
+
+```bash
+tools/check.sh
+```
+
+- **Smoke test**: `tools/smoke_test.gd` loads every script and scene under `src/`, boots
+  the game headless and runs 240 physics frames. It fails if anything logs an error.
+- **Tests**: `tools/run_tests.gd` runs every `tools/tests/test_*.gd` (floor generation,
+  damage and the timer, the tuning table, room scenes). Run some with
+  `tools/check.sh tests <part of a file name>`. New tests extend `tools/tests/test_case.gd`.
+- **Linked issue**: the pull request's description must close an open issue its author is
+  assigned to (`Closes #12`). The owner's pull requests are exempt.
+
+Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (see
+[Tools](#tools)) and playtest.
+
+## Contributing
+
+1. **Claim the work.** Find the GitHub issue for what you want to do. If someone else is
+   assigned, it's theirs: pick something else or talk to them. If it's unassigned, assign
+   yourself; if there's no issue, create one and assign yourself.
+2. **Branch** from the latest `master`: `git fetch origin && git switch -c <branch> origin/master`.
+3. **Change, then check**: `tools/check.sh`, screenshots for visual changes, a playtest.
+4. **Open a pull request** into `master` that says `Closes #<issue>`, and get the checks green.
+
+Only the project owner commits to `master` directly. AI agents do all of this through the
+`make-change` skill ([.claude/skills/make-change/SKILL.md](.claude/skills/make-change/SKILL.md));
+the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
+[BUGS.md](BUGS.md) alongside a fix.
+
+## Tools
+
+### Room creator
 
 Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
-Pick a tool on the left (or press 1-9), then left-click or drag on the floor to paint pitfalls,
-and stalagmites, or click to place goblins, knights, wizards and switches; right-click
-erases. A goblin or knight you place, or click with the **Select** tool, shows its detection
+Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles** and
+**Enemies** tabs of icons), then left-click or drag on the floor to paint pitfalls and
+stalagmites, or click to place enemies (goblins, trolls, orcs, knights, dual knights,
+wizards, warlocks, necromancers) and switches; right-click erases. A goblin or knight you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
 the side it watches, since enemies can't see behind themselves. Wizards have no radius: they
 react to the player anywhere in the room. In room scenes the value is each enemy's
@@ -53,7 +200,7 @@ into a scene in `src/world/rooms/`. Run from source, the folder is in the projec
 exported build it sits beside the game's executable (or in the user data folder if that one
 can't be written to). **Open folder** opens it.
 
-## Debug menu
+### Debug menu
 
 In debug builds (running from the editor or a debug export), **F2** opens the debug menu over
 the game and pauses it; F2 or **Close** shuts it again. The **Progress** tab edits the running
@@ -67,49 +214,71 @@ resets every row. **Export** writes every Tuning value, changed ones first and m
 clipboard. Hover a row's name to see where its value lives in the code. Changed values last
 until the game closes; copy the ones you want to keep into the defaults in `Tuning.gd`.
 
-## Smoke test
+### Screenshots
 
-`tools/smoke_test.gd` loads every script and scene under `src/`, then boots the game headless
-and runs it for 240 physics frames. It exits with code 1 and lists each unique error if anything
-was logged:
+`tools/screenshot.gd` boots a floor in a window and saves what it shows, for checking HUD,
+menu and art changes without playing:
 
 ```bash
-Godot_v4.7.2-stable_win64_console.exe --headless --path . -s res://tools/smoke_test.gd
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot            # /tmp/shot.png
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot hurt       # plus two frames after a hit
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot upgrades   # plus the upgrade menu
 ```
 
-Run it after every change, then playtest.
+## Exporting builds
+
+`export_presets.cfg` has presets for Windows (64 and 32 bit), Linux (64 and 32 bit) and
+macOS, each writing to its own folder in `builds/` (ignored by git; publish builds as GitHub
+releases). In the editor use **Project → Export → Export All**, or from a terminal, for
+example:
+
+```bash
+"$GODOT" --headless --path . --export-release "Windows Desktop 64 bit"
+```
+
+The other preset names are `Windows Desktop 32 bit`, `Linux 64 bit`, `Linux 32 bit` and
+`macOS`. Export templates must be installed first (see Setup).
 
 ## Code style
 
 Scripts follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)
 and are statically typed. The `untyped_declaration` warning is on, so the editor flags any
-variable, parameter or return type left untyped.
+variable, parameter or return type left untyped. More conventions are in
+[AGENTS.md](AGENTS.md#conventions).
 
 ## Known bugs
 
-See [BUGS.md](BUGS.md).
+See [BUGS.md](BUGS.md) and the open issues.
 
 ## Layout
 
 ```
-assets/        sprites, sfx, music, fonts (assets/sfx/unused holds unreferenced duplicates)
-src/autoload/  SaveData (save file), Game (coins, keys, game-wide signals and references to
-               the player, camera and rooms), Music (dungeon and boss themes) and Juice
-               (hit-stop, screen shake, sound pitch variation, flashes and particle bursts)
+assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts
+src/autoload/  Tuning (every gameplay number, edited live by the debug menu), SaveData (save
+               file), Game (coins, keys, game-wide signals and references to the player,
+               camera and rooms), Music, Juice (hit-stop, slow motion, screen shake, sound
+               pitch variation, flashes and particle bursts), DebugMenu
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
-src/player/    player scene and script
-src/enemies/   enemy scenes; Enemy is the base class for MeleeEnemy, RangedEnemy and Boss
+src/player/    player scene and script, the level timer, curses
+src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), RangedEnemy
+               (wizard), Caster (warlock, necromancer) and Boss; AttackCoordinator takes
+               turns and group rushes between a room's enemies
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
-src/effects/   flash shader, floor stains and coin pickups used by Juice
-src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room), camera
+src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
+src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room),
+               camera and HUD (GameCamera)
   rooms/       random rooms (every .tscn here is picked up automatically)
   keyrooms/    rooms holding the three keys
   special/     start, end and boss rooms
   tiles/       TileMap scenes used by rooms
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
-src/ui/        HUD widgets and menus (Boot is the main scene)
+src/ui/        HUD widgets (timer, counters, minimap) and menus (title, boot, pause,
+               upgrades, game over)
 src/audio/     enemy death sound players
-tools/         headless smoke test
+tools/         smoke test, test runner and tests, check script, screenshot tool
+.github/       pull request checks (workflows) and the Godot setup they share
+.claude/       the make-change skill agents follow
+room_designs/  room creator exports waiting to become room scenes
 ```
