@@ -17,6 +17,7 @@ var _raise_sound: AudioStreamPlayer
 func _ready() -> void:
 	super()
 	_raise_sound = AudioStreamPlayer.new()
+	_raise_sound.bus = &"SFX"
 	_raise_sound.stream = RAISE_SOUND
 	_raise_sound.volume_db = -4.0
 	add_child(_raise_sound)

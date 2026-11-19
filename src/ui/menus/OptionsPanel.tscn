@@ -1,0 +1,138 @@
+[gd_scene load_steps=7 format=3 uid="uid://copiiftk2y8fu"]
+
+[ext_resource type="Script" path="res://src/ui/menus/OptionsPanel.gd" id="1"]
+[ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/options_grabber.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/options_grabber_highlight.png" id="4"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.035, 0.035, 0.055, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.75, 0.65, 0.35, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
+bg_color = Color(0.07, 0.06, 0.09, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.2, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.8, 0.65, 0.2, 1)
+
+[node name="OptionsPanel" type="Control" unique_id=1463720491]
+visible = false
+layout_mode = 0
+offset_right = 704.0
+offset_bottom = 396.0
+script = ExtResource("1")
+
+[node name="Shade" type="ColorRect" parent="." unique_id=2074518933]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="Panel" type="Panel" parent="." unique_id=784120356]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -182.0
+offset_top = -124.0
+offset_right = 182.0
+offset_bottom = 124.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Heading" type="Label" parent="Panel" unique_id=1938472650]
+layout_mode = 0
+offset_top = 14.0
+offset_right = 364.0
+offset_bottom = 38.0
+theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 18
+text = "OPTIONS"
+horizontal_alignment = 1
+
+[node name="MusicLabel" type="Label" parent="Panel" unique_id=512840763]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 66.0
+offset_right = 108.0
+offset_bottom = 92.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 16
+text = "MUSIC"
+vertical_alignment = 1
+
+[node name="MusicSlider" type="HSlider" parent="Panel" unique_id=1382749605]
+layout_mode = 0
+offset_left = 116.0
+offset_top = 70.0
+offset_right = 344.0
+offset_bottom = 90.0
+focus_neighbor_top = NodePath("../Back")
+focus_neighbor_bottom = NodePath("../SfxSlider")
+focus_next = NodePath("../SfxSlider")
+focus_previous = NodePath("../Back")
+max_value = 100.0
+step = 5.0
+theme_override_icons/grabber = ExtResource("3")
+theme_override_icons/grabber_highlight = ExtResource("4")
+theme_override_styles/background = SubResource("StyleBoxFlat_track")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_fill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_fill")
+
+[node name="SfxLabel" type="Label" parent="Panel" unique_id=974513820]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 106.0
+offset_right = 108.0
+offset_bottom = 132.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 16
+text = "SFX"
+vertical_alignment = 1
+
+[node name="SfxSlider" type="HSlider" parent="Panel" unique_id=1650382477]
+layout_mode = 0
+offset_left = 116.0
+offset_top = 110.0
+offset_right = 344.0
+offset_bottom = 130.0
+focus_neighbor_top = NodePath("../MusicSlider")
+focus_neighbor_bottom = NodePath("../Back")
+focus_next = NodePath("../Back")
+focus_previous = NodePath("../MusicSlider")
+max_value = 100.0
+step = 5.0
+theme_override_icons/grabber = ExtResource("3")
+theme_override_icons/grabber_highlight = ExtResource("4")
+theme_override_styles/background = SubResource("StyleBoxFlat_track")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_fill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_fill")
+
+[node name="Back" type="Button" parent="Panel" unique_id=631907284]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 168.0
+offset_right = 252.0
+offset_bottom = 200.0
+focus_neighbor_top = NodePath("../SfxSlider")
+focus_neighbor_bottom = NodePath("../MusicSlider")
+focus_next = NodePath("../MusicSlider")
+focus_previous = NodePath("../SfxSlider")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 16
+text = "BACK"

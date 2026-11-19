@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/ui/menus/TitleScreen.gd" id="1"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/title_background.png" id="2"]
@@ -7,6 +7,9 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/title/quit.png" id="5"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/quit_selected.png" id="6"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/cursor.png" id="7"]
+[ext_resource type="PackedScene" uid="uid://copiiftk2y8fu" path="res://src/ui/menus/OptionsPanel.tscn" id="9"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/options.png" id="10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/options_selected.png" id="11"]
 
 [node name="TitleScreen" type="Control"]
 layout_mode = 3
@@ -57,21 +60,36 @@ offset_top = 196.0
 offset_right = 532.0
 offset_bottom = 228.0
 focus_neighbor_top = NodePath("../Quit")
-focus_neighbor_bottom = NodePath("../Quit")
-focus_next = NodePath("../Quit")
+focus_neighbor_bottom = NodePath("../Options")
+focus_next = NodePath("../Options")
 focus_previous = NodePath("../Quit")
 texture_normal = ExtResource("3")
 texture_focused = ExtResource("4")
 
+[node name="Options" type="TextureButton" parent="Canvas"]
+layout_mode = 0
+offset_left = 388.0
+offset_top = 238.0
+offset_right = 556.0
+offset_bottom = 270.0
+focus_neighbor_top = NodePath("../Start")
+focus_neighbor_bottom = NodePath("../Quit")
+focus_next = NodePath("../Quit")
+focus_previous = NodePath("../Start")
+texture_normal = ExtResource("10")
+texture_focused = ExtResource("11")
+
 [node name="Quit" type="TextureButton" parent="Canvas"]
 layout_mode = 0
 offset_left = 424.0
-offset_top = 228.0
+offset_top = 280.0
 offset_right = 520.0
-offset_bottom = 260.0
-focus_neighbor_top = NodePath("../Start")
+offset_bottom = 312.0
+focus_neighbor_top = NodePath("../Options")
 focus_neighbor_bottom = NodePath("../Start")
 focus_next = NodePath("../Start")
-focus_previous = NodePath("../Start")
+focus_previous = NodePath("../Options")
 texture_normal = ExtResource("5")
 texture_focused = ExtResource("6")
+
+[node name="OptionsPanel" parent="Canvas" instance=ExtResource("9")]

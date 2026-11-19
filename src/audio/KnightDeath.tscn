@@ -1,3 +1,4 @@
 [gd_scene format=3 uid="uid://beqexx5f7g2j1"]
 
 [node name="KnightDeath" type="AudioStreamPlayer" unique_id=1086595428]
+bus = &"SFX"

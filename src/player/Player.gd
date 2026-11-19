@@ -621,6 +621,7 @@ func _update_respawn_point() -> void:
 # A sound player made in code for the roll and landing sounds, which swap streams each play.
 func _add_sound(volume_db: float) -> AudioStreamPlayer:
 	var sound := AudioStreamPlayer.new()
+	sound.bus = &"SFX"
 	sound.volume_db = volume_db
 	add_child(sound)
 	return sound

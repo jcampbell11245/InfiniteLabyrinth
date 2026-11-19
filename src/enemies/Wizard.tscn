@@ -395,6 +395,7 @@ one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="." unique_id=1551740441]
 stream = ExtResource("14")
+bus = &"SFX"
 
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_hurtbox_area_shape_entered"]
