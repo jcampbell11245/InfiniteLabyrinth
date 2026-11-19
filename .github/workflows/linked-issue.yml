@@ -1,0 +1,49 @@
+# The third check a pull request must pass before it can merge into master (with Smoke
+# test and Tests, in checks.yml). It re-runs when the description is edited, so fixing a
+# missing "Closes #12" doesn't need a new commit.
+name: Linked issue
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  # Work is tracked in issues so two people never do the same thing: the pull request has
+  # to close an open issue that its author is assigned to. The repository owner is exempt
+  # (a skipped check counts as passed).
+  linked-issue:
+    name: Linked issue
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login != github.repository_owner
+    permissions:
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Check the pull request closes an issue assigned to its author
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          numbers=$(printf '%s' "$BODY" | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) +#[0-9]+' | grep -oE '[0-9]+' || true)
+          if [ -z "$numbers" ]; then
+            echo "::error::The pull request description must say which issue it closes, e.g. 'Closes #12'. Create or claim the issue first (see AGENTS.md)."
+            exit 1
+          fi
+          for n in $numbers; do
+            info=$(gh issue view "$n" --repo "$REPO" --json state,assignees \
+              --jq '.state + " " + ([.assignees[].login] | join(","))' 2>/dev/null || echo "MISSING")
+            state=${info%% *}
+            assignees=${info#* }
+            if [ "$state" = "OPEN" ] && [[ ",$assignees," == *",$AUTHOR,"* ]]; then
+              echo "Closes #$n, which is open and assigned to $AUTHOR."
+              exit 0
+            fi
+            echo "#$n: state '$state', assignees '$assignees'"
+          done
+          echo "::error::None of the issues this pull request closes is open and assigned to $AUTHOR. Assign yourself to the issue (or create one) before opening the pull request."
+          exit 1
