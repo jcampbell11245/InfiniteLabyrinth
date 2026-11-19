@@ -1,6 +1,6 @@
 extends "res://tools/tests/test_case.gd"
 
-# The pause menu's Return to Menu button leaves the run for the title screen, or the room
+# The pause menu's Return to title button leaves the run for the title screen, or the room
 # creator during a play-test; its Quit to Desktop button closes the application.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
@@ -13,7 +13,7 @@ func test_return_to_menu_button_returns_to_title() -> void:
 	menu.call("pause")
 	expect(tree.paused, "the menu pauses the game")
 	var menu_button := menu.get_node("PauseVBox/ButtonVBox/ReturnToMenu") as Button
-	expect_equal(menu_button.text, "Return to Menu", "the button says Return to Menu")
+	expect_equal(menu_button.text, "Return to title", "the button says Return to title")
 	menu_button.pressed.emit()
 	await _scene_changed()
 	expect_equal(tree.current_scene.scene_file_path, TITLE_SCENE, "the title screen is open")

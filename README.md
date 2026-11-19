@@ -38,7 +38,7 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
 
-The pause menu's **Return to Menu** button returns to the title screen, so a run can be
+The pause menu's **Return to title** button returns to the title screen, so a run can be
 left without closing the game. **Quit to Desktop** closes the game, as does the title
 screen's Quit.
 
