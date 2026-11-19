@@ -173,3 +173,94 @@ func test_wyrm_fireball_flies_straight_and_wyvern_fireball_homes() -> void:
 func head_on(dragon: Wyrm) -> String:
 	return {Direction.LEFT: Direction.RIGHT, Direction.RIGHT: Direction.LEFT,
 		Direction.UP: Direction.DOWN, Direction.DOWN: Direction.UP}[dragon.direction]
+
+func test_backs_off_a_player_who_gets_close() -> void:
+	calm()
+	var wyrm := await boot_dragon("wyrm")
+	await physics_frames(10)
+	player().global_position = wyrm.global_position + Vector2(-20, 0)
+	await wait_real(0.6)
+	var tuning := autoload("Tuning")
+	var distance := wyrm.global_position.distance_to(player().global_position)
+	expect(distance >= tuning.wyrm_orbit_radius * tuning.wyrm_keep_away,
+		"flies back out to keep its distance: %s px" % distance)
+
+func test_bite_only_hurts_on_the_bite_frame() -> void:
+	eager(true)
+	var wyrm := await boot_dragon("wyrm")
+	var live_after_bite := false
+	var bit := false
+	for i in 400:
+		if wyrm._animation_is("slash") && wyrm.animator.frame == wyrm.attack_frame && !wyrm._hitbox.disabled:
+			bit = true
+		if wyrm._animation_is("slash") && wyrm.animator.frame > wyrm.attack_frame && !wyrm._hitbox.disabled:
+			live_after_bite = true
+		if bit && !wyrm._animation_is("slash"):
+			break
+		await tree.physics_frame
+	expect(bit, "the bite's hitbox goes live")
+	expect(!live_after_bite, "and is off again once the bite frame is over")
+
+func test_fireball_charges_up_and_a_hit_cancels_it() -> void:
+	eager(false)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_fireball_charge_time = 2.0
+	var wyrm := await boot_dragon("wyrm")
+	for i in 300:
+		if wyrm._breath_held():
+			break
+		await tree.physics_frame
+	expect(wyrm._breath_held(), "holds its breath before breathing fire")
+	await wait_real(1.0)
+	expect(wyrm._breath_held(), "still holding it a second later")
+	expect(!has_fireball(wyrm.room), "with no fireball out yet")
+	wyrm.take_damage(Direction.LEFT, 0.1)
+	await physics_frames(2)
+	expect(!wyrm._breath_held(), "a hit cancels the breath")
+	expect(!wyrm._recover.is_stopped(), "and sends it backing off")
+	await wait_real(1.5)
+	expect(!has_fireball(wyrm.room), "no fireball comes")
+
+func test_backs_off_before_attacking_after_a_hit() -> void:
+	calm()
+	var wyrm := await boot_dragon("wyrm")
+	await physics_frames(10)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_attack_cooldown_min = 0.0
+	tuning.wyrm_attack_cooldown_max = 0.0
+	wyrm.attack_cooldown.stop()
+	wyrm.take_damage(Direction.LEFT, 0.1)
+	await physics_frames(2)
+	expect(!wyrm._recover.is_stopped(), "backs off after being hit")
+	expect(wyrm.attack_cooldown.time_left > 0, "and can't attack meanwhile")
+	expect(!wyrm._animation_is("slash") && !wyrm._animation_is("shoot"), "so no attack starts at once")
+
+func test_fireball_hit_back_as_it_comes_out_is_a_counter() -> void:
+	eager(false)
+	autoload("Tuning").wyrm_fireball_charge_time = 0.5
+	var wyrm := await boot_dragon("wyrm")
+	var fireball: Projectile = null
+	for i in 300:
+		fireball = wyrm._fireball
+		if fireball != null:
+			break
+		await tree.physics_frame
+	expect(fireball != null, "the wyrm breathes a fireball")
+	if fireball == null:
+		return
+	wyrm.health = 100.0 # So the fireball coming back stuns it rather than killing it
+	# Sent straight back at once, as a swing on the glint would.
+	fireball.deflect(Wyrm._nearest_direction(wyrm.global_position - fireball.global_position))
+	await physics_frames(2)
+	expect(wyrm._fireball_countered, "hit back as it comes out counts as a counter")
+	for i in 120:
+		if wyrm.is_stunned():
+			break
+		await tree.physics_frame
+	expect(wyrm.is_stunned(), "and stuns the wyrm when it lands")
+
+func has_fireball(room: Room) -> bool:
+	for child in room.get_children():
+		if child is Projectile:
+			return true
+	return false

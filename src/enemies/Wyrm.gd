@@ -13,20 +13,28 @@ extends Enemy
 # creator.
 #
 # Fighting, it circles at Tuning.wyrm_orbit_radius, now and then turning round to circle the
-# other way, and every so often (Tuning.wyrm_attack_cooldown_min/max) stops to attack, one of
-# two ways:
+# other way. It keeps its distance: a player who gets inside Tuning.wyrm_keep_away of the
+# circle sends it backing straight off at Tuning.wyrm_retreat_speed times its speed. A hit
+# that lands, or coming round from a stun, sends it backing off for Tuning.wyrm_hit_back_off
+# before it can attack again. Only its attacks hurt: there's no damage for touching it. Every
+# so often (Tuning.wyrm_attack_cooldown_min/max) it stops to attack, one of two ways:
 #
-# Fireball (the "shoot" animation): it rears back, glows, and breathes a fireball at the
-# player. A wyrm's flies straight; a wyvern's homes like a wizard's (homing_fireball). Either
-# can be hit back with the sword, and then homes on the dragon that breathed it. Dragons
-# don't bat it back again the way wizards do. Breathing can't be parried.
+# Fireball (the "shoot" animation): it rears back and holds its breath, rooted and glowing
+# faster and faster, for Tuning.wyrm_fireball_charge_time, long enough for the player to
+# close in; a hit that lands then cancels the fireball. A glint at its mouth comes a parry
+# window before it breathes. A wyrm's fireball flies straight; a wyvern's homes like a
+# wizard's (homing_fireball). Either can be hit back with the sword, and then homes on the
+# dragon that breathed it; dragons don't bat it back again the way wizards do. Hit back
+# within Tuning.wyrm_fireball_counter_window of coming out (a swing on the glint) it's a
+# counter, and stuns the dragon like a parry when it lands. Breathing can't be parried.
 #
 # Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
 # coils (frame 0), then freezes in its lunge pose (frame 1) for the usual random windup hold,
 # aims at the player and dashes straight at them at Tuning.wyrm_charge_speed. Half a parry
 # window before it gets within Tuning.wyrm_clash_reach of them it glints and pulls up there,
 # hanging in front of the player until the window closes; then it bites (frame 2, its
-# Hitbox live) and carries on through for Tuning.wyrm_charge_overshoot. Parried in the
+# Hitbox live for that frame only) and carries on through, harmless, for
+# Tuning.wyrm_charge_overshoot. Parried in the
 # window it's knocked back and stunned like any parried enemy; a swing that meets it before
 # the glint is blocked and staggers the player. A wyvern's charges glint red
 # Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
@@ -44,6 +52,7 @@ const Fireball := preload("res://src/projectiles/Fireball.tscn")
 const CHARGE_SOUND := preload("res://assets/sfx/slash1.wav")
 const CHARGE_PITCH := 0.6
 const ORBIT_LEAD := 0.5 # Radians ahead round the circle it aims for
+const BACK_OFF_LEAD := 0.3 # Share of ORBIT_LEAD while backing off: mostly straight away, sliding round a little
 const ORBIT_WALL_MARGIN := 14.0 # Circle targets stay this far inside the floor
 const ORBIT_ARRIVE := 2.0 # Pixels from a circle target that count as there
 const ORBIT_STUCK_TIME := 0.4 # Seconds pressed against something before circling the other way
@@ -58,6 +67,12 @@ const MOUTH_HEIGHT := -8.0
 const WALL_HIT_SOUND := preload("res://assets/sfx/hit1.wav")
 const WALL_HIT_PITCH := 0.7
 const WALL_DUST := Color(0.75, 0.68, 0.55)
+# Holding its breath before a fireball: a rising hiss and a glow that pulses faster as the
+# breath comes.
+const BREATH_SOUND := preload("res://assets/sfx/arrow_charge.wav")
+const BREATH_PITCH := 0.6
+const BREATH_PULSE_SLOW := 0.4 # Seconds between glows as it starts holding its breath...
+const BREATH_PULSE_FAST := 0.1 # ...and just before it breathes
 
 @export var homing_fireball := false # Wyverns: the fireball homes on the player
 @export var has_heavy_charge := false # Wyverns: some charges glint red and can't be parried
@@ -81,8 +96,16 @@ var _charge_dir := Vector2.RIGHT # Fixed for a charge once it sets off
 var _dashing := false # The charge under way has set off
 var _dash_left := 0.0 # Pixels of the charge still to fly
 var _recover: Timer # Running while it hovers after an attack, before circling again
+var _recover_rooted := false # The recovery under way hangs still instead of backing off
 var _charge_sound: AudioStreamPlayer
 var _wall_sound: AudioStreamPlayer
+var _breath_sound: AudioStreamPlayer
+var _breath_timer: Timer # Running while it holds its breath before a fireball
+var _breath_pulse_in := 0.0 # Seconds to the next warning glow while holding its breath
+var _breath_glinted := false # The glint before this breath has shown
+var _fireball: Projectile # Its last fireball, while it's still about
+var _fireball_out_at := -1 # Ticks (ms) _fireball came out
+var _fireball_countered := false # The player hit _fireball back within the counter window
 
 @onready var _hitbox_pivot: Node2D = $HitboxPivot
 @onready var _hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
@@ -92,6 +115,9 @@ func _ready() -> void:
 	_recover = _add_timer()
 	_charge_sound = _add_sound(CHARGE_SOUND)
 	_wall_sound = _add_sound(WALL_HIT_SOUND)
+	_breath_sound = _add_sound(BREATH_SOUND)
+	_breath_timer = _add_timer(_release_breath)
+	_stun_timer.timeout.connect(_back_off) # Parried or dazed: once it comes round, it backs off
 	if starting_direction == MeleeEnemy.AUTO_FACING:
 		direction = Direction.RIGHT # Until the player comes in
 		Game.room_entered.connect(_on_room_entered)
@@ -133,11 +159,30 @@ func _alert_pack() -> void:
 				&& other.position.distance_to(position) <= Tuning.alert_radius:
 			other.noticed = true
 
-# Any hit gives the player away.
+# Any hit gives the player away. One that lands (and doesn't stun it) cuts short a breath
+# being held and sends it backing off before it attacks again.
 func take_damage(from_direction: String, amount: float) -> void:
 	if is_player_in_room():
 		noticed = true
+	var before := health
 	super(from_direction, amount)
+	if health >= before || health <= 0:
+		return
+	if _breath_held():
+		_end_attack(0.0)
+	if !_animation_is("slash") && !_animation_is("shoot") && !is_stunned():
+		_back_off()
+
+# Flies off for Tuning.wyrm_hit_back_off before it can attack again (after being hit, or
+# coming round from a stun). Hanging open after a red charge, it stays put until that's
+# over, and only then backs off before attacking.
+func _back_off() -> void:
+	if _recover_rooted && !_recover.is_stopped():
+		attack_cooldown.start(maxf(attack_cooldown.time_left, _recover.time_left + Tuning.wyrm_hit_back_off))
+		return
+	_recover_rooted = false
+	_recover.start(maxf(_recover.time_left, Tuning.wyrm_hit_back_off))
+	attack_cooldown.start(maxf(attack_cooldown.time_left, Tuning.wyrm_hit_back_off))
 
 func _process(_delta: float) -> void:
 	if player.in_transition:
@@ -147,11 +192,14 @@ func _process(_delta: float) -> void:
 	if !_animation_is("slash"): # Parried, interrupted or finished
 		_hitbox.disabled = true
 		_dashing = false
+	if !_animation_is("shoot") && _breath_sound.playing: # A breath cut short
+		_breath_sound.stop()
 
 func _physics_process(delta: float) -> void:
 	_moving = false
 	if player.in_transition:
 		return
+	_watch_fireball()
 	if !room.player_active || !is_player_in_room():
 		noticed = false
 		_was_noticed = false
@@ -172,9 +220,15 @@ func _physics_process(delta: float) -> void:
 	if _animation_is("slash"):
 		_charge(delta)
 	elif _animation_is("shoot"):
-		if _animation_done():
+		if _breath_held():
+			_pulse_breath(delta)
+		elif _animation_done():
 			_end_attack(0.0)
-	elif _recover.is_stopped():
+	elif !_recover.is_stopped():
+		if !_recover_rooted: # Backs off after an ordinary charge; hangs open after a red one
+			_circle(delta)
+			_play("fly" if _moving else "idle")
+	else:
 		_circle(delta)
 		if _can_attack(coordinator):
 			_start_attack()
@@ -189,6 +243,9 @@ func _on_reset() -> void:
 	_dash_left = 0.0
 	_stuck_for = 0.0
 	_recover.stop()
+	_recover_rooted = false
+	_breath_timer.stop()
+	_breath_sound.stop()
 	_hitbox.disabled = true
 	_roll_cooldown()
 
@@ -206,12 +263,17 @@ func _circle(delta: float) -> void:
 	var offset := position - centre
 	if offset.length() < 1.0:
 		offset = Vector2.RIGHT
-	var target := centre + Vector2.from_angle(offset.angle() + _orbit_dir * ORBIT_LEAD) * Tuning.wyrm_orbit_radius
+	# A player inside its circle sends it backing straight off, quicker than it circles, so it
+	# keeps its distance; it only comes close to attack.
+	var backing_off := offset.length() < Tuning.wyrm_orbit_radius * Tuning.wyrm_keep_away
+	var lead := ORBIT_LEAD * (BACK_OFF_LEAD if backing_off else 1.0)
+	var target := centre + Vector2.from_angle(offset.angle() + _orbit_dir * lead) * Tuning.wyrm_orbit_radius
 	target = room.clamp_to_floor(target + _separation(), ORBIT_WALL_MARGIN)
 	var to_target := target - position
 	if to_target.length() <= ORBIT_ARRIVE:
 		return
-	var motion := to_target.normalized() * minf(speed * delta, to_target.length())
+	var fly_speed := speed * (Tuning.wyrm_retreat_speed if backing_off else 1.0)
+	var motion := to_target.normalized() * minf(fly_speed * delta, to_target.length())
 	var collision := move_and_collide(motion)
 	if collision != null:
 		move_and_collide(collision.get_remainder().slide(collision.get_normal()))
@@ -261,12 +323,15 @@ func _roll_cooldown() -> void:
 		maxf(Tuning.wyrm_attack_cooldown_min, Tuning.wyrm_attack_cooldown_max))
 		* Tuning.enemy_attack_cooldown_multiplier)
 
-# The attack is over: back to hovering for `lag` seconds, then circling.
-func _end_attack(lag: float) -> void:
+# The attack is over. For `lag` seconds it doesn't attack: it backs off, or with `rooted`
+# hangs where it is, open to hits. Then it circles again.
+func _end_attack(lag: float, rooted := false) -> void:
 	_dashing = false
 	_dash_left = 0.0
+	_breath_timer.stop()
 	_hitbox.disabled = true
 	_play("idle")
+	_recover_rooted = rooted
 	if lag > 0:
 		_recover.start(lag)
 	_roll_cooldown()
@@ -282,14 +347,75 @@ func _start_fireball() -> void:
 	_play("shoot")
 	animator.frame = 0
 
+# Reaching the breath frame, it freezes there, rooted and glowing, for
+# Tuning.wyrm_fireball_charge_time: time for the player to close in and hit it, which cancels
+# the fireball (see take_damage).
+func _hold_breath() -> void:
+	if Tuning.wyrm_fireball_charge_time <= 0:
+		return
+	animator.pause()
+	_breath_timer.start(Tuning.wyrm_fireball_charge_time)
+	_breath_pulse_in = 0.0
+	_breath_glinted = false
+	Juice.play(_breath_sound, 0.05, BREATH_PITCH * voice_pitch)
+
+func _breath_held() -> bool:
+	return _animation_is("shoot") && !_breath_timer.is_stopped()
+
+# The warning glow, quickening as the breath comes, and a parry window before it the glint
+# at its mouth that a counter is timed on.
+func _pulse_breath(delta: float) -> void:
+	if !_breath_glinted && _breath_timer.time_left <= Tuning.parry_window:
+		_breath_glinted = true
+		Juice.twinkle(self, _mouth_offset() / scale)
+	_breath_pulse_in -= delta
+	if _breath_pulse_in > 0:
+		return
+	var left := _breath_timer.time_left / maxf(Tuning.wyrm_fireball_charge_time, 0.001)
+	_breath_pulse_in = lerpf(BREATH_PULSE_FAST, BREATH_PULSE_SLOW, left)
+	Juice.flash(animator, _breath_pulse_in * 0.6, FIRE_FLASH)
+
+func _release_breath() -> void:
+	_breath_sound.stop()
+	if _animation_is("shoot"):
+		animator.play() # On to the frame that breathes the fireball
+
+# From its origin to its mouth, where fireballs come out, scaled.
+func _mouth_offset() -> Vector2:
+	return (Direction.to_vector(direction) * MOUTH_REACH + Vector2(0, MOUTH_HEIGHT)) * scale
+
+# Notes whether the player has hit its fireball back, and if so whether in time to count as a
+# counter. Called every physics frame; a deflect happens at most a frame before it's seen.
+func _watch_fireball() -> void:
+	if !is_instance_valid(_fireball):
+		_fireball = null
+		return
+	if _fireball.deflections == 1 && !_fireball.hostile_to_player && !_fireball_countered \
+			&& Time.get_ticks_msec() - _fireball_out_at <= Tuning.wyrm_fireball_counter_window * 1000.0:
+		_fireball_countered = true
+
+# A countered fireball (see _watch_fireball) landing on it stuns it like a parry, on top of
+# the damage.
+func _on_hurtbox_area_shape_entered(area_id: RID, area: Area2D, area_shape: int, self_shape: int) -> void:
+	var shot := area.get_parent() as Projectile
+	var countered := area.get_name() == "ProjectileHitbox" && shot != null && shot == _fireball \
+		&& _fireball_countered && !shot.hostile_to_player
+	super(area_id, area, area_shape, self_shape)
+	if countered && health > 0 && !is_stunned():
+		_fireball_countered = false
+		_parry_feedback()
+		stagger(shot.direction)
+
 func breathe_fire() -> void:
 	if !is_player_in_room():
 		return
 	Juice.play($Attack, 0.08, voice_pitch)
 	var fireball: Projectile = Fireball.instantiate()
 	room.add_child(fireball)
-	var mouth := (Direction.to_vector(direction) * MOUTH_REACH + Vector2(0, MOUTH_HEIGHT)) * scale
-	fireball.position = room.clamp_to_floor(position + mouth, Projectile.SPAWN_MARGIN)
+	fireball.position = room.clamp_to_floor(position + _mouth_offset(), Projectile.SPAWN_MARGIN)
+	_fireball = fireball
+	_fireball_out_at = Time.get_ticks_msec()
+	_fireball_countered = false
 	fireball.direction = direction
 	fireball.damage = damage
 	fireball.speed = Tuning.wyrm_fireball_speed
@@ -344,7 +470,10 @@ func _charge(delta: float) -> void:
 	if _dashing && _twinkled_at < 0 && _due_to_glint():
 		super._twinkle()
 	if _animation_done() && _dash_left <= 0:
-		_end_attack(Tuning.wyvern_heavy_end_lag if _unparryable else Tuning.wyrm_charge_recovery)
+		if _unparryable:
+			_end_attack(Tuning.wyvern_heavy_end_lag, true)
+		else:
+			_end_attack(Tuning.wyrm_charge_recovery)
 
 # Flew into a wall or rock mid-charge: dazed just as if parried, bounced back off it.
 func _slam_into_wall() -> void:
@@ -406,9 +535,11 @@ static func _nearest_direction(heading: Vector2) -> String:
 
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if _animation_is("shoot") && animator.frame == BREATH_FRAME:
-		Juice.flash(animator, 0.2, FIRE_FLASH)
+		_hold_breath()
 	elif _animation_is("shoot") && animator.frame == attack_frame:
 		breathe_fire()
 	elif _animation_is("slash") && animator.frame == attack_frame:
 		Juice.play($Bite, 0.08, voice_pitch)
 		_hitbox.disabled = false
+	elif _animation_is("slash") && animator.frame > attack_frame:
+		_hitbox.disabled = true # Only the bite itself hurts, not flying on through after it
