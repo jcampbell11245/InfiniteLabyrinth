@@ -407,3 +407,41 @@ func test_teleporters_squish_the_way_they_are_entered() -> void:
 	await wait_real(SpecialTiles.SQUISH_IN_TIME + SpecialTiles.SQUISH_HOLD + SpecialTiles.SQUISH_TIME + 0.3)
 	expect(tiles._squishes.is_empty(), "sprung back")
 	expect(tiles.get_cell_source_id(0, entry) != -1 && tiles.get_cell_source_id(0, exit) != -1, "drawn again")
+
+# An enemy held at the edge of paste runs on the spot for a while, then is hauled back to
+# the middle with one snap, and can walk out again once it's there.
+func test_enemies_are_hauled_back_after_straining_at_the_edge() -> void:
+	var tuning := autoload("Tuning")
+	tuning.paste_enemy_strain_time = 0.5
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.PASTE)
+	design.set_object(Vector2i(3, 6), "goblin")
+	var room: Room = await boot_design(design)
+	var goblin: Enemy = null
+	for child in room.get_children():
+		if child is Enemy:
+			goblin = child
+	tuning.set_value("freeze_enemies", true) # Its AI stays out of it; the test walks it
+	var centre := room.to_global(RoomDesign.cell_centre(Vector2i(6, 6)))
+	goblin.process_mode = Node.PROCESS_MODE_INHERIT # Back in the physics world, AI aside
+	goblin.set_physics_process(false)
+	goblin.global_position += centre - goblin.feet_position()
+	await physics_frames(3)
+	expect(SpecialTiles.is_stuck_in(room, goblin), "caught")
+	var bounds: Rect2 = SpecialTiles.paste_bounds_in(room, goblin)
+	goblin.global_position.x += bounds.end.x - goblin.feet_position().x - 0.5 # At the edge
+	for i in 15: # Straining: trying to walk on, going nowhere
+		goblin.move_and_collide(goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0))
+		await tree.physics_frame
+	expect(goblin.feet_position().x > centre.x + 20.0, "still at the edge while straining")
+	expect(!SpecialTiles.is_hauled_in(room, goblin), "not hauled yet")
+	for i in 60:
+		goblin.move_and_collide(goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0))
+		await tree.physics_frame
+		if absf(goblin.feet_position().x - centre.x) <= 2.0:
+			break
+	expect(absf(goblin.feet_position().x - centre.x) <= 3.0, "hauled back to the middle")
+	var record: Dictionary = layer(room)._bodies[goblin.get_instance_id()]
+	expect_equal(record.snaps, 1, "one snap for it")
+	await physics_frames(2)
+	expect(goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0) != Vector2.ZERO, "free to walk out again")

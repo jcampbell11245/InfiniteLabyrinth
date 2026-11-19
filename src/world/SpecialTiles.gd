@@ -507,7 +507,8 @@ func _record(body: Node2D) -> Dictionary:
 	if !_bodies.has(id):
 		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, shocked = {}, stuck = null,
 			paste_free_until = 0.0, arrived = null,
-			stretching = false, snapped = false, snaps = 0, rolls = 0, was_rolling = false}
+			stretching = false, snapped = false, snaps = 0, rolls = 0, was_rolling = false,
+			strain = 0.0, hauling = false}
 	return _bodies[id]
 
 # True while paste holds `body` in `room`.
@@ -517,6 +518,12 @@ static func is_stuck_in(room: Node, body: Node) -> bool:
 # Where the feet of `body` in `room` may go while paste holds it (global pixels: the paste's
 # square grown by Tuning.paste_reach), or null if nothing holds it. Enemies stop walking at
 # its edge (Enemy.ground_motion).
+# True while paste in `room` hauls `body` (an enemy) back to its middle, after it strained
+# at the edge for Tuning.paste_enemy_strain_time. It can't walk meanwhile (Enemy.ground_motion).
+static func is_hauled_in(room: Node, body: Node) -> bool:
+	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
+	return layer != null && layer._bodies.get(body.get_instance_id(), {}).get("hauling", false)
+
 static func paste_bounds_in(room: Node, body: Node) -> Variant:
 	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
 	if layer == null:
@@ -582,6 +589,8 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 					record.stuck = cell
 					record.stretching = false
 					record.snapped = false
+					record.strain = 0.0
+					record.hauling = false
 					record.rolls = 0
 					record.was_rolling = false
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
@@ -722,7 +731,8 @@ func _teleport_colour(frame: int) -> Color:
 # Caught in paste: kept within Tuning.paste_reach of the paste's edge, and pulled back to
 # the middle whenever it stops moving. The player gets out with Tuning.paste_rolls_to_escape
 # rolls (the ones before only strain against it); otherwise it holds for good.
-# Enemies walk as usual inside it but stop, straining, at its edge (Enemy.ground_motion).
+# Enemies walk as usual inside it, run on the spot at its edge (Enemy.ground_motion), and
+# are hauled back to the middle after Tuning.paste_enemy_strain_time there.
 func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, delta: float) -> void:
 	if record.stuck == null:
 		return
@@ -748,27 +758,49 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, de
 	var offset := feet - centre
 	var half := Room.CELL_SIZE / 2.0 + Tuning.paste_reach
 	var held := offset.clamp(-Vector2.ONE * half, Vector2.ONE * half)
-	# Walking, for the player: moving under their own steam. For an enemy: trying to, even
-	# if it's stuck straining at the edge (Enemy.ground_motion), which it does on the spot.
-	var walking := player.velocity.length() > MOVING_SPEED if player != null \
-		else (body as Enemy).walked_this_frame()
-	# A creak as it reaches the paste's limit, and one snap as the paste starts pulling it
-	# back from out there. The snap is heard again only once it's been back in the middle,
-	# so a pull back that's stopped and started (or a twitchy enemy) makes just the one.
 	# Enemies stop just short of the edge (their next step would cross it), hence the slack.
 	var at_limit := held != offset || maxf(absf(offset.x), absf(offset.y)) >= half - PASTE_EDGE_SLACK
-	if at_limit && walking && !record.stretching:
-		record.stretching = true
-		Juice.play(_sounds.stretch, 0.08)
-	if !walking:
+	var pull := false
+	if player != null:
+		# The player is pulled back to the middle whenever they stop walking.
+		var walking := player.velocity.length() > MOVING_SPEED
+		if at_limit && walking && !record.stretching:
+			record.stretching = true
+			Juice.play(_sounds.stretch, 0.08) # A creak as they reach the limit
+		if !walking:
+			record.stretching = false
+			pull = true
+	else:
+		# An enemy runs on the spot at the edge (Enemy.ground_motion) for
+		# Tuning.paste_enemy_strain_time, then the paste hauls it back to the middle, where it
+		# can set off again. It can't walk while it's hauled (is_hauled).
+		if record.hauling:
+			pull = true
+		elif at_limit:
+			if !record.stretching:
+				record.stretching = true
+				Juice.play(_sounds.stretch, 0.08)
+			record.strain += delta
+			if record.strain >= Tuning.paste_enemy_strain_time:
+				record.hauling = true
+				pull = true
+		else:
+			record.stretching = false
+			record.strain = 0.0
+	if pull:
+		# One snap as the pull back starts. It's heard again only once they've been back in
+		# the middle, so a pull back that stops and starts makes just the one.
 		if !record.snapped && offset.length() >= PASTE_SNAP_DISTANCE:
 			Juice.play(_sounds.snap, 0.08)
 			record.snapped = true
 			record.snaps += 1
-		record.stretching = false
 		held = held.move_toward(Vector2.ZERO, Tuning.paste_pull * delta)
 	if offset.length() <= PASTE_REARM_DISTANCE:
 		record.snapped = false
+		if record.hauling: # Back in the middle: free to walk out again
+			record.hauling = false
+			record.stretching = false
+			record.strain = 0.0
 	if held != offset:
 		body.move_and_collide(held - offset)
 

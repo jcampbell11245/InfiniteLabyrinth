@@ -96,7 +96,10 @@ func _physics_process(delta: float) -> void:
 			motion = ground_motion(motion, delta)
 			var collision := move_and_collide(motion)
 			# Grazing something still counts as moving; only a near-stop means it's stuck.
-			retreat_blocked = collision != null && collision.get_travel().length() < motion.length() / 2
+			# Going nowhere at all (a trap ahead, or held at the edge of paste) is stuck too,
+			# so it shoots instead of backing away on the spot for ever.
+			retreat_blocked = motion == Vector2.ZERO \
+				|| (collision != null && collision.get_travel().length() < motion.length() / 2)
 		elif _can_cast():
 			animate()
 			attack()

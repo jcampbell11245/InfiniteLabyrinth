@@ -159,6 +159,7 @@ var enemy_slick_grip := 70.0
 var paste_reach := 12.0 # Pixels past thermal paste's edge something caught in it can walk
 var paste_pull := 60.0 # Pixels/sec it's pulled back to the middle while standing still
 var paste_rolls_to_escape := 3 # Rolls the player needs to get out of paste
+var paste_enemy_strain_time := 2.0 # Seconds an enemy runs on the spot at paste's edge before it's pulled back
 # Path cost for enemies of crossing a trap, against 1 for plain floor (RoomNav): they walk
 # round one unless the way round is more than this many cells longer.
 var trap_avoid_weight := 3.0
@@ -315,6 +316,7 @@ const FIELDS := [
 	["Tiles", "paste_reach", "Paste reach past its edge (px)", 0, 48, 1, "new (SpecialTiles)"],
 	["Tiles", "paste_pull", "Paste pull back (px/s)", 0, 300, 5, "new (SpecialTiles)"],
 	["Tiles", "paste_rolls_to_escape", "Rolls to escape paste", 1, 10, 1, "new (SpecialTiles._hold_in_paste)"],
+	["Tiles", "paste_enemy_strain_time", "Enemy strains at paste edge (s)", 0, 10, 0.25, "new (SpecialTiles._hold_in_paste)"],
 	["Tiles", "trap_avoid_weight", "Enemy trap avoidance (path cost)", 1, 20, 0.5, "new (RoomNav.set_avoided)"],
 	["Tiles", "slow_tile_multiplier", "Slow tile speed x", 0.1, 1, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
