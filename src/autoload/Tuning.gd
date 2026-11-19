@@ -85,18 +85,18 @@ var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that
 var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back when the troll dies
 # Dragons (Wyrm.gd): wyrms and the bigger wyverns circle the player, now and then stopping
 # to breathe a fireball or charge.
-var wyrm_orbit_radius := 70.0 # Pixels from the player they circle at
-var wyrm_orbit_flip_min := 1.5 # Seconds before it may turn round and circle the other way, rolled each time
-var wyrm_orbit_flip_max := 4.0
-var wyrm_attack_cooldown_min := 1.0 # Seconds of circling between attacks, rolled each time
-var wyrm_attack_cooldown_max := 2.0
+var wyrm_orbit_radius := 100.0 # Pixels from the player they circle at
+var wyrm_orbit_flip_min := 1.0 # Seconds before it may turn round and circle the other way, rolled each time
+var wyrm_orbit_flip_max := 2.5
+var wyrm_attack_cooldown_min := 0.6 # Seconds of circling between attacks, rolled each time
+var wyrm_attack_cooldown_max := 1.3
 var wyrm_charge_chance := 0.6 # Share of attacks that are charges; the rest are fireballs
-var wyrm_charge_speed := 340.0 # Pixels/sec while charging
+var wyrm_charge_speed := 420.0 # Pixels/sec while charging
 var wyrm_charge_overshoot := 28.0 # Pixels past the player a charge carries on
 var wyrm_charge_max_distance := 240.0 # Pixels: longest a charge goes, overshoot included
 var wyrm_clash_reach := 22.0 # Pixels short of the player where a charge strikes; its twinkle comes a parry window before
-var wyrm_charge_recovery := 0.3 # Seconds it hovers after a charge before circling again
-var wyrm_fireball_speed := 150.0 # Wyrm and wyvern fireballs, before any hit back
+var wyrm_charge_recovery := 0.2 # Seconds it hovers after a charge before circling again
+var wyrm_fireball_speed := 175.0 # Wyrm and wyvern fireballs, before any hit back
 var wyvern_heavy_charge_chance := 0.4 # Share of a wyvern's charges that glint red and can't be parried
 var wyvern_heavy_end_lag := 1.0 # Seconds a wyvern hangs in the air, open, after an unparryable charge
 var boss_laser_cooldown := 1.0

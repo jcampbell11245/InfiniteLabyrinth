@@ -293,7 +293,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"fly_down",
-"speed": 8.0
+"speed": 11.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -310,7 +310,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"fly_left",
-"speed": 8.0
+"speed": 11.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -327,7 +327,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"fly_right",
-"speed": 8.0
+"speed": 11.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -344,7 +344,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"fly_up",
-"speed": 8.0
+"speed": 11.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -429,7 +429,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"shoot_down",
-"speed": 6.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -446,7 +446,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"shoot_left",
-"speed": 6.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -463,7 +463,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"shoot_right",
-"speed": 6.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -480,7 +480,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"shoot_up",
-"speed": 6.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -497,7 +497,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"slash_down",
-"speed": 11.0
+"speed": 13.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -514,7 +514,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"slash_left",
-"speed": 11.0
+"speed": 13.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -531,7 +531,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"slash_right",
-"speed": 11.0
+"speed": 13.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -548,7 +548,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"slash_up",
-"speed": 11.0
+"speed": 13.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vfrx1"]
@@ -567,7 +567,7 @@ collision_layer = 2
 collision_mask = 257
 motion_mode = 1
 script = ExtResource("1_3qgvj")
-speed = 70.0
+speed = 105.0
 knockback_speed = 140.0
 damage = 1.0
 health = 1.5
