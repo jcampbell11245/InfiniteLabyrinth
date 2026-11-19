@@ -201,7 +201,7 @@ func test_bite_only_hurts_on_the_bite_frame() -> void:
 	expect(bit, "the bite's hitbox goes live")
 	expect(!live_after_bite, "and is off again once the bite frame is over")
 
-func test_fireball_charges_up_and_a_hit_cancels_it() -> void:
+func test_hit_while_charging_a_fireball_stuns_it() -> void:
 	eager(false)
 	var tuning := autoload("Tuning")
 	tuning.wyrm_fireball_charge_time = 2.0
@@ -216,8 +216,8 @@ func test_fireball_charges_up_and_a_hit_cancels_it() -> void:
 	expect(!has_fireball(wyrm.room), "with no fireball out yet")
 	wyrm.take_damage(Direction.LEFT, 0.1)
 	await physics_frames(2)
-	expect(!wyrm._breath_held(), "a hit cancels the breath")
-	expect(!wyrm._recover.is_stopped(), "and sends it backing off")
+	expect(!wyrm._breath_held(), "a hit chokes off the breath")
+	expect(wyrm.is_stunned(), "and stuns it like a parry")
 	await wait_real(1.5)
 	expect(!has_fireball(wyrm.room), "no fireball comes")
 

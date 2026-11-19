@@ -21,7 +21,7 @@ extends Enemy
 #
 # Fireball (the "shoot" animation): it rears back and holds its breath, rooted and glowing
 # faster and faster, for Tuning.wyrm_fireball_charge_time, long enough for the player to
-# close in; a hit that lands then cancels the fireball. A glint at its mouth comes a parry
+# close in; a hit that lands then chokes off the fireball and stuns it like a parry. A glint at its mouth comes a parry
 # window before it breathes. A wyrm's fireball flies straight; a wyvern's homes like a
 # wizard's (homing_fireball). Either can be hit back with the sword, and then homes on the
 # dragon that breathed it; dragons don't bat it back again the way wizards do. Hit back
@@ -159,17 +159,22 @@ func _alert_pack() -> void:
 				&& other.position.distance_to(position) <= Tuning.alert_radius:
 			other.noticed = true
 
-# Any hit gives the player away. One that lands (and doesn't stun it) cuts short a breath
-# being held and sends it backing off before it attacks again.
+# Any hit gives the player away. One that lands while it holds its breath for a fireball
+# chokes the breath off and stuns it like a parry, the reward for closing in on it in time.
+# Otherwise one that lands (and doesn't stun it) sends it backing off before it attacks again.
 func take_damage(from_direction: String, amount: float) -> void:
 	if is_player_in_room():
 		noticed = true
 	var before := health
+	var was_holding_breath := _breath_held()
 	super(from_direction, amount)
 	if health >= before || health <= 0:
 		return
-	if _breath_held():
+	if was_holding_breath:
 		_end_attack(0.0)
+		_parry_feedback()
+		stagger(from_direction)
+		return
 	if !_animation_is("slash") && !_animation_is("shoot") && !is_stunned():
 		_back_off()
 
