@@ -116,9 +116,13 @@ text = "quit"
 
 [node name="OptionsPanel" parent="Pause" instance=ExtResource("3")]
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -352.0
+offset_top = -198.0
+offset_right = 352.0
+offset_bottom = 198.0
+pivot_offset = Vector2(352, 198)
+scale = Vector2(2.72727, 2.72727)

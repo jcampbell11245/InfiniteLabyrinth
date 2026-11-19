@@ -12,6 +12,17 @@ func test_title_options_button_uses_sprites() -> void:
 		expect((button as TextureButton).texture_focused != null, "the Options button has a focused sprite")
 	_free_screen(screen)
 
+func test_title_buttons_have_vertical_gaps() -> void:
+	var screen := _add_title_screen()
+	var start := screen.get_node("Canvas/Start") as Control
+	var options := screen.get_node("Canvas/Options") as Control
+	var quit := screen.get_node("Canvas/Quit") as Control
+	expect(options.position.y - (start.position.y + start.size.y) >= 8.0,
+		"START and OPTIONS have a gap between them")
+	expect(quit.position.y - (options.position.y + options.size.y) >= 8.0,
+		"OPTIONS and QUIT have a gap between them")
+	_free_screen(screen)
+
 func test_title_options_cancel_and_focus_recovery() -> void:
 	var save_data := autoload("SaveData")
 	var old_write: bool = save_data.write_to_disk

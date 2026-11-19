@@ -3,7 +3,8 @@ class_name OptionsPanel
 
 # Shared audio settings panel for the title and pause menus. Sliders change the buses
 # through SaveData as they move, but the disk write happens once when the parent closes
-# the panel. The parent decides when to show it and handles Back through the signal.
+# the panel or the window is closed with it open. The parent decides when to show it and
+# handles Back through the signal.
 
 signal back_pressed
 
@@ -30,6 +31,11 @@ func focus_first() -> void:
 # Called by the menus when the panel closes, so all changes land in one disk write.
 func save_changes() -> void:
 	SaveData.save()
+
+func _notification(what: int) -> void:
+	# Closing the window never reaches the parent's Back path, so save here while open.
+	if what == NOTIFICATION_WM_CLOSE_REQUEST && visible:
+		save_changes()
 
 func _on_music_volume_changed(value: float) -> void:
 	SaveData.set_music_volume(value / VOLUME_PERCENT)

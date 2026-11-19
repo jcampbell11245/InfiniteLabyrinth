@@ -69,9 +69,9 @@ texture_focused = ExtResource("4")
 [node name="Options" type="TextureButton" parent="Canvas"]
 layout_mode = 0
 offset_left = 388.0
-offset_top = 228.0
+offset_top = 238.0
 offset_right = 556.0
-offset_bottom = 260.0
+offset_bottom = 270.0
 focus_neighbor_top = NodePath("../Start")
 focus_neighbor_bottom = NodePath("../Quit")
 focus_next = NodePath("../Quit")
@@ -82,9 +82,9 @@ texture_focused = ExtResource("11")
 [node name="Quit" type="TextureButton" parent="Canvas"]
 layout_mode = 0
 offset_left = 424.0
-offset_top = 260.0
+offset_top = 280.0
 offset_right = 520.0
-offset_bottom = 292.0
+offset_bottom = 312.0
 focus_neighbor_top = NodePath("../Options")
 focus_neighbor_bottom = NodePath("../Start")
 focus_next = NodePath("../Start")

@@ -12,6 +12,20 @@ func test_pause_menu_has_shared_options_panel() -> void:
 	expect(menu.get_node("PauseVBox/ButtonVBox/Options") is Button, "the pause menu has an Options button")
 	_free_menu(menu)
 
+func test_pause_options_panel_is_large_and_centred() -> void:
+	var menu := _add_pause_menu()
+	if menu == null:
+		return
+	var panel := menu.options_panel
+	expect_near(panel.anchor_left, 0.5, 0.001, "the panel is anchored to the pause menu's centre")
+	expect_near(panel.anchor_top, 0.5, 0.001, "the panel is vertically centred")
+	expect_near(panel.offset_right - panel.offset_left, 704.0, 0.01,
+		"the panel keeps the title screen's layout size")
+	expect_near(panel.scale.x, 2.72727, 0.001, "the panel is scaled up to match the title screen")
+	expect_near(panel.pivot_offset.x, (panel.offset_right - panel.offset_left) / 2.0, 0.01,
+		"the panel scales around its centre")
+	_free_menu(menu)
+
 func test_options_panel_changes_settings_and_returns_to_buttons() -> void:
 	var save_data := autoload("SaveData")
 	var old_music: float = save_data.music_volume

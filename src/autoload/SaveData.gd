@@ -21,6 +21,8 @@ var sfx_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
 var debug_time_limit := 0
 # Tests turn this off so changing a slider never overwrites the developer's save file.
 var write_to_disk := true
+# Testing aid: counts save attempts even when writes are disabled.
+var save_calls := 0
 
 func _ready() -> void:
 	load_from_disk()
@@ -62,6 +64,7 @@ func _set_bus_volume(bus_name: StringName, volume: float) -> void:
 	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(volume, MIN_AUDIBLE_VOLUME)))
 
 func save() -> void:
+	save_calls += 1
 	if !write_to_disk:
 		return
 	var file := ConfigFile.new()
