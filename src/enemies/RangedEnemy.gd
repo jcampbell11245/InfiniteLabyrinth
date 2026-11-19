@@ -91,6 +91,9 @@ func _physics_process(delta: float) -> void:
 			_face_player()
 		if _is_retreating():
 			var motion := -_to_player().normalized() * speed * delta
+			if !_safe_step(motion): # Won't back onto a trap
+				motion = Vector2.ZERO
+			motion = ground_motion(motion, delta)
 			var collision := move_and_collide(motion)
 			# Grazing something still counts as moving; only a near-stop means it's stuck.
 			retreat_blocked = collision != null && collision.get_travel().length() < motion.length() / 2
@@ -121,7 +124,7 @@ func animate() -> void:
 func attack() -> void:
 	retreat_blocked = false
 	if animator.visible && is_player_in_room():
-		attack_cooldown.start(attack_cooldown_length)
+		attack_cooldown.start(attack_cooldown_length / ground_factor()) # Quicker on a speed tile
 
 func shoot_fireball() -> void:
 	if !is_player_in_room():

@@ -115,6 +115,8 @@ var current_room := Constants.START_ROOM
 var direction := Direction.RIGHT # Direction the player is facing
 
 var knockback := Vector2.ZERO
+var _slide := Vector2.ZERO # Last frame's walking velocity, carried on slick floor
+var _ground_factor := 1.0 # Speed and attack speed from the tile underfoot (_apply_ground)
 var last_tile := Vector2.ZERO # Where the player respawns after falling down a pitfall
 var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene started
 var _ghost_timer := 0.0
@@ -240,6 +242,8 @@ func _physics_process(delta: float) -> void:
 		_update_hitboxes()
 	else:
 		_cancel_charge()
+		animator.speed_scale = 1.0 # Off any speed tile, walking through a door
+		_slide = Vector2.ZERO
 		if _door_lane != null:
 			_steer_through_door()
 	if visible:
@@ -348,6 +352,7 @@ func _handle_input(input: FrameInput) -> void:
 	velocity = velocity.normalized() * speed * curses.speed_multiplier()
 	if _spin_charging && rolling.time_left == 0:
 		velocity *= Tuning.spin_charge_move
+	_apply_ground()
 
 	# Decided once, here: _update_animation can drop a swing back to idle (on its last
 	# frame), which mustn't let a new one start that same frame
@@ -364,6 +369,19 @@ func _handle_input(input: FrameInput) -> void:
 
 	_update_spin_charge(input)
 	_update_charge(input)
+
+# The special tile underfoot (SpecialTiles) changes this frame's walk or roll: speed and
+# slow tiles scale it, along with how fast the player's animations (and so swings) play,
+# and on slick floor the velocity eases towards it from the last frame's, so the player
+# slides. The sword and bow cooldowns started on such a tile are scaled too (_ground_factor).
+func _apply_ground() -> void:
+	var frame := SpecialTiles.frame_at(Game.room_by_id(current_room), global_position + FEET)
+	_ground_factor = SpecialTiles.speed_factor(frame)
+	velocity *= _ground_factor
+	animator.speed_scale = _ground_factor
+	if SpecialTiles.is_slick(frame) && rolling.time_left == 0:
+		velocity = _slide.move_toward(velocity, Tuning.slick_grip * get_physics_process_delta_time())
+	_slide = velocity
 
 # Draws the bow on a press, charges it while held and looses the arrow on release.
 # Losing the button any other way (dazed, falling, a room transition) lowers it unfired.
@@ -414,7 +432,7 @@ func _fire_arrow(charged: bool) -> void:
 		arrow.modulate = CHARGED_ARROW_TINT
 	if !Tuning.infinite_arrows:
 		Game.add_arrows(-1)
-	shoot_cooldown.start(Tuning.shoot_cooldown)
+	shoot_cooldown.start(Tuning.shoot_cooldown / _ground_factor)
 	Juice.play($Shoot, 0.08, 0.85 if charged else 1.0)
 	var aim := Direction.to_vector(direction)
 	knockback = -aim * Tuning.shoot_recoil * (1.5 if charged else 1.0)
@@ -524,7 +542,7 @@ func _update_sword_cooldown() -> void:
 	var slashing := _action() == Action.SLASH
 	if _was_slashing && !slashing:
 		if Tuning.sword_cooldown > 0 && !in_finisher():
-			_sword_cooldown.start(Tuning.sword_cooldown)
+			_sword_cooldown.start(Tuning.sword_cooldown / _ground_factor)
 	_was_slashing = slashing
 
 func _action() -> Action:
@@ -615,7 +633,8 @@ func _update_respawn_point() -> void:
 	var local := position - room.position + RESPAWN_PROBE
 	var first := Vector2i.ONE * Room.FLOOR_FIRST
 	var cell := tiles.local_to_map(local).clamp(first, Vector2i.ONE * room.floor_last)
-	if tiles.get_cell_source_id(0, cell) != -1:
+	# Never on a trap or teleporter: cracked floor in particular would still be a hole.
+	if tiles.get_cell_source_id(0, cell) != -1 && room.is_safe_ground(cell):
 		last_tile = room.position + tiles.map_to_local(cell) + RESPAWN_OFFSET
 
 # A sound player made in code for the roll and landing sounds, which swap streams each play.
@@ -866,6 +885,7 @@ func _fall() -> void:
 		$Fall.play()
 		visible = false
 		knockback = Vector2.ZERO
+		_slide = Vector2.ZERO
 		# A swing cut short by the fall ends now, so its hitbox can't hit while down there.
 		_play(Action.IDLE)
 		hitbox.set_deferred("disabled", true) # Called from a collision callback

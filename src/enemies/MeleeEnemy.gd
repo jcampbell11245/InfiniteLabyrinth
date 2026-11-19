@@ -281,7 +281,7 @@ func animate() -> void:
 
 func attack() -> void:
 	if animator.visible:
-		attack_cooldown.start(attack_cooldown_length)
+		attack_cooldown.start(attack_cooldown_length / ground_factor()) # Quicker on a speed tile
 
 # True when the player is in this room, not down a pitfall, and either inside the detection
 # zone or has been noticed. The room check stops enemies next door chasing or slashing
@@ -687,7 +687,7 @@ func _walk_to(target: Vector2, walk_speed: float, delta: float, arrive := ARRIVE
 	var distance := to_waypoint.length()
 	if distance < 0.01:
 		return
-	var motion := to_waypoint / distance * minf(walk_speed * delta, distance)
+	var motion := ground_motion(to_waypoint / distance * minf(walk_speed * delta, distance), delta)
 	var collision := move_and_collide(motion)
 	if collision != null:
 		move_and_collide(collision.get_remainder().slide(collision.get_normal()))

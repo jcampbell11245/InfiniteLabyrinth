@@ -139,6 +139,26 @@ var upgrade_cost_multiplier := 1.0
 var pickup_collect_distance := 6.0 # Pixels; raise it for a coin magnet
 var pickup_home_accel := 900.0 # Pixels/sec² pickups fly towards the player
 
+# --- Special floor tiles (SpecialTiles) ---
+var spike_damage := 0.5 # Damage on stepping onto spikes, and again each spike_interval stood on them
+var spike_interval := 1.0 # Seconds between spike hits while standing on them
+var shock_damage := 1.0 # Damage from live wires or a live pressure plate
+var shock_daze := 0.3 # Seconds the player can't act after a shock
+var wire_idle_time := 2.5 # Seconds exposed wires rest between shocks
+var wire_spark_time := 1.0 # Seconds they spark (the warning) before going live
+var wire_live_time := 0.8 # Seconds they stay live
+var plate_delay := 0.35 # Seconds from a pressure plate clicking down to it going live
+var plate_live_time := 0.8 # Seconds a plate stays live
+var plate_rearm_time := 1.5 # Seconds after going off before a plate can be set off again
+var crack_time := 1.0 # Seconds cracked floor takes to give way once stood on
+var crack_respawn_time := 5.0 # Seconds the hole stays open before the floor mends
+var slick_grip := 300.0 # Pixels/sec² of speed gained or lost on slick floor (lower slides more)
+var paste_reach := 12.0 # Pixels past thermal paste's edge something caught in it can walk
+var paste_pull := 60.0 # Pixels/sec it's pulled back to the middle while standing still
+var paste_dissolve_time := 4.0 # Seconds after first catching someone before the paste dissolves
+var slow_tile_multiplier := 0.6 # Walk, roll and attack speed on a slow tile
+var fast_tile_multiplier := 1.4 # Walk, roll and attack speed on a speed tile
+
 # --- Game feel ---
 var game_speed := 1.0 # Engine.time_scale outside hit-stop
 var hitstop_enabled := true
@@ -270,6 +290,25 @@ const FIELDS := [
 	["Loot", "upgrade_cost_multiplier", "Upgrade cost multiplier", 0, 5, 0.05, "new (UpgradeMenu.gd COSTS)"],
 	["Loot", "pickup_collect_distance", "Pickup collect distance", 1, 400, 1, "Pickup.gd COLLECT_DISTANCE"],
 	["Loot", "pickup_home_accel", "Pickup homing accel", 50, 5000, 50, "Pickup.gd HOME_ACCEL"],
+
+	["Tiles", "spike_damage", "Spike damage", 0, 5, 0.25, "new (SpecialTiles)"],
+	["Tiles", "spike_interval", "Spike hit interval (s)", 0.1, 5, 0.05, "new (SpecialTiles)"],
+	["Tiles", "shock_damage", "Shock damage", 0, 5, 0.25, "new (SpecialTiles)"],
+	["Tiles", "shock_daze", "Shock daze (s)", 0, 3, 0.05, "new (SpecialTiles)"],
+	["Tiles", "wire_idle_time", "Wires rest (s)", 0.1, 20, 0.1, "new (SpecialTiles)"],
+	["Tiles", "wire_spark_time", "Wires spark warning (s)", 0, 5, 0.05, "new (SpecialTiles)"],
+	["Tiles", "wire_live_time", "Wires live (s)", 0.05, 5, 0.05, "new (SpecialTiles)"],
+	["Tiles", "plate_delay", "Plate click to live (s)", 0, 3, 0.05, "new (SpecialTiles)"],
+	["Tiles", "plate_live_time", "Plate live (s)", 0.05, 5, 0.05, "new (SpecialTiles)"],
+	["Tiles", "plate_rearm_time", "Plate re-arm (s)", 0, 10, 0.1, "new (SpecialTiles)"],
+	["Tiles", "crack_time", "Cracked floor gives way after (s)", 0, 5, 0.05, "new (SpecialTiles)"],
+	["Tiles", "crack_respawn_time", "Hole mends after (s)", 0.5, 30, 0.5, "new (SpecialTiles)"],
+	["Tiles", "slick_grip", "Slick floor grip (px/s²)", 20, 3000, 10, "new (Player/Enemy on slick tiles)"],
+	["Tiles", "paste_reach", "Paste reach past its edge (px)", 0, 48, 1, "new (SpecialTiles)"],
+	["Tiles", "paste_pull", "Paste pull back (px/s)", 0, 300, 5, "new (SpecialTiles)"],
+	["Tiles", "paste_dissolve_time", "Paste dissolves after (s)", 0.5, 30, 0.5, "new (SpecialTiles)"],
+	["Tiles", "slow_tile_multiplier", "Slow tile speed x", 0.1, 1, 0.05, "new (SpecialTiles.speed_factor)"],
+	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
 
 	["Feel", "game_speed", "Game speed", 0.1, 3, 0.05, "new (Engine.time_scale)"],
 	["Feel", "hitstop_enabled", "Hit-stop", 0, 0, 0, "new (Juice.hitstop)"],
