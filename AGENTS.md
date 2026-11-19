@@ -18,7 +18,8 @@ follow it step by step, whatever agent you are. In short:
    open a pull request whose description says `Closes #<issue>`.
 
 `master` is protected: a pull request can only merge once **Smoke test**, **Tests** and
-**Linked issue** pass (the last checks the PR closes an open issue assigned to its author).
+**Linked issue** pass (the last checks the PR closes an open issue assigned to its author),
+the branch is up to date with `master`, and someone else has approved it.
 The owner may commit to `master` directly and is exempt from the issue rule.
 
 Never close, reassign or edit other people's issues, and never push to someone else's

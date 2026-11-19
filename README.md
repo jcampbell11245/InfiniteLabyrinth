@@ -123,7 +123,8 @@ Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through th
 ## Checks
 
 Pull requests can only merge into `master` when three checks pass (see
-`.github/workflows/`). Run the first two yourself before pushing:
+`.github/workflows/`), the branch is up to date with `master`, and another developer has
+approved it. Run the first two checks yourself before pushing:
 
 ```bash
 tools/check.sh
@@ -147,7 +148,8 @@ Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (
    yourself; if there's no issue, create one and assign yourself.
 2. **Branch** from the latest `master`: `git fetch origin && git switch -c <branch> origin/master`.
 3. **Change, then check**: `tools/check.sh`, screenshots for visual changes, a playtest.
-4. **Open a pull request** into `master` that says `Closes #<issue>`, and get the checks green.
+4. **Open a pull request** into `master` that says `Closes #<issue>`, get the checks green,
+   and ask a teammate for the one approving review it needs.
 
 Only the project owner commits to `master` directly. AI agents do all of this through the
 `make-change` skill ([.claude/skills/make-change/SKILL.md](.claude/skills/make-change/SKILL.md));

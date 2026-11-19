@@ -8,7 +8,7 @@ description: Use whenever a developer wants to change anything in the Infinite L
 Every change except the project owner's goes through a feature branch and a GitHub issue
 assigned to the developer making it, so no two people do the same work. `master` is
 protected: a pull request merges only when **Smoke test**, **Tests** and **Linked issue**
-pass. Follow these steps in order. Don't edit files before step 4.
+pass, the branch is up to date with `master`, and another developer has approved it. Follow these steps in order. Don't edit files before step 4.
 
 Repository: `jcampbell11245/InfiniteLabyrinth`. Owner: `jcampbell11245`.
 
@@ -148,7 +148,9 @@ gh pr checks --watch
 ```
 
 If one fails, read its log (`gh run view --log-failed`), fix the cause on the branch,
-run `tools/check.sh` again and push. Don't merge the pull request yourself unless the
+run `tools/check.sh` again and push. If GitHub says the branch is out of date, bring
+`master` in (`git fetch origin && git merge origin/master`), re-run the checks and push.
+Ask a teammate to review; it needs one approval. Don't merge the pull request yourself unless the
 developer asks; when it merges, GitHub closes the issue.
 
 ## Stopping partway
