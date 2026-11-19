@@ -35,6 +35,9 @@ a **spin attack**, which also breaks up group rushes.
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
 
+Quitting from the pause menu returns to the title screen, so a run can be left without
+closing the game. The title screen's Quit closes the game.
+
 ## Setup
 
 Everything here can be run as written by a person or an agent. You need **Godot 4.7.2**
