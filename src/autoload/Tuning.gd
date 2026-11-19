@@ -159,6 +159,12 @@ var enemy_slick_grip := 70.0
 var paste_reach := 12.0 # Pixels past thermal paste's edge something caught in it can walk
 var paste_pull := 60.0 # Pixels/sec it's pulled back to the middle while standing still
 var paste_dissolve_time := 7.0 # Seconds after first catching someone before the paste dissolves
+var paste_respawn_time := 6.0 # Seconds after dissolving before the paste grows back
+var paste_rolls_to_escape := 3 # Rolls the player needs to get out of paste
+var paste_enemy_speed := 0.3 # Walk speed of an enemy caught in paste, times normal
+# Path cost for enemies of crossing a trap, against 1 for plain floor (RoomNav): they walk
+# round one unless the way round is more than this many cells longer.
+var trap_avoid_weight := 3.0
 var slow_tile_multiplier := 0.6 # Walk, roll and attack speed on a slow tile
 var fast_tile_multiplier := 1.4 # Walk, roll and attack speed on a speed tile
 var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its destination lights up
@@ -312,6 +318,10 @@ const FIELDS := [
 	["Tiles", "paste_reach", "Paste reach past its edge (px)", 0, 48, 1, "new (SpecialTiles)"],
 	["Tiles", "paste_pull", "Paste pull back (px/s)", 0, 300, 5, "new (SpecialTiles)"],
 	["Tiles", "paste_dissolve_time", "Paste dissolves after (s)", 0.5, 30, 0.5, "new (SpecialTiles)"],
+	["Tiles", "paste_respawn_time", "Paste grows back after (s)", 0.5, 60, 0.5, "new (SpecialTiles._update_paste)"],
+	["Tiles", "paste_rolls_to_escape", "Rolls to escape paste", 1, 10, 1, "new (SpecialTiles._hold_in_paste)"],
+	["Tiles", "paste_enemy_speed", "Enemy speed in paste x", 0, 1, 0.05, "new (Enemy.ground_motion)"],
+	["Tiles", "trap_avoid_weight", "Enemy trap avoidance (path cost)", 1, 20, 0.5, "new (RoomNav.set_avoided)"],
 	["Tiles", "slow_tile_multiplier", "Slow tile speed x", 0.1, 1, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "teleport_glow_range", "Teleporter destination glow range (px)", 0, 200, 4, "new (SpecialTiles._update_glow)"],

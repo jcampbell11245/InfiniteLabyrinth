@@ -90,7 +90,7 @@ func test_cracked_floor_gives_way_then_mends() -> void:
 	await wait_real(1.6) # Past the fall and the hole's time
 	expect(!layer(room).is_hole(cell), "mended")
 
-func test_paste_holds_until_a_roll() -> void:
+func test_paste_takes_three_rolls_to_escape() -> void:
 	var design := RoomDesign.new()
 	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PASTE)
 	var room: Room = await boot_design(design)
@@ -99,11 +99,66 @@ func test_paste_holds_until_a_roll() -> void:
 	stand_on(room, Vector2i(8, 6)) # Yanked well out of reach
 	await physics_frames(3)
 	expect(feet_index(room).x <= 5, "pulled back to the paste, at %s" % feet_index(room))
-	player().rolling.start(0.2) # As a roll does
-	await physics_frames(2)
-	stand_on(room, Vector2i(8, 6))
+	var rolls: int = autoload("Tuning").paste_rolls_to_escape
+	for roll in rolls:
+		player().rolling.start(0.2) # As a roll does
+		await physics_frames(2)
+		player().rolling.stop()
+		await physics_frames(2)
+		stand_on(room, Vector2i(8, 6))
+		await physics_frames(3)
+		if roll < rolls - 1:
+			expect(feet_index(room).x <= 5, "still held after roll %d" % (roll + 1))
+	expect_equal(feet_index(room), Vector2i(8, 6), "free after %d rolls" % rolls)
+
+func test_paste_grows_back() -> void:
+	var tuning := autoload("Tuning")
+	tuning.paste_dissolve_time = 0.3
+	tuning.paste_respawn_time = 0.4
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PASTE)
+	var room: Room = await boot_design(design)
+	var cell := RoomDesign.tile_cell(Vector2i(4, 6))
+	stand_on(room, Vector2i(4, 6))
+	await wait_real(0.45)
+	expect_equal(layer(room).get_cell_source_id(0, cell), -1, "dissolved")
+	stand_on(room, Vector2i(9, 9))
+	await wait_real(0.6)
+	expect(layer(room).get_cell_source_id(0, cell) != -1, "grown back")
+	expect(layer(room).avoided_cells().has(cell), "and avoided again")
+
+func test_pressure_plate_rises_when_left() -> void:
+	autoload("Tuning").plate_delay = 5.0 # Stays clicked down, not live, while we look
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PLATE)
+	var room: Room = await boot_design(design)
+	var cell := RoomDesign.tile_cell(Vector2i(4, 6))
+	stand_on(room, Vector2i(4, 6))
 	await physics_frames(3)
-	expect_equal(feet_index(room), Vector2i(8, 6), "free after rolling")
+	expect_equal(layer(room).get_cell_atlas_coords(0, cell).x, SpecialTiles.Frame.PLATE_DOWN, "pressed while stood on")
+	stand_on(room, Vector2i(8, 6))
+	await physics_frames(2)
+	expect_equal(layer(room).get_cell_atlas_coords(0, cell).x, SpecialTiles.Frame.PLATE, "raised as soon as it's left")
+
+func test_enemies_crawl_in_paste() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.PASTE)
+	design.set_object(Vector2i(4, 6), "goblin")
+	design.set_facing(Vector2i(4, 6), Direction.LEFT)
+	design.set_radius(Vector2i(4, 6), 0.0)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(12, 0))
+	var goblin: Enemy = null
+	for child in room.get_children():
+		if child is Enemy:
+			goblin = child
+	var free_step := goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0)
+	goblin.global_position += room.to_global(RoomDesign.cell_centre(Vector2i(6, 6))) - goblin.feet_position()
+	await physics_frames(3)
+	expect(SpecialTiles.is_stuck_in(room, goblin), "caught")
+	var stuck_step := goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0)
+	expect_near(stuck_step.length() / free_step.length(), autoload("Tuning").paste_enemy_speed, 0.01,
+		"walks at the paste speed")
 
 func test_swinging_into_live_wires_breaks_them() -> void:
 	var tuning := autoload("Tuning")
@@ -122,20 +177,27 @@ func test_swinging_into_live_wires_breaks_them() -> void:
 	expect_equal(layer(room)._tiles[cell].phase, SpecialTiles.Phase.BROKEN, "broken by the swing")
 	expect(!layer(room).avoided_cells().has(cell), "enemies no longer avoid it")
 
-func test_enemies_walk_round_traps() -> void:
+# Enemies walk round a trap when the way round is short, but cut across a long wall of them
+# (Tuning.trap_avoid_weight) rather than go far out of their way.
+func test_enemies_walk_round_small_traps_but_cut_across_long_ones() -> void:
 	var design := RoomDesign.new()
-	for y in range(2, 11): # A wall of spikes down the middle, open at top and bottom
+	design.set_cell(Vector2i(6, 3), RoomDesign.Cell.SPIKES) # One trap in the way, top half
+	for y in range(6, 13): # A wall of spikes from the middle to the bottom edge
 		design.set_cell(Vector2i(6, y), RoomDesign.Cell.SPIKES)
 	var room: Room = await boot_design(design)
 	await tree.physics_frame
 	var nav := room.nav()
-	var left := RoomDesign.cell_centre(Vector2i(3, 6))
-	var right := RoomDesign.cell_centre(Vector2i(9, 6))
-	var spikes := RoomDesign.cell_centre(Vector2i(6, 6))
+	var spikes := RoomDesign.cell_centre(Vector2i(6, 3))
 	expect(nav.is_avoided(spikes) && !nav.is_open(spikes), "spikes are avoided")
-	expect(!nav.is_clear_line(left, right), "no walking straight across them")
-	var waypoint := nav.next_waypoint(left, right)
-	expect(absf(waypoint.y - left.y) > Room.CELL_SIZE * 2, "heads round the end of the spikes, to %s" % waypoint)
+	var top_left := RoomDesign.cell_centre(Vector2i(3, 3))
+	var top_right := RoomDesign.cell_centre(Vector2i(9, 3))
+	expect(!nav.is_clear_line(top_left, top_right), "no walking straight across one")
+	var round_one := nav.next_waypoint(top_left, top_right)
+	expect(absf(round_one.y - top_left.y) >= Room.CELL_SIZE / 2.0, "steps round the one trap, to %s" % round_one)
+	var bottom_left := RoomDesign.cell_centre(Vector2i(4, 11))
+	var bottom_right := RoomDesign.cell_centre(Vector2i(8, 11))
+	var across := nav.next_waypoint(bottom_left, bottom_right)
+	expect(absf(across.y - bottom_left.y) < Room.CELL_SIZE * 2, "cuts across the long wall, to %s" % across)
 
 func test_teleporter_takes_feet_brushing_its_edge() -> void:
 	var design := RoomDesign.new()

@@ -98,6 +98,8 @@ var _time := 0.0
 var _clashed_swing := -1 # Player.swing_started_frame of the swing that last broke a tile
 var _sounds := {}
 var _glow: Sprite2D # Brightens the teleporter the player would be sent to
+var _occupied := {} # Cells someone's feet are on this frame
+var _fx: Node2D # Draws the tiles' little animations over them (_draw_fx)
 
 # --- Looking things up (any body, room or not) ---
 
@@ -270,6 +272,10 @@ func _ready() -> void:
 	_glow.material = additive
 	_glow.visible = false
 	add_child(_glow)
+	_fx = Node2D.new()
+	_fx.z_index = 1 # Over the tiles, under the player
+	_fx.draw.connect(_draw_fx)
+	add_child(_fx)
 
 func _add_sound(stream: AudioStream, volume_db: float) -> AudioStreamPlayer:
 	var sound := AudioStreamPlayer.new()
@@ -303,6 +309,7 @@ func _physics_process(delta: float) -> void:
 	for cell: Vector2i in _tiles:
 		_update_tile(cell, delta)
 	var seen := {}
+	_occupied.clear()
 	if player.visible:
 		_affect(player, player.global_position + Player.FEET, delta)
 		seen[player.get_instance_id()] = true
@@ -311,6 +318,9 @@ func _physics_process(delta: float) -> void:
 		if _affects(enemy):
 			_affect(enemy, enemy.feet_position(), delta)
 			seen[enemy.get_instance_id()] = true
+	_show_plates()
+	_ambient_effects(delta)
+	_fx.queue_redraw()
 	# Projectiles live on the room or the overworld; only those over this room's floor count.
 	for node in get_tree().get_nodes_in_group(PROJECTILE_GROUP):
 		var shot := node as Projectile
@@ -347,10 +357,33 @@ func _update_tile(cell: Vector2i, delta: float) -> void:
 		Frame.WIRES: _update_wires(cell, tile, delta)
 		Frame.PLATE: _update_plate(cell, tile, delta)
 		Frame.CRACKED: _update_cracked(cell, tile, delta)
-		Frame.PASTE:
-			if tile.phase == Phase.RESTING && tile.dissolve_at >= 0 && _time >= tile.dissolve_at:
-				_set_phase(cell, Phase.BROKEN)
-				Juice.burst(self, _centre(cell), PASTE_COLOR, 10, 30.0, Vector2.ZERO, 2.0, 0.5)
+		Frame.PASTE: _update_paste(cell, tile, delta)
+
+# Paste dissolves Tuning.paste_dissolve_time after first catching someone, then grows back
+# Tuning.paste_respawn_time later.
+func _update_paste(cell: Vector2i, tile: Dictionary, delta: float) -> void:
+	if tile.phase == Phase.RESTING && tile.dissolve_at >= 0 && _time >= tile.dissolve_at:
+		_set_phase(cell, Phase.BROKEN, Tuning.paste_respawn_time)
+		Juice.burst(self, _centre(cell), PASTE_COLOR, 10, 30.0, Vector2.ZERO, 2.0, 0.5)
+	elif tile.phase == Phase.BROKEN:
+		tile.left -= delta
+		if tile.left <= 0:
+			tile.dissolve_at = -1.0
+			_set_phase(cell, Phase.RESTING)
+			var nav := _room.nav_if_built()
+			if nav != null:
+				nav.set_avoided(cell, true)
+			Juice.burst(self, _centre(cell), PASTE_COLOR, 12, 20.0, Vector2.ZERO, 2.0, 0.4)
+			Juice.play(_sounds.stick, 0.08, 0.8)
+
+# A plate is drawn raised whenever nobody's standing on it (even while it re-arms), and
+# pressed while somebody is; live, it shows its sparks either way.
+func _show_plates() -> void:
+	for cell: Vector2i in _tiles:
+		var tile: Dictionary = _tiles[cell]
+		if tile.frame != Frame.PLATE || tile.phase in [Phase.LIVE, Phase.BROKEN]:
+			continue
+		_show_frame(cell, Frame.PLATE_DOWN if _occupied.has(cell) else Frame.PLATE)
 
 func _update_wires(cell: Vector2i, tile: Dictionary, delta: float) -> void:
 	if tile.phase == Phase.BROKEN:
@@ -372,7 +405,6 @@ func _update_plate(cell: Vector2i, tile: Dictionary, delta: float) -> void:
 		# Waits to be stepped on (_affect); after going off it stays down until it re-arms.
 		if tile.has("rearm_at") && _time >= tile.rearm_at:
 			tile.erase("rearm_at")
-			_show_frame(cell, Frame.PLATE)
 		return
 	tile.left -= delta
 	if tile.left > 0:
@@ -382,7 +414,6 @@ func _update_plate(cell: Vector2i, tile: Dictionary, delta: float) -> void:
 		Phase.LIVE:
 			_set_phase(cell, Phase.RESTING)
 			tile.rearm_at = _time + Tuning.plate_rearm_time
-			_show_frame(cell, Frame.PLATE_DOWN)
 
 func _update_cracked(cell: Vector2i, tile: Dictionary, delta: float) -> void:
 	if tile.phase == Phase.RESTING:
@@ -466,8 +497,13 @@ func _record(body: Node2D) -> Dictionary:
 	if !_bodies.has(id):
 		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, shocked = {}, stuck = null,
 			paste_free_until = 0.0, arrived = null, last_position = body.global_position,
-			stretching = false, snapped = false}
+			stretching = false, snapped = false, rolls = 0, was_rolling = false}
 	return _bodies[id]
+
+# True while paste holds `body` in `room` (enemies crawl while it does: Enemy.ground_motion).
+static func is_stuck_in(room: Node, body: Node) -> bool:
+	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
+	return layer != null && layer._bodies.get(body.get_instance_id(), {}).get("stuck") != null
 
 # How much longer the paste holding `body` lasts, 1 just caught to 0 dissolved, or 0 if
 # nothing holds it. Its status bar shows this (Player, Enemy).
@@ -490,6 +526,7 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 	var cell := _cell_of(feet)
 	var entered: bool = cell != record.cell
 	record.cell = cell
+	_occupied[cell] = true
 	var teleporter: Variant = teleporter_at(feet)
 	if record.arrived != null && record.arrived != teleporter:
 		record.arrived = null # Stepped off the square it arrived on
@@ -525,6 +562,8 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 						&& _time >= record.paste_free_until:
 					record.stuck = cell
 					record.stretching = false
+					record.rolls = 0
+					record.was_rolling = false
 					if tile.dissolve_at < 0:
 						tile.dissolve_at = _time + Tuning.paste_dissolve_time
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
@@ -609,18 +648,32 @@ func _teleport_colour(frame: int) -> Color:
 	return colours[clampi(frame - Frame.TELEPORT_1, 0, TELEPORT_PAIRS - 1)]
 
 # Caught in paste: kept within Tuning.paste_reach of the paste's edge, and pulled back to
-# the middle whenever it stops moving. A roll (the player's) gets out, as does the paste
-# dissolving.
+# the middle whenever it stops moving. The player gets out with Tuning.paste_rolls_to_escape
+# rolls (the ones before only strain against it); otherwise it holds until it dissolves.
+# Enemies caught in it crawl (Enemy.ground_motion).
 func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, moved: float, delta: float) -> void:
 	if record.stuck == null:
 		return
 	var cell: Vector2i = record.stuck
 	var tile: Dictionary = _tiles[cell]
 	var player := body as Player
-	if tile.phase == Phase.BROKEN || (player != null && player.rolling.time_left > 0):
+	if tile.phase == Phase.BROKEN:
 		record.stuck = null
-		record.paste_free_until = _time + Tuning.roll_duration + 0.2 # Not caught again mid-roll
 		return
+	if player != null:
+		var rolling := player.rolling.time_left > 0
+		if rolling && !record.was_rolling: # A new roll
+			record.rolls += 1
+			if record.rolls >= Tuning.paste_rolls_to_escape:
+				record.stuck = null
+				record.was_rolling = true
+				record.paste_free_until = _time + Tuning.roll_duration + 0.2 # Not caught again mid-roll
+				Juice.burst(self, feet, PASTE_COLOR, 14, 70.0, Direction.to_vector(player.direction), 2.0, 0.4)
+				Juice.play(_sounds.snap, 0.08, 1.3)
+				return
+			Juice.burst(self, feet, PASTE_COLOR, 6, 40.0, Direction.to_vector(player.direction), 1.5, 0.3)
+			Juice.play(_sounds.stretch, 0.08, 1.0 + 0.15 * record.rolls) # Higher as it gives
+		record.was_rolling = rolling
 	var centre := _centre(cell)
 	var offset := feet - centre
 	var half := Room.CELL_SIZE / 2.0 + Tuning.paste_reach
@@ -657,6 +710,137 @@ func _drift_on_ice(enemy: Enemy, feet: Vector2, delta: float) -> void:
 	if collision != null: # Slid into something: carry on along it, losing what went into it
 		enemy.slide = enemy.slide.slide(collision.get_normal())
 		enemy.move_and_collide(collision.get_remainder().slide(collision.get_normal()))
+
+# --- Flare: little animations over the tiles ---
+# Drawn in code, on whole pixels, each tile's timing offset by its own seed so a room of
+# them doesn't move in step. Only while the rules run (in a room, with the player in it).
+
+const FX_SPARKLE := Color(1, 1, 1, 0.9)
+const SPIKE_TIPS: Array[Vector2i] = [ # Spike points in the spikes art (make_tile_art's grid)
+	Vector2i(5, 4), Vector2i(12, 4), Vector2i(19, 4), Vector2i(5, 11), Vector2i(12, 11),
+	Vector2i(19, 11), Vector2i(5, 18), Vector2i(12, 18), Vector2i(19, 18)]
+const WIRE_GAPS: Array[Vector2i] = [Vector2i(11, 8), Vector2i(12, 16)] # Bare copper in the wires art
+const AMBIENT_SPARK_CHANCE := 0.25 # Per second, per resting wire: a stray spark
+const AMBIENT_DUST_CHANCE := 3.0 # Per second, per hole or cracking floor: dust falling in
+
+func _draw_fx() -> void:
+	for cell: Vector2i in _tiles:
+		var tile: Dictionary = _tiles[cell]
+		var origin := Vector2(cell) * Room.CELL_SIZE
+		var seed := _seed(cell)
+		match tile.frame:
+			Frame.TELEPORT_1, Frame.TELEPORT_2, Frame.TELEPORT_3, Frame.TELEPORT_4:
+				_fx_teleport(origin, seed, _teleport_colour(tile.frame))
+			Frame.FAST: _fx_sweep(origin, seed, 34.0, Color(1, 0.95, 0.7, 0.35))
+			Frame.SLOW: _fx_slow(origin, seed)
+			Frame.SLICK: _fx_glint(origin, seed)
+			Frame.SPIKES: _fx_spike_glint(origin, seed, cell)
+			Frame.WIRES, Frame.PLATE:
+				if tile.phase == Phase.LIVE: # Flickering current
+					_fx.draw_rect(Rect2(origin, Vector2.ONE * Room.CELL_SIZE),
+						Color(SHOCK_COLOR, 0.12 + 0.18 * absf(sin(_time * 37.0 + seed * 9.0))))
+				elif tile.frame == Frame.WIRES && tile.phase == Phase.RESTING:
+					_fx_copper_flicker(origin, seed)
+			Frame.CRACKED:
+				if tile.phase == Phase.WARNING: # Darkening as it gives way
+					var progress: float = 1.0 - tile.left / maxf(Tuning.crack_time, 0.01)
+					_fx.draw_circle(origin + Vector2.ONE * 12, 3.0 + 7.0 * progress, Color(0, 0, 0, 0.35 * progress))
+			Frame.PASTE:
+				if tile.phase != Phase.BROKEN:
+					_fx_bubbles(origin, seed, tile)
+
+func _fx_pixel(at: Vector2, colour: Color) -> void:
+	_fx.draw_rect(Rect2(at.floor(), Vector2.ONE), colour)
+
+# Three sparks running round the ring, and the middle breathing.
+func _fx_teleport(origin: Vector2, seed: float, colour: Color) -> void:
+	var centre := origin + Vector2.ONE * 12
+	_fx.draw_circle(centre, 6.5, Color(colour, 0.1 + 0.08 * sin(_time * 3.0 + seed * TAU)))
+	for k in 3:
+		var angle := _time * 2.5 + k * TAU / 3.0 + seed * TAU
+		_fx_pixel(centre + Vector2.from_angle(angle) * 9.5, colour.lightened(0.6))
+
+# A band of light sliding across the tile, left to right.
+func _fx_sweep(origin: Vector2, seed: float, speed: float, colour: Color) -> void:
+	var x := fmod(_time * speed + seed * 24.0, 30.0) - 3.0
+	var left := clampf(x, 3.0, 21.0)
+	var right := clampf(x + 3.0, 3.0, 21.0)
+	if right > left:
+		_fx.draw_rect(Rect2(origin + Vector2(left, 3), Vector2(right - left, 18)), colour)
+
+# Sand trickling through the hourglass, and the tile slowly breathing.
+func _fx_slow(origin: Vector2, seed: float) -> void:
+	_fx.draw_rect(Rect2(origin + Vector2(3, 3), Vector2(18, 18)),
+		Color(0.6, 0.55, 1.0, 0.06 + 0.06 * sin(_time * 1.5 + seed * TAU)))
+	var fall := fmod(_time * 0.9 + seed, 1.0)
+	_fx_pixel(origin + Vector2(11, 12 + fall * 4.0), Color("e6d38a"))
+
+# Every few seconds a glint runs diagonally over the ice.
+func _fx_glint(origin: Vector2, seed: float) -> void:
+	var period := 2.6
+	var t := fmod(_time + seed * period, period) / 0.45
+	if t >= 1.0:
+		return
+	var along := -4.0 + t * 30.0
+	for i in 5:
+		var at := Vector2(along + i, 20 - i * 1.2 - t * 14.0)
+		if at.x >= 1 && at.x < 23 && at.y >= 1 && at.y < 23:
+			_fx_pixel(origin + at, Color(1, 1, 1, 0.8))
+
+# Now and then one spike tip catches the light.
+func _fx_spike_glint(origin: Vector2, seed: float, cell: Vector2i) -> void:
+	var period := 1.7
+	var step := floori((_time + seed * 5.0) / period)
+	var t := fmod(_time + seed * 5.0, period) / period
+	if t > 0.25:
+		return
+	var tip := SPIKE_TIPS[absi(hash(Vector2i(step, 0) + cell)) % SPIKE_TIPS.size()]
+	var strength := sin(t / 0.25 * PI)
+	var at := origin + Vector2(tip)
+	_fx_pixel(at, Color(1, 1, 1, strength))
+	for d: Vector2 in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
+		_fx_pixel(at + d, Color(1, 1, 1, strength * 0.5))
+
+# The bare copper glows now and then while the wires rest.
+func _fx_copper_flicker(origin: Vector2, seed: float) -> void:
+	var flicker := sin(_time * 11.0 + seed * 20.0) * sin(_time * 4.3 + seed * 7.0)
+	if flicker > 0.6:
+		for gap in WIRE_GAPS:
+			_fx_pixel(origin + Vector2(gap), Color(1.0, 0.9, 0.5, (flicker - 0.6) * 2.5))
+
+# Two bubbles slowly swelling and popping; while it's holding someone it bubbles faster,
+# and in its last two seconds it flickers as it's about to dissolve.
+func _fx_bubbles(origin: Vector2, seed: float, tile: Dictionary) -> void:
+	var holding: bool = tile.dissolve_at >= 0
+	var speed := 1.6 if holding else 0.7
+	for k in 2:
+		var t := fmod(_time * speed + seed + k * 0.5, 1.0)
+		var at := origin + Vector2(7 + k * 9 + int(seed * 4.0), 8 + k * 7)
+		if t < 0.85:
+			_fx.draw_arc(at, 0.5 + t * 1.8, 0, TAU, 8, Color("f7b866"), 1.0)
+		else:
+			for d: Vector2 in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2)]:
+				_fx_pixel(at + d, Color(1, 0.85, 0.6, 0.8))
+	if holding && tile.dissolve_at - _time < 2.0 && fmod(_time, 0.3) < 0.15:
+		_fx.draw_rect(Rect2(origin + Vector2(2, 2), Vector2(20, 20)), Color(1, 1, 1, 0.12))
+
+# Stray sparks off resting wires, dust trickling into holes and floor that's giving way.
+func _ambient_effects(delta: float) -> void:
+	for cell: Vector2i in _tiles:
+		var tile: Dictionary = _tiles[cell]
+		if tile.frame == Frame.WIRES && tile.phase == Phase.RESTING && randf() < AMBIENT_SPARK_CHANCE * delta:
+			var gap := WIRE_GAPS.pick_random() as Vector2i
+			Juice.burst(self, to_global(Vector2(cell) * Room.CELL_SIZE + Vector2(gap)), SPARK_COLOR, 2, 30.0,
+				Vector2.UP, 1.0, 0.15)
+		elif tile.frame == Frame.CRACKED && tile.phase in [Phase.WARNING, Phase.LIVE] \
+				&& randf() < AMBIENT_DUST_CHANCE * delta:
+			var edge := Vector2(randf_range(4, 20), randf_range(4, 20))
+			Juice.burst(self, to_global(Vector2(cell) * Room.CELL_SIZE + edge), DUST, 1, 12.0,
+				(Vector2.ONE * 12 - edge).normalized(), 1.0, 0.3)
+
+# A steady number from 0 to 1 for `cell`, so each tile's animation runs to its own time.
+func _seed(cell: Vector2i) -> float:
+	return float(absi(hash(cell)) % 1000) / 1000.0
 
 # Tiles work on every enemy but the boss (whose room has none anyway).
 func _affects(node: Node) -> bool:

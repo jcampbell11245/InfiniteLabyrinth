@@ -12,8 +12,8 @@ extends RefCounted
 #
 # Special tiles that hurt or hold (SpecialTiles.avoided_cells) are avoided rather than
 # blocked: they don't count as open for walking straight or picking a spot, and paths cost
-# AVOID_WEIGHT times as much through them, so enemies go round when there's a way round
-# and only cross when there isn't. Cracked floor that gives way is blocked while it's a hole.
+# Tuning.trap_avoid_weight times as much through them, so enemies go round unless the way
+# round is much longer, then cut across. Cracked floor that gives way is blocked while it's a hole.
 
 # Physics layers that stop an enemy's feet: general walls and rocks, pitfalls, wall tops.
 const SOLID_MASK := (1 << (Constants.Layer.GENERAL - 1)) | (1 << (Constants.Layer.PITFALL - 1)) \
@@ -21,7 +21,6 @@ const SOLID_MASK := (1 << (Constants.Layer.GENERAL - 1)) | (1 << (Constants.Laye
 const PROBE_SIZE := Vector2(16, 16) # Pixels; a cell is blocked if this much of its middle hits something
 const LINE_STEP := 4.0 # Pixels between the checks along a straight walk
 const FEET_HALF_WIDTH := 6.0 # Pixels either side of a walk's line that must be clear too
-const AVOID_WEIGHT := 8.0 # Path cost of crossing an avoided cell, against 1 for plain floor
 
 var _grid := AStarGrid2D.new()
 var _region: Rect2i
@@ -67,7 +66,7 @@ func set_avoided(cell: Vector2i, on: bool) -> void:
 		_avoided[cell] = true
 	else:
 		_avoided.erase(cell)
-	_grid.set_point_weight_scale(cell, AVOID_WEIGHT if on else 1.0)
+	_grid.set_point_weight_scale(cell, Tuning.trap_avoid_weight if on else 1.0)
 
 # Marks `cell` as impassable (a hole opening up) or open again.
 func set_blocked(cell: Vector2i, on: bool) -> void:

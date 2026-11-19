@@ -207,17 +207,18 @@ can't be written to). **Open folder** opens it.
 
 The room creator's **Tiles** tab has slick floor, slow and speed tiles and four pairs of
 teleporters; the **Traps** tab has exposed wires, spikes, cracked floor, pressure plates and
-thermal paste. They affect the player and enemies alike, and enemies walk round the traps
-when there's a way round. A roll protects the player from spikes and shocks.
+thermal paste. They affect the player and enemies alike. Enemies walk round a trap when the
+way round is short, but cut across rather than go far out of their way. A roll protects the
+player from spikes and shocks.
 
 | Tile | What it does |
 |---|---|
 | Exposed wires | Rest, spark as a warning, then go live (with an enemy-style twinkle) and shock whoever is on them. Swing the sword into them while live to break them for good. |
-| Pressure plate | Clicks down when stepped on, then goes live like wires and re-arms. Breaks the same way. |
+| Pressure plate | Clicks down when stepped on (and pops back up as soon as it's left), then goes live like wires and re-arms. Breaks the same way. |
 | Spikes | Hurt on stepping on, and again every second while stood on. |
 | Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
 | Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
-| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Roll out of it; it dissolves 7 seconds after catching someone, counted down by a bar over their head. |
+| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop; enemies caught in it crawl. Three rolls break free; otherwise it dissolves 7 seconds after catching someone, counted down by a bar over their head, and grows back 6 seconds later. |
 | Slow / speed tile | Slower or faster walking, rolling and attacking while on it, with a sound on stepping on and a status icon while there. |
 | Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. |
 
