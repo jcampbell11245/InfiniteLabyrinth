@@ -220,3 +220,4 @@ layer_0/tile_data = PackedInt32Array(786450, 1, 0, 851986, 0, 0)
 
 [node name="BossDoorClose" type="AudioStreamPlayer" parent="BossDoorBody"]
 stream = ExtResource("16")
+bus = &"SFX"

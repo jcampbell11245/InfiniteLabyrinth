@@ -56,6 +56,7 @@ func _ready() -> void:
 	_add_swipe_animations()
 	_add_swipe_hitbox()
 	_swipe_sound = AudioStreamPlayer.new()
+	_swipe_sound.bus = &"SFX"
 	_swipe_sound.stream = SWIPE_SOUND
 	add_child(_swipe_sound)
 	_swipe_cooldown = _add_timer()

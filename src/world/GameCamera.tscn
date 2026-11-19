@@ -351,4 +351,5 @@ script = ExtResource("9")
 
 [node name="GameOverSFX" type="AudioStreamPlayer" parent="GameOver" unique_id=236099973]
 stream = ExtResource("10")
+bus = &"SFX"
 

@@ -4,3 +4,4 @@
 
 [node name="GoblinDeath" type="AudioStreamPlayer" unique_id=1404293692]
 stream = ExtResource("1")
+bus = &"SFX"

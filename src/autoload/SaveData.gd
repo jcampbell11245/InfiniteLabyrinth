@@ -4,12 +4,17 @@ extends Node
 # save() after changing them.
 
 const PATH := "user://save.cfg"
+const MUSIC_BUS := &"Music"
+const SFX_BUS := &"SFX"
+const MIN_AUDIBLE_VOLUME := 0.001
 
 var floor_number := 1
 var coins := 0
 var damage_level := 0 # Critical hit chance
 var time_level := 0 # Extra seconds on the level timer
 var looting_level := 0 # Extra coins per kill
+var music_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
+var sfx_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
 # Testing aid, debug builds only: when above 0, the level timer starts at this many
 # seconds instead of the upgrade-based limit. Set it by hand in the save file under
 # [debug] time_limit; it survives saves and is ignored by exported release builds.
@@ -17,6 +22,7 @@ var debug_time_limit := 0
 
 func _ready() -> void:
 	load_from_disk()
+	apply_audio_settings()
 
 func load_from_disk() -> void:
 	var file := ConfigFile.new()
@@ -27,7 +33,31 @@ func load_from_disk() -> void:
 	damage_level = file.get_value("upgrades", "damage", damage_level)
 	time_level = file.get_value("upgrades", "time", time_level)
 	looting_level = file.get_value("upgrades", "looting", looting_level)
+	music_volume = clampf(float(file.get_value("audio", "music_volume", music_volume)), 0.0, 1.0)
+	sfx_volume = clampf(float(file.get_value("audio", "sfx_volume", sfx_volume)), 0.0, 1.0)
 	debug_time_limit = file.get_value("debug", "time_limit", debug_time_limit)
+
+# Applies the saved linear sliders to their buses. Muting at zero avoids relying on a
+# finite dB approximation for silence.
+func apply_audio_settings() -> void:
+	_set_bus_volume(MUSIC_BUS, music_volume)
+	_set_bus_volume(SFX_BUS, sfx_volume)
+
+func set_music_volume(value: float) -> void:
+	music_volume = clampf(value, 0.0, 1.0)
+	_set_bus_volume(MUSIC_BUS, music_volume)
+
+func set_sfx_volume(value: float) -> void:
+	sfx_volume = clampf(value, 0.0, 1.0)
+	_set_bus_volume(SFX_BUS, sfx_volume)
+
+func _set_bus_volume(bus_name: StringName, volume: float) -> void:
+	var bus := AudioServer.get_bus_index(bus_name)
+	if bus < 0:
+		push_error("Missing audio bus: %s" % bus_name)
+		return
+	AudioServer.set_bus_mute(bus, is_zero_approx(volume))
+	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(volume, MIN_AUDIBLE_VOLUME)))
 
 func save() -> void:
 	var file := ConfigFile.new()
@@ -36,6 +66,8 @@ func save() -> void:
 	file.set_value("upgrades", "damage", damage_level)
 	file.set_value("upgrades", "time", time_level)
 	file.set_value("upgrades", "looting", looting_level)
+	file.set_value("audio", "music_volume", music_volume)
+	file.set_value("audio", "sfx_volume", sfx_volume)
 	if debug_time_limit > 0:
 		file.set_value("debug", "time_limit", debug_time_limit)
 	file.save(PATH)
@@ -46,4 +78,7 @@ func reset() -> void:
 	damage_level = 0
 	time_level = 0
 	looting_level = 0
+	music_volume = 1.0
+	sfx_volume = 1.0
+	apply_audio_settings()
 	save()

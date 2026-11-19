@@ -1254,15 +1254,19 @@ one_shot = true
 
 [node name="Slash" type="AudioStreamPlayer" parent="." unique_id=270906752]
 stream = ExtResource("20")
+bus = &"SFX"
 
 [node name="Shoot" type="AudioStreamPlayer" parent="." unique_id=48651579]
 stream = ExtResource("21")
+bus = &"SFX"
 
 [node name="Hit" type="AudioStreamPlayer" parent="." unique_id=674403552]
 stream = ExtResource("22")
+bus = &"SFX"
 
 [node name="Fall" type="AudioStreamPlayer" parent="." unique_id=1819808098]
 stream = ExtResource("23")
+bus = &"SFX"
 
 [node name="TransitionPause" type="Timer" parent="." unique_id=1552564137]
 one_shot = true

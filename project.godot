@@ -25,6 +25,10 @@ Music="*res://src/autoload/Music.tscn"
 Juice="*res://src/autoload/Juice.gd"
 DebugMenu="*res://src/autoload/DebugMenu.gd"
 
+[audio]
+
+default_bus_layout="res://default_bus_layout.tres"
+
 [debug]
 
 gdscript/warnings/untyped_declaration=1

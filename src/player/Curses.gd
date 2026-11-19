@@ -28,6 +28,7 @@ func _ready() -> void:
 		add_child(timer)
 		_timers[effect] = timer
 	_jam_sound = AudioStreamPlayer.new()
+	_jam_sound.bus = &"SFX"
 	_jam_sound.stream = JAM_SOUND
 	_jam_sound.volume_db = -8.0
 	add_child(_jam_sound)

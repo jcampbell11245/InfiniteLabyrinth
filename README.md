@@ -25,6 +25,8 @@ strike. Swing as it glints to **parry** and stun it; swing too early and you're 
 staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
+Choose **Options** on the title screen to set persistent Music and SFX volume separately.
+
 | Action | Keyboard | Controller |
 |---|---|---|
 | Move | WASD or arrow keys | D-pad |
