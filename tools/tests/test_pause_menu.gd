@@ -6,13 +6,13 @@ extends "res://tools/tests/test_case.gd"
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 
-func test_return_to_menu_button_returns_to_title() -> void:
+func test_return_to_title_button_returns_to_title() -> void:
 	Overworld.test_design = null
 	await boot_floor()
 	var menu := tree.current_scene.get_node("PauseLayer/Pause")
 	menu.call("pause")
 	expect(tree.paused, "the menu pauses the game")
-	var menu_button := menu.get_node("PauseVBox/ButtonVBox/ReturnToMenu") as Button
+	var menu_button := menu.get_node("PauseVBox/ButtonVBox/ReturnToTitle") as Button
 	expect_equal(menu_button.text, "Return to Title", "the button says Return to Title")
 	menu_button.pressed.emit()
 	await _scene_changed()
@@ -24,18 +24,29 @@ func test_return_to_menu_button_returns_to_title() -> void:
 	expect((music.get_node("TitleIntro") as AudioStreamPlayer).playing ||
 		(music.get_node("TitleLoop") as AudioStreamPlayer).playing, "title music playing")
 
-func test_return_to_menu_from_play_test_goes_to_room_editor() -> void:
+func test_return_to_title_from_play_test_goes_to_room_editor() -> void:
 	Overworld.test_design = RoomDesign.new()
 	await boot_floor()
 	var menu := tree.current_scene.get_node("PauseLayer/Pause")
 	menu.call("pause")
-	var menu_button := menu.get_node("PauseVBox/ButtonVBox/ReturnToMenu") as Button
+	var menu_button := menu.get_node("PauseVBox/ButtonVBox/ReturnToTitle") as Button
 	menu_button.pressed.emit()
 	await _scene_changed()
 	expect_equal(tree.current_scene.scene_file_path, ROOM_EDITOR,
 		"a play-test goes back to the room creator")
 	expect(Overworld.test_design == null, "the play-test design is cleared")
 	expect(!tree.paused, "the tree is running in the room creator")
+
+func test_leaving_play_test_ends_time_effects() -> void:
+	Overworld.test_design = RoomDesign.new()
+	await boot_floor()
+	var juice := autoload("Juice")
+	juice.slow_motion(0.1)
+	expect(Engine.time_scale < Tuning.game_speed, "slow motion is active in the play-test")
+	autoload("Game").overworld.leave_test()
+	await _scene_changed()
+	expect_near(Engine.time_scale, Tuning.game_speed, 0.001,
+		"leaving a play-test restores normal speed")
 
 func test_title_screen_clears_a_stale_play_test_design() -> void:
 	Overworld.test_design = RoomDesign.new()

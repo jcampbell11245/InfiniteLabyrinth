@@ -52,6 +52,9 @@ func is_test() -> bool:
 
 func leave_test() -> void:
 	get_tree().paused = false
+	# Dying in a play-test leaves slow motion running; clear it so the editor and later
+	# play-tests don't inherit it. Covers F1 as well as Return to Title.
+	Juice.end_time_effects()
 	Music.stop_all()
 	get_tree().change_scene_to_file(ROOM_EDITOR)
 

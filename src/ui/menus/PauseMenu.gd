@@ -11,7 +11,7 @@ const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 
 @onready var resume_button: Button = $PauseVBox/ButtonVBox/Resume
 @onready var options_button: Button = $PauseVBox/ButtonVBox/Options
-@onready var return_to_menu_button: Button = $PauseVBox/ButtonVBox/ReturnToMenu
+@onready var return_to_title_button: Button = $PauseVBox/ButtonVBox/ReturnToTitle
 @onready var quit_to_desktop_button: Button = $PauseVBox/ButtonVBox/QuitToDesktop
 @onready var button_vbox: VBoxContainer = $PauseVBox/ButtonVBox
 @onready var options_panel: OptionsPanel = $OptionsPanel
@@ -22,7 +22,7 @@ var _returning_to_title := false # Guards against a second press during the scen
 func _ready() -> void:
 	resume_button.pressed.connect(pause)
 	options_button.pressed.connect(show_options)
-	return_to_menu_button.pressed.connect(return_to_title)
+	return_to_title_button.pressed.connect(return_to_title)
 	quit_to_desktop_button.pressed.connect(quit_to_desktop)
 	options_panel.back_pressed.connect(hide_options)
 
