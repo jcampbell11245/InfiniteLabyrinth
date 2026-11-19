@@ -112,7 +112,7 @@ text = "options"
 [node name="ReturnToMenu" type="Button" parent="Pause/PauseVBox/ButtonVBox" unique_id=1791081582]
 layout_mode = 2
 theme_override_fonts/font = SubResource("3")
-text = "Return to title"
+text = "Return to Title"
 
 [node name="QuitToDesktop" type="Button" parent="Pause/PauseVBox/ButtonVBox" unique_id=1567813801]
 layout_mode = 2

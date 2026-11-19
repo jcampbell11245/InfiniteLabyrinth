@@ -3,7 +3,7 @@ class_name PauseMenu
 
 # Pause toggles on the pause key or the Resume button. Options opens the shared audio
 # settings panel; while it is open, pause, ui_cancel or Back returns to the buttons
-# instead of ending the pause. Return to title leaves the run for the title screen (or the
+# instead of ending the pause. Return to Title leaves the run for the title screen (or the
 # room creator during a play-test); Quit to Desktop closes the game. There's deliberately
 # no quit key: one stray press shouldn't end a run.
 
