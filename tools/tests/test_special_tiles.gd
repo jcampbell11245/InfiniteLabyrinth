@@ -136,3 +136,93 @@ func test_enemies_walk_round_traps() -> void:
 	expect(!nav.is_clear_line(left, right), "no walking straight across them")
 	var waypoint := nav.next_waypoint(left, right)
 	expect(absf(waypoint.y - left.y) > Room.CELL_SIZE * 2, "heads round the end of the spikes, to %s" % waypoint)
+
+func test_teleporter_takes_feet_brushing_its_edge() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.TELEPORT_1)
+	design.set_cell(Vector2i(10, 2), RoomDesign.Cell.TELEPORT_1)
+	var room: Room = await boot_design(design)
+	# Feet a few pixels above the teleporter's row, walking in from the left along its edge.
+	stand_on(room, Vector2i(3, 6))
+	player().global_position.y -= Room.CELL_SIZE / 2.0 + SpecialTiles.TELEPORT_GRACE - 2.0
+	await physics_frames(2)
+	Input.action_press("right")
+	var arrived := false
+	for i in 90:
+		await tree.physics_frame
+		if feet_index(room) == Vector2i(10, 2):
+			arrived = true
+			break
+	Input.action_release("right")
+	expect(arrived, "went through, though the middle of the feet never crossed the square")
+
+func test_projectiles_go_through_teleporters() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.TELEPORT_2)
+	design.set_cell(Vector2i(6, 1), RoomDesign.Cell.TELEPORT_2)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(0, 12)) # Out of the way
+	var arrow: Projectile = (load("res://src/projectiles/Arrow.tscn") as PackedScene).instantiate()
+	room.add_child(arrow)
+	arrow.global_position = room.to_global(RoomDesign.cell_centre(Vector2i(3, 6))) - SpecialTiles.PROJECTILE_DROP
+	arrow.direction = Direction.RIGHT
+	arrow.speed = 120.0
+	var went := false
+	for i in 90:
+		await tree.physics_frame
+		if !is_instance_valid(arrow):
+			break
+		var under := room.to_local(arrow.global_position + SpecialTiles.PROJECTILE_DROP)
+		if RoomDesign.floor_index(Vector2i((under / Room.CELL_SIZE).floor())).y == 1:
+			went = true
+			expect_equal(arrow.direction, Direction.RIGHT, "still flying the same way")
+			break
+	expect(went, "the arrow came out of the other teleporter")
+	if is_instance_valid(arrow):
+		arrow.queue_free()
+
+func test_destination_glows_when_near() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.TELEPORT_3)
+	design.set_cell(Vector2i(10, 10), RoomDesign.Cell.TELEPORT_3)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(1, 1))
+	await physics_frames(2)
+	expect(layer(room).glowing_teleporter() == null, "no glow from far away")
+	stand_on(room, Vector2i(5, 6)) # Next to it
+	await physics_frames(2)
+	expect_equal(layer(room).glowing_teleporter(), RoomDesign.tile_cell(Vector2i(10, 10)), "its partner glows")
+
+func test_parryable_traps_twinkle_as_they_go_live() -> void:
+	autoload("Tuning").wire_idle_time = 100.0
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(8, 8), RoomDesign.Cell.WIRES)
+	var room: Room = await boot_design(design)
+	var tiles := layer(room)
+	var before := tiles.get_child_count()
+	tiles._go_live(RoomDesign.tile_cell(Vector2i(8, 8)))
+	expect(tiles.get_child_count() > before, "a twinkle appears on the wires")
+
+func test_enemies_keep_sliding_on_ice() -> void:
+	var design := RoomDesign.new()
+	for x in range(2, 12):
+		for y in range(4, 9):
+			design.set_cell(Vector2i(x, y), RoomDesign.Cell.SLICK)
+	design.set_object(Vector2i(4, 6), "goblin")
+	design.set_facing(Vector2i(4, 6), Direction.LEFT) # Away from the player, so it stands still
+	design.set_radius(Vector2i(4, 6), 0.0)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(12, 0)) # Behind it and far off: any movement is the slide
+	var goblin: Enemy = null
+	for child in room.get_children():
+		if child is Enemy:
+			goblin = child
+	goblin.global_position.x += Room.CELL_SIZE * 2 # Off its own floor cell, onto the ice
+	await physics_frames(2)
+	var start := goblin.global_position
+	goblin.slide = Vector2(goblin.speed, 0)
+	await physics_frames(20)
+	expect(goblin.global_position.x - start.x > 6.0, "still sliding after it stopped walking (moved %.1f px)"
+		% (goblin.global_position.x - start.x))
+	await wait_real(2.0)
+	expect_equal(goblin.slide, Vector2.ZERO, "comes to a stop in the end")

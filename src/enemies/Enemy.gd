@@ -311,7 +311,7 @@ func ground_motion(motion: Vector2, delta: float) -> Vector2:
 	var frame := ground()
 	var wanted := motion * SpecialTiles.speed_factor(frame) / maxf(delta, 0.0001)
 	if SpecialTiles.is_slick(frame):
-		slide = slide.move_toward(wanted, Tuning.slick_grip * delta)
+		slide = slide.move_toward(wanted, Tuning.enemy_slick_grip * delta)
 	else:
 		slide = wanted
 	return slide * delta

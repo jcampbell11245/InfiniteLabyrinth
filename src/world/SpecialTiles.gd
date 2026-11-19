@@ -14,7 +14,8 @@ extends TileMap
 #
 #   Wires     cycle: resting, sparking (the warning), live (shocks whoever is on them).
 #   Plate     is stepped on, clicks down, then goes live like wires, then re-arms.
-#             Swinging the sword into live wires or a live plate breaks it for good.
+#             Swinging the sword into live wires or a live plate breaks it for good. Both
+#             twinkle as they go live, as an enemy does when its parry window opens.
 #   Spikes    hurt on stepping on, and again every Tuning.spike_interval while stood on.
 #   Cracked   cracks when stood on, then opens into a pit, then mends.
 #   Paste     holds whoever steps in within Tuning.paste_reach of its edge, pulling them back
@@ -22,7 +23,11 @@ extends TileMap
 #             after first catching someone.
 #   Slick, Slow, Fast   change how things move while on them; the player and enemies ask
 #             speed_factor() and is_slick() themselves.
-#   Teleport  sends whoever steps on it to the next square of the same colour and symbol.
+#   Teleport  sends whoever steps on it, and any projectile flying over it, to the next
+#             square of the same colour and symbol. It works from TELEPORT_GRACE pixels
+#             outside its square, so feet brushing its edge still go through. The square
+#             the player would be sent to glows while they're within
+#             Tuning.teleport_glow_range of one.
 #
 # The player's roll keeps them from harm (the hurtbox is off while rolling, as for hits),
 # and rolling is the way out of paste. Enemies are hurt and moved the same way, but walk
@@ -63,6 +68,15 @@ const CRUMBLE_SOUND := preload("res://assets/sfx/rumble1.wav")
 const CRUMBLE_DB := -8.0
 const TELEPORT_SOUND := preload("res://assets/sfx/magic1.wav")
 const TELEPORT_DB := -8.0
+const TELEPORT_GRACE := 5.0 # Pixels outside its square a teleporter still takes feet from
+# Projectiles fly at about chest height; this far below one is the floor it's over.
+const PROJECTILE_DROP := Vector2(0, 12)
+const PROJECTILE_GROUP := &"projectiles" # Every Projectile joins it (Projectile._ready)
+const GLOW_PULSE := 7.0 # Radians/sec the destination glow pulses at
+const GLOW_ALPHA := Vector2(0.6, 1.0) # Its least and most strength
+# Over 1, so the art added on top of itself washes out towards white.
+const GLOW_BRIGHTNESS := 2.5
+const TWINKLE_OFFSET := Vector2(0, -4) # From a trap's centre to where its twinkle shows
 
 var _room: Room
 # Cell -> {frame: Frame it was painted with, phase: Phase, left: seconds in the phase,
@@ -73,6 +87,7 @@ var _bodies := {} # Instance id -> per-body record (see _record)
 var _time := 0.0
 var _clashed_swing := -1 # Player.swing_started_frame of the swing that last broke a tile
 var _sounds := {}
+var _glow: Sprite2D # Brightens the teleporter the player would be sent to
 
 # --- Looking things up (any body, room or not) ---
 
@@ -172,6 +187,46 @@ func teleport_destination(cell: Vector2i) -> Variant:
 	squares.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y || (a.y == b.y && a.x < b.x))
 	return squares[(squares.find(cell) + 1) % squares.size()]
 
+# The teleporter that takes something at `global_point`: one whose square, grown by `grace`
+# pixels, it's inside (its own cell's first), or null.
+func teleporter_at(global_point: Vector2, grace := TELEPORT_GRACE) -> Variant:
+	var local := to_local(global_point)
+	var centre := local_to_map(local)
+	if is_teleport(painted(centre)):
+		return centre
+	for y in range(-1, 2):
+		for x in range(-1, 2):
+			var cell := centre + Vector2i(x, y)
+			if is_teleport(painted(cell)) && _cell_rect(cell).grow(grace).has_point(local):
+				return cell
+	return null
+
+# The nearest teleporter within `reach` pixels of `global_point` that has somewhere to send
+# things, or null.
+func teleporter_near(global_point: Vector2, reach: float) -> Variant:
+	var local := to_local(global_point)
+	var best: Variant = null
+	var best_distance := INF
+	for cell: Vector2i in get_used_cells(0):
+		if !is_teleport(painted(cell)) || teleport_destination(cell) == null:
+			continue
+		# Measured to the square's edge, so the range is the same from every side.
+		var rect := _cell_rect(cell)
+		var distance := (local.clamp(rect.position, rect.end) - local).length()
+		if distance <= reach && distance < best_distance:
+			best = cell
+			best_distance = distance
+	return best
+
+# The teleporter the destination glow is on, or null if it's off.
+func glowing_teleporter() -> Variant:
+	if _glow == null || !_glow.visible:
+		return null
+	return local_to_map(_glow.position)
+
+func _cell_rect(cell: Vector2i) -> Rect2:
+	return Rect2(Vector2(cell) * Room.CELL_SIZE, Vector2.ONE * Room.CELL_SIZE)
+
 # --- Running in a room ---
 
 func _ready() -> void:
@@ -193,6 +248,15 @@ func _ready() -> void:
 		"crumble": _add_sound(CRUMBLE_SOUND, CRUMBLE_DB),
 		"teleport": _add_sound(TELEPORT_SOUND, TELEPORT_DB),
 	}
+	_glow = Sprite2D.new()
+	_glow.texture = TEXTURE
+	_glow.region_enabled = true
+	_glow.z_index = 1 # Over the tiles, under the player
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD # Brightens towards white
+	_glow.material = additive
+	_glow.visible = false
+	add_child(_glow)
 
 func _add_sound(stream: AudioStream, volume_db: float) -> AudioStreamPlayer:
 	var sound := AudioStreamPlayer.new()
@@ -234,9 +298,33 @@ func _physics_process(delta: float) -> void:
 		if _affects(enemy):
 			_affect(enemy, enemy.feet_position(), delta)
 			seen[enemy.get_instance_id()] = true
+	# Projectiles live on the room or the overworld; only those over this room's floor count.
+	for node in get_tree().get_nodes_in_group(PROJECTILE_GROUP):
+		var shot := node as Projectile
+		if shot != null && !shot.is_queued_for_deletion() \
+				&& _room.floor_rect.has_point(_room.to_local(shot.global_position + PROJECTILE_DROP)):
+			_carry_projectile(shot)
+			seen[shot.get_instance_id()] = true
 	for id: int in _bodies.keys():
 		if !seen.has(id):
 			_bodies.erase(id)
+	_update_glow(player)
+
+# Lights up where the player would be sent from the teleporter they're nearest, if they're
+# within Tuning.teleport_glow_range of one.
+func _update_glow(player: Player) -> void:
+	var near: Variant = teleporter_near(player.global_position + Player.FEET, Tuning.teleport_glow_range) \
+		if player.visible else null
+	if near == null:
+		_glow.visible = false
+		return
+	var destination: Vector2i = teleport_destination(near)
+	_glow.position = map_to_local(destination)
+	_glow.region_rect = Rect2(painted(destination) * Room.CELL_SIZE, 0, Room.CELL_SIZE, Room.CELL_SIZE)
+	var pulse := (sin(_time * GLOW_PULSE) + 1.0) / 2.0
+	_glow.modulate = Color(GLOW_BRIGHTNESS, GLOW_BRIGHTNESS, GLOW_BRIGHTNESS,
+		lerpf(GLOW_ALPHA.x, GLOW_ALPHA.y, pulse))
+	_glow.visible = true
 
 # --- Tile states ---
 
@@ -299,6 +387,8 @@ func _go_live(cell: Vector2i) -> void:
 	tile.cycle += 1
 	var live := Tuning.wire_live_time if tile.frame == Frame.WIRES else Tuning.plate_live_time
 	_set_phase(cell, Phase.LIVE, live)
+	# The clash window opens now, so it gets the twinkle an enemy shows as its parry window opens.
+	Juice.twinkle(self, map_to_local(cell) + TWINKLE_OFFSET)
 	Juice.burst(self, _centre(cell), SHOCK_COLOR, 8, 60.0, Vector2.ZERO, 1.5, 0.25)
 	Juice.play(_sounds.shock, 0.08, SHOCK_PITCH)
 
@@ -370,8 +460,11 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 	var cell := _cell_of(feet)
 	var entered: bool = cell != record.cell
 	record.cell = cell
-	if record.arrived != null && record.arrived != cell:
-		record.arrived = null
+	var teleporter: Variant = teleporter_at(feet)
+	if record.arrived != null && record.arrived != teleporter:
+		record.arrived = null # Stepped off the square it arrived on
+	if teleporter != null && record.arrived == null && _teleport(body, record, teleporter, feet):
+		return
 	var player := body as Player
 	var rolling := player != null && player.rolling.time_left > 0
 	var moved: float = (body.global_position - record.last_position).length() / maxf(delta, 0.0001)
@@ -404,11 +497,18 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 					if tile.dissolve_at < 0:
 						tile.dissolve_at = _time + Tuning.paste_dissolve_time
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
-			_:
-				if is_teleport(tile.frame) && record.arrived == null:
-					_teleport(body, record, cell, feet)
-					return
 	_hold_in_paste(body, record, feet, moved, delta)
+
+# A projectile over a teleporter goes through it like anything else, flying on the same way
+# out of the far square. `point` is the floor under it.
+func _carry_projectile(shot: Projectile) -> void:
+	var record := _record(shot)
+	var point := shot.global_position + PROJECTILE_DROP
+	var teleporter: Variant = teleporter_at(point, 0.0) # Squarely over it, not grazing past
+	if record.arrived != null && record.arrived != teleporter:
+		record.arrived = null
+	if teleporter != null && record.arrived == null:
+		_teleport(shot, record, teleporter, point)
 
 func _hurt(body: Node2D, amount: float) -> void:
 	if body is Player:
@@ -445,10 +545,12 @@ func _check_clash(player: Player) -> void:
 			Juice.shake(Juice.SHAKE_MEDIUM)
 			return
 
-func _teleport(body: CharacterBody2D, record: Dictionary, cell: Vector2i, feet: Vector2) -> void:
+# Moves `body` so that `feet` (the point of it that stands on tiles) lands in the middle of
+# where `cell` sends things. False if `cell` has no partner, so nothing happened.
+func _teleport(body: Node2D, record: Dictionary, cell: Vector2i, feet: Vector2) -> bool:
 	var destination: Variant = teleport_destination(cell)
 	if destination == null:
-		return
+		return false
 	var colour := _teleport_colour(painted(cell))
 	Juice.burst(self, feet, colour, 12, 60.0, Vector2.ZERO, 1.5, 0.35)
 	body.global_position += _centre(destination) - feet
@@ -461,6 +563,7 @@ func _teleport(body: CharacterBody2D, record: Dictionary, cell: Vector2i, feet: 
 		player.knockback = Vector2.ZERO
 	Juice.burst(self, _centre(destination), colour, 12, 60.0, Vector2.ZERO, 1.5, 0.35)
 	Juice.play(_sounds.teleport, 0.08)
+	return true
 
 func _teleport_colour(frame: int) -> Color:
 	var colours := [Color("e85050"), Color("4f8fff"), Color("4fd060"), Color("f0d040")]
@@ -494,10 +597,14 @@ func _drift_on_ice(enemy: Enemy, feet: Vector2, delta: float) -> void:
 	if !is_slick(frame_at(_room, feet)):
 		enemy.slide = Vector2.ZERO
 		return
-	if enemy.walked_this_frame() || enemy.slide == Vector2.ZERO:
+	# A frozen enemy (Tuning.freeze_enemies) is out of the physics world and can't move.
+	if enemy.walked_this_frame() || enemy.slide == Vector2.ZERO || !enemy.can_process():
 		return
-	enemy.slide = enemy.slide.move_toward(Vector2.ZERO, Tuning.slick_grip * delta)
-	enemy.move_and_collide(enemy.slide * delta)
+	enemy.slide = enemy.slide.move_toward(Vector2.ZERO, Tuning.enemy_slick_grip * delta)
+	var collision := enemy.move_and_collide(enemy.slide * delta)
+	if collision != null: # Slid into something: carry on along it, losing what went into it
+		enemy.slide = enemy.slide.slide(collision.get_normal())
+		enemy.move_and_collide(collision.get_remainder().slide(collision.get_normal()))
 
 # Tiles work on every enemy but the boss (whose room has none anyway).
 func _affects(node: Node) -> bool:
