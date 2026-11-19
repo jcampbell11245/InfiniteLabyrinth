@@ -9,6 +9,11 @@ extends RefCounted
 # Enemies ask next_waypoint() where to head for: straight at the target when nothing is in
 # the way, otherwise the furthest point along the A* path round the obstacles that they can
 # walk straight to. Points are room-local pixels, measured at the enemy's feet.
+#
+# Special tiles that hurt or hold (SpecialTiles.avoided_cells) are avoided rather than
+# blocked: they don't count as open for walking straight or picking a spot, and paths cost
+# Tuning.trap_avoid_weight times as much through them, so enemies go round unless the way
+# round is much longer, then cut across. Cracked floor that gives way is blocked while it's a hole.
 
 # Physics layers that stop an enemy's feet: general walls and rocks, pitfalls, wall tops.
 const SOLID_MASK := (1 << (Constants.Layer.GENERAL - 1)) | (1 << (Constants.Layer.PITFALL - 1)) \
@@ -19,6 +24,7 @@ const FEET_HALF_WIDTH := 6.0 # Pixels either side of a walk's line that must be 
 
 var _grid := AStarGrid2D.new()
 var _region: Rect2i
+var _avoided := {} # Cell -> true for special tiles enemies keep off
 
 func _init(room: Room) -> void:
 	var cell := Room.CELL_SIZE
@@ -45,6 +51,38 @@ func _init(room: Room) -> void:
 			query.transform = Transform2D(0, room.to_global(centre))
 			if !space.intersect_shape(query, 1).is_empty():
 				_grid.set_point_solid(Vector2i(x, y))
+	var special := room.get_node_or_null(SpecialTiles.NODE_NAME) as SpecialTiles
+	if special != null:
+		for avoided in special.avoided_cells():
+			set_avoided(avoided, true)
+			if special.is_hole(avoided):
+				set_blocked(avoided, true)
+	# The avoided cells' path cost follows Tuning.trap_avoid_weight as it changes (the debug
+	# menu), rather than keeping the value it had when the grid was built.
+	Tuning.changed.connect(_on_tuning_changed)
+
+func _on_tuning_changed(key: String) -> void:
+	if key == "trap_avoid_weight":
+		for cell: Vector2i in _avoided:
+			_grid.set_point_weight_scale(cell, Tuning.trap_avoid_weight)
+
+# Marks `cell` as one enemies keep off when they can (or not).
+func set_avoided(cell: Vector2i, on: bool) -> void:
+	if !_region.has_point(cell):
+		return
+	if on:
+		_avoided[cell] = true
+	else:
+		_avoided.erase(cell)
+	_grid.set_point_weight_scale(cell, Tuning.trap_avoid_weight if on else 1.0)
+
+# Marks `cell` as impassable (a hole opening up) or open again.
+func set_blocked(cell: Vector2i, on: bool) -> void:
+	if _region.has_point(cell):
+		_grid.set_point_solid(cell, on)
+
+func is_avoided(point: Vector2) -> bool:
+	return _avoided.has(_cell_of(point))
 
 # Where to walk next, from `from` towards `to` (room-local feet positions).
 func next_waypoint(from: Vector2, to: Vector2) -> Vector2:
@@ -63,25 +101,31 @@ func next_waypoint(from: Vector2, to: Vector2) -> Vector2:
 			return path[i]
 	return path[mini(1, path.size() - 1)]
 
+# Open floor an enemy can stand on and means to: not blocked, and not an avoided tile.
 func is_open(point: Vector2) -> bool:
 	var cell := _cell_of(point)
-	return _region.has_point(cell) && !_grid.is_point_solid(cell)
+	return _region.has_point(cell) && !_grid.is_point_solid(cell) && !_avoided.has(cell)
 
-# True when feet could walk straight from `from` to `to` without crossing a blocked cell.
+# True when feet could walk straight from `from` to `to` without crossing a blocked or
+# avoided cell. The cell it starts in doesn't count, so one standing on a trap can walk off.
 func is_clear_line(from: Vector2, to: Vector2) -> bool:
 	var along := to - from
 	var length := along.length()
 	var side := Vector2.ZERO if length == 0 else along.orthogonal() / length * FEET_HALF_WIDTH
 	var steps := maxi(1, ceili(length / LINE_STEP))
+	var start := _cell_of(from)
 	for i in range(steps + 1):
 		var point := from + along * (float(i) / steps)
 		for offset in [Vector2.ZERO, side, -side]:
-			if !is_open(point + offset):
+			var cell := _cell_of(point + offset)
+			if !_region.has_point(cell) || _grid.is_point_solid(cell):
+				return false
+			if cell != start && _avoided.has(cell):
 				return false
 	return true
 
-# `point` if it's on open floor, otherwise the centre of the nearest open cell, or null if
-# the whole floor is blocked.
+# `point` if it's on open floor, otherwise the centre of the nearest unblocked cell, or
+# null if the whole floor is blocked.
 func nearest_open(point: Vector2) -> Variant:
 	if is_open(point):
 		return point
