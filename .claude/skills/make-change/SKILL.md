@@ -108,6 +108,13 @@ static typing, comments that explain why, LF line endings, careful `.tscn` edits
 provenance in `assets/sfx/SOURCE.txt`, README/BUGS.md updates. Add or update a test in
 `tools/tests/` for rules that can be checked without the screen.
 
+**Assets:** final assets must be hand made or from an open-source library (AGENTS.md →
+Assets). If the change needs art, a sound, music or a font that doesn't exist yet, make a
+temporary placeholder and add it to [PENDING_ASSETS.md](../../../PENDING_ASSETS.md) in this
+change, with a preview in `docs/pending_assets/` (PNG for still art, GIF for an animation, a
+link for a sound). If you replace a placeholder, remove its row and preview. Code effects
+(particles, shaders, tints) and simple edits (flips, slices, re-pitched sounds) are exempt.
+
 ## 6. Run the checks
 
 ```bash
@@ -134,6 +141,8 @@ gh pr create --base master --head <branch> --title "<title>" --body "<summary>
 How it was checked:
 - tools/check.sh passes
 - <screenshots looked at / tests added>
+
+Placeholder assets added (listed in PENDING_ASSETS.md): <none, or which>
 
 Needs a human: <playtest, listen to the new sound, ...>
 

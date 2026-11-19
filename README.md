@@ -154,6 +154,10 @@ Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (
 4. **Open a pull request** into `master` that says `Closes #<issue>`, get the checks green,
    and ask a teammate for the one approving review it needs.
 
+Assets in the finished game are hand made or from open-source libraries. Until a real asset
+exists, use a placeholder and list it in [PENDING_ASSETS.md](PENDING_ASSETS.md) (rules in
+[AGENTS.md → Assets](AGENTS.md#assets)).
+
 Only the project owner commits to `master` directly. AI agents do all of this through the
 `make-change` skill ([.claude/skills/make-change/SKILL.md](.claude/skills/make-change/SKILL.md));
 the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
@@ -227,7 +231,8 @@ player from spikes and shocks.
 
 Their timings, damage and strengths are in the debug menu's **Tiles** tab (`Tuning.gd`). In a
 room scene they're a `SpecialTiles` layer (`src/world/tiles/SpecialTiles.tscn`), painted with
-the frames of `assets/sprites/tiles/special_tiles.png` (placeholder art); the room creator's
+the frames of `assets/sprites/tiles/special_tiles.png` (placeholder art, see
+[PENDING_ASSETS.md](PENDING_ASSETS.md)); the room creator's
 export lists them in its grid.
 
 ### Debug menu
@@ -283,7 +288,8 @@ See [BUGS.md](BUGS.md) and the open issues.
 ## Layout
 
 ```
-assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts
+assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts; placeholders
+               are listed in PENDING_ASSETS.md, with previews in docs/pending_assets/
 src/autoload/  Tuning (every gameplay number, edited live by the debug menu), SaveData (save
                file), Game (coins, keys, game-wide signals and references to the player,
                camera and rooms), Music, Juice (hit-stop, slow motion, screen shake, sound
