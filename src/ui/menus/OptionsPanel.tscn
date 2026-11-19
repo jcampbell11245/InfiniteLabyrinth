@@ -1,0 +1,114 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/ui/menus/OptionsPanel.gd" id="1"]
+[ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.035, 0.035, 0.055, 0.94)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.75, 0.65, 0.35, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_focus"]
+bg_color = Color(0.35, 0.28, 0.1, 0.8)
+
+[node name="OptionsPanel" type="Control"]
+visible = false
+layout_mode = 0
+offset_right = 704.0
+offset_bottom = 396.0
+script = ExtResource("1")
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 704.0
+offset_bottom = 396.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 74.0
+offset_right = 534.0
+offset_bottom = 322.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Heading" type="Label" parent="Panel"]
+layout_mode = 0
+offset_top = 22.0
+offset_right = 364.0
+offset_bottom = 46.0
+theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 16
+text = "OPTIONS"
+horizontal_alignment = 1
+
+[node name="MusicLabel" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 80.0
+offset_right = 326.0
+offset_bottom = 98.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 10
+text = "MUSIC"
+
+[node name="MusicSlider" type="HSlider" parent="Panel"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 104.0
+offset_right = 326.0
+offset_bottom = 124.0
+focus_neighbor_top = NodePath("../Back")
+focus_neighbor_bottom = NodePath("../SfxSlider")
+focus_next = NodePath("../SfxSlider")
+focus_previous = NodePath("../Back")
+max_value = 100.0
+step = 5.0
+
+[node name="SfxLabel" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 140.0
+offset_right = 326.0
+offset_bottom = 158.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 10
+text = "SFX"
+
+[node name="SfxSlider" type="HSlider" parent="Panel"]
+layout_mode = 0
+offset_left = 38.0
+offset_top = 164.0
+offset_right = 326.0
+offset_bottom = 184.0
+focus_neighbor_top = NodePath("../MusicSlider")
+focus_neighbor_bottom = NodePath("../Back")
+focus_next = NodePath("../Back")
+focus_previous = NodePath("../MusicSlider")
+max_value = 100.0
+step = 5.0
+
+[node name="Back" type="Button" parent="Panel"]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 202.0
+offset_right = 252.0
+offset_bottom = 230.0
+focus_neighbor_top = NodePath("../SfxSlider")
+focus_neighbor_bottom = NodePath("../MusicSlider")
+focus_next = NodePath("../MusicSlider")
+focus_previous = NodePath("../SfxSlider")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 10
+theme_override_styles/focus = SubResource("StyleBoxFlat_focus")
+flat = true
+text = "BACK"

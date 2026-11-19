@@ -2,6 +2,7 @@
 
 [ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="1"]
 [ext_resource type="Script" uid="uid://bnj0rj324h43v" path="res://src/ui/menus/PauseMenu.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/ui/menus/OptionsPanel.tscn" id="3"]
 
 [sub_resource type="FontFile" id="1"]
 fallbacks = Array[Font]([ExtResource("1")])
@@ -103,7 +104,17 @@ layout_mode = 2
 theme_override_fonts/font = SubResource("2")
 text = "resume"
 
+[node name="Options" type="Button" parent="Pause/PauseVBox/ButtonVBox"]
+layout_mode = 2
+theme_override_fonts/font = SubResource("2")
+text = "options"
+
 [node name="Quit" type="Button" parent="Pause/PauseVBox/ButtonVBox" unique_id=1791081582]
 layout_mode = 2
 theme_override_fonts/font = SubResource("3")
 text = "quit"
+
+[node name="OptionsPanel" parent="Pause" instance=ExtResource("3")]
+offset_left = -125.0
+offset_top = -75.0
+scale = Vector2(2.72727, 2.72727)
