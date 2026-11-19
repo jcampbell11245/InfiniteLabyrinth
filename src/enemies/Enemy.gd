@@ -356,6 +356,9 @@ func fall() -> void:
 # True if walking `motion` keeps it off the tiles enemies avoid (or it's already on one,
 # so stepping off is fine). Walls and pits are left to its collisions.
 func _safe_step(motion: Vector2) -> bool:
+	# A room with no special tiles has no traps, and no need to build its pathfinding for this.
+	if room.get_node_or_null(SpecialTiles.NODE_NAME) == null:
+		return true
 	var nav := room.nav()
 	var feet := room.to_local(feet_position())
 	var ahead := feet + motion.normalized() * Room.CELL_SIZE / 2.0

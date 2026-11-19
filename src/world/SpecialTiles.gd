@@ -71,6 +71,7 @@ const CRUMBLE_SOUND := preload("res://assets/sfx/rumble1.wav")
 const CRUMBLE_DB := -8.0
 const TELEPORT_SOUND := preload("res://assets/sfx/magic1.wav")
 const TELEPORT_DB := -8.0
+const SFX_BUS := &"SFX"
 const PASTE_STICK_SOUND := preload("res://assets/sfx/paste_stick.wav")
 const PASTE_STRETCH_SOUND := preload("res://assets/sfx/paste_stretch.wav")
 const PASTE_SNAP_SOUND := preload("res://assets/sfx/paste_snap.wav")
@@ -117,7 +118,7 @@ var _glow: Sprite2D # Brightens the teleporter the player would be sent to
 var _occupied := {} # Cells someone's feet are on this frame
 var _held := {} # Paste cells holding someone this frame
 var _squishes := {} # Teleporter cell -> the Sprite2D springing back on it (_squish)
-var _fx: Node2D # Draws the tiles' little animations over them (_draw_fx)
+var _fx: SpecialTilesFx # Draws the tiles' little animations over them
 
 # --- Looking things up (any body, room or not) ---
 
@@ -132,15 +133,12 @@ func painted(cell: Vector2i) -> int:
 # What a body standing at `global_point` stands on: the SpecialTiles of the room it's in
 # and the painted frame there, or -1 if nothing special.
 static func frame_at(room: Node, global_point: Vector2) -> int:
-	if room == null:
-		return -1
-	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles
-	if layer == null:
-		return -1
-	var cell := layer.local_to_map(layer.to_local(global_point))
-	if !layer._tiles.has(cell):
-		return layer.painted(cell)
-	return layer._tiles[cell].frame
+	var layer := _layer_in(room)
+	return layer.frame_under(global_point) if layer != null else -1
+
+# The frame painted under `global_point` on this layer, or -1.
+func frame_under(global_point: Vector2) -> int:
+	return painted(local_to_map(to_local(global_point)))
 
 # Walk, roll and attack speed on `frame`, as a multiple of normal.
 static func speed_factor(frame: int) -> float:
@@ -154,11 +152,6 @@ static func is_slick(frame: int) -> bool:
 
 static func is_teleport(frame: int) -> bool:
 	return frame >= Frame.TELEPORT_1 && frame <= Frame.TELEPORT_4
-
-# The frames a tile can be painted with (its resting look).
-static func painted_frames() -> Array[int]:
-	return [Frame.WIRES, Frame.SPIKES, Frame.CRACKED, Frame.SLICK, Frame.PLATE, Frame.PASTE,
-		Frame.SLOW, Frame.FAST, Frame.TELEPORT_1, Frame.TELEPORT_2, Frame.TELEPORT_3, Frame.TELEPORT_4]
 
 # A picture of `frame`, for the room creator's tool buttons.
 static func icon(frame: int) -> AtlasTexture:
@@ -184,6 +177,21 @@ func painted_cells() -> Array[Vector2i]:
 		cells.assign(_tiles.keys())
 		return cells
 	return get_used_cells(0)
+
+# --- Read by SpecialTilesFx ---
+
+# The running state of the tile on `cell` (frame, phase, seconds left in it), or an empty
+# dictionary outside a room. For reading only.
+func tile_state(cell: Vector2i) -> Dictionary:
+	return _tiles.get(cell, {})
+
+# True if the paste on `cell` is holding someone this frame.
+func is_holding_at(cell: Vector2i) -> bool:
+	return _held.has(cell)
+
+# Seconds the rules have run for, which the animations are timed by.
+func clock() -> float:
+	return _time
 
 # Cells enemies should keep off when they can: anything that hurts or holds them.
 func avoided_cells() -> Array[Vector2i]:
@@ -254,7 +262,7 @@ func teleporter_near(global_point: Vector2, reach: float) -> Variant:
 			best_distance = distance
 	return best
 
-# The teleporter the destination glow is on, or null if it's off.
+# The teleporter the destination glow is on, or null if it's off. Only the tests use it.
 func glowing_teleporter() -> Variant:
 	if _glow == null || !_glow.visible:
 		return null
@@ -296,15 +304,18 @@ func _ready() -> void:
 	_glow.material = additive
 	_glow.visible = false
 	add_child(_glow)
-	_fx = Node2D.new()
-	_fx.z_index = 1 # Over the tiles, under the player
-	_fx.draw.connect(_draw_fx)
+	_fx = SpecialTilesFx.new()
+	_fx.layer = self
 	add_child(_fx)
 
 func _add_sound(stream: AudioStream, volume_db: float) -> AudioStreamPlayer:
 	var sound := AudioStreamPlayer.new()
 	sound.stream = stream
 	sound.volume_db = volume_db
+	# Sound effects go on the SFX bus, which the SFX volume slider controls, once the
+	# project has one; until then they stay on Master.
+	if AudioServer.get_bus_index(SFX_BUS) != -1:
+		sound.bus = SFX_BUS
 	add_child(sound)
 	return sound
 
@@ -344,8 +355,7 @@ func _physics_process(delta: float) -> void:
 			_affect(enemy, enemy.feet_position(), delta)
 			seen[enemy.get_instance_id()] = true
 	_show_plates()
-	_ambient_effects(delta)
-	_fx.queue_redraw()
+	_fx.step(delta)
 	# Projectiles live on the room or the overworld; only those over this room's floor count.
 	for node in get_tree().get_nodes_in_group(PROJECTILE_GROUP):
 		var shot := node as Projectile
@@ -512,28 +522,24 @@ func _record(body: Node2D) -> Dictionary:
 			strain = 0.0, hauling = false, edges = 0}
 	return _bodies[id]
 
-# True while paste holds `body` in `room`.
-static func is_stuck_in(room: Node, body: Node) -> bool:
-	return paste_bounds_in(room, body) != null
+# --- Paste, asked about from outside (Player, Enemy and tests) ---
+# Each instance method answers for this layer; the static *_in versions take the room a body
+# is in, which may have no layer. Neither shows other scripts the per-body records.
 
-# Where the feet of `body` in `room` may go while paste holds it (global pixels: the paste's
-# square grown by Tuning.paste_reach), or null if nothing holds it. Enemies stop walking at
-# its edge (Enemy.ground_motion).
-# True while paste in `room` hauls `body` (an enemy) back to its middle, after it strained
-# at the edge for Tuning.paste_enemy_strain_time. It can't walk meanwhile (Enemy.ground_motion).
-static func is_hauled_in(room: Node, body: Node) -> bool:
-	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
-	return layer != null && layer._bodies.get(body.get_instance_id(), {}).get("hauling", false)
-
-static func paste_bounds_in(room: Node, body: Node) -> Variant:
-	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
-	if layer == null:
-		return null
-	var stuck: Variant = layer._bodies.get(body.get_instance_id(), {}).get("stuck")
+# Where the feet of `body` may go while paste holds it (global pixels: the paste's square
+# grown by Tuning.paste_reach), or null if nothing holds it. Enemies stop walking at its
+# edge (Enemy.ground_motion).
+func paste_bounds(body: Node) -> Variant:
+	var stuck: Variant = _bodies.get(body.get_instance_id(), {}).get("stuck")
 	if stuck == null:
 		return null
-	var square := Rect2(layer.to_global(Vector2(stuck as Vector2i) * Room.CELL_SIZE), Vector2.ONE * Room.CELL_SIZE)
+	var square := Rect2(to_global(Vector2(stuck as Vector2i) * Room.CELL_SIZE), Vector2.ONE * Room.CELL_SIZE)
 	return square.grow(Tuning.paste_reach)
+
+# True while paste hauls `body` (an enemy) back to its middle, after it strained at the edge
+# for Tuning.paste_enemy_strain_time. It can't walk meanwhile (Enemy.ground_motion).
+func is_hauling(body: Node) -> bool:
+	return _bodies.get(body.get_instance_id(), {}).get("hauling", false)
 
 # How much the paste holding `body` still holds it: the share of the rolls (player) or trips
 # to the edge (enemy) it needs to escape that it has yet to make, 1 just caught down towards
@@ -547,10 +553,26 @@ func paste_left(body: Node) -> float:
 	var done: int = record.rolls if body is Player else record.edges
 	return clampf(float(needed - done) / needed, 0.0, 1.0)
 
-# The same for a body in `room`, which may have no special tiles.
+static func paste_bounds_in(room: Node, body: Node) -> Variant:
+	var layer := _layer_in(room)
+	return layer.paste_bounds(body) if layer != null else null
+
+static func is_hauled_in(room: Node, body: Node) -> bool:
+	var layer := _layer_in(room)
+	return layer != null && layer.is_hauling(body)
+
 static func paste_left_in(room: Node, body: Node) -> float:
-	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
+	var layer := _layer_in(room)
 	return layer.paste_left(body) if layer != null else 0.0
+
+# True while paste holds `body` in `room`. Only the tests use it; game code asks
+# paste_bounds_in, which says where the body may go as well.
+static func is_stuck_in(room: Node, body: Node) -> bool:
+	return paste_bounds_in(room, body) != null
+
+# The room's SpecialTiles layer, or null if it has none (or there's no room).
+static func _layer_in(room: Node) -> SpecialTiles:
+	return room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
 
 func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 	var record := _record(body)
@@ -570,36 +592,45 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 		_drift_on_ice(body as Enemy, feet, delta)
 
 	if _tiles.has(cell):
-		var tile: Dictionary = _tiles[cell]
-		match tile.frame:
-			Frame.SPIKES:
-				if !rolling && (entered || _time >= record.spike_next):
-					record.spike_next = _time + Tuning.spike_interval
-					_hurt(body, Tuning.spike_damage)
-			Frame.WIRES, Frame.PLATE:
-				if tile.frame == Frame.PLATE && tile.phase == Phase.RESTING && !tile.has("rearm_at"):
-					_set_phase(cell, Phase.WARNING, Tuning.plate_delay) # Click
-					Juice.burst(self, _centre(cell), DUST, 4, 20.0, Vector2.ZERO, 1.0, 0.2)
-				if tile.phase == Phase.LIVE && !rolling && record.shocked.get(cell, -1) != tile.cycle:
-					record.shocked[cell] = tile.cycle
-					_shock(body)
-			Frame.CRACKED:
-				if tile.phase == Phase.RESTING:
-					_set_phase(cell, Phase.WARNING, Tuning.crack_time)
-			Frame.PASTE:
-				if tile.phase == Phase.RESTING && record.stuck == null && !rolling \
-						&& _time >= record.paste_free_until:
-					record.stuck = cell
-					record.stretching = false
-					record.snapped = false
-					record.strain = 0.0
-					record.hauling = false
-					record.edges = 0
-					record.rolls = 0
-					record.was_rolling = false
-					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
-					Juice.play(_sounds.stick, 0.08)
+		_step_on(body, record, cell, feet, entered, rolling)
 	_hold_in_paste(body, record, feet, delta)
+
+# What the tile on `cell` does to `body`, whose feet are on it (just `entered`, or still).
+# A roll keeps the player from spikes, shocks and paste.
+func _step_on(body: CharacterBody2D, record: Dictionary, cell: Vector2i, feet: Vector2,
+		entered: bool, rolling: bool) -> void:
+	var tile: Dictionary = _tiles[cell]
+	match tile.frame:
+		Frame.SPIKES:
+			if !rolling && (entered || _time >= record.spike_next):
+				record.spike_next = _time + Tuning.spike_interval
+				_hurt(body, Tuning.spike_damage)
+		Frame.WIRES, Frame.PLATE:
+			if tile.frame == Frame.PLATE && tile.phase == Phase.RESTING && !tile.has("rearm_at"):
+				_set_phase(cell, Phase.WARNING, Tuning.plate_delay) # Click
+				Juice.burst(self, _centre(cell), DUST, 4, 20.0, Vector2.ZERO, 1.0, 0.2)
+			if tile.phase == Phase.LIVE && !rolling && record.shocked.get(cell, -1) != tile.cycle:
+				record.shocked[cell] = tile.cycle
+				_shock(body)
+		Frame.CRACKED:
+			if tile.phase == Phase.RESTING:
+				_set_phase(cell, Phase.WARNING, Tuning.crack_time)
+		Frame.PASTE:
+			if record.stuck == null && !rolling && _time >= record.paste_free_until:
+				_catch_in_paste(record, cell, feet)
+
+# The paste on `cell` catches whoever `record` is for, starting their escape afresh.
+func _catch_in_paste(record: Dictionary, cell: Vector2i, feet: Vector2) -> void:
+	record.stuck = cell
+	record.stretching = false
+	record.snapped = false
+	record.strain = 0.0
+	record.hauling = false
+	record.edges = 0
+	record.rolls = 0
+	record.was_rolling = false
+	Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
+	Juice.play(_sounds.stick, 0.08)
 
 # A projectile over a teleporter goes through it like anything else, flying on the same way
 # out of the far square. It flies at chest height, so it's drawn PROJECTILE_DROP above the
@@ -660,7 +691,7 @@ func _teleport(body: Node2D, record: Dictionary, cell: Vector2i, feet: Vector2) 
 	var destination: Variant = teleport_destination(cell)
 	if destination == null:
 		return false
-	var colour := _teleport_colour(painted(cell))
+	var colour := teleport_colour(painted(cell))
 	Juice.burst(self, feet, colour, 12, 60.0, Vector2.ZERO, 1.5, 0.35)
 	var travel := _travel_direction(body, cell, feet)
 	_squish(cell, travel, true)
@@ -728,7 +759,7 @@ func _end_squish(cell: Vector2i, sprite: Sprite2D) -> void:
 		_show_frame(cell, painted(cell))
 	sprite.queue_free()
 
-func _teleport_colour(frame: int) -> Color:
+static func teleport_colour(frame: int) -> Color:
 	var colours := [Color("e85050"), Color("4f8fff"), Color("4fd060"), Color("f0d040")]
 	return colours[clampi(frame - Frame.TELEPORT_1, 0, TELEPORT_PAIRS - 1)]
 
@@ -741,77 +772,98 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, de
 	if record.stuck == null:
 		return
 	var cell: Vector2i = record.stuck
-	var tile: Dictionary = _tiles[cell]
 	var player := body as Player
 	_held[cell] = true
-	if player != null:
-		var rolling := player.rolling.time_left > 0
-		if rolling && !record.was_rolling: # A new roll
-			record.rolls += 1
-			if record.rolls >= Tuning.paste_rolls_to_escape:
-				record.was_rolling = true
-				# Not caught again mid-roll.
-				_free_from_paste(record, feet, Direction.to_vector(player.direction), Tuning.roll_duration + 0.2)
-				return
-			Juice.burst(self, feet, PASTE_COLOR, 6, 40.0, Direction.to_vector(player.direction), 1.5, 0.3)
-			Juice.play(_sounds.stretch, 0.08, 1.0 + 0.15 * record.rolls) # Higher as it gives
-		record.was_rolling = rolling
-	var centre := _centre(cell)
-	var offset := feet - centre
+	if player != null && _rolled_free(player, record, feet):
+		return
+	var offset := feet - _centre(cell)
 	var half := Room.CELL_SIZE / 2.0 + Tuning.paste_reach
 	var held := offset.clamp(-Vector2.ONE * half, Vector2.ONE * half)
 	# Enemies stop just short of the edge (their next step would cross it), hence the slack.
 	var at_limit := held != offset || maxf(absf(offset.x), absf(offset.y)) >= half - PASTE_EDGE_SLACK
-	var pull := false
-	if player != null:
-		# The player is pulled back to the middle whenever they stop walking.
-		var walking := player.velocity.length() > MOVING_SPEED
-		if at_limit && walking && !record.stretching:
-			record.stretching = true
-			Juice.play(_sounds.stretch, 0.08) # A creak as they reach the limit
-		if !walking:
-			record.stretching = false
-			pull = true
-	else:
-		# An enemy runs on the spot at the edge (Enemy.ground_motion) for
-		# Tuning.paste_enemy_strain_time, then the paste slowly hauls it back to the middle
-		# (Tuning.paste_enemy_pull), where it can set off again. It can't walk while it's
-		# hauled (is_hauled_in). The Tuning.paste_enemy_escape_edges-th time it reaches the
-		# edge, it tears free.
-		if record.hauling:
-			pull = true
-		elif at_limit:
-			if !record.stretching:
-				record.stretching = true
-				record.edges += 1
-				if record.edges >= Tuning.paste_enemy_escape_edges:
-					_free_from_paste(record, feet, offset.normalized())
-					return
-				Juice.play(_sounds.stretch, 0.08)
-			record.strain += delta
-			if record.strain >= Tuning.paste_enemy_strain_time:
-				record.hauling = true
-				pull = true
-		else:
-			record.stretching = false
-			record.strain = 0.0
+	var pull := _player_pulled(player, record, at_limit) if player != null \
+		else _enemy_pulled(record, at_limit, offset, feet, delta)
+	if record.stuck == null: # The enemy tore free
+		return
 	if pull:
-		# One snap as the pull back starts. It's heard again only once they've been back in
-		# the middle, so a pull back that stops and starts makes just the one.
-		if !record.snapped && offset.length() >= PASTE_SNAP_DISTANCE:
-			Juice.play(_sounds.snap, 0.08)
-			record.snapped = true
-			record.snaps += 1
 		var speed := Tuning.paste_pull if player != null else Tuning.paste_enemy_pull
-		held = held.move_toward(Vector2.ZERO, speed * delta)
+		held = _pull_back(record, held, offset, speed * delta)
 	if offset.length() <= PASTE_REARM_DISTANCE:
-		record.snapped = false
-		if record.hauling: # Back in the middle: free to walk out again
-			record.hauling = false
-			record.stretching = false
-			record.strain = 0.0
+		_back_in_the_middle(record)
 	if held != offset:
 		body.move_and_collide(held - offset)
+
+# Counts the player's rolls against the paste: the ones before the last strain against it
+# (a creak, higher each time); the last tears them free. True if they're free.
+func _rolled_free(player: Player, record: Dictionary, feet: Vector2) -> bool:
+	var rolling := player.rolling.time_left > 0
+	var new_roll: bool = rolling && !record.was_rolling
+	record.was_rolling = rolling
+	if !new_roll:
+		return false
+	record.rolls += 1
+	var heading := Direction.to_vector(player.direction)
+	if record.rolls >= Tuning.paste_rolls_to_escape:
+		_free_from_paste(record, feet, heading, Tuning.roll_duration + 0.2) # Not caught again mid-roll
+		return true
+	Juice.burst(self, feet, PASTE_COLOR, 6, 40.0, heading, 1.5, 0.3)
+	Juice.play(_sounds.stretch, 0.08, 1.0 + 0.15 * record.rolls) # Higher as it gives
+	return false
+
+# The player creaks at the paste's limit and is pulled back whenever they stop walking.
+# True if the paste pulls them this frame.
+func _player_pulled(player: Player, record: Dictionary, at_limit: bool) -> bool:
+	var walking := player.velocity.length() > MOVING_SPEED
+	if at_limit && walking && !record.stretching:
+		record.stretching = true
+		Juice.play(_sounds.stretch, 0.08)
+	if walking:
+		return false
+	record.stretching = false
+	return true
+
+# An enemy runs on the spot at the edge (Enemy.ground_motion) for
+# Tuning.paste_enemy_strain_time, then is slowly hauled back to the middle
+# (Tuning.paste_enemy_pull), where it can set off again; it can't walk while hauled
+# (is_hauling). The Tuning.paste_enemy_escape_edges-th time it reaches the edge, it tears
+# free. True if the paste pulls it this frame.
+func _enemy_pulled(record: Dictionary, at_limit: bool, offset: Vector2, feet: Vector2, delta: float) -> bool:
+	if record.hauling:
+		return true
+	if !at_limit:
+		record.stretching = false
+		record.strain = 0.0
+		return false
+	if !record.stretching: # Just reached the edge
+		record.stretching = true
+		record.edges += 1
+		if record.edges >= Tuning.paste_enemy_escape_edges:
+			_free_from_paste(record, feet, offset.normalized())
+			return false
+		Juice.play(_sounds.stretch, 0.08)
+	record.strain += delta
+	if record.strain < Tuning.paste_enemy_strain_time:
+		return false
+	record.hauling = true
+	return true
+
+# Moves the held offset `step` pixels back towards the paste's middle. One snap as the pull
+# back starts; it's heard again only once they've been back in the middle, so a pull back
+# that stops and starts makes just the one.
+func _pull_back(record: Dictionary, held: Vector2, offset: Vector2, step: float) -> Vector2:
+	if !record.snapped && offset.length() >= PASTE_SNAP_DISTANCE:
+		Juice.play(_sounds.snap, 0.08)
+		record.snapped = true
+		record.snaps += 1
+	return held.move_toward(Vector2.ZERO, step)
+
+# Back in the paste's middle: the next pull back may snap, and a hauled enemy may set off again.
+func _back_in_the_middle(record: Dictionary) -> void:
+	record.snapped = false
+	if record.hauling:
+		record.hauling = false
+		record.stretching = false
+		record.strain = 0.0
 
 # Lets go of whoever `record` is for, tearing free towards `direction`; the same paste can't
 # catch them again for `immune_for` seconds, so they get clear of it.
@@ -837,132 +889,6 @@ func _drift_on_ice(enemy: Enemy, feet: Vector2, delta: float) -> void:
 	if collision != null: # Slid into something: carry on along it, losing what went into it
 		enemy.slide = enemy.slide.slide(collision.get_normal())
 		enemy.move_and_collide(collision.get_remainder().slide(collision.get_normal()))
-
-# --- Flare: little animations over the tiles ---
-# Drawn in code, on whole pixels, each tile's timing offset by its own seed so a room of
-# them doesn't move in step. Only while the rules run (in a room, with the player in it).
-
-const FX_SPARKLE := Color(1, 1, 1, 0.9)
-const SPIKE_TIPS: Array[Vector2i] = [ # Spike points in the spikes art (make_tile_art's grid)
-	Vector2i(5, 4), Vector2i(12, 4), Vector2i(19, 4), Vector2i(5, 11), Vector2i(12, 11),
-	Vector2i(19, 11), Vector2i(5, 18), Vector2i(12, 18), Vector2i(19, 18)]
-const WIRE_GAPS: Array[Vector2i] = [Vector2i(11, 8), Vector2i(12, 16)] # Bare copper in the wires art
-const AMBIENT_SPARK_CHANCE := 0.25 # Per second, per resting wire: a stray spark
-const AMBIENT_DUST_CHANCE := 3.0 # Per second, per hole or cracking floor: dust falling in
-
-func _draw_fx() -> void:
-	for cell: Vector2i in _tiles:
-		var tile: Dictionary = _tiles[cell]
-		var origin := Vector2(cell) * Room.CELL_SIZE
-		var seed := _seed(cell)
-		match tile.frame:
-			Frame.TELEPORT_1, Frame.TELEPORT_2, Frame.TELEPORT_3, Frame.TELEPORT_4:
-				_fx_teleport(origin, seed, _teleport_colour(tile.frame))
-			Frame.FAST: _fx_sweep(origin, seed, 34.0, Color(1, 0.95, 0.7, 0.35))
-			Frame.SLOW: _fx_slow(origin, seed)
-			Frame.SLICK: _fx_glint(origin, seed)
-			Frame.SPIKES: _fx_spike_glint(origin, seed, cell)
-			Frame.WIRES, Frame.PLATE:
-				if tile.phase == Phase.LIVE: # Flickering current
-					_fx.draw_rect(Rect2(origin, Vector2.ONE * Room.CELL_SIZE),
-						Color(SHOCK_COLOR, 0.12 + 0.18 * absf(sin(_time * 37.0 + seed * 9.0))))
-				elif tile.frame == Frame.WIRES && tile.phase == Phase.RESTING:
-					_fx_copper_flicker(origin, seed)
-			Frame.CRACKED:
-				if tile.phase == Phase.WARNING: # Darkening as it gives way
-					var progress: float = 1.0 - tile.left / maxf(Tuning.crack_time, 0.01)
-					_fx.draw_circle(origin + Vector2.ONE * 12, 3.0 + 7.0 * progress, Color(0, 0, 0, 0.35 * progress))
-			Frame.PASTE: _fx_bubbles(origin, seed, cell)
-
-func _fx_pixel(at: Vector2, colour: Color) -> void:
-	_fx.draw_rect(Rect2(at.floor(), Vector2.ONE), colour)
-
-# Three sparks running round the ring, and the middle breathing.
-func _fx_teleport(origin: Vector2, seed: float, colour: Color) -> void:
-	var centre := origin + Vector2.ONE * 12
-	_fx.draw_circle(centre, 6.5, Color(colour, 0.1 + 0.08 * sin(_time * 3.0 + seed * TAU)))
-	for k in 3:
-		var angle := _time * 2.5 + k * TAU / 3.0 + seed * TAU
-		_fx_pixel(centre + Vector2.from_angle(angle) * 9.5, colour.lightened(0.6))
-
-# A band of light sliding across the tile, left to right.
-func _fx_sweep(origin: Vector2, seed: float, speed: float, colour: Color) -> void:
-	var x := fmod(_time * speed + seed * 24.0, 30.0) - 3.0
-	var left := clampf(x, 3.0, 21.0)
-	var right := clampf(x + 3.0, 3.0, 21.0)
-	if right > left:
-		_fx.draw_rect(Rect2(origin + Vector2(left, 3), Vector2(right - left, 18)), colour)
-
-# Sand trickling through the hourglass, and the tile slowly breathing.
-func _fx_slow(origin: Vector2, seed: float) -> void:
-	_fx.draw_rect(Rect2(origin + Vector2(3, 3), Vector2(18, 18)),
-		Color(0.6, 0.55, 1.0, 0.06 + 0.06 * sin(_time * 1.5 + seed * TAU)))
-	var fall := fmod(_time * 0.9 + seed, 1.0)
-	_fx_pixel(origin + Vector2(11, 12 + fall * 4.0), Color("e6d38a"))
-
-# Every few seconds a glint runs diagonally over the ice.
-func _fx_glint(origin: Vector2, seed: float) -> void:
-	var period := 2.6
-	var t := fmod(_time + seed * period, period) / 0.45
-	if t >= 1.0:
-		return
-	var along := -4.0 + t * 30.0
-	for i in 5:
-		var at := Vector2(along + i, 20 - i * 1.2 - t * 14.0)
-		if at.x >= 1 && at.x < 23 && at.y >= 1 && at.y < 23:
-			_fx_pixel(origin + at, Color(1, 1, 1, 0.8))
-
-# Now and then one spike tip catches the light.
-func _fx_spike_glint(origin: Vector2, seed: float, cell: Vector2i) -> void:
-	var period := 1.7
-	var step := floori((_time + seed * 5.0) / period)
-	var t := fmod(_time + seed * 5.0, period) / period
-	if t > 0.25:
-		return
-	var tip := SPIKE_TIPS[absi(hash(Vector2i(step, 0) + cell)) % SPIKE_TIPS.size()]
-	var strength := sin(t / 0.25 * PI)
-	var at := origin + Vector2(tip)
-	_fx_pixel(at, Color(1, 1, 1, strength))
-	for d: Vector2 in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
-		_fx_pixel(at + d, Color(1, 1, 1, strength * 0.5))
-
-# The bare copper glows now and then while the wires rest.
-func _fx_copper_flicker(origin: Vector2, seed: float) -> void:
-	var flicker := sin(_time * 11.0 + seed * 20.0) * sin(_time * 4.3 + seed * 7.0)
-	if flicker > 0.6:
-		for gap in WIRE_GAPS:
-			_fx_pixel(origin + Vector2(gap), Color(1.0, 0.9, 0.5, (flicker - 0.6) * 2.5))
-
-# Two bubbles slowly swelling and popping, faster while it holds someone.
-func _fx_bubbles(origin: Vector2, seed: float, cell: Vector2i) -> void:
-	var holding := _held.has(cell)
-	var speed := 1.6 if holding else 0.7
-	for k in 2:
-		var t := fmod(_time * speed + seed + k * 0.5, 1.0)
-		var at := origin + Vector2(7 + k * 9 + int(seed * 4.0), 8 + k * 7)
-		if t < 0.85:
-			_fx.draw_arc(at, 0.5 + t * 1.8, 0, TAU, 8, Color("f7b866"), 1.0)
-		else:
-			for d: Vector2 in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2)]:
-				_fx_pixel(at + d, Color(1, 0.85, 0.6, 0.8))
-
-# Stray sparks off resting wires, dust trickling into holes and floor that's giving way.
-func _ambient_effects(delta: float) -> void:
-	for cell: Vector2i in _tiles:
-		var tile: Dictionary = _tiles[cell]
-		if tile.frame == Frame.WIRES && tile.phase == Phase.RESTING && randf() < AMBIENT_SPARK_CHANCE * delta:
-			var gap := WIRE_GAPS.pick_random() as Vector2i
-			Juice.burst(self, to_global(Vector2(cell) * Room.CELL_SIZE + Vector2(gap)), SPARK_COLOR, 2, 30.0,
-				Vector2.UP, 1.0, 0.15)
-		elif tile.frame == Frame.CRACKED && tile.phase in [Phase.WARNING, Phase.LIVE] \
-				&& randf() < AMBIENT_DUST_CHANCE * delta:
-			var edge := Vector2(randf_range(4, 20), randf_range(4, 20))
-			Juice.burst(self, to_global(Vector2(cell) * Room.CELL_SIZE + edge), DUST, 1, 12.0,
-				(Vector2.ONE * 12 - edge).normalized(), 1.0, 0.3)
-
-# A steady number from 0 to 1 for `cell`, so each tile's animation runs to its own time.
-func _seed(cell: Vector2i) -> float:
-	return float(absi(hash(cell)) % 1000) / 1000.0
 
 # Tiles work on every enemy but the boss (whose room has none anyway).
 func _affects(node: Node) -> bool:

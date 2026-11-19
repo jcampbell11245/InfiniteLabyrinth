@@ -57,6 +57,14 @@ func _init(room: Room) -> void:
 			set_avoided(avoided, true)
 			if special.is_hole(avoided):
 				set_blocked(avoided, true)
+	# The avoided cells' path cost follows Tuning.trap_avoid_weight as it changes (the debug
+	# menu), rather than keeping the value it had when the grid was built.
+	Tuning.changed.connect(_on_tuning_changed)
+
+func _on_tuning_changed(key: String) -> void:
+	if key == "trap_avoid_weight":
+		for cell: Vector2i in _avoided:
+			_grid.set_point_weight_scale(cell, Tuning.trap_avoid_weight)
 
 # Marks `cell` as one enemies keep off when they can (or not).
 func set_avoided(cell: Vector2i, on: bool) -> void:

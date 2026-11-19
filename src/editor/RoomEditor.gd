@@ -63,7 +63,7 @@ const SPECIAL_TIPS := {
 	RoomDesign.Cell.CRACKED: "Cracked floor: gives way into a pit when stood on, then mends",
 	RoomDesign.Cell.SLICK: "Slick floor: keeps your momentum, so you slide",
 	RoomDesign.Cell.PLATE: "Pressure plate: shocks whoever steps on it. Swing into it while live to break it",
-	RoomDesign.Cell.PASTE: "Thermal paste: holds whoever steps in; roll out, or wait for it to dissolve",
+	RoomDesign.Cell.PASTE: "Thermal paste: holds whoever steps in; three rolls break free (enemies tear free on their third trip to its edge)",
 	RoomDesign.Cell.SLOW: "Slow tile: slower walking, rolling and attacking",
 	RoomDesign.Cell.FAST: "Speed tile: faster walking, rolling and attacking",
 }
