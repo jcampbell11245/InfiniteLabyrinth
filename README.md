@@ -218,7 +218,7 @@ player from spikes and shocks.
 | Spikes | Hurt on stepping on, and again every second while stood on. Rolling right over them in one roll is safe; a roll that ends on them isn't. |
 | Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
 | Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
-| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Enemies caught in it walk as usual inside that area, run on the spot at its edge, and after a couple of seconds there are hauled back to the middle; they stay caught. It never wears off: three rolls break free, counted down by a bar over the player's head. |
+| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Enemies caught in it walk as usual inside that area, run on the spot at its edge, and after a couple of seconds there are slowly hauled back to the middle; the third time they reach the edge they tear free. It never wears off: three rolls break free, counted down by a bar over the player's head. |
 | Slow / speed tile | Slower or faster walking, rolling and attacking while on it, with a sound on stepping on and a status icon while there. |
 | Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. Going through squashes the square the way it was entered and stretches the far one out. |
 

@@ -79,6 +79,7 @@ const PASTE_DB := -6.0
 const PASTE_SNAP_DISTANCE := 10.0
 const PASTE_REARM_DISTANCE := 3.0 # Back within this of the middle, the next pull back snaps again
 const PASTE_EDGE_SLACK := 2.0 # Pixels short of the paste's limit that count as at it
+const ENEMY_PASTE_IMMUNITY := 1.0 # Seconds after tearing free before paste can catch an enemy again
 const TELEPORT_GRACE := 5.0 # Pixels outside its square a teleporter still takes feet from
 # Projectiles fly at about chest height; this far below one is the floor it's over.
 const PROJECTILE_DROP := Vector2(0, 12)
@@ -508,7 +509,7 @@ func _record(body: Node2D) -> Dictionary:
 		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, shocked = {}, stuck = null,
 			paste_free_until = 0.0, arrived = null,
 			stretching = false, snapped = false, snaps = 0, rolls = 0, was_rolling = false,
-			strain = 0.0, hauling = false}
+			strain = 0.0, hauling = false, edges = 0}
 	return _bodies[id]
 
 # True while paste holds `body` in `room`.
@@ -534,15 +535,17 @@ static func paste_bounds_in(room: Node, body: Node) -> Variant:
 	var square := Rect2(layer.to_global(Vector2(stuck as Vector2i) * Room.CELL_SIZE), Vector2.ONE * Room.CELL_SIZE)
 	return square.grow(Tuning.paste_reach)
 
-# How much the paste holding `body` still holds it: the share of the rolls to escape it has
-# yet to make, 1 just caught (and always, for an enemy) down towards 0, or 0 if nothing
-# holds it. Its status bar shows this (Player, Enemy).
+# How much the paste holding `body` still holds it: the share of the rolls (player) or trips
+# to the edge (enemy) it needs to escape that it has yet to make, 1 just caught down towards
+# 0, or 0 if nothing holds it. Its status bar shows this (Player, Enemy).
 func paste_left(body: Node) -> float:
 	var record: Dictionary = _bodies.get(body.get_instance_id(), {})
 	if record.get("stuck") == null:
 		return 0.0
-	var needed := maxi(Tuning.paste_rolls_to_escape, 1)
-	return clampf(float(needed - record.rolls) / needed, 0.0, 1.0)
+	# The player escapes by rolling, an enemy by reaching the edge often enough.
+	var needed := maxi(Tuning.paste_rolls_to_escape if body is Player else Tuning.paste_enemy_escape_edges, 1)
+	var done: int = record.rolls if body is Player else record.edges
+	return clampf(float(needed - done) / needed, 0.0, 1.0)
 
 # The same for a body in `room`, which may have no special tiles.
 static func paste_left_in(room: Node, body: Node) -> float:
@@ -591,6 +594,7 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 					record.snapped = false
 					record.strain = 0.0
 					record.hauling = false
+					record.edges = 0
 					record.rolls = 0
 					record.was_rolling = false
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
@@ -745,11 +749,9 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, de
 		if rolling && !record.was_rolling: # A new roll
 			record.rolls += 1
 			if record.rolls >= Tuning.paste_rolls_to_escape:
-				record.stuck = null
 				record.was_rolling = true
-				record.paste_free_until = _time + Tuning.roll_duration + 0.2 # Not caught again mid-roll
-				Juice.burst(self, feet, PASTE_COLOR, 14, 70.0, Direction.to_vector(player.direction), 2.0, 0.4)
-				Juice.play(_sounds.snap, 0.08, 1.3)
+				# Not caught again mid-roll.
+				_free_from_paste(record, feet, Direction.to_vector(player.direction), Tuning.roll_duration + 0.2)
 				return
 			Juice.burst(self, feet, PASTE_COLOR, 6, 40.0, Direction.to_vector(player.direction), 1.5, 0.3)
 			Juice.play(_sounds.stretch, 0.08, 1.0 + 0.15 * record.rolls) # Higher as it gives
@@ -772,13 +774,19 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, de
 			pull = true
 	else:
 		# An enemy runs on the spot at the edge (Enemy.ground_motion) for
-		# Tuning.paste_enemy_strain_time, then the paste hauls it back to the middle, where it
-		# can set off again. It can't walk while it's hauled (is_hauled).
+		# Tuning.paste_enemy_strain_time, then the paste slowly hauls it back to the middle
+		# (Tuning.paste_enemy_pull), where it can set off again. It can't walk while it's
+		# hauled (is_hauled_in). The Tuning.paste_enemy_escape_edges-th time it reaches the
+		# edge, it tears free.
 		if record.hauling:
 			pull = true
 		elif at_limit:
 			if !record.stretching:
 				record.stretching = true
+				record.edges += 1
+				if record.edges >= Tuning.paste_enemy_escape_edges:
+					_free_from_paste(record, feet, offset.normalized())
+					return
 				Juice.play(_sounds.stretch, 0.08)
 			record.strain += delta
 			if record.strain >= Tuning.paste_enemy_strain_time:
@@ -794,7 +802,8 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, de
 			Juice.play(_sounds.snap, 0.08)
 			record.snapped = true
 			record.snaps += 1
-		held = held.move_toward(Vector2.ZERO, Tuning.paste_pull * delta)
+		var speed := Tuning.paste_pull if player != null else Tuning.paste_enemy_pull
+		held = held.move_toward(Vector2.ZERO, speed * delta)
 	if offset.length() <= PASTE_REARM_DISTANCE:
 		record.snapped = false
 		if record.hauling: # Back in the middle: free to walk out again
@@ -803,6 +812,17 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, de
 			record.strain = 0.0
 	if held != offset:
 		body.move_and_collide(held - offset)
+
+# Lets go of whoever `record` is for, tearing free towards `direction`; the same paste can't
+# catch them again for `immune_for` seconds, so they get clear of it.
+func _free_from_paste(record: Dictionary, feet: Vector2, direction: Vector2,
+		immune_for := ENEMY_PASTE_IMMUNITY) -> void:
+	record.stuck = null
+	record.hauling = false
+	record.stretching = false
+	record.paste_free_until = _time + immune_for
+	Juice.burst(self, feet, PASTE_COLOR, 14, 70.0, direction, 2.0, 0.4)
+	Juice.play(_sounds.snap, 0.08, 1.3)
 
 # An enemy that didn't walk this frame keeps sliding on ice, slowing as it goes.
 func _drift_on_ice(enemy: Enemy, feet: Vector2, delta: float) -> void:

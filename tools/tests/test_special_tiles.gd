@@ -435,13 +435,52 @@ func test_enemies_are_hauled_back_after_straining_at_the_edge() -> void:
 		await tree.physics_frame
 	expect(goblin.feet_position().x > centre.x + 20.0, "still at the edge while straining")
 	expect(!SpecialTiles.is_hauled_in(room, goblin), "not hauled yet")
-	for i in 60:
+	var hauled := false
+	for i in 150: # Hauled back slowly (Tuning.paste_enemy_pull), until the haul ends
 		goblin.move_and_collide(goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0))
 		await tree.physics_frame
-		if absf(goblin.feet_position().x - centre.x) <= 2.0:
+		if SpecialTiles.is_hauled_in(room, goblin):
+			hauled = true
+		elif hauled:
 			break
+	expect(hauled, "it was hauled")
 	expect(absf(goblin.feet_position().x - centre.x) <= 3.0, "hauled back to the middle")
 	var record: Dictionary = layer(room)._bodies[goblin.get_instance_id()]
 	expect_equal(record.snaps, 1, "one snap for it")
 	await physics_frames(2)
 	expect(goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0) != Vector2.ZERO, "free to walk out again")
+
+# The third time a held enemy reaches the paste's edge, it tears free; its bar counts
+# those trips down.
+func test_enemies_escape_paste_on_the_third_trip_to_the_edge() -> void:
+	var tuning := autoload("Tuning")
+	tuning.paste_enemy_strain_time = 0.1
+	tuning.paste_enemy_pull = 300.0 # Quick hauls, to keep the test short
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.PASTE)
+	design.set_object(Vector2i(3, 6), "goblin")
+	var room: Room = await boot_design(design)
+	var goblin: Enemy = null
+	for child in room.get_children():
+		if child is Enemy:
+			goblin = child
+	tuning.set_value("freeze_enemies", true) # Its AI stays out of it; the test walks it
+	goblin.process_mode = Node.PROCESS_MODE_INHERIT
+	goblin.set_physics_process(false)
+	goblin.global_position += room.to_global(RoomDesign.cell_centre(Vector2i(6, 6))) - goblin.feet_position()
+	await physics_frames(3)
+	expect(SpecialTiles.is_stuck_in(room, goblin), "caught")
+	expect_near(SpecialTiles.paste_left_in(room, goblin), 1.0, 0.001, "full bar when caught")
+	var escapes: int = tuning.paste_enemy_escape_edges
+	var saw_two_thirds := false
+	for i in 400: # Walking right the whole time: out to the edge, hauled back, out again...
+		goblin.move_and_collide(goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0))
+		await tree.physics_frame
+		if absf(SpecialTiles.paste_left_in(room, goblin) - float(escapes - 1) / escapes) < 0.001:
+			saw_two_thirds = true
+		if !SpecialTiles.is_stuck_in(room, goblin):
+			break
+	expect(saw_two_thirds, "the bar went down a trip's worth")
+	expect(!SpecialTiles.is_stuck_in(room, goblin), "torn free")
+	var record: Dictionary = layer(room)._bodies[goblin.get_instance_id()]
+	expect_equal(record.edges, escapes, "on trip %d to the edge" % escapes)
