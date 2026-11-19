@@ -1,11 +1,13 @@
 extends "res://tools/tests/test_case.gd"
 
-# The pause menu's Return to Menu button and quit key leave the run for the title screen
-# without closing the game; its Quit to Desktop button closes the application.
+# The pause menu's Return to Menu button leaves the run for the title screen, or the room
+# creator during a play-test; its Quit to Desktop button closes the application.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
+const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 
 func test_return_to_menu_button_returns_to_title() -> void:
+	Overworld.test_design = null
 	await boot_floor()
 	var menu := tree.current_scene.get_node("PauseLayer/Pause")
 	menu.call("pause")
@@ -22,18 +24,27 @@ func test_return_to_menu_button_returns_to_title() -> void:
 	expect((music.get_node("TitleIntro") as AudioStreamPlayer).playing ||
 		(music.get_node("TitleLoop") as AudioStreamPlayer).playing, "title music playing")
 
-func test_quit_key_returns_to_title() -> void:
+func test_return_to_menu_from_play_test_goes_to_room_editor() -> void:
+	Overworld.test_design = RoomDesign.new()
 	await boot_floor()
 	var menu := tree.current_scene.get_node("PauseLayer/Pause")
-	var event := InputEventAction.new()
-	event.action = "quit"
-	event.pressed = false
-	menu._input(event)
+	menu.call("pause")
+	var menu_button := menu.get_node("PauseVBox/ButtonVBox/ReturnToMenu") as Button
+	menu_button.pressed.emit()
 	await _scene_changed()
-	expect_equal(tree.current_scene.scene_file_path, TITLE_SCENE, "the quit key opens the title screen")
-	expect(!tree.paused, "the tree is running after the quit key")
+	expect_equal(tree.current_scene.scene_file_path, ROOM_EDITOR,
+		"a play-test goes back to the room creator")
+	expect(Overworld.test_design == null, "the play-test design is cleared")
+	expect(!tree.paused, "the tree is running in the room creator")
+
+func test_title_screen_clears_a_stale_play_test_design() -> void:
+	Overworld.test_design = RoomDesign.new()
+	tree.change_scene_to_file(TITLE_SCENE)
+	await _scene_changed()
+	expect(Overworld.test_design == null, "Start won't build a leftover test room")
 
 func test_quit_to_desktop_button_is_wired_to_quit() -> void:
+	Overworld.test_design = null
 	await boot_floor()
 	var menu := tree.current_scene.get_node("PauseLayer/Pause")
 	var desktop_button := menu.get_node("PauseVBox/ButtonVBox/QuitToDesktop") as Button
