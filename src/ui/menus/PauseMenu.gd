@@ -1,7 +1,7 @@
 extends Control
 
-# Pause toggles on the pause key or the Resume button. Quitting from here, by button or
-# quit key, goes back to the title screen; only the title screen's Quit closes the game.
+# Pause toggles on the pause key or the Resume button. Return to Menu, and the quit key
+# while unpaused, leave the run for the title screen. Quit to Desktop closes the game.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 
@@ -10,7 +10,8 @@ var _returning_to_title := false # Guards against a second press during the scen
 
 func _ready() -> void:
 	$PauseVBox/ButtonVBox/Resume.pressed.connect(pause)
-	$PauseVBox/ButtonVBox/Quit.pressed.connect(return_to_title)
+	$PauseVBox/ButtonVBox/ReturnToMenu.pressed.connect(return_to_title)
+	$PauseVBox/ButtonVBox/QuitToDesktop.pressed.connect(quit_to_desktop)
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
@@ -30,6 +31,10 @@ func return_to_title() -> void:
 	Music.stop_all()
 	get_tree().change_scene_to_file(TITLE_SCENE)
 
+# Closes the application from the pause menu. The title screen's Quit does the same.
+func quit_to_desktop() -> void:
+	get_tree().quit()
+
 # Android's back button/gesture pauses (or unpauses) rather than closing the game; see
 # application/config/quit_on_go_back.
 func _notification(what: int) -> void:
@@ -44,5 +49,5 @@ func pause() -> void:
 		visible = new_pause_state
 		pause_state = new_pause_state
 		if new_pause_state:
-			# Give the menu focus so the stick/D-pad can move between Resume and Quit.
+			# Give the menu focus so the stick/D-pad can reach every button.
 			$PauseVBox/ButtonVBox/Resume.grab_focus()
