@@ -313,8 +313,14 @@ func ground_motion(motion: Vector2, delta: float) -> Vector2:
 	_walked_frame = Engine.get_physics_frames()
 	var frame := ground()
 	var wanted := motion * SpecialTiles.speed_factor(frame) / maxf(delta, 0.0001)
-	if SpecialTiles.is_stuck_in(room, self): # Wading through thermal paste
-		wanted *= Tuning.paste_enemy_speed
+	# Held in thermal paste: it walks as usual inside the area the paste lets it reach, but
+	# a step past the edge goes nowhere. It still counts as walking, so it strains against
+	# the paste on the spot, walk animation and all, and isn't pulled back meanwhile.
+	var bounds: Variant = SpecialTiles.paste_bounds_in(room, self)
+	if bounds != null:
+		slide = Vector2.ZERO
+		var step := wanted * delta
+		return step if (bounds as Rect2).has_point(feet_position() + step) else Vector2.ZERO
 	if SpecialTiles.is_slick(frame):
 		slide = slide.move_toward(wanted, Tuning.enemy_slick_grip * delta)
 	else:

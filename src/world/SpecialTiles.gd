@@ -77,6 +77,8 @@ const PASTE_SNAP_SOUND := preload("res://assets/sfx/paste_snap.wav")
 const PASTE_DB := -6.0
 # Pulled back from at least this far past the paste's middle, the snap back is heard.
 const PASTE_SNAP_DISTANCE := 10.0
+const PASTE_REARM_DISTANCE := 3.0 # Back within this of the middle, the next pull back snaps again
+const PASTE_EDGE_SLACK := 2.0 # Pixels short of the paste's limit that count as at it
 const TELEPORT_GRACE := 5.0 # Pixels outside its square a teleporter still takes feet from
 # Projectiles fly at about chest height; this far below one is the floor it's over.
 const PROJECTILE_DROP := Vector2(0, 12)
@@ -504,14 +506,26 @@ func _record(body: Node2D) -> Dictionary:
 	var id := body.get_instance_id()
 	if !_bodies.has(id):
 		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, shocked = {}, stuck = null,
-			paste_free_until = 0.0, arrived = null, last_position = body.global_position,
-			stretching = false, snapped = false, rolls = 0, was_rolling = false}
+			paste_free_until = 0.0, arrived = null,
+			stretching = false, snapped = false, snaps = 0, rolls = 0, was_rolling = false}
 	return _bodies[id]
 
-# True while paste holds `body` in `room` (enemies crawl while it does: Enemy.ground_motion).
+# True while paste holds `body` in `room`.
 static func is_stuck_in(room: Node, body: Node) -> bool:
+	return paste_bounds_in(room, body) != null
+
+# Where the feet of `body` in `room` may go while paste holds it (global pixels: the paste's
+# square grown by Tuning.paste_reach), or null if nothing holds it. Enemies stop walking at
+# its edge (Enemy.ground_motion).
+static func paste_bounds_in(room: Node, body: Node) -> Variant:
 	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
-	return layer != null && layer._bodies.get(body.get_instance_id(), {}).get("stuck") != null
+	if layer == null:
+		return null
+	var stuck: Variant = layer._bodies.get(body.get_instance_id(), {}).get("stuck")
+	if stuck == null:
+		return null
+	var square := Rect2(layer.to_global(Vector2(stuck as Vector2i) * Room.CELL_SIZE), Vector2.ONE * Room.CELL_SIZE)
+	return square.grow(Tuning.paste_reach)
 
 # How much the paste holding `body` still holds it: the share of the rolls to escape it has
 # yet to make, 1 just caught (and always, for an enemy) down towards 0, or 0 if nothing
@@ -541,8 +555,6 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 		return
 	var player := body as Player
 	var rolling := player != null && player.rolling.time_left > 0
-	var moved: float = (body.global_position - record.last_position).length() / maxf(delta, 0.0001)
-	record.last_position = body.global_position
 	if body is Enemy:
 		(body as Enemy).animator.speed_scale = speed_factor(frame_at(_room, feet))
 		_drift_on_ice(body as Enemy, feet, delta)
@@ -569,11 +581,12 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 						&& _time >= record.paste_free_until:
 					record.stuck = cell
 					record.stretching = false
+					record.snapped = false
 					record.rolls = 0
 					record.was_rolling = false
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
 					Juice.play(_sounds.stick, 0.08)
-	_hold_in_paste(body, record, feet, moved, delta)
+	_hold_in_paste(body, record, feet, delta)
 
 # A projectile over a teleporter goes through it like anything else, flying on the same way
 # out of the far square. It flies at chest height, so it's drawn PROJECTILE_DROP above the
@@ -643,7 +656,6 @@ func _teleport(body: Node2D, record: Dictionary, cell: Vector2i, feet: Vector2) 
 	record.cell = destination
 	record.arrived = destination
 	record.stuck = null
-	record.last_position = body.global_position
 	var player := body as Player
 	if player != null:
 		player.knockback = Vector2.ZERO
@@ -710,8 +722,8 @@ func _teleport_colour(frame: int) -> Color:
 # Caught in paste: kept within Tuning.paste_reach of the paste's edge, and pulled back to
 # the middle whenever it stops moving. The player gets out with Tuning.paste_rolls_to_escape
 # rolls (the ones before only strain against it); otherwise it holds for good.
-# Enemies caught in it crawl (Enemy.ground_motion).
-func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, moved: float, delta: float) -> void:
+# Enemies walk as usual inside it but stop, straining, at its edge (Enemy.ground_motion).
+func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, delta: float) -> void:
 	if record.stuck == null:
 		return
 	var cell: Vector2i = record.stuck
@@ -736,21 +748,26 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, mo
 	var offset := feet - centre
 	var half := Room.CELL_SIZE / 2.0 + Tuning.paste_reach
 	var held := offset.clamp(-Vector2.ONE * half, Vector2.ONE * half)
-	var walking := player.velocity.length() > MOVING_SPEED if player != null else moved > MOVING_SPEED
-	# A creak the moment it pulls against the paste's limit, and a snap as the paste pulls
-	# it back from out there.
-	var at_limit := held != offset
+	# Walking, for the player: moving under their own steam. For an enemy: trying to, even
+	# if it's stuck straining at the edge (Enemy.ground_motion), which it does on the spot.
+	var walking := player.velocity.length() > MOVING_SPEED if player != null \
+		else (body as Enemy).walked_this_frame()
+	# A creak as it reaches the paste's limit, and one snap as the paste starts pulling it
+	# back from out there. The snap is heard again only once it's been back in the middle,
+	# so a pull back that's stopped and started (or a twitchy enemy) makes just the one.
+	# Enemies stop just short of the edge (their next step would cross it), hence the slack.
+	var at_limit := held != offset || maxf(absf(offset.x), absf(offset.y)) >= half - PASTE_EDGE_SLACK
 	if at_limit && walking && !record.stretching:
 		record.stretching = true
 		Juice.play(_sounds.stretch, 0.08)
 	if !walking:
-		var pulled_back: bool = record.stretching || offset.length() >= PASTE_SNAP_DISTANCE
-		if pulled_back && !record.snapped:
+		if !record.snapped && offset.length() >= PASTE_SNAP_DISTANCE:
 			Juice.play(_sounds.snap, 0.08)
-			record.snapped = true # Once per pull back; walking again re-arms it
+			record.snapped = true
+			record.snaps += 1
 		record.stretching = false
 		held = held.move_toward(Vector2.ZERO, Tuning.paste_pull * delta)
-	else:
+	if offset.length() <= PASTE_REARM_DISTANCE:
 		record.snapped = false
 	if held != offset:
 		body.move_and_collide(held - offset)

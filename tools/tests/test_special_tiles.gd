@@ -134,7 +134,9 @@ func test_pressure_plate_rises_when_left() -> void:
 	await physics_frames(2)
 	expect_equal(layer(room).get_cell_atlas_coords(0, cell).x, SpecialTiles.Frame.PLATE, "raised as soon as it's left")
 
-func test_enemies_crawl_in_paste() -> void:
+# Held in paste, an enemy walks as usual until its next step would take it past the paste's
+# reach; then it goes nowhere, though it's still walking (straining on the spot).
+func test_enemies_strain_at_the_edge_of_paste() -> void:
 	var design := RoomDesign.new()
 	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.PASTE)
 	design.set_object(Vector2i(4, 6), "goblin")
@@ -146,13 +148,29 @@ func test_enemies_crawl_in_paste() -> void:
 	for child in room.get_children():
 		if child is Enemy:
 			goblin = child
-	var free_step := goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0)
+	var step := Vector2(1, 0)
+	var free_step := goblin.ground_motion(step, 1.0 / 60.0)
 	goblin.global_position += room.to_global(RoomDesign.cell_centre(Vector2i(6, 6))) - goblin.feet_position()
 	await physics_frames(3)
 	expect(SpecialTiles.is_stuck_in(room, goblin), "caught")
-	var stuck_step := goblin.ground_motion(Vector2(1, 0), 1.0 / 60.0)
-	expect_near(stuck_step.length() / free_step.length(), autoload("Tuning").paste_enemy_speed, 0.01,
-		"walks at the paste speed")
+	expect_equal(goblin.ground_motion(step, 1.0 / 60.0), free_step, "walks at its usual speed inside")
+	var bounds: Rect2 = SpecialTiles.paste_bounds_in(room, goblin)
+	goblin.global_position.x += bounds.end.x - goblin.feet_position().x - 0.5 # Right at the edge
+	expect_equal(goblin.ground_motion(step, 1.0 / 60.0), Vector2.ZERO, "goes nowhere past the edge")
+	expect(goblin.walked_this_frame(), "but is still walking, straining against it")
+
+# However the pull back goes, one snap is heard for it.
+func test_one_snap_per_pull_back() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PASTE)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(4, 6))
+	await physics_frames(3)
+	var record: Dictionary = layer(room)._bodies[player().get_instance_id()]
+	player().global_position.x += 20.0 # Out at the edge of its reach
+	for i in 60: # Standing still, pulled back to the middle
+		await tree.physics_frame
+	expect_equal(record.snaps, 1, "one snap for the pull back")
 
 func test_swinging_into_live_wires_breaks_them() -> void:
 	var tuning := autoload("Tuning")
