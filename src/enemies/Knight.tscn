@@ -1334,11 +1334,14 @@ one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="." unique_id=545046299]
 stream = ExtResource("23")
+bus = &"SFX"
 
 [node name="Block" type="AudioStreamPlayer2D" parent="." unique_id=2123803867]
 stream = ExtResource("22")
+bus = &"SFX"
 
 [node name="Crit" type="AudioStreamPlayer" parent="." unique_id=935898631]
+bus = &"SFX"
 
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_hurtbox_area_shape_entered"]

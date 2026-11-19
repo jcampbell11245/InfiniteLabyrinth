@@ -15,6 +15,7 @@ var _curse_sound: AudioStreamPlayer
 func _ready() -> void:
 	super()
 	_curse_sound = AudioStreamPlayer.new()
+	_curse_sound.bus = &"SFX"
 	_curse_sound.stream = CURSE_SOUND
 	_curse_sound.volume_db = -4.0
 	add_child(_curse_sound)

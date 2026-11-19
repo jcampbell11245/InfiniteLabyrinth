@@ -654,9 +654,11 @@ one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="." unique_id=1406853551]
 stream = ExtResource("15")
+bus = &"SFX"
 
 [node name="Crit" type="AudioStreamPlayer" parent="." unique_id=2097012480]
 stream = ExtResource("14")
+bus = &"SFX"
 
 [node name="DetectionZonePivot" type="Marker2D" parent="." unique_id=1059724198]
 

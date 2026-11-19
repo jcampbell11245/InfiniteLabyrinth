@@ -512,6 +512,7 @@ func _refresh_doors() -> void:
 # The payoff for clearing a locked room: a heavy unlock sound, a thud and dust at each door.
 func _celebrate_unlock() -> void:
 	var sound := AudioStreamPlayer.new()
+	sound.bus = &"SFX"
 	sound.stream = LaserUnlockSound if _floor2_doors else UnlockSound
 	if _floor2_doors:
 		sound.volume_db = LASER_UNLOCK_VOLUME_DB
