@@ -215,12 +215,12 @@ player from spikes and shocks.
 |---|---|
 | Exposed wires | Rest, spark as a warning, then go live (with an enemy-style twinkle) and shock whoever is on them. Swing the sword into them while live to break them for good. |
 | Pressure plate | Clicks down when stepped on (and pops back up as soon as it's left), then goes live like wires and re-arms. Breaks the same way. |
-| Spikes | Hurt on stepping on, and again every second while stood on. |
+| Spikes | Hurt on stepping on, and again every second while stood on. Rolling right over them in one roll is safe; a roll that ends on them isn't. |
 | Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
 | Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
-| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop; enemies caught in it crawl. Three rolls break free; otherwise it dissolves 7 seconds after catching someone, counted down by a bar over their head, and grows back 6 seconds later. |
+| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop; enemies caught in it crawl, and stay caught. It never wears off: three rolls break free, counted down by a bar over the player's head. |
 | Slow / speed tile | Slower or faster walking, rolling and attacking while on it, with a sound on stepping on and a status icon while there. |
-| Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. |
+| Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. Going through squashes the square the way it was entered and stretches the far one out. |
 
 Their timings, damage and strengths are in the debug menu's **Tiles** tab (`Tuning.gd`). In a
 room scene they're a `SpecialTiles` layer (`src/world/tiles/SpecialTiles.tscn`), painted with

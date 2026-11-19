@@ -19,17 +19,18 @@ extends TileMap
 #   Spikes    hurt on stepping on, and again every Tuning.spike_interval while stood on.
 #   Cracked   cracks when stood on, then opens into a pit, then mends.
 #   Paste     holds whoever steps in within Tuning.paste_reach of its edge, pulling them back
-#             when they stop; the player rolls out. It dissolves Tuning.paste_dissolve_time
-#             after first catching someone, and a bar over whoever it holds counts that down
-#             (paste_left). It squelches on catching, creaks when pulled against, and snaps
-#             as it pulls back.
+#             when they stop. It never wears off: the player breaks free with
+#             Tuning.paste_rolls_to_escape rolls, counted down by a bar over their head
+#             (paste_left), and enemies, which can't roll, stay held. It squelches on
+#             catching, creaks when pulled against, and snaps as it pulls back.
 #   Slick, Slow, Fast   change how things move while on them; the player and enemies ask
 #             speed_factor() and is_slick() themselves.
 #   Teleport  sends whoever steps on it, and any projectile flying over it, to the next
 #             square of the same colour and symbol. It works from TELEPORT_GRACE pixels
 #             outside its square, so feet brushing its edge still go through. The square
 #             the player would be sent to glows while they're within
-#             Tuning.teleport_glow_range of one.
+#             Tuning.teleport_glow_range of one. Going through squashes the square in
+#             the way it was entered and stretches the far one out the same way.
 #
 # The player's roll keeps them from harm (the hurtbox is off while rolling, as for hits),
 # and rolling is the way out of paste. Enemies are hurt and moved the same way, but walk
@@ -87,10 +88,22 @@ const GLOW_ALPHA := Vector2(0.6, 1.0) # Its least and most strength
 # Over 1, so the art added on top of itself washes out towards white.
 const GLOW_BRIGHTNESS := 2.5
 const TWINKLE_OFFSET := Vector2(0, -4) # From a trap's centre to where its twinkle shows
+# Teleporter squish (_squish): the entered square's scale along and across the way it was
+# entered, and how far it's pushed; the same for the square stretched out of; and how long
+# they take to spring back.
+const SQUISH_ALONG := 0.55
+const SQUISH_ACROSS := 1.3
+const SQUISH_SHIFT := 3.0
+const STRETCH_ALONG := 1.35
+const STRETCH_ACROSS := 0.75
+const STRETCH_SHIFT := 2.0
+const SQUISH_IN_TIME := 0.06
+const SQUISH_HOLD := 0.05
+const SQUISH_TIME := 0.5
 
 var _room: Room
 # Cell -> {frame: Frame it was painted with, phase: Phase, left: seconds in the phase,
-# cycle: times it has gone live (wires, plates), dissolve_at: paste only}.
+# cycle: times it has gone live (wires, plates)}.
 var _tiles := {}
 var _holes := {} # Cell -> StaticBody2D on the pitfall layer, its shape on while the hole is open
 var _bodies := {} # Instance id -> per-body record (see _record)
@@ -99,6 +112,8 @@ var _clashed_swing := -1 # Player.swing_started_frame of the swing that last bro
 var _sounds := {}
 var _glow: Sprite2D # Brightens the teleporter the player would be sent to
 var _occupied := {} # Cells someone's feet are on this frame
+var _held := {} # Paste cells holding someone this frame
+var _squishes := {} # Teleporter cell -> the Sprite2D springing back on it (_squish)
 var _fx: Node2D # Draws the tiles' little animations over them (_draw_fx)
 
 # --- Looking things up (any body, room or not) ---
@@ -122,10 +137,7 @@ static func frame_at(room: Node, global_point: Vector2) -> int:
 	var cell := layer.local_to_map(layer.to_local(global_point))
 	if !layer._tiles.has(cell):
 		return layer.painted(cell)
-	var tile: Dictionary = layer._tiles[cell]
-	if tile.frame == Frame.PASTE && tile.phase == Phase.BROKEN:
-		return -1 # Dissolved
-	return tile.frame
+	return layer._tiles[cell].frame
 
 # Walk, roll and attack speed on `frame`, as a multiple of normal.
 static func speed_factor(frame: int) -> float:
@@ -161,10 +173,19 @@ static func of(room: Node) -> SpecialTiles:
 		room.add_child(layer)
 	return layer
 
+# Every painted cell. In a room that's what was painted when it loaded, so a tile that's
+# briefly not drawn (a teleporter mid-squish, _squish) still counts.
+func painted_cells() -> Array[Vector2i]:
+	if !_tiles.is_empty():
+		var cells: Array[Vector2i] = []
+		cells.assign(_tiles.keys())
+		return cells
+	return get_used_cells(0)
+
 # Cells enemies should keep off when they can: anything that hurts or holds them.
 func avoided_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
-	for cell: Vector2i in get_used_cells(0):
+	for cell: Vector2i in painted_cells():
 		if _is_avoided(cell):
 			cells.append(cell)
 	return cells
@@ -191,7 +212,7 @@ func teleport_destination(cell: Vector2i) -> Variant:
 	if !is_teleport(frame):
 		return null
 	var squares: Array[Vector2i] = []
-	for other: Vector2i in get_used_cells(0):
+	for other: Vector2i in painted_cells():
 		if painted(other) == frame:
 			squares.append(other)
 	if squares.size() < 2:
@@ -219,7 +240,7 @@ func teleporter_near(global_point: Vector2, reach: float) -> Variant:
 	var local := to_local(global_point)
 	var best: Variant = null
 	var best_distance := INF
-	for cell: Vector2i in get_used_cells(0):
+	for cell: Vector2i in painted_cells():
 		if !is_teleport(painted(cell)) || teleport_destination(cell) == null:
 			continue
 		# Measured to the square's edge, so the range is the same from every side.
@@ -249,7 +270,7 @@ func _ready() -> void:
 		return
 	for cell: Vector2i in get_used_cells(0):
 		var frame := get_cell_atlas_coords(0, cell).x
-		var tile := {frame = frame, phase = Phase.RESTING, left = 0.0, cycle = 0, dissolve_at = -1.0}
+		var tile := {frame = frame, phase = Phase.RESTING, left = 0.0, cycle = 0}
 		if frame == Frame.WIRES: # Out of step with each other
 			tile.left = randf_range(0.0, Tuning.wire_idle_time)
 		_tiles[cell] = tile
@@ -310,6 +331,7 @@ func _physics_process(delta: float) -> void:
 		_update_tile(cell, delta)
 	var seen := {}
 	_occupied.clear()
+	_held.clear()
 	if player.visible:
 		_affect(player, player.global_position + Player.FEET, delta)
 		seen[player.get_instance_id()] = true
@@ -343,6 +365,11 @@ func _update_glow(player: Player) -> void:
 		return
 	var destination: Vector2i = teleport_destination(near)
 	_glow.position = map_to_local(destination)
+	_glow.scale = Vector2.ONE
+	if _squishes.has(destination): # Glows squished along with it
+		var squish: Sprite2D = _squishes[destination]
+		_glow.position = squish.position
+		_glow.scale = squish.scale
 	_glow.region_rect = Rect2(painted(destination) * Room.CELL_SIZE, 0, Room.CELL_SIZE, Room.CELL_SIZE)
 	var pulse := (sin(_time * GLOW_PULSE) + 1.0) / 2.0
 	_glow.modulate = Color(GLOW_BRIGHTNESS, GLOW_BRIGHTNESS, GLOW_BRIGHTNESS,
@@ -357,24 +384,7 @@ func _update_tile(cell: Vector2i, delta: float) -> void:
 		Frame.WIRES: _update_wires(cell, tile, delta)
 		Frame.PLATE: _update_plate(cell, tile, delta)
 		Frame.CRACKED: _update_cracked(cell, tile, delta)
-		Frame.PASTE: _update_paste(cell, tile, delta)
 
-# Paste dissolves Tuning.paste_dissolve_time after first catching someone, then grows back
-# Tuning.paste_respawn_time later.
-func _update_paste(cell: Vector2i, tile: Dictionary, delta: float) -> void:
-	if tile.phase == Phase.RESTING && tile.dissolve_at >= 0 && _time >= tile.dissolve_at:
-		_set_phase(cell, Phase.BROKEN, Tuning.paste_respawn_time)
-		Juice.burst(self, _centre(cell), PASTE_COLOR, 10, 30.0, Vector2.ZERO, 2.0, 0.5)
-	elif tile.phase == Phase.BROKEN:
-		tile.left -= delta
-		if tile.left <= 0:
-			tile.dissolve_at = -1.0
-			_set_phase(cell, Phase.RESTING)
-			var nav := _room.nav_if_built()
-			if nav != null:
-				nav.set_avoided(cell, true)
-			Juice.burst(self, _centre(cell), PASTE_COLOR, 12, 20.0, Vector2.ZERO, 2.0, 0.4)
-			Juice.play(_sounds.stick, 0.08, 0.8)
 
 # A plate is drawn raised whenever nobody's standing on it (even while it re-arms), and
 # pressed while somebody is; live, it shows its sparks either way.
@@ -477,8 +487,6 @@ func _frame_for(tile: Dictionary) -> int:
 			return [Frame.PLATE, Frame.PLATE_DOWN, Frame.PLATE_LIVE, Frame.PLATE_BROKEN][phase]
 		Frame.CRACKED:
 			return [Frame.CRACKED, Frame.CRACKING, Frame.HOLE, Frame.CRACKED][phase]
-		Frame.PASTE:
-			return -1 if phase == Phase.BROKEN else Frame.PASTE
 	return tile.frame
 
 func _show_frame(cell: Vector2i, frame: int) -> void:
@@ -505,16 +513,15 @@ static func is_stuck_in(room: Node, body: Node) -> bool:
 	var layer := room.get_node_or_null(NODE_NAME) as SpecialTiles if room != null else null
 	return layer != null && layer._bodies.get(body.get_instance_id(), {}).get("stuck") != null
 
-# How much longer the paste holding `body` lasts, 1 just caught to 0 dissolved, or 0 if
-# nothing holds it. Its status bar shows this (Player, Enemy).
+# How much the paste holding `body` still holds it: the share of the rolls to escape it has
+# yet to make, 1 just caught (and always, for an enemy) down towards 0, or 0 if nothing
+# holds it. Its status bar shows this (Player, Enemy).
 func paste_left(body: Node) -> float:
 	var record: Dictionary = _bodies.get(body.get_instance_id(), {})
-	if record.get("stuck") == null || Tuning.paste_dissolve_time <= 0:
+	if record.get("stuck") == null:
 		return 0.0
-	var tile: Dictionary = _tiles[record.stuck]
-	if tile.phase == Phase.BROKEN:
-		return 0.0
-	return clampf((tile.dissolve_at - _time) / Tuning.paste_dissolve_time, 0.0, 1.0)
+	var needed := maxi(Tuning.paste_rolls_to_escape, 1)
+	return clampf(float(needed - record.rolls) / needed, 0.0, 1.0)
 
 # The same for a body in `room`, which may have no special tiles.
 static func paste_left_in(room: Node, body: Node) -> float:
@@ -564,8 +571,6 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 					record.stretching = false
 					record.rolls = 0
 					record.was_rolling = false
-					if tile.dissolve_at < 0:
-						tile.dissolve_at = _time + Tuning.paste_dissolve_time
 					Juice.burst(self, feet, PASTE_COLOR, 6, 25.0, Vector2.ZERO, 1.5, 0.3)
 					Juice.play(_sounds.stick, 0.08)
 	_hold_in_paste(body, record, feet, moved, delta)
@@ -631,6 +636,9 @@ func _teleport(body: Node2D, record: Dictionary, cell: Vector2i, feet: Vector2) 
 		return false
 	var colour := _teleport_colour(painted(cell))
 	Juice.burst(self, feet, colour, 12, 60.0, Vector2.ZERO, 1.5, 0.35)
+	var travel := _travel_direction(body, cell, feet)
+	_squish(cell, travel, true)
+	_squish(destination, travel, false)
 	body.global_position += _centre(destination) - feet
 	record.cell = destination
 	record.arrived = destination
@@ -643,13 +651,65 @@ func _teleport(body: Node2D, record: Dictionary, cell: Vector2i, feet: Vector2) 
 	Juice.play(_sounds.teleport, 0.08)
 	return true
 
+# Which way something was going as it went into a teleporter: a projectile the way it
+# flies, a body from where its feet came onto the square towards the middle (or the way it
+# was moving, if it's dead centre).
+func _travel_direction(body: Node2D, cell: Vector2i, feet: Vector2) -> Vector2:
+	var shot := body as Projectile
+	if shot != null:
+		return Direction.to_vector(shot.direction)
+	var inward := _centre(cell) - feet
+	if inward.length() >= 1.0:
+		return inward.normalized()
+	var mover := body as CharacterBody2D
+	return mover.velocity.normalized() if mover != null else Vector2.ZERO
+
+# The teleporter on `cell` squashes along `travel`, pushed the way it was entered, and
+# springs back; the square it sends to (`entered` false) stretches out the same way, as
+# if pushed out of. Shown on a sprite over the cell, which isn't drawn meanwhile.
+func _squish(cell: Vector2i, travel: Vector2, entered: bool) -> void:
+	if _squishes.has(cell): # Still springing back from the last one
+		var old: Sprite2D = _squishes[cell]
+		old.queue_free()
+	var frame := painted(cell)
+	var sprite := Sprite2D.new()
+	sprite.texture = TEXTURE
+	sprite.region_enabled = true
+	sprite.region_rect = Rect2(frame * Room.CELL_SIZE, 0, Room.CELL_SIZE, Room.CELL_SIZE)
+	var home := map_to_local(cell)
+	sprite.position = home
+	add_child(sprite)
+	_squishes[cell] = sprite
+	erase_cell(0, cell)
+	var horizontal := absf(travel.x) >= absf(travel.y)
+	var along := SQUISH_ALONG if entered else STRETCH_ALONG
+	var across := SQUISH_ACROSS if entered else STRETCH_ACROSS
+	var squashed := Vector2(along, across) if horizontal else Vector2(across, along)
+	if travel == Vector2.ZERO:
+		squashed = Vector2.ONE * SQUISH_ALONG # Straight down onto it: squashed all round
+	var pushed := home + travel * (SQUISH_SHIFT if entered else STRETCH_SHIFT)
+	# Into the squash quickly, a moment held there, then a wobbly spring back.
+	var tween := sprite.create_tween()
+	tween.tween_property(sprite, "scale", squashed, SQUISH_IN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(sprite, "position", pushed, SQUISH_IN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(SQUISH_HOLD)
+	tween.tween_property(sprite, "scale", Vector2.ONE, SQUISH_TIME).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(sprite, "position", home, SQUISH_TIME).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(_end_squish.bind(cell, sprite))
+
+func _end_squish(cell: Vector2i, sprite: Sprite2D) -> void:
+	if _squishes.get(cell) == sprite:
+		_squishes.erase(cell)
+		_show_frame(cell, painted(cell))
+	sprite.queue_free()
+
 func _teleport_colour(frame: int) -> Color:
 	var colours := [Color("e85050"), Color("4f8fff"), Color("4fd060"), Color("f0d040")]
 	return colours[clampi(frame - Frame.TELEPORT_1, 0, TELEPORT_PAIRS - 1)]
 
 # Caught in paste: kept within Tuning.paste_reach of the paste's edge, and pulled back to
 # the middle whenever it stops moving. The player gets out with Tuning.paste_rolls_to_escape
-# rolls (the ones before only strain against it); otherwise it holds until it dissolves.
+# rolls (the ones before only strain against it); otherwise it holds for good.
 # Enemies caught in it crawl (Enemy.ground_motion).
 func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, moved: float, delta: float) -> void:
 	if record.stuck == null:
@@ -657,9 +717,7 @@ func _hold_in_paste(body: CharacterBody2D, record: Dictionary, feet: Vector2, mo
 	var cell: Vector2i = record.stuck
 	var tile: Dictionary = _tiles[cell]
 	var player := body as Player
-	if tile.phase == Phase.BROKEN:
-		record.stuck = null
-		return
+	_held[cell] = true
 	if player != null:
 		var rolling := player.rolling.time_left > 0
 		if rolling && !record.was_rolling: # A new roll
@@ -745,9 +803,7 @@ func _draw_fx() -> void:
 				if tile.phase == Phase.WARNING: # Darkening as it gives way
 					var progress: float = 1.0 - tile.left / maxf(Tuning.crack_time, 0.01)
 					_fx.draw_circle(origin + Vector2.ONE * 12, 3.0 + 7.0 * progress, Color(0, 0, 0, 0.35 * progress))
-			Frame.PASTE:
-				if tile.phase != Phase.BROKEN:
-					_fx_bubbles(origin, seed, tile)
+			Frame.PASTE: _fx_bubbles(origin, seed, cell)
 
 func _fx_pixel(at: Vector2, colour: Color) -> void:
 	_fx.draw_rect(Rect2(at.floor(), Vector2.ONE), colour)
@@ -808,10 +864,9 @@ func _fx_copper_flicker(origin: Vector2, seed: float) -> void:
 		for gap in WIRE_GAPS:
 			_fx_pixel(origin + Vector2(gap), Color(1.0, 0.9, 0.5, (flicker - 0.6) * 2.5))
 
-# Two bubbles slowly swelling and popping; while it's holding someone it bubbles faster,
-# and in its last two seconds it flickers as it's about to dissolve.
-func _fx_bubbles(origin: Vector2, seed: float, tile: Dictionary) -> void:
-	var holding: bool = tile.dissolve_at >= 0
+# Two bubbles slowly swelling and popping, faster while it holds someone.
+func _fx_bubbles(origin: Vector2, seed: float, cell: Vector2i) -> void:
+	var holding := _held.has(cell)
 	var speed := 1.6 if holding else 0.7
 	for k in 2:
 		var t := fmod(_time * speed + seed + k * 0.5, 1.0)
@@ -821,8 +876,6 @@ func _fx_bubbles(origin: Vector2, seed: float, tile: Dictionary) -> void:
 		else:
 			for d: Vector2 in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2)]:
 				_fx_pixel(at + d, Color(1, 0.85, 0.6, 0.8))
-	if holding && tile.dissolve_at - _time < 2.0 && fmod(_time, 0.3) < 0.15:
-		_fx.draw_rect(Rect2(origin + Vector2(2, 2), Vector2(20, 20)), Color(1, 1, 1, 0.12))
 
 # Stray sparks off resting wires, dust trickling into holes and floor that's giving way.
 func _ambient_effects(delta: float) -> void:

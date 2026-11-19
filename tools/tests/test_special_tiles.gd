@@ -111,21 +111,15 @@ func test_paste_takes_three_rolls_to_escape() -> void:
 			expect(feet_index(room).x <= 5, "still held after roll %d" % (roll + 1))
 	expect_equal(feet_index(room), Vector2i(8, 6), "free after %d rolls" % rolls)
 
-func test_paste_grows_back() -> void:
-	var tuning := autoload("Tuning")
-	tuning.paste_dissolve_time = 0.3
-	tuning.paste_respawn_time = 0.4
+func test_paste_never_wears_off() -> void:
 	var design := RoomDesign.new()
 	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PASTE)
 	var room: Room = await boot_design(design)
 	var cell := RoomDesign.tile_cell(Vector2i(4, 6))
 	stand_on(room, Vector2i(4, 6))
-	await wait_real(0.45)
-	expect_equal(layer(room).get_cell_source_id(0, cell), -1, "dissolved")
-	stand_on(room, Vector2i(9, 9))
-	await wait_real(0.6)
-	expect(layer(room).get_cell_source_id(0, cell) != -1, "grown back")
-	expect(layer(room).avoided_cells().has(cell), "and avoided again")
+	await wait_real(3.0)
+	expect(layer(room).get_cell_source_id(0, cell) != -1, "still there")
+	expect(SpecialTiles.is_stuck_in(room, player()), "still holding the player")
 
 func test_pressure_plate_rises_when_left() -> void:
 	autoload("Tuning").plate_delay = 5.0 # Stays clicked down, not live, while we look
@@ -314,22 +308,20 @@ func test_arrow_drawn_across_a_teleporter_goes_through() -> void:
 			break
 	expect(went, "the arrow came out of the partner teleporter")
 
-func test_paste_bar_counts_down_until_it_dissolves() -> void:
-	var tuning := autoload("Tuning")
-	tuning.paste_dissolve_time = 1.0
+func test_paste_bar_counts_down_the_rolls() -> void:
 	var design := RoomDesign.new()
 	design.set_cell(Vector2i(4, 6), RoomDesign.Cell.PASTE)
 	var room: Room = await boot_design(design)
 	expect_equal(SpecialTiles.paste_left_in(room, player()), 0.0, "no bar before it's caught")
 	stand_on(room, Vector2i(4, 6))
 	await physics_frames(3)
-	var first := SpecialTiles.paste_left_in(room, player())
-	expect(first > 0.8, "nearly full just after being caught (%.2f)" % first)
-	await wait_real(0.5)
-	var later := SpecialTiles.paste_left_in(room, player())
-	expect(later < first && later > 0.0, "counting down (%.2f)" % later)
-	await wait_real(0.8)
-	expect_equal(SpecialTiles.paste_left_in(room, player()), 0.0, "gone once the paste has dissolved")
+	expect_near(SpecialTiles.paste_left_in(room, player()), 1.0, 0.001, "full when caught")
+	var rolls: int = autoload("Tuning").paste_rolls_to_escape
+	player().rolling.start(0.2)
+	await physics_frames(2)
+	player().rolling.stop()
+	await physics_frames(2)
+	expect_near(SpecialTiles.paste_left_in(room, player()), float(rolls - 1) / rolls, 0.001, "down a roll's worth")
 
 func test_speed_tile_speeds_up_and_shows_its_status() -> void:
 	var design := RoomDesign.new()
@@ -346,3 +338,54 @@ func test_speed_tile_speeds_up_and_shows_its_status() -> void:
 	stand_on(room, Vector2i(2, 2))
 	await physics_frames(3)
 	expect_near(player()._ground_factor, 1.0, 0.001, "normal off them")
+
+# Rolls in place (facing right, no direction held) using the real roll input.
+func roll_right() -> void:
+	player().direction = Direction.RIGHT
+	Input.action_press("roll")
+	await physics_frames(2)
+	Input.action_release("roll")
+	await wait_real(Tuning.roll_duration + 0.3)
+
+func test_rolling_over_spikes_in_one_roll_takes_no_hit() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(5, 6), RoomDesign.Cell.SPIKES)
+	design.set_cell(Vector2i(10, 6), RoomDesign.Cell.SPIKES)
+	design.set_cell(Vector2i(11, 6), RoomDesign.Cell.SPIKES)
+	var room: Room = await boot_design(design)
+	stand_on(room, Vector2i(4, 6))
+	await physics_frames(3)
+	var before := player().level_countdown.time_left
+	await roll_right()
+	expect(feet_index(room).x >= 6, "the roll cleared the spikes (feet at %s)" % feet_index(room))
+	expect_near(player().level_countdown.time_left, before, 0.6, "no time taken rolling over them")
+	# A roll that ends on spikes still hurts.
+	stand_on(room, Vector2i(9, 6))
+	await wait_real(0.6) # Roll cooldown
+	before = player().level_countdown.time_left
+	await roll_right()
+	expect(feet_index(room).x in [10, 11], "the roll ended on the spikes (feet at %s)" % feet_index(room))
+	expect(before - player().level_countdown.time_left > 1.0, "hurt for landing on them")
+
+func test_teleporters_squish_the_way_they_are_entered() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(6, 6), RoomDesign.Cell.TELEPORT_1)
+	design.set_cell(Vector2i(10, 2), RoomDesign.Cell.TELEPORT_1)
+	var room: Room = await boot_design(design)
+	var tiles := layer(room)
+	var entry := RoomDesign.tile_cell(Vector2i(6, 6))
+	var exit := RoomDesign.tile_cell(Vector2i(10, 2))
+	stand_on(room, Vector2i(6, 6))
+	player().global_position.x -= 10.0 # Feet coming in from the left
+	await physics_frames(6) # Into the squash
+	expect(tiles._squishes.has(entry) && tiles._squishes.has(exit), "both squares squish")
+	if tiles._squishes.has(entry):
+		var squashed: Vector2 = (tiles._squishes[entry] as Sprite2D).scale
+		expect(squashed.x < 1.0 && squashed.y > 1.0, "the entered square squashes left to right: %s" % squashed)
+	if tiles._squishes.has(exit):
+		var stretched: Vector2 = (tiles._squishes[exit] as Sprite2D).scale
+		expect(stretched.x > 1.0, "the far square stretches out the same way: %s" % stretched)
+	expect(tiles.teleport_destination(exit) == entry, "still pairs up while squished")
+	await wait_real(SpecialTiles.SQUISH_IN_TIME + SpecialTiles.SQUISH_HOLD + SpecialTiles.SQUISH_TIME + 0.3)
+	expect(tiles._squishes.is_empty(), "sprung back")
+	expect(tiles.get_cell_source_id(0, entry) != -1 && tiles.get_cell_source_id(0, exit) != -1, "drawn again")

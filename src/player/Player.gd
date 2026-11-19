@@ -82,7 +82,7 @@ const DAZE_BAR := Color(0.75, 0.5, 1)
 const SPIN_BAR := Color(1, 0.85, 0.3)
 const CURSE_BAR := Color(0.55, 0.85, 0.3) # A warlock's curses (see Curses)
 # Special tiles (see SpecialTiles): a speed or slow tile shows a full bar while stood on;
-# thermal paste counts down until it dissolves.
+# thermal paste counts down the rolls left to break free.
 const FAST_TILE_BAR := Color(1.0, 0.7, 0.2)
 const SLOW_TILE_BAR := Color(0.5, 0.45, 1.0)
 const PASTE_BAR := Color(0.85, 0.5, 0.17)
