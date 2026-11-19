@@ -25,6 +25,9 @@ strike. Swing as it glints to **parry** and stun it; swing too early and you're 
 staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
+Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
+volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.
+
 | Action | Keyboard | Controller |
 |---|---|---|
 | Move | WASD or arrow keys | D-pad |
@@ -165,10 +168,11 @@ the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
 ### Room creator
 
 Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
-Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles** and
-**Enemies** tabs of icons), then left-click or drag on the floor to paint pitfalls and
-stalagmites, or click to place enemies (goblins, trolls, orcs, knights, dual knights,
-wizards, warlocks, necromancers) and switches; right-click erases. A goblin or knight you place, or click with the **Select** tool, shows its detection
+Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
+**Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
+pitfalls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
+knights, dual knights, wizards, warlocks, necromancers) and switches; right-click erases.
+Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin or knight you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
 the side it watches, since enemies can't see behind themselves. Wizards have no radius: they
 react to the player anywhere in the room. In room scenes the value is each enemy's
@@ -206,14 +210,38 @@ into a scene in `src/world/rooms/`. Run from source, the folder is in the projec
 exported build it sits beside the game's executable (or in the user data folder if that one
 can't be written to). **Open folder** opens it.
 
+### Special tiles
+
+The room creator's **Tiles** tab has slick floor, slow and speed tiles and four pairs of
+teleporters; the **Traps** tab has exposed wires, spikes, cracked floor, pressure plates and
+thermal paste. They affect the player and enemies alike. Enemies walk round a trap when the
+way round is short, but cut across rather than go far out of their way. A roll protects the
+player from spikes and shocks.
+
+| Tile | What it does |
+|---|---|
+| Exposed wires | Rest, spark as a warning, then go live (with an enemy-style twinkle) and shock whoever is on them. Swing the sword into them while live to break them for good. |
+| Pressure plate | Clicks down when stepped on (and pops back up as soon as it's left), then goes live like wires and re-arms. Breaks the same way. |
+| Spikes | Hurt on stepping on, and again every second while stood on. Rolling right over them in one roll is safe; a roll that ends on them isn't. |
+| Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
+| Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
+| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Enemies caught in it walk as usual inside that area, run on the spot at its edge, and after a couple of seconds there are slowly hauled back to the middle; the third time they reach the edge they tear free. It never wears off: three rolls break free, counted down by a bar over the player's head. |
+| Slow / speed tile | Slower or faster walking, rolling and attacking while on it, with a sound on stepping on and a status icon while there. |
+| Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. Going through squashes the square the way it was entered and stretches the far one out. |
+
+Their timings, damage and strengths are in the debug menu's **Tiles** tab (`Tuning.gd`). In a
+room scene they're a `SpecialTiles` layer (`src/world/tiles/SpecialTiles.tscn`), painted with
+the frames of `assets/sprites/tiles/special_tiles.png` (placeholder art); the room creator's
+export lists them in its grid.
+
 ### Debug menu
 
 In debug builds (running from the editor or a debug export), **F2** opens the debug menu over
 the game and pauses it; F2 or **Close** shuts it again. The **Progress** tab edits the running
 floor (coins, keys, arrows, time left, floor, upgrade levels) and has Refill time, Kill
 enemies in this room and Next floor buttons. The other tabs edit the gameplay numbers in
-`src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, timer, loot, hit-stop,
-cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back
+`src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, special tiles, timer,
+loot, hit-stop, cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back
 to their shipped value, Progress rows to what they were when the menu opened. **Reset all**
 resets every row. **Export** writes every Tuning value, changed ones first and marked `*`, to a
 `tuning_exports` folder (same locations as the room creator's export) and copies it to the
@@ -273,11 +301,11 @@ src/projectiles/  arrows, fireballs and the boss laser, all one Projectile scrip
 src/objects/   chests, switches, room detection and the fade-out void
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
 src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room),
-               camera and HUD (GameCamera)
+               special tiles (SpecialTiles), camera and HUD (GameCamera)
   rooms/       random rooms (every .tscn here is picked up automatically)
   keyrooms/    rooms holding the three keys
   special/     start, end and boss rooms
-  tiles/       TileMap scenes used by rooms
+  tiles/       TileMap scenes used by rooms (SpecialTiles.tscn: traps and teleporters)
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
 src/ui/        HUD widgets (timer, counters, minimap) and menus (title, boot, pause,

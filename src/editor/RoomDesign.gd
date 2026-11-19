@@ -9,7 +9,30 @@ extends RefCounted
 # Cells here are floor indices, (0, 0) to (SIZE - 1, SIZE - 1), top-left first. tile_cell()
 # turns one into the TileMap cell it covers.
 
-enum Cell { FLOOR, PIT, STALAGMITE }
+# FLOOR to STALAGMITE are drawn on the room's own tile layers; the rest are special tiles,
+# drawn on its SpecialTiles layer over plain floor (see SpecialTiles for what each does).
+enum Cell {
+	FLOOR, PIT, STALAGMITE,
+	WIRES, SPIKES, CRACKED, SLICK, PLATE, PASTE, SLOW, FAST,
+	TELEPORT_1, TELEPORT_2, TELEPORT_3, TELEPORT_4,
+}
+# The SpecialTiles frame each special cell is painted with.
+const SPECIAL_FRAMES := {
+	Cell.WIRES: SpecialTiles.Frame.WIRES,
+	Cell.SPIKES: SpecialTiles.Frame.SPIKES,
+	Cell.CRACKED: SpecialTiles.Frame.CRACKED,
+	Cell.SLICK: SpecialTiles.Frame.SLICK,
+	Cell.PLATE: SpecialTiles.Frame.PLATE,
+	Cell.PASTE: SpecialTiles.Frame.PASTE,
+	Cell.SLOW: SpecialTiles.Frame.SLOW,
+	Cell.FAST: SpecialTiles.Frame.FAST,
+	Cell.TELEPORT_1: SpecialTiles.Frame.TELEPORT_1,
+	Cell.TELEPORT_2: SpecialTiles.Frame.TELEPORT_2,
+	Cell.TELEPORT_3: SpecialTiles.Frame.TELEPORT_3,
+	Cell.TELEPORT_4: SpecialTiles.Frame.TELEPORT_4,
+}
+const TELEPORTS: Array[Cell] = [Cell.TELEPORT_1, Cell.TELEPORT_2, Cell.TELEPORT_3, Cell.TELEPORT_4]
+const TELEPORT_NAMES: Array[String] = ["red dot", "blue triangle", "green square", "yellow diamond"]
 
 const SIZE := Room.STANDARD_FLOOR_SIZE
 const BLANK_ROOM := "res://src/editor/BlankRoom.tscn"
@@ -29,7 +52,12 @@ const ENEMY_FEET := Vector2(0, 8) # Enemies stand this far below their origin (E
 const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relative to its origin
 
 # Characters in the exported grid.
-const CELL_CHARS := {Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S"}
+const CELL_CHARS := {
+	Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S",
+	Cell.WIRES: "E", Cell.SPIKES: "^", Cell.CRACKED: "%", Cell.SLICK: "=", Cell.PLATE: "P",
+	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
+	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
+}
 const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
 # in the room, so they have none.
@@ -92,12 +120,20 @@ static func object_origin(kind: String, index: Vector2i) -> Vector2:
 func get_cell(index: Vector2i) -> Cell:
 	return cells[index.y * SIZE + index.x] as Cell
 
+static func is_special(kind: Cell) -> bool:
+	return SPECIAL_FRAMES.has(kind)
+
+# Ground something can walk on: floor and every special tile, but not a pit or rock.
+static func is_walkable(kind: Cell) -> bool:
+	return kind != Cell.PIT && kind != Cell.STALAGMITE
+
 # Sets the ground on `index`. Anything but floor knocks off an object standing there.
 func set_cell(index: Vector2i, kind: Cell) -> void:
 	cells[index.y * SIZE + index.x] = kind
 	if kind != Cell.FLOOR:
 		_forget(index)
-		# Paths can't run through a pit or rock.
+	if !is_walkable(kind):
+		# Paths can't run through a pit or rock (they can cross special tiles).
 		for enemy: Vector2i in roams:
 			if roams[enemy].mode == "path" && (roams[enemy].points as Array).has(index):
 				(roams[enemy].points as Array).erase(index)
@@ -155,7 +191,7 @@ func clear_enemies() -> void:
 		if objects[index] != "switch":
 			_forget(index)
 
-# Turns every pitfall and stalagmite back to floor; enemies and switches stay.
+# Turns every pitfall, stalagmite and special tile back to floor; enemies and switches stay.
 func clear_tiles() -> void:
 	cells.fill(Cell.FLOOR)
 
@@ -208,7 +244,7 @@ func path_points(index: Vector2i) -> Array:
 # before the last takes the last one off instead, so a drag can back up. False if nothing
 # changed (not floor, or already the end).
 func add_path_point(index: Vector2i, cell: Vector2i) -> bool:
-	if roam_mode(index) != "path" || !in_floor(cell) || get_cell(cell) != Cell.FLOOR:
+	if roam_mode(index) != "path" || !in_floor(cell) || !is_walkable(get_cell(cell)):
 		return false
 	var points: Array = roams[index].points
 	var last: Vector2i = points.back() if !points.is_empty() else index
@@ -370,7 +406,13 @@ func clear_problem() -> String:
 		return "No enemies: the room opens straight away"
 	if floors == 0:
 		return "No floors ticked: the room never appears"
+	for i in TELEPORTS.size():
+		if cell_count(TELEPORTS[i]) == 1:
+			return "The %s teleporter needs a second square to send things to" % TELEPORT_NAMES[i]
 	return ""
+
+func cell_count(kind: Cell) -> int:
+	return Array(cells).count(kind)
 
 # Where the play-test puts the player: the free floor cell nearest the middle of the left
 # edge, just inside the left door, as if they had walked in from the room to the left.
@@ -390,7 +432,7 @@ func spawn_index() -> Vector2i:
 
 # --- Drawing onto a room ---
 
-# Draws every cell onto `room`'s Tiles, Pitfalls and Stalagmites layers.
+# Draws every cell onto `room`'s Tiles, Pitfalls, Stalagmites and SpecialTiles layers.
 func paint_all(room: Node) -> void:
 	for y in range(SIZE):
 		for x in range(SIZE):
@@ -402,6 +444,13 @@ func paint(room: Node, index: Vector2i) -> void:
 	var tiles: TileMap = room.get_node("Tiles")
 	var pitfalls: TileMap = room.get_node("Pitfalls")
 	var kind := get_cell(index)
+	# Special tiles sit on plain floor, on a layer of their own made the first time one is painted.
+	var special := room.get_node_or_null(SpecialTiles.NODE_NAME) as SpecialTiles
+	if is_special(kind):
+		special = SpecialTiles.of(room)
+		special.set_cell(0, tile, 0, Vector2i(SPECIAL_FRAMES[kind], 0))
+	elif special != null:
+		special.erase_cell(0, tile)
 	# Rooms have no floor tile under a pit.
 	if kind == Cell.PIT:
 		tiles.erase_cell(0, tile)
@@ -474,7 +523,7 @@ func to_text() -> String:
 	var lines: PackedStringArray = [
 		"# Infinite Labyrinth room design, made with the room creator.",
 		"# Give this file to Claude to add the room to src/world/rooms/.",
-		"version: 4",
+		"version: 5",
 		"floor_size: %d" % SIZE,
 		"completion: %s" % completion(),
 		"enemy_count: %d" % enemy_count(),
@@ -486,6 +535,12 @@ func to_text() -> String:
 		"#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)",
 		"#   D  dual knight             (knight family: DualKnight.tscn)",
 		"#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)",
+		"# Special tiles, on a SpecialTiles layer (src/world/tiles/SpecialTiles.tscn) over plain",
+		"# floor, each the SpecialTiles.Frame of the same name as its atlas column:",
+		"#   E  exposed wires   ^  spikes        %  cracked floor   =  slick",
+		"#   P  pressure plate  &  thermal paste  -  slow tile      +  speed tile",
+		"#   1-4  teleporters (1 red dot, 2 blue triangle, 3 green square, 4 yellow diamond);",
+		"#        each sends to the next square with the same number, in reading order",
 		"# Enemies and switches stand on floor.",
 		"grid:",
 	]

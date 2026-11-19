@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" uid="uid://bxeuboc4hhnit" path="res://assets/sprites/tiles/special_tiles.png" id="1"]
+[ext_resource type="Script" uid="uid://b0upmb0em25dw" path="res://src/world/SpecialTiles.gd" id="2"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_special"]
+texture = ExtResource("1")
+texture_region_size = Vector2i(24, 24)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+10:0/0 = 0
+11:0/0 = 0
+12:0/0 = 0
+13:0/0 = 0
+14:0/0 = 0
+15:0/0 = 0
+16:0/0 = 0
+17:0/0 = 0
+18:0/0 = 0
+19:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_special"]
+tile_size = Vector2i(24, 24)
+sources/0 = SubResource("TileSetAtlasSource_special")
+
+[node name="SpecialTiles" type="TileMap" unique_id=1873402215]
+tile_set = SubResource("TileSet_special")
+format = 2
+script = ExtResource("2")

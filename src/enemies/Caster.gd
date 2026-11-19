@@ -57,6 +57,9 @@ func animate() -> void:
 # Straight away from the player, sliding along whatever it bumps into.
 func _back_away(delta: float) -> void:
 	var motion := -_to_player().normalized() * speed * delta
+	if !_safe_step(motion): # Won't back onto a trap
+		motion = Vector2.ZERO
+	motion = ground_motion(motion, delta)
 	var collision := move_and_collide(motion)
 	if collision != null:
 		move_and_collide(collision.get_remainder().slide(collision.get_normal()))

@@ -75,10 +75,12 @@ func _ready() -> void:
 	# Running out of time pauses the game, so keep updating to show 0:00 under it.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_tick = AudioStreamPlayer.new()
+	_tick.bus = &"SFX"
 	_tick.stream = TickSound
 	add_child(_tick)
 	for i in DRAIN_TICK_VOICES:
 		var voice := AudioStreamPlayer.new()
+		voice.bus = &"SFX"
 		voice.stream = TickSound
 		voice.volume_db = DRAIN_TICK_DB
 		add_child(voice)

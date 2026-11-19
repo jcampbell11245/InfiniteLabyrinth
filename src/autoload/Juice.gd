@@ -63,19 +63,24 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	for i in COIN_VOICES:
 		var voice := AudioStreamPlayer.new()
+		voice.bus = &"SFX"
 		voice.volume_db = COIN_VOLUME_DB
 		add_child(voice)
 		_coin_players.append(voice)
 	_clank_player = AudioStreamPlayer.new()
+	_clank_player.bus = &"SFX"
 	_clank_player.stream = CLANK
 	add_child(_clank_player)
 	_bad_clank_player = AudioStreamPlayer.new()
+	_bad_clank_player.bus = &"SFX"
 	_bad_clank_player.stream = CLANK_BAD
 	add_child(_bad_clank_player)
 	_deflect_player = AudioStreamPlayer.new()
+	_deflect_player.bus = &"SFX"
 	_deflect_player.stream = DEFLECT
 	add_child(_deflect_player)
 	_coin_bad_player = AudioStreamPlayer.new()
+	_coin_bad_player.bus = &"SFX"
 	_coin_bad_player.stream = COIN_BAD
 	_coin_bad_player.volume_db = COIN_VOLUME_DB
 	add_child(_coin_bad_player)
@@ -245,6 +250,7 @@ func twinkle(parent: Node2D, offset: Vector2, solid := Color(0, 0, 0, 0)) -> voi
 
 func _twinkle_voice(t: Node2D, pitch: float, volume_db: float) -> void:
 	var sound := AudioStreamPlayer.new()
+	sound.bus = &"SFX"
 	sound.stream = TWINKLE_SOUND
 	sound.volume_db = volume_db
 	t.add_child(sound)
