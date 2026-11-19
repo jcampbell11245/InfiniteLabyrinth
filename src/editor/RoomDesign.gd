@@ -46,6 +46,8 @@ const OBJECT_SCENES := {
 	"warlock": "res://src/enemies/Warlock.tscn",
 	"necromancer": "res://src/enemies/Necromancer.tscn",
 	"wizard": "res://src/enemies/Wizard.tscn",
+	"wyrm": "res://src/enemies/Wyrm.tscn",
+	"wyvern": "res://src/enemies/Wyvern.tscn",
 	"switch": "res://src/objects/Switch.tscn",
 }
 const ENEMY_FEET := Vector2(0, 8) # Enemies stand this far below their origin (Enemy.FEET_OFFSET)
@@ -58,7 +60,7 @@ const CELL_CHARS := {
 	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
 }
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N"}
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
 # in the room, so they have none.
 const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight"]
@@ -535,6 +537,7 @@ func to_text() -> String:
 		"#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)",
 		"#   D  dual knight             (knight family: DualKnight.tscn)",
 		"#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)",
+		"#   Y  wyrm       V  wyvern       (dragons: Wyrm.tscn, Wyvern.tscn)",
 		"# Special tiles, on a SpecialTiles layer (src/world/tiles/SpecialTiles.tscn) over plain",
 		"# floor, each the SpecialTiles.Frame of the same name as its atlas column:",
 		"#   E  exposed wires   ^  spikes        %  cracked floor   =  slick",

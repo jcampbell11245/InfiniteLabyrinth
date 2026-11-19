@@ -83,6 +83,22 @@ var curse_speed_multiplier := 0.55 # Walk and roll speed while slowed
 # Goblin family: trolls (Troll.gd) and orcs (Orc.tscn), placed with the room creator.
 var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
 var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back when the troll dies
+# Dragons (Wyrm.gd): wyrms and the bigger wyverns circle the player, now and then stopping
+# to breathe a fireball or charge.
+var wyrm_orbit_radius := 80.0 # Pixels from the player they circle at
+var wyrm_orbit_flip_min := 1.5 # Seconds before it may turn round and circle the other way, rolled each time
+var wyrm_orbit_flip_max := 4.0
+var wyrm_attack_cooldown_min := 1.8 # Seconds of circling between attacks, rolled each time
+var wyrm_attack_cooldown_max := 3.2
+var wyrm_charge_chance := 0.5 # Share of attacks that are charges; the rest are fireballs
+var wyrm_charge_speed := 260.0 # Pixels/sec while charging
+var wyrm_charge_overshoot := 28.0 # Pixels past the player a charge carries on
+var wyrm_charge_max_distance := 240.0 # Pixels: longest a charge goes, overshoot included
+var wyrm_clash_reach := 22.0 # Pixels short of the player where a charge strikes; its twinkle comes a parry window before
+var wyrm_charge_recovery := 0.45 # Seconds it hovers after a charge before circling again
+var wyrm_fireball_speed := 140.0 # Wyrm and wyvern fireballs, before any hit back
+var wyvern_heavy_charge_chance := 0.4 # Share of a wyvern's charges that glint red and can't be parried
+var wyvern_heavy_end_lag := 1.0 # Seconds a wyvern hangs in the air, open, after an unparryable charge
 var boss_laser_cooldown := 1.0
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
@@ -253,6 +269,20 @@ const FIELDS := [
 	["Enemies", "wizard_volley_reaction_time", "Wizard volley reaction time (s)", 0, 2, 0.05, "new (RangedEnemy._player_could_return)"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],
+	["Enemies", "wyrm_orbit_radius", "Wyrm circle radius (px)", 20, 200, 1, "new (Wyrm._circle)"],
+	["Enemies", "wyrm_orbit_flip_min", "Wyrm circle direction change min (s)", 0.1, 10, 0.1, "new (Wyrm._circle)"],
+	["Enemies", "wyrm_orbit_flip_max", "Wyrm circle direction change max (s)", 0.1, 10, 0.1, "new (Wyrm._circle)"],
+	["Enemies", "wyrm_attack_cooldown_min", "Wyrm attack cooldown min (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
+	["Enemies", "wyrm_attack_cooldown_max", "Wyrm attack cooldown max (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
+	["Enemies", "wyrm_charge_chance", "Wyrm charge (vs fireball) chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
+	["Enemies", "wyrm_charge_speed", "Wyrm charge speed (px/s)", 50, 800, 10, "new (Wyrm._dash)"],
+	["Enemies", "wyrm_charge_overshoot", "Wyrm charge overshoot (px)", 0, 150, 1, "new (Wyrm._begin_dash)"],
+	["Enemies", "wyrm_charge_max_distance", "Wyrm charge max distance (px)", 20, 500, 5, "new (Wyrm._begin_dash)"],
+	["Enemies", "wyrm_clash_reach", "Wyrm charge strike distance (px)", 0, 80, 1, "new (Wyrm._dash)"],
+	["Enemies", "wyrm_charge_recovery", "Wyrm recovery after a charge (s)", 0, 3, 0.05, "new (Wyrm._end_attack)"],
+	["Enemies", "wyrm_fireball_speed", "Wyrm/wyvern fireball speed", 10, 600, 10, "new (Wyrm.breathe_fire)"],
+	["Enemies", "wyvern_heavy_charge_chance", "Wyvern unparryable charge chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
+	["Enemies", "wyvern_heavy_end_lag", "Wyvern unparryable charge end lag (s)", 0, 5, 0.05, "new (Wyrm._end_attack)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],

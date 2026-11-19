@@ -1,0 +1,320 @@
+class_name Wyrm
+extends Enemy
+
+# Dragons: the wyrm and the wyvern (Wyvern.tscn, the same script with bigger numbers). They
+# fly, so pits and special tiles leave them alone (see Enemy.flies), though stalagmites and
+# walls still stop them. While the player is in the room they circle at
+# Tuning.wyrm_orbit_radius, now and then turning round to circle the other way, and every
+# few seconds (Tuning.wyrm_attack_cooldown_min/max) stop to attack, one of two ways:
+#
+# Fireball (the "shoot" animation): it rears back, glows, and breathes a fireball at the
+# player. A wyrm's flies straight; a wyvern's homes like a wizard's (homing_fireball). Either
+# can be hit back with the sword, and then homes on the dragon that breathed it. Dragons
+# don't bat it back again the way wizards do. Breathing can't be parried.
+#
+# Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
+# coils (frame 0), then freezes in its lunge pose (frame 1) for the usual random windup hold,
+# aims at the player and dashes straight at them at Tuning.wyrm_charge_speed. Half a parry
+# window before it gets within Tuning.wyrm_clash_reach of them it glints and pulls up there,
+# hanging in front of the player until the window closes; then it bites (frame 2, its
+# Hitbox live) and carries on through for Tuning.wyrm_charge_overshoot. Parried in the
+# window it's knocked back and stunned like any parried enemy; a swing that meets it before
+# the glint is blocked and staggers the player. A wyvern's charges glint red
+# Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
+# so the player rolls through and hits it from behind, and it hangs in the air open for
+# Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
+#
+# Dragons check in with the room's AttackCoordinator, so a goblin won't start a swing while
+# a dragon is mid-charge (and the other way round), but never take melee turns. Dragons in
+# the same room attack one at a time.
+
+const Fireball := preload("res://src/projectiles/Fireball.tscn")
+const CHARGE_SOUND := preload("res://assets/sfx/slash1.wav")
+const CHARGE_PITCH := 0.6
+const ORBIT_LEAD := 0.5 # Radians ahead round the circle it aims for
+const ORBIT_WALL_MARGIN := 14.0 # Circle targets stay this far inside the floor
+const ORBIT_ARRIVE := 2.0 # Pixels from a circle target that count as there
+const ORBIT_STUCK_TIME := 0.4 # Seconds pressed against something before circling the other way
+const SEPARATION := 30.0 # Pixels: closer than this to another enemy, it steers away from it
+const FIRE_FLASH := Color(1, 0.6, 0.2) # Glow as it draws breath, warning of the fireball
+const BREATH_FRAME := 1 # "shoot" frame it draws breath on
+# Where fireballs leave its mouth, in its own (unscaled) units: this far out the way it
+# faces, and MOUTH_HEIGHT above its origin.
+const MOUTH_REACH := 16.0
+const MOUTH_HEIGHT := -8.0
+
+@export var homing_fireball := false # Wyverns: the fireball homes on the player
+@export var has_heavy_charge := false # Wyverns: some charges glint red and can't be parried
+@export var voice_pitch := 1.0 # Pitch of its sounds (wyverns deeper)
+
+var _orbit_dir := 1.0 # 1 circles clockwise, -1 anticlockwise
+var _orbit_flip_in := 0.0 # Seconds until it may turn round
+var _stuck_for := 0.0 # Seconds its circling has been pressed against something
+var _moving := false # Flew this physics frame (picks "fly" over "idle")
+var _charge_dir := Vector2.RIGHT # Fixed for a charge once it sets off
+var _dashing := false # The charge under way has set off
+var _dash_left := 0.0 # Pixels of the charge still to fly
+var _recover: Timer # Running while it hovers after an attack, before circling again
+var _charge_sound: AudioStreamPlayer
+
+@onready var _hitbox_pivot: Node2D = $HitboxPivot
+@onready var _hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
+
+func _ready() -> void:
+	super()
+	_recover = _add_timer()
+	_charge_sound = AudioStreamPlayer.new()
+	_charge_sound.bus = &"SFX"
+	_charge_sound.stream = CHARGE_SOUND
+	add_child(_charge_sound)
+	direction = Direction.RIGHT
+	_orbit_dir = [-1.0, 1.0].pick_random()
+	_roll_cooldown()
+	_play("idle")
+
+func flies() -> bool:
+	return true
+
+func _process(_delta: float) -> void:
+	if player.in_transition:
+		_play("idle")
+		return
+	_update_windup()
+	if !_animation_is("slash"): # Parried, interrupted or finished
+		_hitbox.disabled = true
+		_dashing = false
+
+func _physics_process(delta: float) -> void:
+	_moving = false
+	if player.in_transition || !room.player_active || !is_player_in_room():
+		return
+	if is_stunned(): # Parried
+		_apply_knockback(delta)
+		return
+	var coordinator := AttackCoordinator.for_room(room)
+	coordinator.check_in(self)
+	if _animation_is("slash"):
+		_charge(delta)
+	elif _animation_is("shoot"):
+		if _animation_done():
+			_end_attack(0.0)
+	elif _recover.is_stopped():
+		_circle(delta)
+		if _can_attack(coordinator):
+			_start_attack()
+		else:
+			_play("fly" if _moving else "idle")
+	_apply_knockback(delta)
+
+func _on_reset() -> void:
+	_dashing = false
+	_dash_left = 0.0
+	_stuck_for = 0.0
+	_recover.stop()
+	_hitbox.disabled = true
+	_roll_cooldown()
+
+# --- Circling ---
+
+func _circle(delta: float) -> void:
+	_orbit_flip_in -= delta
+	if _orbit_flip_in <= 0:
+		if randf() < 0.5:
+			_orbit_dir = -_orbit_dir
+		_orbit_flip_in = randf_range(Tuning.wyrm_orbit_flip_min,
+			maxf(Tuning.wyrm_orbit_flip_min, Tuning.wyrm_orbit_flip_max))
+	_face_player()
+	var centre := room.to_local(player.global_position)
+	var offset := position - centre
+	if offset.length() < 1.0:
+		offset = Vector2.RIGHT
+	var target := centre + Vector2.from_angle(offset.angle() + _orbit_dir * ORBIT_LEAD) * Tuning.wyrm_orbit_radius
+	target = room.clamp_to_floor(target + _separation(), ORBIT_WALL_MARGIN)
+	var to_target := target - position
+	if to_target.length() <= ORBIT_ARRIVE:
+		return
+	var motion := to_target.normalized() * minf(speed * delta, to_target.length())
+	var collision := move_and_collide(motion)
+	if collision != null:
+		move_and_collide(collision.get_remainder().slide(collision.get_normal()))
+		_stuck_for += delta
+		if _stuck_for >= ORBIT_STUCK_TIME: # Pinned on a rock or wall: go round the other way
+			_orbit_dir = -_orbit_dir
+			_stuck_for = 0.0
+	else:
+		_stuck_for = 0.0
+	_moving = true
+
+# A nudge away from any other enemy too close, so dragons don't stack on the circle.
+func _separation() -> Vector2:
+	var push := Vector2.ZERO
+	for node in room.get_children():
+		var other := node as Enemy
+		if other == null || other == self:
+			continue
+		var away := position - other.position
+		if away.length() < SEPARATION:
+			push += away.normalized() * (SEPARATION - away.length()) if away != Vector2.ZERO else Vector2.RIGHT
+	return push
+
+# --- Attacks ---
+
+func _can_attack(coordinator: AttackCoordinator) -> bool:
+	return attack_cooldown.is_stopped() && !coordinator.other_is_swinging(self) \
+		&& !coordinator.rush_active() && !_other_dragon_attacking()
+
+func _start_attack() -> void:
+	if randf() < Tuning.wyrm_charge_chance:
+		_start_charge(has_heavy_charge && randf() < Tuning.wyvern_heavy_charge_chance)
+	else:
+		_start_fireball()
+
+# Another dragon in the room is breathing fire or charging.
+func _other_dragon_attacking() -> bool:
+	for node in room.get_children():
+		var other := node as Wyrm
+		if other != null && other != self && !other.is_queued_for_deletion() \
+				&& (other._animation_is("shoot") || other._animation_is("slash")):
+			return true
+	return false
+
+func _roll_cooldown() -> void:
+	attack_cooldown.start(randf_range(Tuning.wyrm_attack_cooldown_min,
+		maxf(Tuning.wyrm_attack_cooldown_min, Tuning.wyrm_attack_cooldown_max))
+		* Tuning.enemy_attack_cooldown_multiplier)
+
+# The attack is over: back to hovering for `lag` seconds, then circling.
+func _end_attack(lag: float) -> void:
+	_dashing = false
+	_dash_left = 0.0
+	_hitbox.disabled = true
+	_play("idle")
+	if lag > 0:
+		_recover.start(lag)
+	_roll_cooldown()
+
+# The attack animation has played to its last frame.
+func _animation_done() -> bool:
+	return animator.frame == attack_end_frame && !animator.is_playing()
+
+# --- Fireball ---
+
+func _start_fireball() -> void:
+	_face_player()
+	_play("shoot")
+	animator.frame = 0
+
+func breathe_fire() -> void:
+	if !is_player_in_room():
+		return
+	Juice.play($Attack, 0.08, voice_pitch)
+	var fireball: Projectile = Fireball.instantiate()
+	room.add_child(fireball)
+	var mouth := (Direction.to_vector(direction) * MOUTH_REACH + Vector2(0, MOUTH_HEIGHT)) * scale
+	fireball.position = room.clamp_to_floor(position + mouth, Projectile.SPAWN_MARGIN)
+	fireball.direction = direction
+	fireball.damage = damage
+	fireball.speed = Tuning.wyrm_fireball_speed
+	fireball.shooter = self # Hit back, it homes on this dragon
+	fireball.launch_at(player)
+	if !homing_fireball:
+		fireball.homing_target = null # Keeps the heading it was launched on
+
+# --- Charge (see the top of the file) ---
+
+func _start_charge(heavy: bool) -> void:
+	_aim_charge()
+	_restart_attack(-1.0) # Fresh windup with a random hold
+	_unparryable = heavy
+	_dashing = false
+	_dash_left = 0.0
+
+func _aim_charge() -> void:
+	var to_player := _to_player()
+	_charge_dir = to_player.normalized() if to_player != Vector2.ZERO else Direction.to_vector(direction)
+	_face_along(_charge_dir)
+	_hitbox_pivot.rotation = _charge_dir.angle()
+
+# The windup hold ends by setting off on the charge instead of glinting: the glint comes
+# from _charge as it nears the player.
+func _twinkle() -> void:
+	if _animation_is("slash") && !_dashing:
+		_begin_dash()
+	else:
+		super()
+
+func _begin_dash() -> void:
+	_aim_charge() # Re-aimed now, so the hold isn't a free head start to dodge
+	_dashing = true
+	_dash_left = minf(_to_player().length() + Tuning.wyrm_charge_overshoot, Tuning.wyrm_charge_max_distance)
+	Juice.play(_charge_sound, 0.08, CHARGE_PITCH * voice_pitch)
+
+func _charge(delta: float) -> void:
+	if _dashing && _dash_left > 0:
+		var step := minf(Tuning.wyrm_charge_speed * delta, _dash_left)
+		if animator.frame < attack_frame: # Before the bite it pulls up at the player
+			step = minf(step, maxf(_ahead_of_strike(), 0.0))
+		var collision := move_and_collide(_charge_dir * step)
+		_dash_left -= step
+		if collision != null: # Flew into a rock or wall
+			_dash_left = 0.0
+		_keep_off_side_walls()
+	if _dashing && _twinkled_at < 0 && _due_to_glint():
+		super._twinkle()
+	if _animation_done() && _dash_left <= 0:
+		_end_attack(Tuning.wyvern_heavy_end_lag if _unparryable else Tuning.wyrm_charge_recovery)
+
+# Pixels along the charge before it's within Tuning.wyrm_clash_reach of the player.
+func _ahead_of_strike() -> float:
+	return _to_player().dot(_charge_dir) - Tuning.wyrm_clash_reach
+
+# Glints half a window before reaching the player (so it hangs there for the other half),
+# or before running out of charge, or at once if it hit something.
+func _due_to_glint() -> bool:
+	var window := Tuning.unparryable_window if _unparryable else Tuning.parry_window
+	var lead := Tuning.wyrm_charge_speed * window / 2.0
+	return _ahead_of_strike() <= lead || _dash_left <= lead
+
+# Partway through a charge, up to the bite. Other enemies hold off their own windups
+# meanwhile (AttackCoordinator.other_is_swinging).
+func is_swinging() -> bool:
+	return _animation_is("slash") && animator.frame <= attack_frame
+
+# Dragons never take a melee turn from the AttackCoordinator; they attack on their own clock.
+func can_take_turn() -> bool:
+	return false
+
+# An arrow cuts an ordinary charge short; a red one ploughs on.
+func _hit_interrupts_attack() -> bool:
+	return !_unparryable
+
+func _on_staggered() -> void:
+	_dashing = false
+	_dash_left = 0.0
+	_roll_cooldown()
+
+# --- Facing ---
+
+func _face_player() -> void:
+	_face_along(_to_player())
+
+# Faces whichever of the four directions `heading` is nearest. Facing up draws it in front
+# of the player, as for every enemy.
+func _face_along(heading: Vector2) -> void:
+	if absf(heading.x) >= absf(heading.y):
+		direction = Direction.LEFT if heading.x < 0 else Direction.RIGHT
+	elif heading.y < 0:
+		direction = Direction.UP
+		z_index = 10
+	else:
+		direction = Direction.DOWN
+		z_index = 0
+
+func _on_animated_sprite_2d_frame_changed() -> void:
+	if _animation_is("shoot") && animator.frame == BREATH_FRAME:
+		Juice.flash(animator, 0.2, FIRE_FLASH)
+	elif _animation_is("shoot") && animator.frame == attack_frame:
+		breathe_fire()
+	elif _animation_is("slash") && animator.frame == attack_frame:
+		Juice.play($Bite, 0.08, voice_pitch)
+		_hitbox.disabled = false

@@ -890,10 +890,12 @@ func _drift_on_ice(enemy: Enemy, feet: Vector2, delta: float) -> void:
 		enemy.slide = enemy.slide.slide(collision.get_normal())
 		enemy.move_and_collide(collision.get_remainder().slide(collision.get_normal()))
 
-# Tiles work on every enemy but the boss (whose room has none anyway).
+# Tiles work on every enemy but the boss (whose room has none anyway) and those that fly
+# over them (Enemy.flies).
 func _affects(node: Node) -> bool:
 	var enemy := node as Enemy
-	return enemy != null && enemy.scene_file_path != Room.BOSS_SCENE && !enemy.is_queued_for_deletion()
+	return enemy != null && enemy.scene_file_path != Room.BOSS_SCENE && !enemy.flies() \
+		&& !enemy.is_queued_for_deletion()
 
 # --- Geometry ---
 
