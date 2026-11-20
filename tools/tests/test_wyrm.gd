@@ -492,3 +492,18 @@ func test_slips_out_of_a_corner() -> void:
 	var gap := wyrm.global_position.distance_to(p.global_position)
 	expect(gap > tuning.wyrm_orbit_radius * 0.75, "it gets away from the player: %s px" % gap)
 	expect(wyrm.position.distance_to(corner) > 40.0, "out of the corner")
+
+# The charge glint goes to the mouth for the way it faces, so the sprite must face that way
+# too when it re-aims and sets off, or the glint lands on a wing.
+func test_charge_glint_matches_the_facing_shown() -> void:
+	eager(true)
+	var wyrm := await boot_dragon("wyrm")
+	for i in 300:
+		if wyrm._animation_is("slash") && wyrm._windup_held:
+			break
+		await tree.physics_frame
+	# The player moves round behind it during the hold, so it has to turn to set off.
+	player().global_position = wyrm.global_position + Vector2(0, 70)
+	await wait_for_glint(wyrm)
+	expect(wyrm._twinkled_at >= 0, "the charge glints")
+	expect_equal(String(wyrm.animator.animation), "slash_" + wyrm.direction, "the lunge pose faces the way it charges")

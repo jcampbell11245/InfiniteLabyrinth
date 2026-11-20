@@ -538,6 +538,20 @@ func _aim_charge() -> void:
 	_charge_dir = to_player.normalized() if to_player != Vector2.ZERO else Direction.to_vector(direction)
 	_face_along(_charge_dir)
 	_hitbox_pivot.rotation = _charge_dir.angle()
+	_turn_attack_pose()
+
+# Re-aimed mid-attack (setting off on a charge): shows the same frame of the attack for the
+# way it now faces. Otherwise the sprite keeps the old facing while the glint goes to the
+# mouth for the new one (weapon_tips), and lands on a wing.
+func _turn_attack_pose() -> void:
+	if !_animation_is("slash") || animator.animation == "slash_" + direction:
+		return
+	var frame := animator.frame
+	var playing := animator.is_playing()
+	_play("slash")
+	animator.frame = frame
+	if !playing:
+		animator.pause()
 
 # The windup hold ends by setting off on the charge, glinting as it goes (see _glint).
 func _twinkle() -> void:
