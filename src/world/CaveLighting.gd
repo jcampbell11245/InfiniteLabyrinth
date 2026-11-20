@@ -4,12 +4,12 @@ extends Node
 # Darkens the cave and lights it with a few soft 2D lights. Overworld adds one to every
 # floor. A CanvasModulate dims everything drawn on the world canvas (the HUD sits on its own
 # CanvasLayers, so it stays bright), and PointLight2Ds add light back: a warm one carried by
-# the player, and small coloured ones on fireballs, lasers and dropped loot so they stand
-# out in the dark. Lights are attached as nodes spawn, so nothing else needs to know about
+# the player, and small coloured ones on fireballs, lasers and dropped arrows so they stand
+# out in the dark. Coins don't glow. Lights are attached as nodes spawn, so nothing else needs to know about
 # lighting. Every number is in Tuning (the F2 menu's Lighting tab) and applies live.
 
 const LIGHT_NAME := &"CaveLight"
-const PICKUP_SCRIPT := preload("res://src/effects/Pickup.gd")
+const ARROW_PICKUP_SCRIPT := preload("res://src/effects/ArrowPickup.gd")
 # Projectile scenes that glow; arrows don't.
 const GLOWING_PROJECTILES := ["Fireball", "Laser"]
 const TEXTURE_SIZE := 256 # Pixels across the generated light texture
@@ -68,16 +68,8 @@ func _on_node_added(node: Node) -> void:
 		var scene := node.scene_file_path.get_file().get_basename()
 		if scene in GLOWING_PROJECTILES:
 			_add_light(node, Kind.PROJECTILE, LASER_COLOR if scene == "Laser" else FIREBALL_COLOR)
-	elif _is_pickup(node):
+	elif node.get_script() == ARROW_PICKUP_SCRIPT:
 		_add_light(node, Kind.PICKUP, PICKUP_COLOR)
-
-static func _is_pickup(node: Node) -> bool:
-	var script := node.get_script() as Script
-	while script != null:
-		if script == PICKUP_SCRIPT:
-			return true
-		script = script.get_base_script()
-	return false
 
 func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
 	var light := PointLight2D.new()
