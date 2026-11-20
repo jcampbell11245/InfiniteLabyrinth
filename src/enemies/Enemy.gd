@@ -112,6 +112,9 @@ func _add_status_bars() -> void:
 	bars.position = dizzy_offset + BARS_ABOVE_DIZZY
 	bars.add_bar(StatusBars.Icon.DAZE, STUN_BAR, StatusBars.timer_left.bind(_stun_timer))
 	bars.add_bar(StatusBars.Icon.PARRY, PARRY_BAR, func() -> float: return _parry_progress)
+	# Caught in thermal paste, which holds an enemy for good (see SpecialTiles).
+	bars.add_bar(StatusBars.Icon.PASTE, Player.PASTE_BAR,
+		func() -> float: return SpecialTiles.paste_left_in(room, self))
 	add_child(bars)
 
 func _reset_parry_progress() -> void:
@@ -136,6 +139,7 @@ func reset_to_spawn() -> void:
 	position = _spawn_position
 	velocity = Vector2.ZERO
 	knockback = Vector2.ZERO
+	slide = Vector2.ZERO
 	direction = _spawn_direction
 	z_index = _spawn_z_index
 	_end_windup_hold()
@@ -283,6 +287,82 @@ func _spin_stun_time() -> float:
 
 func is_player_in_room() -> bool:
 	return player.current_room == room.room_id
+
+# --- Special floor tiles (see SpecialTiles) ---
+
+# Velocity carried over from the last walk, kept while on slick floor so the enemy slides.
+var slide := Vector2.ZERO
+var _walked_frame := -1 # Physics frame ground_motion last ran (it walked)
+
+# Global point where the enemy stands: the middle of its feet (its body's collision shape).
+func feet_position() -> Vector2:
+	var feet := get_node_or_null("CollisionShape2D") as Node2D
+	return global_position + (feet.position * scale if feet != null else FEET_OFFSET)
+
+# The special tile under its feet (a SpecialTiles.Frame), or -1.
+func ground() -> int:
+	return SpecialTiles.frame_at(room, feet_position())
+
+# Walk, roll and attack speed from the tile underfoot, as a multiple of normal.
+func ground_factor() -> float:
+	return SpecialTiles.speed_factor(ground())
+
+# A walk of `motion` this frame, as the floor turns it: faster or slower on speed and slow
+# tiles, and on slick floor easing towards it from the slide it already had.
+func ground_motion(motion: Vector2, delta: float) -> Vector2:
+	_walked_frame = Engine.get_physics_frames()
+	var frame := ground()
+	var wanted := motion * SpecialTiles.speed_factor(frame) / maxf(delta, 0.0001)
+	# Held in thermal paste: it walks as usual inside the area the paste lets it reach, but
+	# a step past the edge goes nowhere, so it runs on the spot there (its walk animation
+	# still plays). After a while the paste hauls it back to the middle, and it can't walk
+	# while it's hauled (SpecialTiles._hold_in_paste).
+	var bounds: Variant = SpecialTiles.paste_bounds_in(room, self)
+	if bounds != null:
+		slide = Vector2.ZERO
+		if SpecialTiles.is_hauled_in(room, self):
+			return Vector2.ZERO
+		var step := wanted * delta
+		return step if (bounds as Rect2).has_point(feet_position() + step) else Vector2.ZERO
+	if SpecialTiles.is_slick(frame):
+		slide = slide.move_toward(wanted, Tuning.enemy_slick_grip * delta)
+	else:
+		slide = wanted
+	return slide * delta
+
+# It walked this physics frame; SpecialTiles keeps one that didn't sliding on ice.
+func walked_this_frame() -> bool:
+	return _walked_frame == Engine.get_physics_frames()
+
+# Hurt by the floor (spikes, a shock): no blocking, knockback or crit, but it can kill.
+func hurt_by_floor(amount: float) -> void:
+	if invincibility_cooldown.time_left != 0 || health <= 0:
+		return
+	invincibility_cooldown.start(invincibility_time)
+	animator.modulate.a = 0.5
+	health -= amount
+	Juice.flash(animator)
+	Juice.burst(room, global_position, blood_color, 6, 60.0, Vector2.ZERO)
+	if health <= 0.0001:
+		health = 0
+		_hit_feedback(Vector2.ZERO, false, true)
+		die()
+
+# The floor gave way under it.
+func fall() -> void:
+	health = 0
+	die()
+
+# True if walking `motion` keeps it off the tiles enemies avoid (or it's already on one,
+# so stepping off is fine). Walls and pits are left to its collisions.
+func _safe_step(motion: Vector2) -> bool:
+	# A room with no special tiles has no traps, and no need to build its pathfinding for this.
+	if room.get_node_or_null(SpecialTiles.NODE_NAME) == null:
+		return true
+	var nav := room.nav()
+	var feet := room.to_local(feet_position())
+	var ahead := feet + motion.normalized() * Room.CELL_SIZE / 2.0
+	return nav.is_avoided(feet) || !nav.is_avoided(ahead)
 
 # --- Overridable hooks ---
 

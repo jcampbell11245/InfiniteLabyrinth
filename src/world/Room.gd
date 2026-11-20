@@ -2,7 +2,9 @@ class_name Room
 extends Node2D
 
 # Script on every room scene. On load it dresses the floor (random floor variants,
-# decorations, pitfall edges and spikes) and places the door transition detectors.
+# decorations, pitfall edges and spikes) and places the door transition detectors. Traps,
+# movement tiles and teleporters are on its SpecialTiles layer, if it has one, which runs
+# them itself.
 # While playing it fades with the player's room changes and draws its doors: closed at the
 # dungeon edge, locked while the player clears it, opened once it's cleared.
 #
@@ -202,10 +204,21 @@ func clamp_to_floor(point: Vector2, margin: float) -> Vector2:
 	var rect := floor_rect
 	return point.clamp(rect.position + inset, rect.end - inset)
 
-# True when `point` (global) is on the room's floor and not over a pitfall.
+# True when `point` (global) is on the room's floor and not over a pitfall (or a hole where
+# cracked floor gave way).
 func is_floor_at(point: Vector2) -> bool:
 	var cell := tiles.local_to_map(tiles.to_local(point))
-	return _on_floor(cell) && !_is_pit(cell)
+	var special := _special_tiles()
+	return _on_floor(cell) && !_is_pit(cell) && (special == null || !special.is_hole(cell))
+
+# True when the player can safely come back up on `cell` after a fall: not on a trap or
+# teleporter (SpecialTiles.is_safe).
+func is_safe_ground(cell: Vector2i) -> bool:
+	var special := _special_tiles()
+	return special == null || special.is_safe(cell)
+
+func _special_tiles() -> SpecialTiles:
+	return get_node_or_null(SpecialTiles.NODE_NAME) as SpecialTiles
 
 func is_cleared() -> bool:
 	match completion_criteria:
@@ -220,6 +233,11 @@ func is_cleared() -> bool:
 func nav() -> RoomNav:
 	if _nav == null:
 		_nav = RoomNav.new(self)
+	return _nav
+
+# The pathfinding if an enemy has asked for it yet, else null. Special tiles changing state
+# (a hole opening) update it, but needn't build it: it reads their state when it's built.
+func nav_if_built() -> RoomNav:
 	return _nav
 
 func _on_floor(cell: Vector2i) -> bool:
@@ -291,12 +309,15 @@ func _add_decorations(rng: RandomNumberGenerator) -> void:
 	if decorations == null:
 		return
 	var stalagmites: TileMap = get_node_or_null("Stalagmites")
+	var special := _special_tiles()
 	for x in range(FLOOR_FIRST, floor_last):
 		for y in range(FLOOR_FIRST, floor_last):
 			var cell := Vector2i(x, y)
 			if tiles.get_cell_source_id(0, cell) != FLOOR || _is_pit(cell):
 				continue
 			if stalagmites != null && stalagmites.get_cell_source_id(0, cell) != -1:
+				continue
+			if special != null && special.painted(cell) != -1: # Would hide the tile
 				continue
 			# 8 in 67 floor tiles get a decoration: 0 is the rarest, 1 the most common.
 			var roll := rng.randi_range(0, 66)

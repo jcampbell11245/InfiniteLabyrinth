@@ -38,6 +38,10 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
 
+The pause menu's **Return to Title** button returns to the title screen, so a run can be
+left without closing the game. **Quit to Desktop** closes the game, as does the title
+screen's Quit.
+
 ## Setup
 
 Everything here can be run as written by a person or an agent. You need **Godot 4.7.2**
@@ -154,6 +158,10 @@ Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (
 4. **Open a pull request** into `master` that says `Closes #<issue>`, get the checks green,
    and ask a teammate for the one approving review it needs.
 
+Assets in the finished game are hand made or from open-source libraries. Until a real asset
+exists, use a placeholder and list it in [PENDING_ASSETS.md](PENDING_ASSETS.md) (rules in
+[AGENTS.md → Assets](AGENTS.md#assets)).
+
 Only the project owner commits to `master` directly. AI agents do all of this through the
 `make-change` skill ([.claude/skills/make-change/SKILL.md](.claude/skills/make-change/SKILL.md));
 the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
@@ -164,10 +172,11 @@ the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
 ### Room creator
 
 Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
-Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles** and
-**Enemies** tabs of icons), then left-click or drag on the floor to paint pitfalls and
-stalagmites, or click to place enemies (goblins, trolls, orcs, knights, dual knights,
-wizards, warlocks, necromancers) and switches; right-click erases. A goblin or knight you place, or click with the **Select** tool, shows its detection
+Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
+**Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
+pitfalls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
+knights, dual knights, wizards, warlocks, necromancers) and switches; right-click erases.
+Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin or knight you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
 the side it watches, since enemies can't see behind themselves. Wizards have no radius: they
 react to the player anywhere in the room. In room scenes the value is each enemy's
@@ -205,14 +214,39 @@ into a scene in `src/world/rooms/`. Run from source, the folder is in the projec
 exported build it sits beside the game's executable (or in the user data folder if that one
 can't be written to). **Open folder** opens it.
 
+### Special tiles
+
+The room creator's **Tiles** tab has slick floor, slow and speed tiles and four pairs of
+teleporters; the **Traps** tab has exposed wires, spikes, cracked floor, pressure plates and
+thermal paste. They affect the player and enemies alike. Enemies walk round a trap when the
+way round is short, but cut across rather than go far out of their way. A roll protects the
+player from spikes and shocks.
+
+| Tile | What it does |
+|---|---|
+| Exposed wires | Rest, spark as a warning, then go live (with an enemy-style twinkle) and shock whoever is on them. Swing the sword into them while live to break them for good. |
+| Pressure plate | Clicks down when stepped on (and pops back up as soon as it's left), then goes live like wires and re-arms. Breaks the same way. |
+| Spikes | Hurt on stepping on, and again every second while stood on. Rolling right over them in one roll is safe; a roll that ends on them isn't. |
+| Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
+| Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
+| Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Enemies caught in it walk as usual inside that area, run on the spot at its edge, and after a couple of seconds there are slowly hauled back to the middle; the third time they reach the edge they tear free. It never wears off: three rolls break free, counted down by a bar over the player's head. |
+| Slow / speed tile | Slower or faster walking, rolling and attacking while on it, with a sound on stepping on and a status icon while there. |
+| Teleporter | Sends whoever steps on it, and any arrow, fireball or laser flying over it, to the other square of the same colour and symbol (the next one in reading order, if there are more than two). Step off before using it again. Standing right by one lights up the square it sends to. Going through squashes the square the way it was entered and stretches the far one out. |
+
+Their timings, damage and strengths are in the debug menu's **Tiles** tab (`Tuning.gd`). In a
+room scene they're a `SpecialTiles` layer (`src/world/tiles/SpecialTiles.tscn`), painted with
+the frames of `assets/sprites/tiles/special_tiles.png` (placeholder art, see
+[PENDING_ASSETS.md](PENDING_ASSETS.md)); the room creator's
+export lists them in its grid.
+
 ### Debug menu
 
 In debug builds (running from the editor or a debug export), **F2** opens the debug menu over
 the game and pauses it; F2 or **Close** shuts it again. The **Progress** tab edits the running
 floor (coins, keys, arrows, time left, floor, upgrade levels) and has Refill time, Kill
 enemies in this room and Next floor buttons. The other tabs edit the gameplay numbers in
-`src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, timer, loot, hit-stop,
-cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back
+`src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, special tiles, timer,
+loot, hit-stop, cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back
 to their shipped value, Progress rows to what they were when the menu opened. **Reset all**
 resets every row. **Export** writes every Tuning value, changed ones first and marked `*`, to a
 `tuning_exports` folder (same locations as the room creator's export) and copies it to the
@@ -244,6 +278,17 @@ example:
 The other preset names are `Windows Desktop 32 bit`, `Linux 64 bit`, `Linux 32 bit` and
 `macOS`. Export templates must be installed first (see Setup).
 
+`tools/export_builds.sh` does what a release needs in one go. It exports every preset as a
+debug build (so the F2 menu works), after emptying each output folder. Then it zips each
+folder on its own into `builds/InfiniteLabyrinth-<folder>.zip`.
+
+### Releases
+
+Releases are GitHub releases tagged `v<major>.<moderate>.<minor>` and titled
+`Version <x.y.z>`. Each has a bulleted list of changes and every build zip attached. AI agents
+make them with the `make-release` skill ([.claude/skills/make-release/SKILL.md](.claude/skills/make-release/SKILL.md)),
+which also has the [guide to writing release notes](.claude/skills/make-release/release-notes-style.md).
+
 ## Code style
 
 Scripts follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)
@@ -258,7 +303,8 @@ See [BUGS.md](BUGS.md) and the open issues.
 ## Layout
 
 ```
-assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts
+assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts; placeholders
+               are listed in PENDING_ASSETS.md, with previews in docs/pending_assets/
 src/autoload/  Tuning (every gameplay number, edited live by the debug menu), SaveData (save
                file), Game (coins, keys, game-wide signals and references to the player,
                camera and rooms), Music, Juice (hit-stop, slow motion, screen shake, sound
@@ -272,11 +318,11 @@ src/projectiles/  arrows, fireballs and the boss laser, all one Projectile scrip
 src/objects/   chests, switches, room detection and the fade-out void
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
 src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room),
-               camera and HUD (GameCamera)
+               special tiles (SpecialTiles), camera and HUD (GameCamera)
   rooms/       random rooms (every .tscn here is picked up automatically)
   keyrooms/    rooms holding the three keys
   special/     start, end and boss rooms
-  tiles/       TileMap scenes used by rooms
+  tiles/       TileMap scenes used by rooms (SpecialTiles.tscn: traps and teleporters)
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
 src/ui/        HUD widgets (timer, counters, minimap) and menus (title, boot, pause,

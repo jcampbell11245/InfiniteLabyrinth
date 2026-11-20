@@ -4,3 +4,7 @@ When a developer asks you to change anything in this repository (a feature, fix,
 asset or doc change), invoke the `make-change` skill first: it claims the work in a GitHub
 issue and sets up the branch before you edit, then takes the change through the checks to
 a pull request.
+
+When a developer asks for a new release (a new version, builds published to GitHub), invoke
+the `make-release` skill instead: it exports and zips every build, drafts the release notes
+and creates the GitHub release.

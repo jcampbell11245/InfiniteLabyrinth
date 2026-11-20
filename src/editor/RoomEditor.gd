@@ -1,8 +1,8 @@
 extends Node2D
 
 # The room creator, opened with F1 on the title screen. Shows a blank 13x13 room to paint:
-# pick a tool on the left (Eraser and Select on top, then tiles and enemies in their own
-# tabs, as scrolling grids of icons), left-click or drag on the floor to paint it,
+# pick a tool on the left (Eraser and Select on top, then tiles, traps and enemies in their
+# own tabs, as scrolling grids of icons), left-click or drag on the floor to paint it,
 # right-click to erase. Play builds the room on its own to test it (F1 there comes back here); Export
 # writes it to a text file (and the clipboard) that can be turned into a room scene, and
 # Open folder shows where the files went. Ctrl+Z undoes; Ctrl+Y or Ctrl+Shift+Z redo.
@@ -52,7 +52,21 @@ const AUTO_MARK_SIZE := 9 # Room pixels
 const AUTO_MARK_RISE := 27.0 # Room pixels above the enemy's origin
 const SELECT_TOOL := 1 # Index of Select in TOOLS
 # The tool picker (see _build_tool_picker).
-const TOOL_TAB_NAMES: Array[String] = ["Tiles", "Enemies"]
+const TOOL_TAB_NAMES: Array[String] = ["Tiles", "Traps", "Enemies"]
+# Special tiles that go in the Traps tab; the rest of the cells go in Tiles.
+const TRAP_CELLS: Array[RoomDesign.Cell] = [RoomDesign.Cell.WIRES, RoomDesign.Cell.SPIKES,
+	RoomDesign.Cell.CRACKED, RoomDesign.Cell.PLATE, RoomDesign.Cell.PASTE]
+# What each special tile does, shown when hovering its tool.
+const SPECIAL_TIPS := {
+	RoomDesign.Cell.WIRES: "Exposed wires: spark, then shock whoever's on them. Swing into them while live to break them",
+	RoomDesign.Cell.SPIKES: "Spikes: hurt on stepping on, and every second stood on",
+	RoomDesign.Cell.CRACKED: "Cracked floor: gives way into a pit when stood on, then mends",
+	RoomDesign.Cell.SLICK: "Slick floor: keeps your momentum, so you slide",
+	RoomDesign.Cell.PLATE: "Pressure plate: shocks whoever steps on it. Swing into it while live to break it",
+	RoomDesign.Cell.PASTE: "Thermal paste: holds whoever steps in; three rolls break free (enemies tear free on their third trip to its edge)",
+	RoomDesign.Cell.SLOW: "Slow tile: slower walking, rolling and attacking",
+	RoomDesign.Cell.FAST: "Speed tile: faster walking, rolling and attacking",
+}
 const TOOL_TABS_HEIGHT := 300.0 # Screen pixels, tabs included; each tab scrolls inside it
 const TOOL_GRID_COLUMNS := 4
 const TOOL_ICON_BUTTON := Vector2(100, 112)
@@ -78,7 +92,7 @@ const CLEAR_LABELS := {
 const CLEAR_HINTS := {
 	ClearWhat.EVERYTHING: "",
 	ClearWhat.ENEMIES: "  (switches stay)",
-	ClearWhat.TILES: "  (pitfalls and stalagmites)",
+	ClearWhat.TILES: "  (pitfalls, rocks, traps)",
 }
 
 # Each tool: [label, what it paints ("cell", "object" or "erase"), value].
@@ -90,6 +104,18 @@ const TOOLS := [
 	["Pitfall", "cell", RoomDesign.Cell.PIT],
 	["Stalagmite", "cell", RoomDesign.Cell.STALAGMITE],
 	["Switch", "object", "switch"],
+	["Slick", "cell", RoomDesign.Cell.SLICK],
+	["Slow", "cell", RoomDesign.Cell.SLOW],
+	["Speed", "cell", RoomDesign.Cell.FAST],
+	["Teleport 1", "cell", RoomDesign.Cell.TELEPORT_1],
+	["Teleport 2", "cell", RoomDesign.Cell.TELEPORT_2],
+	["Teleport 3", "cell", RoomDesign.Cell.TELEPORT_3],
+	["Teleport 4", "cell", RoomDesign.Cell.TELEPORT_4],
+	["Wires", "cell", RoomDesign.Cell.WIRES],
+	["Spikes", "cell", RoomDesign.Cell.SPIKES],
+	["Cracked", "cell", RoomDesign.Cell.CRACKED],
+	["Plate", "cell", RoomDesign.Cell.PLATE],
+	["Paste", "cell", RoomDesign.Cell.PASTE],
 	["Goblin", "object", "goblin"],
 	["Troll", "object", "troll"],
 	["Orc", "object", "orc"],
@@ -872,13 +898,14 @@ func _build_tool_picker(column: VBoxContainer) -> void:
 		_tool_buttons[i] = button
 	_refresh_tool_icons()
 
-# Which tab tool `i` sits in: "Tiles" for ground and switches, "Enemies" for enemies, or ""
-# for the tools that aren't things to place (Eraser, Select), which sit above the tabs. New
-# cell kinds and objects land in the right tab without listing them here.
+# Which tab tool `i` sits in: "Traps" for TRAP_CELLS, "Tiles" for other ground and
+# switches, "Enemies" for enemies, or "" for the tools that aren't things to place (Eraser,
+# Select), which sit above the tabs. New cell kinds and objects land in a tab without
+# listing them here.
 func _tool_tab(i: int) -> String:
 	match TOOLS[i][1]:
 		"cell":
-			return "Tiles"
+			return "Traps" if TOOLS[i][2] in TRAP_CELLS else "Tiles"
 		"object":
 			return "Tiles" if TOOLS[i][2] == "switch" else "Enemies"
 	return ""
@@ -898,6 +925,14 @@ func _icon_button(grid: GridContainer, i: int) -> Button:
 	button.add_theme_constant_override("icon_max_width", TOOL_ICON_SIZE)
 	button.clip_text = true
 	button.tooltip_text = TOOLS[i][0]
+	if TOOLS[i][1] == "cell":
+		var kind: RoomDesign.Cell = TOOLS[i][2]
+		if SPECIAL_TIPS.has(kind):
+			button.tooltip_text = SPECIAL_TIPS[kind]
+		elif kind in RoomDesign.TELEPORTS:
+			button.tooltip_text = "Teleporter (%s): sends whoever steps on it to the other %s square" \
+				% [RoomDesign.TELEPORT_NAMES[RoomDesign.TELEPORTS.find(kind)],
+				RoomDesign.TELEPORT_NAMES[RoomDesign.TELEPORTS.find(kind)]]
 	return button
 
 # Puts each tile and enemy's picture on its button: the tile as the current tileset draws
@@ -924,8 +959,10 @@ func _refresh_tool_icons() -> void:
 			button.add_theme_color_override(state, tint)
 
 # One tile of `kind` cut from the preview room's tileset: a plain floor tile, a pit, or a
-# stalagmite standing on its own.
+# stalagmite standing on its own. A special tile's comes from its own art.
 func _tile_icon(kind: RoomDesign.Cell) -> Texture2D:
+	if RoomDesign.is_special(kind):
+		return SpecialTiles.icon(RoomDesign.SPECIAL_FRAMES[kind])
 	var map_name := "Tiles"
 	var source_id := Room.FLOOR
 	match kind:

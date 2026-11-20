@@ -39,6 +39,7 @@ var _heading := Vector2.ZERO # Free direction of travel while homing or after; Z
 
 func _ready() -> void:
 	$ExistenceTime.start(Tuning.projectile_lifetime)
+	add_to_group(SpecialTiles.PROJECTILE_GROUP) # So teleporters can find it
 
 func _physics_process(delta: float) -> void:
 	if free_in_end_room && Game.player.current_room == Constants.END_ROOM:
