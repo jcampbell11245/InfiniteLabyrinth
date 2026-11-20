@@ -32,8 +32,8 @@ extends Enemy
 # like a parry when it lands.
 #
 # Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
-# coils (frame 0), then freezes in its lunge pose (frame 1) for the usual random windup hold,
-# aims at the player and dashes straight at them at Tuning.wyrm_charge_speed without
+# coils (frame 0), then hangs still in its lunge pose (frame 1) for a few seconds
+# (Tuning.wyrm_charge_hold_min/max), aims at the player and dashes straight at them at Tuning.wyrm_charge_speed without
 # stopping. A parry window's flight before it gets within Tuning.wyrm_clash_reach of them it
 # glints, and it bites (frame 2, its Hitbox live for that frame only) the moment it gets
 # there, then carries on through, harmless, for Tuning.wyrm_charge_overshoot. A swing begun
@@ -488,7 +488,9 @@ func breathe_fire() -> void:
 
 func _start_charge(heavy: bool) -> void:
 	_aim_charge()
-	_restart_attack(-1.0) # Fresh windup with a random hold
+	# Fresh windup: it hangs still in its lunge pose for a few seconds, a clear warning.
+	_restart_attack(randf_range(Tuning.wyrm_charge_hold_min,
+		maxf(Tuning.wyrm_charge_hold_min, Tuning.wyrm_charge_hold_max)))
 	_unparryable = heavy
 	_dashing = false
 	_dash_left = 0.0

@@ -95,6 +95,8 @@ var wyrm_attack_cooldown_min := 1.6 # Seconds of circling between its attacks, r
 var wyrm_attack_cooldown_max := 2.6
 var wyrm_pack_attack_gap := 1.2 # Seconds every other dragon in the room waits after one finishes an attack
 var wyrm_charge_chance := 0.6 # Share of attacks that are charges; the rest are fireballs
+var wyrm_charge_hold_min := 1.5 # Seconds it hangs still in its lunge pose before a charge sets off, rolled each time
+var wyrm_charge_hold_max := 2.5
 var wyrm_charge_speed := 420.0 # Pixels/sec while charging
 var wyrm_charge_overshoot := 28.0 # Pixels past the player a charge carries on
 var wyrm_charge_max_distance := 240.0 # Pixels: longest a charge goes, overshoot included
@@ -285,6 +287,8 @@ const FIELDS := [
 	["Enemies", "wyrm_attack_cooldown_max", "Wyrm attack cooldown max (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
 	["Enemies", "wyrm_pack_attack_gap", "Wyrm gap after another dragon attacks (s)", 0, 10, 0.1, "new (Wyrm._hold_off_other_dragons)"],
 	["Enemies", "wyrm_charge_chance", "Wyrm charge (vs fireball) chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
+	["Enemies", "wyrm_charge_hold_min", "Wyrm hold before a charge min (s)", 0, 6, 0.1, "new (Wyrm._start_charge)"],
+	["Enemies", "wyrm_charge_hold_max", "Wyrm hold before a charge max (s)", 0, 6, 0.1, "new (Wyrm._start_charge)"],
 	["Enemies", "wyrm_charge_speed", "Wyrm charge speed (px/s)", 50, 800, 10, "new (Wyrm._dash)"],
 	["Enemies", "wyrm_charge_overshoot", "Wyrm charge overshoot (px)", 0, 150, 1, "new (Wyrm._begin_dash)"],
 	["Enemies", "wyrm_charge_max_distance", "Wyrm charge max distance (px)", 20, 500, 5, "new (Wyrm._begin_dash)"],

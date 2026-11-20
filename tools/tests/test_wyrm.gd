@@ -351,3 +351,22 @@ func test_charge_bites_straight_after_the_glint() -> void:
 	var tuning := autoload("Tuning")
 	expect(waited <= tuning.parry_window + 0.1, "bites within the window of the glint: %s s" % waited)
 	expect(stalled <= 1, "without stopping on the way: %s frames still" % stalled)
+
+# Before a charge it hangs still for Tuning.wyrm_charge_hold_min/max, then sets off.
+func test_holds_still_before_charging() -> void:
+	eager(true)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_charge_hold_min = 1.0
+	tuning.wyrm_charge_hold_max = 1.0
+	var wyrm := await boot_dragon("wyrm")
+	for i in 300:
+		if wyrm._animation_is("slash") && wyrm._windup_held:
+			break
+		await tree.physics_frame
+	expect(wyrm._windup_held, "it winds up a charge")
+	var at := wyrm.global_position
+	await wait_real(0.8)
+	expect(!wyrm._dashing, "still holding 0.8 s in")
+	expect(wyrm.global_position.distance_to(at) < 1.0, "without moving")
+	await wait_real(0.5)
+	expect(wyrm._dashing || !wyrm._animation_is("slash"), "and has set off by 1.3 s")
