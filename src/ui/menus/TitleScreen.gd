@@ -16,6 +16,8 @@ const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected opt
 @onready var options_panel: OptionsPanel = $Canvas/OptionsPanel
 
 func _ready() -> void:
+	# A leftover play-test design must never make Start build someone's test room.
+	Overworld.test_design = null
 	for button: BaseButton in [start_button, options_button, quit_button]:
 		button.focus_entered.connect(_move_cursor_to.bind(button))
 		# Hovering selects, so the mouse and the controller share one highlight.

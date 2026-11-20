@@ -45,8 +45,6 @@ const ACTIONS := [
 		"keys": [], "axes": []},
 	{"action": "select", "label": "SELECT", "key": KEY_ENTER, "button": JOY_BUTTON_A,
 		"keys": [KEY_J], "axes": []},
-	{"action": "quit", "label": "QUIT", "key": KEY_BACKSPACE, "button": UNBOUND,
-		"keys": [], "axes": []},
 ]
 
 var bindings := {} # action -> {"key": int, "button": int}; mirrored into SaveData.bindings
