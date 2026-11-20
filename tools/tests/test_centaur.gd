@@ -100,7 +100,8 @@ func test_an_unparried_clash_ends_the_combo() -> void:
 	expect(centaur._combo.is_empty(), "the combo is over")
 	expect(!centaur.is_stunned(), "with no stun")
 
-func test_a_kick_that_lands_ends_the_combo() -> void:
+# A kick that lands carries the combo on, but isn't cleared: the combo ends without a stun.
+func test_a_kick_that_lands_carries_the_combo_on() -> void:
 	var centaur := await boot_centaur("taurtaur")
 	only_combo(centaur, [KICK, KICK, KICK])
 	player().invincibility_cooldown.start(100.0)
@@ -108,8 +109,14 @@ func test_a_kick_that_lands_ends_the_combo() -> void:
 	await wait_for_spark(centaur)
 	centaur.landed_hit() # As if the kick caught the player
 	await wait_for_hit_after(centaur, 0)
-	expect(centaur._combo.is_empty(), "the combo is over")
-	expect(!centaur.is_stunned(), "with no stun")
+	expect_equal(centaur._combo_index, 1, "on to the next kick")
+	expect_near(centaur._parry_progress, 0.0, 0.01, "with nothing cleared on the bar")
+	for i in 400:
+		if centaur._combo.is_empty():
+			break
+		await tree.physics_frame
+	expect(centaur._combo.is_empty(), "the combo plays out")
+	expect(!centaur.is_stunned(), "and dodging the rest doesn't stun it")
 
 func test_dodging_every_kick_stuns_a_taurtaur() -> void:
 	var centaur := await boot_centaur("taurtaur")

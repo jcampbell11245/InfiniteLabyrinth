@@ -43,9 +43,11 @@ extends Enemy
 # through, harmless, for Tuning.wyrm_charge_overshoot. A swing begun after the glint that
 # meets it up to the bite parries it: knocked back and stunned like any parried enemy. One
 # that meets it before the glint is blocked and staggers the player. A wyvern's charges
-# glint red Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
-# so the player rolls through and hits it from behind, and it hangs in the air open for
-# Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
+# glint red Tuning.wyvern_heavy_charge_chance of the time: those can't be parried
+# (Enemy._on_player_sword), so the player rolls through, and it hangs in the air open for
+# Tuning.wyvern_heavy_end_lag afterwards. A hit from behind, during the charge or while it
+# hangs there, dazes it like a parry instead of hurting it. Arrows don't stop a red charge
+# either.
 #
 # A charge that slams into a wall, inner wall or stalagmite dazes it exactly as a parry would (stars,
 # Tuning.parried_stun_time, the player's sword cooldown skipped).
@@ -632,7 +634,13 @@ func can_take_turn() -> bool:
 func _hit_interrupts_attack() -> bool:
 	return !_unparryable
 
+# Hanging open after a red charge: a hit from behind dazes it (Enemy._dazed_from_behind).
+func _in_rollable_recovery() -> bool:
+	return _recover_rooted && !_recover.is_stopped()
+
 func _on_staggered() -> void:
+	_recover.stop() # Dazed out of hanging open after a red charge
+	_recover_rooted = false
 	# Unlike other enemies, a stunned dragon takes no extra damage from the next hit
 	# (Tuning.stagger_damage_multiplier): the stun itself is the reward.
 	_set_vulnerable(false)

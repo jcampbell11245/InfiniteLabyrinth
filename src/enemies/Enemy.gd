@@ -458,7 +458,9 @@ func _parry_timing() -> Parry:
 #
 # An unparryable attack (red twinkle) can't be met head on: before it strikes, a sword hit
 # from the front is blocked and staggers the player, whatever the timing. One from behind
-# (the sword travelling the way the enemy faces, after rolling through it) lands.
+# (the sword travelling the way the enemy faces, after rolling through it) dazes the enemy
+# like a parry instead of hurting it, and so does one from behind while it's still stuck
+# recovering from that attack (_in_rollable_recovery): see _dazed_from_behind.
 #
 # Either way, a swing the player started before the enemy began its attack isn't a clash:
 # the player got in first, so it's an ordinary hit (which cuts the attack short).
@@ -469,9 +471,12 @@ func _on_player_sword(from_direction: String) -> void:
 	if _unparryable && _animation_is(_attack_action()) && animator.frame <= attack_frame \
 			&& !_swung_first():
 		if from_direction == direction:
-			take_damage(from_direction, player.sword_damage())
+			_dazed_from_behind(from_direction)
 		else:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
+		return
+	if from_direction == direction && _in_rollable_recovery():
+		_dazed_from_behind(from_direction)
 		return
 	match _parry_timing():
 		Parry.NONE:
@@ -488,6 +493,20 @@ func _on_player_sword(from_direction: String) -> void:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
 		Parry.LATE:
 			pass
+
+# Caught from behind by a player who rolled through its unparryable attack: dazed as if
+# parried (stars, the stun, the player's sword cooldown skipped), with no damage. The roll
+# is the counter, as the parry is for a white attack.
+func _dazed_from_behind(from_direction: String) -> void:
+	player.mark_swing_parried()
+	_parry_feedback()
+	_parry_progress = 1.0
+	stagger(from_direction)
+
+# Still stuck recovering from an unparryable attack it just made (a knight's end lag, a
+# wyvern hanging in the air), when a hit from behind dazes it. None by default.
+func _in_rollable_recovery() -> bool:
+	return false
 
 # Blocks the player's swing (begun on physics frame `swing_frame`) and staggers them, unless
 # that swing parried another enemy: then it just passes through this one, no block, chip or

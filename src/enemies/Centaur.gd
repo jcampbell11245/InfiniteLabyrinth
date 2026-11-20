@@ -13,12 +13,14 @@ extends MeleeEnemy
 #   from it) ends the combo.
 # - a kick (Hit.KICK): it turns its back and lashes out with its hind legs, with a red spark
 #   at the hooves. It can't be parried (Enemy._on_player_sword), so the player rolls through
-#   or out of reach; one that misses carries the combo on, one that lands ends it.
-# Clearing a hit goes straight on to the next, its windup held Tuning.centaur_combo_hold so
-# the player's sword cooldown has run out by the next spark. Only clearing the whole combo
-# stuns it: parrying a last clash staggers it as any parry does, dodging a last kick stuns it
-# the same way (_combo_cleared). A parry partway through never does. Each hit hurts for its
-# own Tuning damage (melee_damage).
+#   or out of reach. Either way the combo carries on, but only a kick that misses counts as
+#   cleared.
+# Each hit goes straight on to the next, its windup held Tuning.centaur_combo_hold so the
+# player's sword cooldown has run out by the next spark. Only clearing every hit of the
+# combo stuns it: parrying a last clash staggers it as any parry does, dodging a last kick
+# stuns it the same way (_combo_cleared). A parry partway through never does, and a combo
+# with a kick that caught the player ends without a stun. Each hit hurts for its own Tuning
+# damage (melee_damage).
 #
 # Instead of a combo it may charge (`charge`, Tuning.centaur_charge_chance of attacks): it
 # holds still for Tuning.centaur_charge_hold_min/max, sparks as it sets off, gallops straight
@@ -64,6 +66,7 @@ const COMBO_FLASH := Color(0.6, 0.9, 1.0) # Shown as a cleared hit flows into th
 var _combo := PackedInt32Array() # The attack under way; empty when not attacking
 var _combo_index := 0 # Hit of _combo under way
 var _hit_landed := false # The hit under way has hurt the player
+var _cleared := 0 # Hits of the combo the player has cleared (parried, dodged or hit from behind)
 var _rush_pending := false # Starting a group-rush strike: a single clash
 var _dashing := false # A charge under way has set off
 var _dash_left := 0.0 # Pixels of the charge still to run
@@ -91,7 +94,7 @@ func _process(delta: float) -> void:
 # The parry bar shows the combo's cleared hits, a step each, full when it's stunned.
 func _show_combo_progress() -> void:
 	if !_combo.is_empty() && _animation_is("slash"):
-		_parry_progress = float(_combo_index) / _combo.size()
+		_parry_progress = float(_cleared) / _combo.size()
 
 # The hurtbox covers whatever the sprite draws this frame (sprite_bounds): the rider, a
 # taurtaur's top horse, legs thrown out in a kick. Where that isn't measured it keeps the
@@ -118,6 +121,7 @@ func _physics_process(delta: float) -> void:
 func _start_swing(horizontal: bool) -> void:
 	_combo = _pick_attack()
 	_combo_index = 0
+	_cleared = 0
 	super(horizontal)
 	_set_up_hit()
 
@@ -174,22 +178,43 @@ func _next_hit() -> void:
 # A clash in the combo parried: on to the next hit rather than staggering, unless it was
 # the last.
 func _parried_follow_up() -> bool:
-	if !_has_next_hit():
-		return false
-	_next_hit()
+	_cleared += 1
+	if _has_next_hit():
+		_next_hit()
+		return true
+	if _all_cleared():
+		return false # Enemy staggers it
+	_end_combo() # A kick caught the player earlier: no stun
 	return true
 
 # A hit has played out without being parried (a parried one never gets here).
 func _on_swing_finished() -> void:
 	var hit := _hit()
-	if hit == Hit.KICK && !_hit_landed:
+	# A kick carries the combo on whether it caught the player or not; only a dodged one
+	# counts as cleared (walking out of reach of the last one doesn't).
+	if hit == Hit.KICK:
+		if !_hit_landed && (_has_next_hit() || !_out_of_reach()):
+			_cleared += 1
 		if _has_next_hit():
 			_next_hit()
 			return
-		if !_out_of_reach(): # Walking away from the last kick isn't clearing it
+		if _all_cleared():
 			_combo_cleared()
 	_combo = PackedInt32Array()
 	super()
+
+# Every hit of the combo was cleared: only then does finishing it stun.
+func _all_cleared() -> bool:
+	return _cleared >= _combo.size()
+
+# Ends the combo without a stun (its last hit cleared, but not all of them were).
+func _end_combo() -> void:
+	_combo = PackedInt32Array()
+	_swings_left -= 1
+	_end_windup_hold()
+	_play("idle")
+	# Deferred: a parry sets its own bar value (Enemy._on_player_sword) after this returns.
+	_reset_parry_progress.call_deferred()
 
 # Further off than it could swing from, even closing in (MeleeEnemy._player_in_threat_range).
 func _out_of_reach() -> bool:
@@ -233,11 +258,15 @@ func _on_player_sword(from_direction: String) -> void:
 		Juice.clank(true)
 		return
 	player.mark_swing_parried()
+	_cleared += 1
 	if _has_next_hit():
 		_parry_feedback()
 		_next_hit()
-	else:
+	elif _all_cleared():
 		_combo_cleared()
+	else:
+		_parry_feedback()
+		_end_combo()
 
 # Whichever of the four directions `v` is nearest.
 static func _direction_of(v: Vector2) -> String:
