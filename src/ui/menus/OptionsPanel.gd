@@ -39,11 +39,21 @@ func focus_first() -> void:
 func is_listening() -> bool:
 	return controls_panel.is_listening()
 
-# Escape cancels a capture before it can close a menu. Returns true when it did that.
-func cancel_capture_if_listening() -> bool:
-	if controls_panel.is_listening():
-		controls_panel.cancel_capture()
-		return true
+# Escape and the pad's B button cancel a capture before they can close a menu. Returns true
+# when the event did that, so the host can leave the options screen and pause alone.
+func cancel_capture_if_listening(event: InputEvent) -> bool:
+	if !controls_panel.is_listening() || !_is_cancel_event(event):
+		return false
+	controls_panel.cancel_capture()
+	return true
+
+func _is_cancel_event(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		return key_event.pressed && key_event.keycode == KEY_ESCAPE
+	if event is InputEventJoypadButton:
+		var pad_event := event as InputEventJoypadButton
+		return pad_event.pressed && pad_event.button_index == JOY_BUTTON_B
 	return false
 
 # Called by the hosts for Escape/B. Returns true when it only closed the controls sub-panel,

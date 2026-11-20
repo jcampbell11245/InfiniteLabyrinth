@@ -4,7 +4,8 @@ class_name ControlsPanel
 # Controls sub-panel of the shared options screen. Each row has one keyboard key and one
 # controller button to capture; clicking either starts listening for a press. Bindings are
 # changed through the Bindings autoload, which updates InputMap and the save data at once.
-# The host saves to disk when it closes the options screen. Escape/B cancels a capture.
+# The host saves to disk when it closes the options screen. Escape and the pad's B button
+# cancel a capture through the host before they can close any menus.
 
 signal back_pressed
 
@@ -74,6 +75,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton:
 		var pad_event := event as InputEventJoypadButton
 		if !pad_event.pressed:
+			return
+		# B is the controller's cancel, so leave it for the host just like Escape.
+		if pad_event.button_index == JOY_BUTTON_B:
 			return
 		_consume()
 		_finish_button(pad_event.button_index)

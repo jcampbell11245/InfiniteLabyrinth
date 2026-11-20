@@ -21,6 +21,7 @@ func test_changing_binding_updates_input_map_and_save_data() -> void:
 	var bindings := autoload("Bindings")
 	var save_data := autoload("SaveData")
 	var snapshot := _snapshot()
+	bindings.reset_defaults()
 	bindings.set_key("roll", KEY_R)
 	bindings.set_button("roll", JOY_BUTTON_B)
 	expect(bindings.key_for("roll") == KEY_R, "the new key is remembered")
@@ -30,6 +31,27 @@ func test_changing_binding_updates_input_map_and_save_data() -> void:
 	var saved: Dictionary = save_data.bindings["roll"]
 	expect(int(saved["key"]) == KEY_R, "the key is written to the save data")
 	expect(int(saved["button"]) == JOY_BUTTON_B, "the pad button is written to the save data")
+	_restore(snapshot)
+
+func test_joypad_events_match_any_controller_device() -> void:
+	var bindings := autoload("Bindings")
+	var snapshot := _snapshot()
+	bindings.apply()
+	var found_button := false
+	for event: InputEvent in InputMap.action_get_events("melee_attack"):
+		if event is InputEventJoypadButton \
+				&& (event as InputEventJoypadButton).button_index == JOY_BUTTON_X:
+			found_button = true
+			expect(event.device == -1, "the sword button accepts any controller")
+	var found_axis := false
+	for event: InputEvent in InputMap.action_get_events("left"):
+		if event is InputEventJoypadMotion \
+				&& (event as InputEventJoypadMotion).axis == 0 \
+				&& (event as InputEventJoypadMotion).axis_value == -1.0:
+			found_axis = true
+			expect(event.device == -1, "the left-stick axis accepts any controller")
+	expect(found_button, "the sword button is still in InputMap")
+	expect(found_axis, "the left-stick axis is still in InputMap")
 	_restore(snapshot)
 
 func test_saved_bindings_load_with_defaults_for_missing_or_bad_values() -> void:
@@ -126,6 +148,7 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	var old_write: bool = save_data.write_to_disk
 	var snapshot := _snapshot()
 	save_data.write_to_disk = false
+	autoload("Bindings").reset_defaults()
 	var panel := _add_options_panel()
 	panel.show()
 	panel.controls_button.pressed.emit()
@@ -138,10 +161,11 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	expect(!panel.controls_panel.is_listening(), "the capture ends after one press")
 	panel.controls_panel.start_capture("roll", "button")
 	var pad_event := InputEventJoypadButton.new()
-	pad_event.button_index = JOY_BUTTON_B
+	pad_event.button_index = JOY_BUTTON_LEFT_SHOULDER
 	pad_event.pressed = true
 	panel.controls_panel._input(pad_event)
-	expect(bindings.button_for("roll") == JOY_BUTTON_B, "capturing a pad button rebinds the action")
+	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_SHOULDER,
+		"capturing a pad button rebinds the action")
 	panel.hide()
 	save_data.write_to_disk = old_write
 	panel.free()
@@ -153,6 +177,7 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	var old_write: bool = save_data.write_to_disk
 	var snapshot := _snapshot()
 	save_data.write_to_disk = false
+	bindings.reset_defaults()
 	var panel := _add_options_panel()
 	panel.show()
 	panel.controls_button.pressed.emit()
@@ -170,6 +195,30 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	panel.controls_panel.cancel_capture()
 	expect(!panel.controls_panel.is_listening(), "Escape cancels the capture")
 	expect(panel.controls_panel.visible, "cancelling keeps the controls page open")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
+func test_fixed_alternate_keys_are_reserved() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	expect(bindings.key_owner(KEY_RIGHT) == "right", "the right arrow belongs to Move Right")
+	expect(bindings.key_owner(KEY_X) == "ranged_attack", "X belongs to Bow's fixed alternate")
+	expect(bindings.key_owner(KEY_J) == "melee_attack", "the shared J is reported by Sword")
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	panel.controls_panel.start_capture("left", "key")
+	_send_key(panel, KEY_RIGHT)
+	expect(bindings.key_for("left") == KEY_A, "a fixed alternate cannot be stolen")
+	panel.controls_panel.start_capture("melee_attack", "key")
+	_send_key(panel, KEY_X)
+	expect(bindings.key_for("melee_attack") == KEY_J, "Bow's alternate cannot be stolen")
 	panel.hide()
 	save_data.write_to_disk = old_write
 	panel.free()
@@ -197,6 +246,72 @@ func test_escape_closes_capture_then_controls_then_options() -> void:
 	save_data.write_to_disk = old_write
 	tree.root.remove_child(screen)
 	screen.free()
+
+func test_controller_b_cancels_capture_then_controls_then_options() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
+	var screen := _add_title_screen()
+	var panel := screen.get_node("Canvas/OptionsPanel") as OptionsPanel
+	(screen.get_node("Canvas/Options") as BaseButton).pressed.emit()
+	panel.controls_button.pressed.emit()
+	panel.controls_panel.start_capture("roll", "key")
+	var b_event := _cancel_button_event()
+	screen._unhandled_input(b_event)
+	expect(panel.visible && panel.controls_panel.visible, "the first B only cancels the capture")
+	expect(!panel.is_listening(), "B is not stored as a binding")
+	screen._unhandled_input(b_event)
+	expect(panel.visible && !panel.controls_panel.visible, "the second B returns to audio options")
+	screen._unhandled_input(b_event)
+	expect(!panel.visible, "the third B closes the options panel")
+	save_data.write_to_disk = old_write
+	tree.root.remove_child(screen)
+	screen.free()
+
+func test_controller_b_cancels_capture_in_pause_menu() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
+	var menu := _add_pause_menu()
+	if menu == null:
+		save_data.write_to_disk = old_write
+		return
+	menu.show_options()
+	var panel := menu.options_panel
+	panel.controls_button.pressed.emit()
+	panel.controls_panel.start_capture("roll", "key")
+	var b_event := _cancel_button_event()
+	menu._input(b_event)
+	expect(panel.visible && panel.controls_panel.visible && !panel.is_listening(),
+		"B cancels the capture without leaving the pause controls page")
+	menu._input(b_event)
+	expect(panel.visible && !panel.controls_panel.visible, "the next B returns to audio options")
+	menu._input(b_event)
+	expect(!panel.visible, "the next B closes the pause options panel")
+	save_data.write_to_disk = old_write
+	var layer := menu.get_parent()
+	tree.root.remove_child(layer)
+	layer.free()
+
+func _add_pause_menu() -> PauseMenu:
+	var packed := load("res://src/ui/menus/PauseMenu.tscn") as PackedScene
+	if packed == null:
+		return null
+	var layer := packed.instantiate() as CanvasLayer
+	tree.root.add_child(layer)
+	return layer.get_node("Pause") as PauseMenu
+
+func _cancel_button_event() -> InputEventJoypadButton:
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_B
+	event.pressed = true
+	return event
+
+func _send_key(panel: OptionsPanel, keycode: int) -> void:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	panel.controls_panel._input(event)
 
 func _add_options_panel() -> OptionsPanel:
 	var packed := load("res://src/ui/menus/OptionsPanel.tscn") as PackedScene

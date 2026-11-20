@@ -27,10 +27,8 @@ func _ready() -> void:
 	options_panel.back_pressed.connect(hide_options)
 
 func _input(event: InputEvent) -> void:
-	# Escape cancels a capture without closing the options screen or the pause menu.
-	if options_panel.visible && event is InputEventKey \
-			&& (event as InputEventKey).keycode == KEY_ESCAPE \
-			&& options_panel.cancel_capture_if_listening():
+	# Escape or B cancels a capture without closing the options screen or the pause menu.
+	if options_panel.visible && options_panel.cancel_capture_if_listening(event):
 		get_viewport().set_input_as_handled()
 		return
 	# While a control is being captured, the key press belongs to the rebinding UI.

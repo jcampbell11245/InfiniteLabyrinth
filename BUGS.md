@@ -4,6 +4,15 @@
 
 ## Fixed
 
+- A controller-only player could get stuck capturing a bind: B was treated as a new button
+  press instead of cancel. Escape and B now cancel a capture in both the title and pause
+  menus without closing the options screen.
+- Rebinding rebuilt joypad events with device 0, so gameplay ignored a second controller or
+  one that reconnected with a new id. Rebuilt button and axis events now use device -1, like
+  the defaults in project.godot.
+- A new key could collide with another action's fixed alternate - for example, binding Sword
+  to X would also fire Bow - because duplicate checks only looked at replaceable keys. Fixed
+  alternates are now reserved, apart from J which Sword and Select deliberately share.
 - The Controls page's status caption overlapped the last bind row. The row container grew
   past its authored height to fit the buttons, so the caption is now lower in a taller
   dialog with clear gaps above and below it.

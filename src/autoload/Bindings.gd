@@ -4,9 +4,14 @@ extends Node
 # project.godot supplies the defaults; this autoload re-applies them (or the player's saved
 # choices) to InputMap on every launch. Each action has one replaceable key and button plus
 # fixed alternates - arrow keys, left-stick axes and the extra attack keys - that stay
-# available so rebinding never removes a way to play. SaveData owns the persistent copy.
+# available so rebinding never removes a way to play. Joypad events use device -1 so any
+# controller works, including one that gets a new id after reconnecting. SaveData owns the
+# persistent copy.
 
 const UNBOUND := -1
+# J is Sword's replaceable key and Select's fixed alternate by design. The primary-key pass
+# in key_owner() already reports it, so the fixed-alternate pass must not claim it as well.
+const SHARED_FIXED_KEYS := [KEY_J]
 const BUTTON_NAMES := {
 	JOY_BUTTON_A: "A",
 	JOY_BUTTON_B: "B",
@@ -129,12 +134,21 @@ func action_label(action: String) -> String:
 			return String(entry["label"])
 	return action.to_upper()
 
-# Returns the other action already using this input, or an empty string when it is free.
-# Only the replaceable bindings count: the fixed alternates may be shared by design.
+# Returns the other action already using this key, or an empty string when it is free.
+# Fixed alternates count too: letting a player bind Move Left to the Right arrow would make
+# one press fire both actions. Deliberately shared keys are reported by their primary owner.
 func key_owner(keycode: int) -> String:
-	for action: String in bindings:
-		if key_for(action) == keycode:
-			return action
+	for entry: Dictionary in ACTIONS:
+		var primary_action := String(entry["action"])
+		if key_for(primary_action) == keycode:
+			return primary_action
+	if SHARED_FIXED_KEYS.has(keycode):
+		return ""
+	for entry: Dictionary in ACTIONS:
+		var alternate_action := String(entry["action"])
+		for fixed_key: int in entry.get("keys", []):
+			if fixed_key == keycode:
+				return alternate_action
 	return ""
 
 func button_owner(button_index: int) -> String:
@@ -169,11 +183,13 @@ func _key_event(keycode: int) -> InputEventKey:
 
 func _button_event(button_index: int) -> InputEventJoypadButton:
 	var event := InputEventJoypadButton.new()
+	event.device = -1
 	event.button_index = button_index
 	return event
 
 func _axis_event(axis: int, value: float) -> InputEventJoypadMotion:
 	var event := InputEventJoypadMotion.new()
+	event.device = -1
 	event.axis = axis
 	event.axis_value = value
 	return event
