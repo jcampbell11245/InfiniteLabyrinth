@@ -30,22 +30,33 @@ func _process(delta: float) -> void:
 		_collect()
 		return
 
+	var to_player := player.global_position - global_position
+	var dist := to_player.length()
+	if dist < Tuning.pickup_collect_distance:
+		_collect()
+		return
+
 	if _age < FLOAT_TIME:
-		# Drift gently around the chest before heading to the player.
+		# Drift gently around the chest while leaning toward the player.
 		var wander := _float_dir.rotated(sin(_bob_time * 2.0) * 0.8)
-		_velocity = _velocity.move_toward(wander * FLOAT_SPEED, FLOAT_SPEED * 3.0 * delta)
+		var dir_to_player := to_player / dist if dist > 0.001 else Vector2.ZERO
+		var drift := (wander + dir_to_player * 0.7).normalized() * FLOAT_SPEED
+		_velocity = _velocity.move_toward(drift, FLOAT_SPEED * 3.0 * delta)
 	else:
-		var to_player := player.global_position - global_position
-		if to_player.length() < Tuning.pickup_collect_distance:
-			_collect()
-			return
-		_velocity += to_player.normalized() * Tuning.pickup_home_accel * HOME_ACCEL_SCALE * delta
-		# Turn toward the player so it glides in instead of orbiting.
+		var dir_to_player := to_player / dist
+		_velocity += dir_to_player * Tuning.pickup_home_accel * HOME_ACCEL_SCALE * delta
 		var speed := _velocity.length()
 		if speed > 0.001:
-			_velocity = _velocity.normalized().slerp(to_player.normalized(), 0.2) * speed
+			_velocity = _velocity.normalized().slerp(dir_to_player, 0.25) * speed
+		# Don't skip past the player in a single frame.
+		if speed * delta >= dist:
+			global_position = player.global_position
+			_collect()
+			return
 
 	global_position += _velocity * delta
+	if is_instance_valid(player) && global_position.distance_to(player.global_position) < Tuning.pickup_collect_distance:
+		_collect()
 
 func _credit() -> void:
 	Game.add_keys(1)
