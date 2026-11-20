@@ -979,7 +979,7 @@ func _tile_icon(kind: RoomDesign.Cell) -> Texture2D:
 		RoomDesign.Cell.INNER_WALL:
 			map_name = "InnerWalls"
 			source_id = 0
-			atlas_cell = Room.INNER_WALL_ATLAS[0]
+			atlas_cell = InnerWalls.BASE_ATLAS[0]
 	var tile_set: TileSet = (_preview.get_node(map_name) as TileMap).tile_set
 	var source := tile_set.get_source(source_id) as TileSetAtlasSource
 	if source == null || source.texture == null:

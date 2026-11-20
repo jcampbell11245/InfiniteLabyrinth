@@ -255,6 +255,20 @@ resets every row. **Export** writes every Tuning value, changed ones first and m
 clipboard. Hover a row's name to see where its value lives in the code. Changed values last
 until the game closes; copy the ones you want to keep into the defaults in `Tuning.gd`.
 
+### Inner wall art
+
+The hand-drawn inner wall sheet, `assets/sprites/tileset/inner_walls/inner_walls.png`, has a
+piece for each set of side neighbours. The game draws from `inner_walls_joined.png`, which
+adds the inside-corner pieces (where two walls meet round a floor cell) cut and pasted from
+those. After changing the hand-drawn sheet, remake it and import:
+
+```bash
+"$GODOT" --headless --path . -s res://tools/build_inner_walls.gd
+"$GODOT" --headless --path . --import
+```
+
+A test fails if the joined sheet is out of date.
+
 ### Screenshots
 
 `tools/screenshot.gd` boots a floor in a window and saves what it shows, for checking HUD,

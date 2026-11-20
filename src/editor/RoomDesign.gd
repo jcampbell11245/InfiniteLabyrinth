@@ -445,7 +445,8 @@ func paint_all(room: Node) -> void:
 		for x in range(SIZE):
 			paint(room, Vector2i(x, y))
 
-# Draws `index` onto `room`, and rejoins the stalagmites and inner walls round it.
+# Draws `index` onto `room`, and rejoins the stalagmites and inner walls round it (inner
+# walls join diagonally too).
 func paint(room: Node, index: Vector2i) -> void:
 	var tile := tile_cell(index)
 	var tiles: TileMap = room.get_node("Tiles")
@@ -468,10 +469,11 @@ func paint(room: Node, index: Vector2i) -> void:
 	var stalagmites: TileMap = room.get_node("Stalagmites")
 	var walls: TileMap = room.get_node("InnerWalls")
 	_paint_stalagmite(stalagmites, index)
-	_paint_inner_wall(walls, index)
 	for step in NEIGHBOURS:
 		_paint_stalagmite(stalagmites, index + step)
-		_paint_inner_wall(walls, index + step)
+	for y in range(-1, 2):
+		for x in range(-1, 2):
+			_paint_inner_wall(walls, index + Vector2i(x, y))
 
 func _is_stalagmite(index: Vector2i) -> bool:
 	return in_floor(index) && get_cell(index) == Cell.STALAGMITE
@@ -497,8 +499,7 @@ func _paint_inner_wall(walls: TileMap, index: Vector2i) -> void:
 	if !_is_inner_wall(index):
 		walls.erase_cell(0, tile_cell(index))
 		return
-	var mask := Room.inner_wall_mask(index, _is_inner_wall)
-	walls.set_cell(0, tile_cell(index), 0, Room.INNER_WALL_ATLAS[mask])
+	walls.set_cell(0, tile_cell(index), 0, InnerWalls.atlas_cell(index, _is_inner_wall))
 
 # --- Play-test ---
 
