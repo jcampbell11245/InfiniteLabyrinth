@@ -7,6 +7,9 @@ extends Node
 # the player, and small coloured ones on fireballs, lasers and dropped arrows so they stand
 # out in the dark. Coins don't glow. Lights are attached as nodes spawn, so nothing else needs to know about
 # lighting. Every number is in Tuning (the F2 menu's Lighting tab) and applies live.
+#
+# The start and end rooms stay fully lit: walking into one fades the darkness (and the
+# lights, which would only wash it out) away, and walking out brings them back.
 
 const LIGHT_NAME := &"CaveLight"
 const ARROW_PICKUP_SCRIPT := preload("res://src/effects/ArrowPickup.gd")
@@ -24,8 +27,14 @@ const PICKUP_COLOR := Color(1.0, 0.9, 0.5)
 
 enum Kind { PLAYER, PROJECTILE, PICKUP }
 
+const BRIGHT_ROOMS := [Constants.START_ROOM, Constants.END_ROOM]
+const BRIGHT_FADE_TIME := 0.5 # Real seconds the darkness takes to lift or fall on changing rooms
+
 var _darkness: CanvasModulate
 var _texture: GradientTexture2D
+var _brightness_lift := 0.0 # 0 in the dark cave, 1 in a room kept fully lit
+var _lift_tween: Tween
+var _seen_room := false # The first room is set at once, not faded to
 
 func _ready() -> void:
 	_darkness = CanvasModulate.new()
@@ -33,6 +42,7 @@ func _ready() -> void:
 	add_child(_darkness)
 	get_tree().node_added.connect(_on_node_added)
 	Tuning.changed.connect(_on_tuning_changed)
+	Game.room_entered.connect(_on_room_entered)
 	# Light what already exists on the floor (the player is in it before this runs).
 	for node in get_parent().find_children("*", "", true, false):
 		_on_node_added(node)
@@ -64,10 +74,28 @@ func light_texture() -> GradientTexture2D:
 	return _texture
 
 # The colour the unlit cave is multiplied by: Tuning.cave_brightness in every channel,
-# nudged towards blue so the shadows read as cold stone rather than grey.
-static func ambient_color() -> Color:
+# nudged towards blue so the shadows read as cold stone rather than grey, and blended to
+# white as a bright room's lift comes in.
+func ambient_color() -> Color:
+	if !Tuning.lighting_enabled:
+		return Color.WHITE
 	var b := Tuning.cave_brightness
-	return Color(b * 0.85, b * 0.9, b * 1.1).clamp() if Tuning.lighting_enabled else Color.WHITE
+	return Color(b * 0.85, b * 0.9, b * 1.1).clamp().lerp(Color.WHITE, _brightness_lift)
+
+func _on_room_entered(room_id: int) -> void:
+	var target := 1.0 if room_id in BRIGHT_ROOMS else 0.0
+	if _lift_tween != null:
+		_lift_tween.kill()
+	if !_seen_room:
+		_seen_room = true
+		_set_lift(target)
+		return
+	_lift_tween = create_tween().set_ignore_time_scale()
+	_lift_tween.tween_method(_set_lift, _brightness_lift, target, BRIGHT_FADE_TIME)
+
+func _set_lift(value: float) -> void:
+	_brightness_lift = value
+	_apply_all()
 
 func _on_node_added(node: Node) -> void:
 	if node.has_node(NodePath(LIGHT_NAME)):
@@ -114,6 +142,7 @@ func _apply_light(light: PointLight2D) -> void:
 		_:
 			radius = Tuning.light_pickup_radius
 			light.energy = Tuning.light_small_energy
+	light.energy *= 1.0 - _brightness_lift
 	light.enabled = Tuning.lighting_enabled
 	# The texture's radius is half its width; undo any scale the owner has.
 	var parent_scale := (light.get_parent() as Node2D).global_scale.x if light.get_parent() is Node2D else 1.0
