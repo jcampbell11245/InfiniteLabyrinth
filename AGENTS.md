@@ -107,6 +107,16 @@ PENDING_ASSETS.md, and record where the real one came from. For a library asset,
 licence and link. For a hand-made one, say who made it. Sounds go in
 `assets/sfx/SOURCE.txt`, everything else in the PR and commit message.
 
+## Releases
+
+To publish a new version, follow the **make-release** skill,
+[.claude/skills/make-release/SKILL.md](.claude/skills/make-release/SKILL.md). It asks whether the
+update is major, moderate or minor (unless the developer has said), and builds from an
+up-to-date `master` after `tools/check.sh` passes. It exports and zips every preset with
+`tools/export_builds.sh`, and drafts the notes in the style of
+[release-notes-style.md](.claude/skills/make-release/release-notes-style.md) for the
+developer to approve. Then it creates the GitHub release with the zips attached.
+
 ## Conventions
 
 - **GDScript**: follow the official style guide and type everything statically (the
