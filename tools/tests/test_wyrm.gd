@@ -369,3 +369,66 @@ func test_holds_still_before_charging() -> void:
 	expect(wyrm.global_position.distance_to(at) < 1.0, "without moving")
 	await wait_real(0.5)
 	expect(wyrm._dashing || !wyrm._animation_is("slash"), "and has set off by 1.3 s")
+
+# A flying dragon's body is its shadow below the sprite: a shot hit back at it from below
+# mustn't break on the shadow without hurting it.
+func test_volleyed_fireball_from_below_hurts_a_wyvern() -> void:
+	calm()
+	var wyvern := await boot_dragon("wyvern")
+	player().invincibility_cooldown.start(100.0)
+	wyvern.health = 100.0
+	wyvern.speed = 0.0 # Holds still over the shot
+	var fireball: Projectile = Wyrm.Fireball.instantiate()
+	wyvern.room.add_child(fireball)
+	fireball.global_position = wyvern.feet_position() + Vector2(0, 30)
+	fireball.direction = Direction.UP
+	fireball.damage = 1.0
+	fireball.speed = 150.0
+	fireball.deflect(Direction.UP) # Now the player's, flying up into the wyvern's shadow
+	for i in 60:
+		await tree.physics_frame
+		if !is_instance_valid(fireball):
+			break
+	expect(wyvern.health < 100.0, "the wyvern is hurt, not its shadow")
+
+# Having noticed the player it flies off, further than its circle, before its first attack.
+func test_flies_off_before_its_first_attack() -> void:
+	eager(true)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_first_attack_delay = 1.0
+	var wyrm := await boot_dragon("wyrm", RoomDesign.new(), false) # Faces right, default radius
+	await physics_frames(10)
+	expect(!wyrm.noticed, "hasn't noticed the player yet")
+	player().global_position = wyrm.global_position + Vector2(60, 0)
+	await physics_frames(2)
+	expect(wyrm.noticed, "notices the player")
+	var start := wyrm.global_position.distance_to(player().global_position)
+	await wait_real(0.8)
+	expect(!wyrm._animation_is("slash") && !wyrm._animation_is("shoot"), "no attack yet 0.8 s in")
+	var now := wyrm.global_position.distance_to(player().global_position)
+	expect(now > start + 20.0, "it has flown off: %s px to %s px" % [start, now])
+
+# A swing on the glint that connects just after the fireball comes out still parries, and
+# the fireball goes: it can't fly on or be hit back.
+func test_glint_parry_just_after_the_breath_removes_the_fireball() -> void:
+	eager(false)
+	autoload("Tuning").wyrm_fireball_charge_time = 0.5
+	var wyrm := await wait_for_breath(await boot_dragon("wyrm"))
+	await stand_in_front(wyrm)
+	for i in 120:
+		if wyrm._breath_glinted:
+			break
+		await tree.physics_frame
+	player().swing_started_at = Time.get_ticks_msec() # Swung on the glint...
+	player().swing_started_frame = Engine.get_physics_frames()
+	for i in 120:
+		if wyrm._fireball != null:
+			break
+		await tree.physics_frame
+	var fireball: Projectile = wyrm._fireball
+	expect(fireball != null, "the fireball comes out before the swing connects")
+	wyrm._on_player_sword(head_on(wyrm)) # ...and connects now
+	await physics_frames(2)
+	expect(wyrm.is_stunned(), "it still parries the dragon")
+	expect(!is_instance_valid(fireball), "and the fireball is gone")
+	expect(!has_fireball(wyrm.room), "with none left in the room")

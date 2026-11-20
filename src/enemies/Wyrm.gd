@@ -10,7 +10,8 @@ extends Enemy
 # in by, for AUTO_FACING). It notices a player within detection_radius anywhere but behind
 # it, or anything hitting it, and alerts the rest of the room within Tuning.alert_radius;
 # then it fights until the player leaves the room. Both are set per dragon in the room
-# creator.
+# creator. Having noticed them, it first flies off (see _open_fight) for
+# Tuning.wyrm_first_attack_delay before it can attack.
 #
 # Fighting, it circles at Tuning.wyrm_orbit_radius, now and then turning round to circle the
 # other way. It keeps its distance: a player who gets inside Tuning.wyrm_keep_away of the
@@ -105,6 +106,7 @@ var _dashing := false # The charge under way has set off
 var _dash_left := 0.0 # Pixels of the charge still to fly
 var _recover: Timer # Running while it hovers after an attack, before circling again
 var _recover_rooted := false # The recovery under way hangs still instead of backing off
+var _opening: Timer # Running while it flies off after first noticing the player
 var _charge_sound: AudioStreamPlayer
 var _wall_sound: AudioStreamPlayer
 var _breath_sound: AudioStreamPlayer
@@ -122,6 +124,7 @@ var _fireball_countered := false # The player hit _fireball back within the coun
 func _ready() -> void:
 	super()
 	_recover = _add_timer()
+	_opening = _add_timer()
 	_charge_sound = _add_sound(CHARGE_SOUND)
 	_wall_sound = _add_sound(WALL_HIT_SOUND)
 	_breath_sound = _add_sound(BREATH_SOUND)
@@ -187,18 +190,35 @@ func take_damage(from_direction: String, amount: float) -> void:
 # its mouth. Swung before the glint, the swing is blocked and the player staggered, as when
 # swinging early at any attack; swung on the glint, it's parried and stunned, the fireball
 # choked off. Otherwise as for any enemy.
+#
+# A swing on the glint can connect a moment after the fireball has come out (the glint is
+# only a parry window ahead of it). That still counts as the parry, and the fireball that
+# just came out goes too, so it can't fly on or be hit back.
 func _on_player_sword(from_direction: String) -> void:
-	if !_charging_fireball():
+	var on_glint := _breath_glint_at >= 0 && player.swing_started_at >= _breath_glint_at
+	if !_charging_fireball() && !(on_glint && _fireball_just_out()):
 		super(from_direction)
 		return
-	if _breath_glint_at >= 0 && player.swing_started_at >= _breath_glint_at:
+	if on_glint:
 		player.mark_swing_parried()
 		_choke_breath()
+		_snuff_fireball()
 		_parry_feedback()
 		_explode_in_mouth()
 		stagger(from_direction)
 	else:
 		_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
+
+# Its fireball came out within Tuning.wyrm_fireball_counter_window and no one has hit it yet.
+func _fireball_just_out() -> bool:
+	return is_instance_valid(_fireball) && _fireball.deflections == 0 \
+		&& Time.get_ticks_msec() - _fireball_out_at <= Tuning.wyrm_fireball_counter_window * 1000.0
+
+# Removes the fireball it just breathed, without a trace: it burst in its mouth instead.
+func _snuff_fireball() -> void:
+	if is_instance_valid(_fireball):
+		_fireball.queue_free()
+	_fireball = null
 
 # Parried on the glint: the fireball it was about to breathe bursts in its mouth instead.
 func _explode_in_mouth() -> void:
@@ -215,6 +235,16 @@ func _choke_breath() -> void:
 	_breath_timer.stop()
 	_play("idle")
 	_roll_cooldown()
+
+# Just noticed the player: it flies off out to Tuning.wyrm_first_back_off_radius times its
+# circle and doesn't attack for Tuning.wyrm_first_attack_delay, so the fight opens with a
+# moment to size it up rather than an attack straight away.
+func _open_fight() -> void:
+	var delay := Tuning.wyrm_first_attack_delay
+	_opening.start(maxf(delay, 0.001))
+	_recover_rooted = false
+	_recover.start(maxf(_recover.time_left, maxf(delay, 0.001)))
+	attack_cooldown.start(maxf(attack_cooldown.time_left, maxf(delay, 0.001)))
 
 # Flies off for Tuning.wyrm_hit_back_off before it can attack again (after being hit, or
 # coming round from a stun). Hanging open after a red charge, it stays put until that's
@@ -251,6 +281,7 @@ func _physics_process(delta: float) -> void:
 		noticed = true
 	if noticed && !_was_noticed:
 		_alert_pack()
+		_open_fight()
 	_was_noticed = noticed
 	if !noticed: # Hovers where it started until it sees the player
 		_apply_knockback(delta)
@@ -286,6 +317,7 @@ func _on_reset() -> void:
 	_dash_left = 0.0
 	_stuck_for = 0.0
 	_recover.stop()
+	_opening.stop()
 	_recover_rooted = false
 	_breath_timer.stop()
 	_breath_sound.stop()
@@ -308,9 +340,12 @@ func _circle(delta: float) -> void:
 		offset = Vector2.RIGHT
 	# A player inside its circle sends it backing straight off, quicker than it circles, so it
 	# keeps its distance; it only comes close to attack.
-	var backing_off := offset.length() < Tuning.wyrm_orbit_radius * Tuning.wyrm_keep_away
+	# Just after noticing the player it keeps further off (see _open_fight).
+	var opening := !_opening.is_stopped()
+	var radius := Tuning.wyrm_orbit_radius * (Tuning.wyrm_first_back_off_radius if opening else 1.0)
+	var backing_off := offset.length() < radius * (1.0 if opening else Tuning.wyrm_keep_away)
 	var lead := ORBIT_LEAD * (BACK_OFF_LEAD if backing_off else 1.0)
-	var target := centre + Vector2.from_angle(offset.angle() + _orbit_dir * lead) * Tuning.wyrm_orbit_radius
+	var target := centre + Vector2.from_angle(offset.angle() + _orbit_dir * lead) * radius
 	target = room.clamp_to_floor(target + _separation(), ORBIT_WALL_MARGIN)
 	var to_target := target - position
 	if to_target.length() <= ORBIT_ARRIVE:

@@ -84,26 +84,29 @@ var curse_speed_multiplier := 0.55 # Walk and roll speed while slowed
 var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
 var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back when the troll dies
 # Dragons (Wyrm.gd): wyrms and the bigger wyverns circle the player, now and then stopping
-# to breathe a fireball or charge.
+# to breathe a fireball or charge. Only their combat timings are in the F2 menu (FIELDS);
+# the movement, distance and chance values here are left out of it on purpose.
 var wyrm_orbit_radius := 100.0 # Pixels from the player they circle at
 var wyrm_orbit_flip_min := 1.0 # Seconds before it may turn round and circle the other way, rolled each time
 var wyrm_orbit_flip_max := 2.5
 var wyrm_retreat_speed := 1.8 # Times its speed while backing off a player inside its circle
 var wyrm_keep_away := 0.85 # Share of the circle radius: a player closer than this sends it backing off
 var wyrm_hit_back_off := 0.8 # Seconds it backs off without attacking after a hit lands (or a stun wears off)
+var wyrm_first_attack_delay := 1.5 # Seconds it flies off, without attacking, after first noticing the player
+var wyrm_first_back_off_radius := 1.4 # Times the circle radius it backs off to meanwhile
 var wyrm_attack_cooldown_min := 1.6 # Seconds of circling between its attacks, rolled each time
 var wyrm_attack_cooldown_max := 2.6
 var wyrm_pack_attack_gap := 1.2 # Seconds every other dragon in the room waits after one finishes an attack
 var wyrm_charge_chance := 0.6 # Share of attacks that are charges; the rest are fireballs
-var wyrm_charge_hold_min := 0.8 # Seconds it hangs still in its lunge pose before a charge sets off, rolled each time
-var wyrm_charge_hold_max := 1.2
+var wyrm_charge_hold_min := 0.2 # Seconds it hangs still in its lunge pose before a charge sets off, rolled each time
+var wyrm_charge_hold_max := 0.5
 var wyrm_charge_speed := 420.0 # Pixels/sec while charging
 var wyrm_charge_overshoot := 28.0 # Pixels past the player a charge carries on
 var wyrm_charge_max_distance := 240.0 # Pixels: longest a charge goes, overshoot included
 var wyrm_clash_reach := 22.0 # Pixels short of the player where a charge strikes; its twinkle comes a parry window before
 var wyrm_charge_recovery := 0.2 # Seconds it hovers after a charge before circling again
 var wyrm_fireball_speed := 175.0 # Wyrm and wyvern fireballs, before any hit back
-var wyrm_fireball_charge_time := 1.2 # Seconds it holds still glowing before breathing a fireball. From keep-away range (~85 px) a walking player (player_speed) reaches it in about 0.6 s, leaving time to react and swing on the glint
+var wyrm_fireball_charge_time := 0.5 # Seconds it holds still glowing before breathing a fireball
 var wyrm_fireball_counter_window := 0.35 # Seconds after a fireball comes out that hitting it back counts as a counter, stunning the dragon
 var wyvern_heavy_charge_chance := 0.4 # Share of a wyvern's charges that glint red and can't be parried
 var wyvern_heavy_end_lag := 1.0 # Seconds a wyvern hangs in the air, open, after an unparryable charge
@@ -277,27 +280,16 @@ const FIELDS := [
 	["Enemies", "wizard_volley_reaction_time", "Wizard volley reaction time (s)", 0, 2, 0.05, "new (RangedEnemy._player_could_return)"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],
-	["Enemies", "wyrm_orbit_radius", "Wyrm circle radius (px)", 20, 200, 1, "new (Wyrm._circle)"],
-	["Enemies", "wyrm_orbit_flip_min", "Wyrm circle direction change min (s)", 0.1, 10, 0.1, "new (Wyrm._circle)"],
-	["Enemies", "wyrm_orbit_flip_max", "Wyrm circle direction change max (s)", 0.1, 10, 0.1, "new (Wyrm._circle)"],
-	["Enemies", "wyrm_retreat_speed", "Wyrm back-off speed multiplier", 0.5, 5, 0.05, "new (Wyrm._circle)"],
-	["Enemies", "wyrm_keep_away", "Wyrm back-off distance (x circle radius)", 0, 1.5, 0.05, "new (Wyrm._circle)"],
 	["Enemies", "wyrm_hit_back_off", "Wyrm back-off after being hit (s)", 0, 5, 0.05, "new (Wyrm._back_off)"],
+	["Enemies", "wyrm_first_attack_delay", "Wyrm delay before its first attack (s)", 0, 6, 0.1, "new (Wyrm._open_fight)"],
 	["Enemies", "wyrm_attack_cooldown_min", "Wyrm attack cooldown min (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
 	["Enemies", "wyrm_attack_cooldown_max", "Wyrm attack cooldown max (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
 	["Enemies", "wyrm_pack_attack_gap", "Wyrm gap after another dragon attacks (s)", 0, 10, 0.1, "new (Wyrm._hold_off_other_dragons)"],
-	["Enemies", "wyrm_charge_chance", "Wyrm charge (vs fireball) chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
 	["Enemies", "wyrm_charge_hold_min", "Wyrm hold before a charge min (s)", 0, 6, 0.1, "new (Wyrm._start_charge)"],
 	["Enemies", "wyrm_charge_hold_max", "Wyrm hold before a charge max (s)", 0, 6, 0.1, "new (Wyrm._start_charge)"],
-	["Enemies", "wyrm_charge_speed", "Wyrm charge speed (px/s)", 50, 800, 10, "new (Wyrm._dash)"],
-	["Enemies", "wyrm_charge_overshoot", "Wyrm charge overshoot (px)", 0, 150, 1, "new (Wyrm._begin_dash)"],
-	["Enemies", "wyrm_charge_max_distance", "Wyrm charge max distance (px)", 20, 500, 5, "new (Wyrm._begin_dash)"],
-	["Enemies", "wyrm_clash_reach", "Wyrm charge strike distance (px)", 0, 80, 1, "new (Wyrm._dash)"],
 	["Enemies", "wyrm_charge_recovery", "Wyrm recovery after a charge (s)", 0, 3, 0.05, "new (Wyrm._end_attack)"],
-	["Enemies", "wyrm_fireball_speed", "Wyrm/wyvern fireball speed", 10, 600, 10, "new (Wyrm.breathe_fire)"],
 	["Enemies", "wyrm_fireball_charge_time", "Wyrm fireball charge-up (s)", 0, 6, 0.1, "new (Wyrm._hold_breath)"],
 	["Enemies", "wyrm_fireball_counter_window", "Wyrm fireball counter window (s)", 0, 2, 0.05, "new (Wyrm._watch_fireball)"],
-	["Enemies", "wyvern_heavy_charge_chance", "Wyvern unparryable charge chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
 	["Enemies", "wyvern_heavy_end_lag", "Wyvern unparryable charge end lag (s)", 0, 5, 0.05, "new (Wyrm._end_attack)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 

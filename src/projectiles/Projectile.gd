@@ -141,6 +141,11 @@ func _is_deflecting_sword(node: Node2D) -> bool:
 func _on_hitbox_hit(area_or_body: Node2D) -> void:
 	if _hit:
 		return
+	# A flying enemy's body is its shadow on the ground, below the sprite: only its hurtbox,
+	# up where it's drawn, can be hit. Otherwise a shot from below breaks on the shadow first.
+	var enemy := area_or_body as Enemy
+	if enemy != null && enemy.flies():
+		return
 	if !deflectable:
 		_impact()
 		return
@@ -153,7 +158,7 @@ func _on_hitbox_hit(area_or_body: Node2D) -> void:
 func _resolve_contacts() -> void:
 	var touched := _contacts.duplicate()
 	_contacts.clear()
-	if _hit:
+	if _hit || is_queued_for_deletion(): # Removed meanwhile (a dragon parried on its glint)
 		return
 	for node in touched:
 		if is_instance_valid(node) && _is_deflecting_sword(node):
