@@ -84,6 +84,15 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	await tree.process_frame
 	await tree.process_frame
 	var controls := panel.controls_panel
+	var host_rect := panel.get_global_rect()
+	var controls_rect := controls.get_global_rect()
+	expect(controls_rect.position.is_equal_approx(host_rect.position) \
+		&& controls_rect.size.is_equal_approx(host_rect.size),
+		"the controls page fills the options panel instead of sitting offscreen")
+	var dialog_rect := (controls.get_node("Panel") as Control).get_global_rect()
+	expect(host_rect.encloses(dialog_rect), "the controls dialog stays inside the options panel")
+	expect(dialog_rect.has_point(host_rect.position + host_rect.size / 2.0),
+		"the controls dialog is centred in the options panel")
 	var rows: VBoxContainer = controls.get_node("Panel/Rows")
 	expect(rows.get_child_count() == autoload("Bindings").ACTIONS.size(), "one row per action")
 	for child: Node in rows.get_children():

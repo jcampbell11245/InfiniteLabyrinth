@@ -4,6 +4,9 @@
 
 ## Fixed
 
+- The Controls page opened off-screen in the bottom-right corner. Its instanced root was
+  anchored to the options panel's bottom-right while keeping its own 704x396 size, so the
+  dialog started outside the window. It now fills the options panel from its top-left.
 - The boss can move through walls and clip out of bounds. The boss only collided with
   physics layer 1, but the wall tiles on the Top and TopWalls layers are on layer 9; it now
   collides with walls and pits like the other enemies.

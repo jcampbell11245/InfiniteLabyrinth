@@ -156,5 +156,3 @@ text = "BACK"
 
 [node name="ControlsPanel" parent="." instance=ExtResource("5")]
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
