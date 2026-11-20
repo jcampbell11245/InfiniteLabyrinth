@@ -476,3 +476,19 @@ func test_stunned_dragon_takes_no_bonus_damage() -> void:
 	expect(!wyrm.is_vulnerable(), "but not open to extra damage")
 	wyrm.take_damage(Direction.RIGHT, 1.0)
 	expect(wyrm.health >= 98.0, "a 1-damage hit takes about 1: %s left" % wyrm.health)
+
+# Backed into a corner it slips out sideways round the player, rather than sitting there.
+func test_slips_out_of_a_corner() -> void:
+	calm()
+	var tuning := autoload("Tuning")
+	tuning.wyrm_first_attack_delay = 0.0
+	var wyrm := await boot_dragon("wyrm")
+	var room := wyrm.room
+	var corner := room.floor_rect.position + Vector2(16, 16)
+	wyrm.position = corner
+	var p := player()
+	p.global_position = room.to_global(corner + Vector2(40, 40))
+	await wait_real(1.5)
+	var gap := wyrm.global_position.distance_to(p.global_position)
+	expect(gap > tuning.wyrm_orbit_radius * 0.75, "it gets away from the player: %s px" % gap)
+	expect(wyrm.position.distance_to(corner) > 40.0, "out of the corner")

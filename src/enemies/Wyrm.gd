@@ -15,7 +15,8 @@ extends Enemy
 #
 # Fighting, it circles at Tuning.wyrm_orbit_radius, now and then turning round to circle the
 # other way. It keeps its distance: a player who gets inside Tuning.wyrm_keep_away of the
-# circle sends it backing straight off at the player's walking speed. A hit
+# circle sends it backing straight off at the player's walking speed, or, backed into a
+# wall or corner, slipping out sideways round them along the wall (_escape_target). A hit
 # that lands, or coming round from a stun, sends it backing off for Tuning.wyrm_hit_back_off
 # before it can attack again. Only its attacks hurt: there's no damage for touching it. Every
 # so often (Tuning.wyrm_attack_cooldown_min/max) it stops to attack, one of two ways:
@@ -62,6 +63,11 @@ const BACK_OFF_LEAD := 0.3 # Share of ORBIT_LEAD while backing off: mostly strai
 const ORBIT_WALL_MARGIN := 14.0 # Circle targets stay this far inside the floor
 const ORBIT_ARRIVE := 2.0 # Pixels from a circle target that count as there
 const ORBIT_STUCK_TIME := 0.4 # Seconds pressed against something before circling the other way
+# Backing off, a target the floor's edge keeps closer to the player than this share of its
+# circle means it's cornered; it then heads ESCAPE_TURN radians round the player instead.
+const CORNERED_SHARE := 0.8
+const ESCAPE_TURN := 1.4
+const ESCAPE_TIE := 4.0 # Pixels: the other way round has to be this much better to switch
 const SEPARATION := 30.0 # Pixels: closer than this to another enemy, it steers away from it
 const FIRE_FLASH := Color(1, 0.6, 0.2) # Glow as it draws breath, warning of the fireball
 const BREATH_FRAME := 1 # "shoot" frame it draws breath on
@@ -341,8 +347,11 @@ func _circle(delta: float) -> void:
 	var radius := Tuning.wyrm_orbit_radius * (Tuning.wyrm_first_back_off_radius if opening else 1.0)
 	var backing_off := offset.length() < radius * (1.0 if opening else Tuning.wyrm_keep_away)
 	var lead := ORBIT_LEAD * (BACK_OFF_LEAD if backing_off else 1.0)
-	var target := centre + Vector2.from_angle(offset.angle() + _orbit_dir * lead) * radius
-	target = room.clamp_to_floor(target + _separation(), ORBIT_WALL_MARGIN)
+	var target := _circle_target(centre, offset, _orbit_dir * lead, radius)
+	# Backed into a wall or corner, the floor's edge stops it getting away: it slips out
+	# sideways round the player instead, along the wall.
+	if backing_off && target.distance_to(centre) < radius * CORNERED_SHARE:
+		target = _escape_target(centre, offset, radius)
 	var to_target := target - position
 	if to_target.length() <= ORBIT_ARRIVE:
 		return
@@ -360,6 +369,26 @@ func _circle(delta: float) -> void:
 	else:
 		_stuck_for = 0.0
 	_moving = true
+
+# The point on its circle round `centre` (the player), `turn` radians on round from where
+# it is now (`offset` from them), kept on the floor and nudged away from other enemies.
+func _circle_target(centre: Vector2, offset: Vector2, turn: float, radius: float) -> Vector2:
+	var target := centre + Vector2.from_angle(offset.angle() + turn) * radius
+	return room.clamp_to_floor(target + _separation(), ORBIT_WALL_MARGIN)
+
+# Cornered: of the two ways round the player along the wall, it takes whichever gets it
+# further from them, and keeps circling that way.
+func _escape_target(centre: Vector2, offset: Vector2, radius: float) -> Vector2:
+	var best := Vector2.ZERO
+	var best_distance := -1.0
+	for dir: float in [_orbit_dir, -_orbit_dir]:
+		var target := _circle_target(centre, offset, dir * ESCAPE_TURN, radius)
+		var distance := target.distance_to(centre)
+		if distance > best_distance + ESCAPE_TIE:
+			best = target
+			best_distance = distance
+			_orbit_dir = dir
+	return best
 
 # A nudge away from any other enemy too close, so dragons don't stack on the circle.
 func _separation() -> Vector2:
