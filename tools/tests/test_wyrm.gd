@@ -124,7 +124,7 @@ func test_charge_glints_near_the_player_and_can_be_parried() -> void:
 	expect(wyrm._twinkled_at >= 0, "the charge glints")
 	expect(!wyrm._unparryable, "a wyrm's charge can be parried")
 	var tuning := autoload("Tuning")
-	var lead: float = tuning.wyrm_charge_speed * tuning.parry_window / 2.0
+	var lead: float = tuning.wyrm_charge_speed * tuning.parry_window
 	var ahead := wyrm._to_player().dot(wyrm._charge_dir)
 	expect(ahead <= lead + tuning.wyrm_clash_reach + 6.0, "glints as it closes on the player: %s px out" % ahead)
 	player().swing_started_at = Time.get_ticks_msec()
@@ -329,3 +329,25 @@ func test_other_dragons_wait_after_one_attacks() -> void:
 	wyvern.attack_cooldown.stop()
 	wyrm._end_attack(0.0)
 	expect(wyvern.attack_cooldown.time_left >= 1.4, "the wyvern waits after the wyrm's attack")
+
+# A charge never stops in front of the player: after the glint it flies on and bites as it
+# arrives, within the parry window.
+func test_charge_bites_straight_after_the_glint() -> void:
+	eager(true)
+	var wyrm := await boot_dragon("wyrm")
+	player().invincibility_cooldown.start(100.0) # Just watching the dragon
+	await wait_for_glint(wyrm)
+	expect(wyrm._twinkled_at >= 0, "the charge glints")
+	var glinted_at := Time.get_ticks_msec()
+	var stalled := 0
+	var last := wyrm.global_position
+	while wyrm._animation_is("slash") && wyrm.animator.frame < wyrm.attack_frame \
+			&& Time.get_ticks_msec() - glinted_at < 2000:
+		await tree.physics_frame
+		if wyrm.global_position.distance_to(last) < 0.5:
+			stalled += 1
+		last = wyrm.global_position
+	var waited := (Time.get_ticks_msec() - glinted_at) / 1000.0
+	var tuning := autoload("Tuning")
+	expect(waited <= tuning.parry_window + 0.1, "bites within the window of the glint: %s s" % waited)
+	expect(stalled <= 1, "without stopping on the way: %s frames still" % stalled)

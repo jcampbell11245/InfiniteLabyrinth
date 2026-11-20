@@ -33,13 +33,12 @@ extends Enemy
 #
 # Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
 # coils (frame 0), then freezes in its lunge pose (frame 1) for the usual random windup hold,
-# aims at the player and dashes straight at them at Tuning.wyrm_charge_speed. Half a parry
-# window before it gets within Tuning.wyrm_clash_reach of them it glints and pulls up there,
-# hanging in front of the player until the window closes; then it bites (frame 2, its
-# Hitbox live for that frame only) and carries on through, harmless, for
-# Tuning.wyrm_charge_overshoot. Parried in the
-# window it's knocked back and stunned like any parried enemy; a swing that meets it before
-# the glint is blocked and staggers the player. A wyvern's charges glint red
+# aims at the player and dashes straight at them at Tuning.wyrm_charge_speed without
+# stopping. A parry window's flight before it gets within Tuning.wyrm_clash_reach of them it
+# glints, and it bites (frame 2, its Hitbox live for that frame only) the moment it gets
+# there, then carries on through, harmless, for Tuning.wyrm_charge_overshoot. A swing begun
+# after the glint that meets it up to the bite parries it: knocked back and stunned like any
+# parried enemy. One that meets it before the glint is blocked and staggers the player. A wyvern's charges glint red
 # Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
 # so the player rolls through and hits it from behind, and it hangs in the air open for
 # Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
@@ -77,6 +76,11 @@ const BREATH_SOUND := preload("res://assets/sfx/arrow_charge.wav")
 const BREATH_PITCH := 0.6
 const BREATH_PULSE_SLOW := 0.4 # Seconds between glows as it starts holding its breath...
 const BREATH_PULSE_FAST := 0.1 # ...and just before it breathes
+# A fireball parried on the glint bursts in its mouth: flame, smoke and a low boom.
+const MOUTH_BLAST_SPARKS := 22
+const MOUTH_BLAST_SPEED := 110.0
+const MOUTH_BLAST_SMOKE := Color(0.35, 0.3, 0.3)
+const MOUTH_BLAST_PITCH := 0.55
 
 @export var homing_fireball := false # Wyverns: the fireball homes on the player
 @export var has_heavy_charge := false # Wyverns: some charges glint red and can't be parried
@@ -191,9 +195,19 @@ func _on_player_sword(from_direction: String) -> void:
 		player.mark_swing_parried()
 		_choke_breath()
 		_parry_feedback()
+		_explode_in_mouth()
 		stagger(from_direction)
 	else:
 		_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
+
+# Parried on the glint: the fireball it was about to breathe bursts in its mouth instead.
+func _explode_in_mouth() -> void:
+	var at := global_position + _mouth_offset()
+	Juice.burst(room, at, FIRE_FLASH, MOUTH_BLAST_SPARKS, MOUTH_BLAST_SPEED, Vector2.ZERO, 2.5, 0.45)
+	Juice.burst(room, at, MOUTH_BLAST_SMOKE, MOUTH_BLAST_SPARKS / 2, MOUTH_BLAST_SPEED / 2, Vector2.UP, 3.0, 0.6)
+	Juice.flash(animator, 0.2, FIRE_FLASH)
+	Juice.play($Attack, 0.05, MOUTH_BLAST_PITCH * voice_pitch)
+	Juice.shake(Juice.SHAKE_HEAVY)
 
 # Stops a fireball before it comes out. Not _end_attack: this can run inside a collision
 # callback, where the bite hitbox can't be switched (it's off anyway while breathing fire).
@@ -502,8 +516,6 @@ func _begin_dash() -> void:
 func _charge(delta: float) -> void:
 	if _dashing && _dash_left > 0:
 		var step := minf(Tuning.wyrm_charge_speed * delta, _dash_left)
-		if animator.frame < attack_frame: # Before the bite it pulls up at the player
-			step = minf(step, maxf(_ahead_of_strike(), 0.0))
 		var collision := move_and_collide(_charge_dir * step)
 		_dash_left -= step
 		# The side walls hold it back by margin rather than by collision (see
@@ -515,6 +527,12 @@ func _charge(delta: float) -> void:
 			return
 	if _dashing && _twinkled_at < 0 && _due_to_glint():
 		super._twinkle()
+	# Reached the player after the glint: it bites at once, without waiting out the window.
+	# Straight to the bite frame: playing on from the lunge pose, it would fly through them
+	# before the bite came round.
+	if _dashing && _twinkled_at >= 0 && animator.frame < attack_frame && _ahead_of_strike() <= 0:
+		_end_windup_hold()
+		animator.frame = attack_frame
 	if _animation_done() && _dash_left <= 0:
 		if _unparryable:
 			_end_attack(Tuning.wyvern_heavy_end_lag, true)
@@ -534,12 +552,21 @@ func _slam_into_wall() -> void:
 func _ahead_of_strike() -> float:
 	return _to_player().dot(_charge_dir) - Tuning.wyrm_clash_reach
 
-# Glints half a window before reaching the player (so it hangs there for the other half),
-# or before running out of charge.
+# Glints a window's flight before reaching the player, or before running out of charge, so
+# against a player standing still the window closes as it arrives.
 func _due_to_glint() -> bool:
 	var window := Tuning.unparryable_window if _unparryable else Tuning.parry_window
-	var lead := Tuning.wyrm_charge_speed * window / 2.0
+	var lead := Tuning.wyrm_charge_speed * window
 	return _ahead_of_strike() <= lead || _dash_left <= lead
+
+# A charge bites as soon as it reaches the player, which can be before the window closes,
+# and the sword only meets it as it arrives. So any swing begun after the glint that
+# connects up to the bite parries it, rather than counting as late.
+func _parry_timing() -> Parry:
+	var timing := super()
+	if timing == Parry.LATE && _animation_is("slash"):
+		return Parry.IN_WINDOW
+	return timing
 
 # Partway through a charge, up to the bite. Other enemies hold off their own windups
 # meanwhile (AttackCoordinator.other_is_swinging).
