@@ -2,8 +2,8 @@ class_name Wyrm
 extends Enemy
 
 # Dragons: the wyrm and the wyvern (Wyvern.tscn, the same script with bigger numbers). They
-# fly, so pits and special tiles leave them alone (see Enemy.flies), though stalagmites and
-# walls still stop them.
+# fly, so pits and special tiles leave them alone (see Enemy.flies), though inner walls,
+# stalagmites and walls still stop them.
 #
 # Noticing the player works as it does for goblins and knights (MeleeEnemy): until then it
 # hovers where it started, facing starting_direction (or turning to the door the player came
@@ -47,7 +47,7 @@ extends Enemy
 # so the player rolls through and hits it from behind, and it hangs in the air open for
 # Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
 #
-# A charge that slams into a wall or stalagmite dazes it exactly as a parry would (stars,
+# A charge that slams into a wall, inner wall or stalagmite dazes it exactly as a parry would (stars,
 # Tuning.parried_stun_time, the player's sword cooldown skipped).
 #
 # Dragons check in with the room's AttackCoordinator, so a goblin won't start a swing while

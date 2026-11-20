@@ -9,12 +9,14 @@ extends RefCounted
 # Cells here are floor indices, (0, 0) to (SIZE - 1, SIZE - 1), top-left first. tile_cell()
 # turns one into the TileMap cell it covers.
 
-# FLOOR to STALAGMITE are drawn on the room's own tile layers; the rest are special tiles,
-# drawn on its SpecialTiles layer over plain floor (see SpecialTiles for what each does).
+# FLOOR to STALAGMITE and INNER_WALL are drawn on the room's own tile layers; the rest are
+# special tiles, drawn on its SpecialTiles layer over plain floor (see SpecialTiles for what
+# each does). INNER_WALL comes last so the values of the others don't change.
 enum Cell {
 	FLOOR, PIT, STALAGMITE,
 	WIRES, SPIKES, CRACKED, SLICK, PLATE, PASTE, SLOW, FAST,
 	TELEPORT_1, TELEPORT_2, TELEPORT_3, TELEPORT_4,
+	INNER_WALL,
 }
 # The SpecialTiles frame each special cell is painted with.
 const SPECIAL_FRAMES := {
@@ -55,7 +57,7 @@ const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relat
 
 # Characters in the exported grid.
 const CELL_CHARS := {
-	Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S",
+	Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S", Cell.INNER_WALL: "X",
 	Cell.WIRES: "E", Cell.SPIKES: "^", Cell.CRACKED: "%", Cell.SLICK: "=", Cell.PLATE: "P",
 	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
@@ -128,9 +130,9 @@ func get_cell(index: Vector2i) -> Cell:
 static func is_special(kind: Cell) -> bool:
 	return SPECIAL_FRAMES.has(kind)
 
-# Ground something can walk on: floor and every special tile, but not a pit or rock.
+# Ground something can walk on: floor and every special tile, but not a pit, rock or wall.
 static func is_walkable(kind: Cell) -> bool:
-	return kind != Cell.PIT && kind != Cell.STALAGMITE
+	return kind != Cell.PIT && kind != Cell.STALAGMITE && kind != Cell.INNER_WALL
 
 # Sets the ground on `index`. Anything but floor knocks off an object standing there.
 func set_cell(index: Vector2i, kind: Cell) -> void:
@@ -196,7 +198,7 @@ func clear_enemies() -> void:
 		if objects[index] != "switch":
 			_forget(index)
 
-# Turns every pitfall, stalagmite and special tile back to floor; enemies and switches stay.
+# Turns every pitfall, stalagmite, inner wall and special tile back to floor; enemies and switches stay.
 func clear_tiles() -> void:
 	cells.fill(Cell.FLOOR)
 
@@ -437,13 +439,13 @@ func spawn_index() -> Vector2i:
 
 # --- Drawing onto a room ---
 
-# Draws every cell onto `room`'s Tiles, Pitfalls, Stalagmites and SpecialTiles layers.
+# Draws every cell onto `room`'s Tiles, Pitfalls, Stalagmites, InnerWalls and SpecialTiles layers.
 func paint_all(room: Node) -> void:
 	for y in range(SIZE):
 		for x in range(SIZE):
 			paint(room, Vector2i(x, y))
 
-# Draws `index` onto `room`, and rejoins the stalagmites round it.
+# Draws `index` onto `room`, and rejoins the stalagmites and inner walls round it.
 func paint(room: Node, index: Vector2i) -> void:
 	var tile := tile_cell(index)
 	var tiles: TileMap = room.get_node("Tiles")
@@ -464,9 +466,12 @@ func paint(room: Node, index: Vector2i) -> void:
 		tiles.set_cell(0, tile, Room.FLOOR, Vector2i.ZERO)
 		pitfalls.erase_cell(0, tile)
 	var stalagmites: TileMap = room.get_node("Stalagmites")
+	var walls: TileMap = room.get_node("InnerWalls")
 	_paint_stalagmite(stalagmites, index)
+	_paint_inner_wall(walls, index)
 	for step in NEIGHBOURS:
 		_paint_stalagmite(stalagmites, index + step)
+		_paint_inner_wall(walls, index + step)
 
 func _is_stalagmite(index: Vector2i) -> bool:
 	return in_floor(index) && get_cell(index) == Cell.STALAGMITE
@@ -482,6 +487,18 @@ func _paint_stalagmite(stalagmites: TileMap, index: Vector2i) -> void:
 		if _is_stalagmite(index + NEIGHBOURS[i]):
 			mask |= 1 << i
 	stalagmites.set_cell(0, tile_cell(index), Room.STALAGMITE_SOURCES[mask], Vector2i.ZERO)
+
+func _is_inner_wall(index: Vector2i) -> bool:
+	return in_floor(index) && get_cell(index) == Cell.INNER_WALL
+
+func _paint_inner_wall(walls: TileMap, index: Vector2i) -> void:
+	if !in_floor(index):
+		return
+	if !_is_inner_wall(index):
+		walls.erase_cell(0, tile_cell(index))
+		return
+	var mask := Room.inner_wall_mask(index, _is_inner_wall)
+	walls.set_cell(0, tile_cell(index), 0, Room.INNER_WALL_ATLAS[mask])
 
 # --- Play-test ---
 
@@ -536,6 +553,7 @@ func to_text() -> String:
 		"floors: %s" % ",".join(PackedStringArray(floor_list().map(func(n: int) -> String: return str(n)))),
 		"# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):",
 		"#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)",
+		"#   X  inner wall (InnerWalls layer; joins its inner wall neighbours)",
 		"#   G  goblin   K  knight     W  wizard     O  switch",
 		"#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)",
 		"#   D  dual knight             (knight family: DualKnight.tscn)",

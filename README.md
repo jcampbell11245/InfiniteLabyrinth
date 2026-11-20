@@ -174,7 +174,7 @@ the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
 Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
 Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
 **Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
-pitfalls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
+pitfalls, inner walls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
 knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns) and switches;
 right-click erases.
 Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight or dragon you place, or click with the **Select** tool, shows its detection
@@ -209,7 +209,7 @@ be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10
 can appear on (floors after 10 follow Floor 10), with Every floor and No floors to set them
 all at once. In room scenes this is the room's `floors` flags; all existing rooms appear on
 every floor. If too few rooms are allowed on a floor to fill it, some appear twice. Ctrl+Z undoes and Ctrl+Y redoes, or use the Undo and Redo buttons. Clear opens a menu to
-wipe everything, just the enemies, or just the tiles (pitfalls and stalagmites). Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
+wipe everything, just the enemies, or just the tiles (pitfalls, inner walls and stalagmites). Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
 dying) goes back to the editor with the design intact. **Export** writes the design as a
 plain-text grid to a `room_designs` folder and copies it to the clipboard, ready to be turned
 into a scene in `src/world/rooms/`. Run from source, the folder is in the project; in an

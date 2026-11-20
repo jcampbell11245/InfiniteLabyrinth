@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="9"]
 [ext_resource type="PackedScene" uid="uid://c8uo03x1rllmx" path="res://src/enemies/Wizard.tscn" id="10"]
 [ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="11"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="12"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Spikes.tscn" id="13"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="14"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="15"]
@@ -43,11 +43,11 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 
 [node name="Spikes" parent="." unique_id=745818810 instance=ExtResource("13")]
 format = 2
-layer_0/tile_data = PackedInt32Array(786445, 0, 0, 786446, 0, 0, 983053, 0, 0, 983054, 0, 0, 1179661, 0, 0, 1179662, 0, 0)
+layer_0/tile_data = PackedInt32Array(1179661, 0, 0, 1179662, 0, 0)
 
-[node name="Stalagmites" parent="." unique_id=387994209 instance=ExtResource("12")]
+[node name="InnerWalls" parent="." unique_id=387994209 instance=ExtResource("12")]
 format = 2
-layer_0/tile_data = PackedInt32Array(786445, 15, 0, 786446, 15, 0, 786447, 2, 0, 851981, 8, 0, 851982, 8, 0, 917517, 8, 0, 917518, 8, 0, 983053, 8, 0, 983054, 8, 0, 1048589, 13, 0, 1048590, 13, 0, 1048591, 3, 0, 1114125, 13, 0, 1114126, 13, 0, 1114127, 3, 0, 1179663, 8, 0, 1245197, 6, 0, 1245198, 6, 0, 1245199, 9, 0, 1310733, 6, 0, 1310734, 6, 0, 1310735, 9, 0)
+layer_0/tile_data = PackedInt32Array(786445, 0, 1, 786446, 65536, 1, 786447, 131072, 0, 851981, 0, 2, 851982, 131072, 2, 917517, 0, 2, 917518, 131072, 2, 983053, 0, 2, 983054, 131072, 2, 1048589, 0, 2, 1048590, 65536, 2, 1048591, 131072, 1, 1114125, 0, 3, 1114126, 65536, 3, 1114127, 131072, 2, 1179663, 196608, 2, 1245197, 0, 1, 1245198, 65536, 1, 1245199, 131072, 2, 1310733, 0, 3, 1310734, 65536, 3, 1310735, 131072, 3)
 
 [node name="Decorations" parent="." unique_id=709546980 instance=ExtResource("14")]
 

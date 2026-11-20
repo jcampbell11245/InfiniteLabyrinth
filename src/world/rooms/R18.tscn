@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" path="res://src/world/tiles/TopWalls.tscn" id="9"]
 [ext_resource type="PackedScene" uid="uid://c8uo03x1rllmx" path="res://src/enemies/Wizard.tscn" id="10"]
 [ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="11"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="12"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="13"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="14"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="15"]
@@ -46,9 +46,9 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 format = 2
 layer_0/tile_data = PackedInt32Array(589832, 0, 0, 589846, 1, 0, 655368, 0, 0, 655382, 1, 0, 720904, 0, 0, 720918, 1, 0, 786440, 0, 0, 786454, 1, 0, 1048584, 0, 0, 1048598, 1, 0, 1114120, 0, 0, 1114134, 1, 0, 1179656, 0, 0, 1179670, 1, 0, 1245192, 0, 0, 1245206, 1, 0, 1310728, 0, 0, 1310742, 1, 0, 1376264, 0, 0, 1376278, 1, 0)
 
-[node name="Stalagmites" parent="." unique_id=1387301982 instance=ExtResource("12")]
+[node name="InnerWalls" parent="." unique_id=1387301982 instance=ExtResource("12")]
 format = 2
-layer_0/tile_data = PackedInt32Array(983050, 0, 0, 983051, 0, 0, 983059, 0, 0, 983060, 0, 0, 1048589, 6, 0, 1048590, 6, 0, 1048591, 4, 0, 1048592, 2, 0, 1048593, 2, 0, 1114125, 6, 0, 1114126, 6, 0, 1114127, 4, 0, 1114128, 2, 0, 1114129, 2, 0)
+layer_0/tile_data = PackedInt32Array(983050, 0, 0, 983051, 131072, 0, 983059, 0, 0, 983060, 131072, 0, 1048589, 0, 1, 1048590, 65536, 1, 1048591, 65536, 1, 1048592, 65536, 1, 1048593, 131072, 1, 1114125, 0, 3, 1114126, 65536, 3, 1114127, 65536, 3, 1114128, 65536, 3, 1114129, 131072, 3)
 
 [node name="Decorations" parent="." unique_id=1710872073 instance=ExtResource("13")]
 

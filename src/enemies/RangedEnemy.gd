@@ -3,7 +3,7 @@ extends Enemy
 # Wizard: backs away while the player is lined up with it on either axis, otherwise casts
 # one fireball at a time, launched straight at the player and homing on them (see
 # Projectile.launch_at). It can't turn on a dime, so a hard enough dodge gets out of its
-# way, and it still breaks on stalagmites and walls. A fireball the player hits back homes
+# way, and it still breaks on inner walls, stalagmites and walls. A fireball the player hits back homes
 # on the wizard and is batted back again (homing on the player) just before it lands, unless the wizard fumbles it
 # (Tuning.wizard_deflect_miss_chance each time), or the rally has got too fast for the
 # player's sword cooldown to answer (see FireballReturner). The two can rally a fireball back and

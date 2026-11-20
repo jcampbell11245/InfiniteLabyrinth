@@ -14,7 +14,7 @@
 [ext_resource type="PackedScene" uid="uid://bn5u0u8tom4eu" path="res://src/objects/Switch.tscn" id="12"]
 [ext_resource type="Script" uid="uid://c40bvpxrvhjxo" path="res://src/objects/Switches.gd" id="13"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Spikes.tscn" id="14"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="15"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="15"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="16"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="17"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/PitfallTransitions.tscn" id="18"]
@@ -46,11 +46,11 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 
 [node name="Spikes" parent="." unique_id=686725161 instance=ExtResource("14")]
 format = 2
-layer_0/tile_data = PackedInt32Array(786444, 0, 0, 786448, 0, 0, 786449, 0, 0, 1048588, 0, 0, 1048592, 0, 0, 1048593, 0, 0, 1114124, 0, 0, 1114128, 0, 0, 1114129, 0, 0)
+layer_0/tile_data = PackedInt32Array(786444, 0, 0)
 
-[node name="Stalagmites" parent="." unique_id=397125200 instance=ExtResource("15")]
+[node name="InnerWalls" parent="." unique_id=397125200 instance=ExtResource("15")]
 format = 2
-layer_0/tile_data = PackedInt32Array(786445, 0, 0, 786446, 0, 0, 786448, 0, 0, 786449, 0, 0, 851980, 0, 0, 851981, 0, 0, 851982, 0, 0, 851984, 0, 0, 851985, 0, 0, 851986, 0, 0, 917516, 0, 0, 917517, 0, 0, 917518, 0, 0, 917520, 0, 0, 917521, 0, 0, 917522, 0, 0, 1048588, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048592, 0, 0, 1048593, 0, 0, 1048594, 0, 0, 1114124, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114128, 0, 0, 1114129, 0, 0, 1114130, 0, 0, 1179661, 0, 0, 1179662, 0, 0, 1179664, 0, 0, 1179665, 0, 0)
+layer_0/tile_data = PackedInt32Array(786445, 0, 1, 786446, 131072, 1, 786448, 0, 1, 786449, 131072, 1, 851980, 0, 1, 851981, 65536, 2, 851982, 131072, 2, 851984, 0, 2, 851985, 65536, 2, 851986, 131072, 1, 917516, 0, 3, 917517, 65536, 3, 917518, 131072, 3, 917520, 0, 3, 917521, 65536, 3, 917522, 131072, 3, 1048588, 0, 1, 1048589, 65536, 1, 1048590, 131072, 1, 1048592, 0, 1, 1048593, 65536, 1, 1048594, 131072, 1, 1114124, 0, 3, 1114125, 65536, 2, 1114126, 131072, 2, 1114128, 0, 2, 1114129, 65536, 2, 1114130, 131072, 3, 1179661, 0, 3, 1179662, 131072, 3, 1179664, 0, 3, 1179665, 131072, 3)
 
 [node name="Decorations" parent="." unique_id=1292166239 instance=ExtResource("16")]
 

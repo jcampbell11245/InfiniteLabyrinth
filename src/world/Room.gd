@@ -60,6 +60,15 @@ const STALAGMITE_SOURCES := {
 	0: 0, 4: 1, 8: 2, 12: 3, 10: 4, 14: 5, 2: 6, 1: 7,
 	5: 8, 9: 9, 13: 10, 11: 11, 15: 12, 3: 13, 7: 14, 6: 15,
 }
+# Inner wall piece for each set of joined inner wall neighbours (same mask as above), as
+# its cell in the 4x4 atlas of InnerWalls.tscn: a one-high strip along the top, a 3x3
+# block below it and a one-wide column on the right.
+const INNER_WALL_ATLAS := {
+	2: Vector2i(0, 0), 10: Vector2i(1, 0), 8: Vector2i(2, 0), 0: Vector2i(3, 0),
+	6: Vector2i(0, 1), 14: Vector2i(1, 1), 12: Vector2i(2, 1), 4: Vector2i(3, 1),
+	7: Vector2i(0, 2), 15: Vector2i(1, 2), 13: Vector2i(2, 2), 5: Vector2i(3, 2),
+	3: Vector2i(0, 3), 11: Vector2i(1, 3), 9: Vector2i(2, 3), 1: Vector2i(3, 3),
+}
 const PitfallSpikes := preload("res://src/world/tiles/PitfallSpikes.tscn")
 const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.tscn")
 
@@ -158,6 +167,7 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	_join_stalagmites()
+	_join_inner_walls()
 	_add_decorations(rng)
 	_add_floor_variants(rng)
 	_add_pitfall_edges()
@@ -304,11 +314,32 @@ func _join_stalagmites() -> void:
 	for cell: Vector2i in sources:
 		stalagmites.set_cell(0, cell, sources[cell], Vector2i.ZERO)
 
+# The same for inner walls, which are one atlas with a piece per set of neighbours.
+func _join_inner_walls() -> void:
+	var walls: TileMap = get_node_or_null("InnerWalls")
+	if walls == null:
+		return
+	var pieces := {} # Cell -> atlas cell to draw, worked out before any cell changes
+	for cell in walls.get_used_cells(0):
+		pieces[cell] = INNER_WALL_ATLAS[inner_wall_mask(cell, func(c: Vector2i) -> bool:
+			return walls.get_cell_source_id(0, c) != -1)]
+	for cell: Vector2i in pieces:
+		walls.set_cell(0, cell, 0, pieces[cell])
+
+# Mask of the neighbours of `cell` that `is_wall` says are walls: 1 top, 2 right, 4 bottom, 8 left.
+static func inner_wall_mask(cell: Vector2i, is_wall: Callable) -> int:
+	var mask := 0
+	for i in RoomDesign.NEIGHBOURS.size():
+		if is_wall.call(cell + RoomDesign.NEIGHBOURS[i]):
+			mask |= 1 << i
+	return mask
+
 func _add_decorations(rng: RandomNumberGenerator) -> void:
 	var decorations: TileMap = get_node_or_null("Decorations")
 	if decorations == null:
 		return
 	var stalagmites: TileMap = get_node_or_null("Stalagmites")
+	var walls: TileMap = get_node_or_null("InnerWalls")
 	var special := _special_tiles()
 	for x in range(FLOOR_FIRST, floor_last):
 		for y in range(FLOOR_FIRST, floor_last):
@@ -316,6 +347,8 @@ func _add_decorations(rng: RandomNumberGenerator) -> void:
 			if tiles.get_cell_source_id(0, cell) != FLOOR || _is_pit(cell):
 				continue
 			if stalagmites != null && stalagmites.get_cell_source_id(0, cell) != -1:
+				continue
+			if walls != null && walls.get_cell_source_id(0, cell) != -1:
 				continue
 			if special != null && special.painted(cell) != -1: # Would hide the tile
 				continue

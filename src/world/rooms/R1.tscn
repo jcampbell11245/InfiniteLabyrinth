@@ -14,7 +14,7 @@
 [ext_resource type="Script" uid="uid://c40bvpxrvhjxo" path="res://src/objects/Switches.gd" id="12"]
 [ext_resource type="PackedScene" uid="uid://da0qyn5u6l0dl" path="res://src/objects/Void.tscn" id="13"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Spikes.tscn" id="14"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="15"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="15"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="16"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="17"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="18"]
@@ -49,7 +49,7 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 
 [node name="Locks" parent="." unique_id=650010402 instance=ExtResource("18")]
 
-[node name="Stalagmites" parent="." unique_id=1798788646 instance=ExtResource("15")]
+[node name="InnerWalls" parent="." unique_id=1798788646 instance=ExtResource("15")]
 format = 2
 
 [node name="Spikes" parent="." unique_id=1585813321 instance=ExtResource("14")]

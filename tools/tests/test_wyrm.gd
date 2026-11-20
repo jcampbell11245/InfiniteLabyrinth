@@ -83,10 +83,10 @@ func test_waits_to_notice_the_player_before_attacking() -> void:
 	await physics_frames(5)
 	expect(wyrm.noticed, "notices a player in front, within its radius")
 
-func test_charging_into_a_rock_dazes_it() -> void:
+func test_charging_into_a_wall_dazes_it() -> void:
 	eager(true)
 	var design := RoomDesign.new()
-	design.set_cell(Vector2i(7, 6), RoomDesign.Cell.STALAGMITE)
+	design.set_cell(Vector2i(7, 6), RoomDesign.Cell.INNER_WALL)
 	var wyrm := await boot_dragon("wyrm", design)
 	var room := wyrm.room
 	# It circles before charging, so wherever it sets off from, put it in line with the rock,
@@ -105,7 +105,7 @@ func test_charging_into_a_rock_dazes_it() -> void:
 		if wyrm.is_stunned():
 			break
 		await tree.physics_frame
-	expect(wyrm.is_stunned(), "slamming into the stalagmite stuns it")
+	expect(wyrm.is_stunned(), "slamming into the inner wall stuns it")
 	expect(!wyrm.is_vulnerable(), "with no bonus damage on the next hit, as for any dragon stun")
 	expect(!wyrm._animation_is("slash"), "the charge is over")
 
