@@ -828,7 +828,7 @@ charge_tips = {
 "down": Vector2(4, 24),
 "left": Vector2(-7, 23),
 "right": Vector2(7, 23),
-"up": Vector2(4, -10)
+"up": Vector2(0, 2)
 }
 per_facing_reach = false
 voice_pitch = 0.9
@@ -846,7 +846,7 @@ weapon_tips = {
 "down": Vector2(4, 16),
 "left": Vector2(-9, 10),
 "right": Vector2(9, 10),
-"up": Vector2(4, -14)
+"up": Vector2(10, -6)
 }
 dizzy_offset = Vector2(0, -26)
 coin_reward = 40

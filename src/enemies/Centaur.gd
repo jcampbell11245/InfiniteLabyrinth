@@ -2,8 +2,9 @@ class_name Centaur
 extends MeleeEnemy
 
 # Cyber centaurs: the Centaur, the bull-bodied Bucentaur and the Taurtaur (two horse bottoms
-# stacked, the top one upside down). They walk, notice the player, take turns, guard and join
-# group rushes exactly as goblins do (MeleeEnemy); what's theirs is how they attack.
+# joined by one neck, the top one upside down). They walk, notice the player, take turns,
+# guard and join group rushes exactly as goblins do (MeleeEnemy); what's theirs is how they
+# attack.
 #
 # Each attack is a combo, a run of hits picked from `combos`. Every hit gets its own windup
 # and spark, so the spark always says what's coming:
