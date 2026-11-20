@@ -8,3 +8,7 @@ a pull request.
 When a developer asks for a new release (a new version, builds published to GitHub), invoke
 the `make-release` skill instead: it exports and zips every build, drafts the release notes
 and creates the GitHub release.
+
+When a developer asks you to review a pull request (or to look at one again after new
+commits), invoke the `review-pr` skill: it checks out the branch, reviews and tests it, and
+reports back before posting any comments.

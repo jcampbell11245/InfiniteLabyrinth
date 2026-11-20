@@ -117,6 +117,15 @@ up-to-date `master` after `tools/check.sh` passes. It exports and zips every pre
 [release-notes-style.md](.claude/skills/make-release/release-notes-style.md) for the
 developer to approve. Then it creates the GitHub release with the zips attached.
 
+## Reviewing pull requests
+
+To review someone's pull request, follow the **review-pr** skill,
+[.claude/skills/review-pr/SKILL.md](.claude/skills/review-pr/SKILL.md). It reads the whole
+diff, says whether the size of the change is justified, checks it against this file, runs
+the checks (backing up the developer's save file first) and takes real-window screenshots
+of anything visible. It reports findings to the developer and posts them as inline review
+comments only when asked; it never pushes to the author's branch or approves for you.
+
 ## Conventions
 
 - **GDScript**: follow the official style guide and type everything statically (the
