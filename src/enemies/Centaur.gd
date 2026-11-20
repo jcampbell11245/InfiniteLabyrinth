@@ -28,6 +28,11 @@ extends MeleeEnemy
 # dazes it. A Taurtaur's lunge (Charge.ROLL) sparks red and can't be parried; it ploughs on
 # and stands frozen for Tuning.heavy_end_lag afterwards, like a knight's red swing.
 #
+# A sword hit from behind mid-combo (after rolling through a kick, say) doesn't hurt: it
+# clanks like a parry and clears the hit it's on, once that hit has sparked
+# (_on_player_sword). The parry bar steps up with every cleared hit, however it was cleared,
+# and is full when it's stunned.
+#
 # A player who gets out of reach mid-combo breaks it off (_break_off): no stun, and it starts
 # over, walking back up for a fresh combo or, if it can charge,
 # Tuning.centaur_chase_charge_chance of the time charging straight away.
@@ -79,7 +84,14 @@ func _process(delta: float) -> void:
 	if !_animation_is("slash"): # Finished, interrupted or parried
 		_dashing = false
 		_combo = PackedInt32Array()
+	else:
+		_show_combo_progress()
 	_fit_hurtbox()
+
+# The parry bar shows the combo's cleared hits, a step each, full when it's stunned.
+func _show_combo_progress() -> void:
+	if !_combo.is_empty() && _animation_is("slash"):
+		_parry_progress = float(_combo_index) / _combo.size()
 
 # The hurtbox covers whatever the sprite draws this frame (sprite_bounds): the rider, a
 # taurtaur's top horse, legs thrown out in a kick. Where that isn't measured it keeps the
@@ -156,6 +168,8 @@ func _next_hit() -> void:
 	Juice.flash(animator, 0.12, COMBO_FLASH)
 	_restart_attack(Tuning.centaur_combo_hold)
 	attack()
+	# Deferred: a parry sets its own bar value (Enemy._on_player_sword) after this returns.
+	_show_combo_progress.call_deferred()
 
 # A clash in the combo parried: on to the next hit rather than staggering, unless it was
 # the last.
@@ -199,11 +213,31 @@ func _break_off() -> void:
 func landed_hit() -> void:
 	_hit_landed = true
 
-# Every hit of the combo cleared, the last one a dodged kick: stunned as if parried, knocked
-# back away from the player.
+# Every hit of the combo cleared, the last one a dodged kick or a back hit: stunned as if
+# parried, knocked back away from the player.
 func _combo_cleared() -> void:
 	_parry_feedback()
+	_parry_progress = 1.0
 	stagger(_direction_of(-_to_player()))
+
+# The sword from behind (travelling the way it faces: the player rolled through a kick or a
+# charge). Mid-combo it doesn't hurt: it clanks, like a parry, and clears the hit it's on, so
+# the combo goes on (or, on the last hit, it's stunned). Only once that hit has sparked,
+# though, or rolling behind and swinging away would clear every hit in its windup; before
+# that it's a dull clank and nothing more. Outside a combo it's an ordinary hit.
+func _on_player_sword(from_direction: String) -> void:
+	if _combo.is_empty() || !_animation_is("slash") || from_direction != direction:
+		super(from_direction)
+		return
+	if _twinkled_at < 0:
+		Juice.clank(true)
+		return
+	player.mark_swing_parried()
+	if _has_next_hit():
+		_parry_feedback()
+		_next_hit()
+	else:
+		_combo_cleared()
 
 # Whichever of the four directions `v` is nearest.
 static func _direction_of(v: Vector2) -> String:

@@ -268,3 +268,69 @@ func test_getting_away_from_a_charger_may_set_it_charging() -> void:
 	await tree.physics_frame
 	expect_equal(centaur._combo, PackedInt32Array([Centaur.Hit.CHARGE]), "it charges instead of going on")
 	expect(!centaur.is_stunned(), "and the parry didn't stun it")
+
+# A sword hit from behind (travelling the way it faces), as the player rolls through a kick.
+func swing_from_behind(centaur: Centaur) -> void:
+	player().swing_started_at = Time.get_ticks_msec()
+	player().swing_started_frame = Engine.get_physics_frames()
+	centaur._on_player_sword(centaur.direction)
+
+# Mid-combo, a hit from behind clears the hit it's on instead of hurting: on to the next.
+func test_back_hit_clears_a_hit_without_damage() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	var health := centaur.health
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect_equal(centaur.health, health, "no damage")
+	expect_equal(centaur._combo_index, 1, "it's on to the next kick")
+	expect_near(centaur._parry_progress, 1.0 / 3.0, 0.01, "the combo bar moves a step")
+	expect(!centaur.is_stunned(), "not stunned yet")
+
+func test_back_hit_before_the_spark_does_nothing() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	centaur._start_swing(true)
+	var health := centaur.health
+	swing_from_behind(centaur) # Still winding up, no spark yet
+	await tree.process_frame
+	expect_equal(centaur.health, health, "no damage")
+	expect_equal(centaur._combo_index, 0, "the kick isn't cleared")
+
+func test_back_hit_on_the_last_hit_stuns_it() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK])
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	var health := centaur.health
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(centaur.is_stunned(), "clearing the last hit from behind stuns it")
+	expect_equal(centaur.health, health, "without hurting it")
+	expect_near(centaur._parry_progress, 1.0, 0.01, "the combo bar is full")
+
+func test_back_hit_outside_a_combo_hurts() -> void:
+	var centaur := await boot_centaur("centaur")
+	await physics_frames(2)
+	centaur._end_windup_hold()
+	centaur._play("idle")
+	centaur._combo = PackedInt32Array()
+	var health := centaur.health
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(centaur.health < health, "an ordinary hit")
+
+func test_parried_clash_moves_the_combo_bar_a_step() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("centaur")
+	only_combo(centaur, [CLASH, CLASH, KICK, CLASH])
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	swing_at(centaur)
+	await tree.process_frame
+	expect_near(centaur._parry_progress, 0.25, 0.01, "a quarter of the way")
