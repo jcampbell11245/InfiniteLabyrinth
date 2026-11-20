@@ -38,6 +38,10 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
 
+The pause menu's **Return to Title** button returns to the title screen, so a run can be
+left without closing the game. **Quit to Desktop** closes the game, as does the title
+screen's Quit.
+
 ## Setup
 
 Everything here can be run as written by a person or an agent. You need **Godot 4.7.2**
