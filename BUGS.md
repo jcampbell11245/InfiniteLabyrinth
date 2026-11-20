@@ -4,6 +4,11 @@
 
 ## Fixed
 
+- Running the tests (`tools/check.sh`) wipes the developer's save file. One test cleared
+  progress in memory with saving switched off, then switched it back on without restoring
+  anything, and a later test that saves (a game over) wrote the cleared progress and full
+  volumes to `user://save.cfg`. The test runner now never writes the save file and puts
+  SaveData back to what it loaded after every test, and the test restores what it changes.
 - A controller-only player could get stuck capturing a bind: B was treated as a new button
   press instead of cancel. Escape and B now cancel a capture in both the title and pause
   menus without closing the options screen.
@@ -12,7 +17,12 @@
   the defaults in project.godot.
 - A new key could collide with another action's fixed alternate - for example, binding Sword
   to X would also fire Bow - because duplicate checks only looked at replaceable keys. Fixed
-  alternates are now reserved, apart from J which Sword and Select deliberately share.
+  alternates are now reserved. J stays shared, but only by Sword and Select, which already
+  use it together; after Sword moved away it was wrongly free for every action.
+- The Controls page's key and pad labels used a colon, and its caption used a hyphen. Neither
+  glyph is in 8-BIT WONDER, so Godot drew them - and everything after them - with a fallback
+  font at half-pixel offsets, leaving grey antialiased edges. The prefixes and hyphen are
+  gone, so the labels stay pixel-perfect.
 - The Controls page's status caption overlapped the last bind row. The row container grew
   past its authored height to fit the buttons, so the caption is now lower in a taller
   dialog with clear gaps above and below it.
