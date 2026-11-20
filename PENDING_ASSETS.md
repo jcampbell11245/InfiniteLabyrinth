@@ -39,6 +39,8 @@ line in `assets/sfx/SOURCE.txt`.
 | Orc (no art of its own) | [Orc.tscn](src/enemies/Orc.tscn) uses the goblin's sprites scaled 1.5x (shown on the right, with a goblin on the left). Needs its own sprite set | ![orc](docs/pending_assets/enemy_orc.gif) |
 | Warlock (no art of its own) | [Warlock.tscn](src/enemies/Warlock.tscn) uses the wizard's sprites with a green `self_modulate` (see [Caster.gd](src/enemies/Caster.gd)). Needs its own sprite set (stand, walk, shoot) | ![warlock](docs/pending_assets/enemy_warlock.gif) |
 | Necromancer (no art of its own) | [Necromancer.tscn](src/enemies/Necromancer.tscn) uses the wizard's sprites with a purple `self_modulate`. Needs its own sprite set | ![necromancer](docs/pending_assets/enemy_necromancer.gif) |
+| `assets/sprites/wyrm/wyrm_*.png` (all 16 sheets) | Wyrm ([Wyrm.tscn](src/enemies/Wyrm.tscn)): a green, winged, limbless dragon drawn as a placeholder, idle, fly, shoot and slash in all four facings (preview: rows are those actions, facing right then down) | ![wyrm](docs/pending_assets/enemy_wyrm.png) |
+| `assets/sprites/wyrm/wyvern_*.png` (all 16 sheets) | Wyvern ([Wyvern.tscn](src/enemies/Wyvern.tscn)): a red, winged, two-legged dragon drawn as a placeholder, same actions and facings | ![wyvern](docs/pending_assets/enemy_wyvern.png) |
 
 ## Sound effects
 
