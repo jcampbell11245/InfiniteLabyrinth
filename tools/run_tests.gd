@@ -9,8 +9,15 @@ extends SceneTree
 # Pass a word after -- to run only the test files whose name contains it:
 #
 #   godot --headless --path . -s res://tools/run_tests.gd -- time
+#
+# Tests run the real game, which saves progress (game over, finishing a floor, the options
+# panel). So the run never writes the save file, and SaveData goes back to what was loaded
+# after each test: the developer's own save is left exactly as it was.
 
 const TESTS_DIR := "res://tools/tests/"
+# The SaveData fields a test may change, put back after each one (_restore_save).
+const SAVE_FIELDS: Array[StringName] = [&"floor_number", &"coins", &"damage_level",
+	&"time_level", &"looting_level", &"music_volume", &"sfx_volume", &"debug_time_limit"]
 
 class ErrorCounter extends Logger:
 	var errors: Array[String] = []
@@ -40,6 +47,7 @@ class ErrorCounter extends Logger:
 		return out
 
 var counter := ErrorCounter.new()
+var _loaded_save := {} # SAVE_FIELDS as SaveData loaded them, before any test ran
 
 func _initialize() -> void:
 	OS.add_logger(counter)
@@ -48,6 +56,10 @@ func _initialize() -> void:
 func _run() -> void:
 	# Let the autoloads finish their _ready first.
 	await process_frame
+	var save_data := root.get_node("SaveData")
+	save_data.write_to_disk = false
+	for field in SAVE_FIELDS:
+		_loaded_save[field] = save_data.get(field)
 	var only := ""
 	if OS.get_cmdline_user_args().size() > 0:
 		only = OS.get_cmdline_user_args()[0]
@@ -74,6 +86,7 @@ func _run() -> void:
 			for error in counter.take():
 				problems.append("error logged: " + error)
 			_reset_tuning()
+			_restore_save()
 			var label := "%s %s" % [file_name.get_basename(), method_name]
 			if problems.is_empty():
 				passed += 1
@@ -98,6 +111,15 @@ func _reset_tuning() -> void:
 	root.get_node("Tuning").reset_all()
 	root.get_node("Juice").end_time_effects()
 	paused = false
+
+# SaveData back to what was loaded, so one test's progress or volumes can't leak into the
+# next. Writes stay off, in case a test turned them back on.
+func _restore_save() -> void:
+	var save_data := root.get_node("SaveData")
+	for field: StringName in _loaded_save:
+		save_data.set(field, _loaded_save[field])
+	save_data.apply_audio_settings()
+	save_data.write_to_disk = false
 
 func _leave_game() -> void:
 	if current_scene != null:

@@ -41,6 +41,11 @@ line in `assets/sfx/SOURCE.txt`.
 | Necromancer (no art of its own) | [Necromancer.tscn](src/enemies/Necromancer.tscn) uses the wizard's sprites with a purple `self_modulate`. Needs its own sprite set | ![necromancer](docs/pending_assets/enemy_necromancer.gif) |
 | `assets/sprites/wyrm/wyrm_*.png` (all 16 sheets) | Wyrm ([Wyrm.tscn](src/enemies/Wyrm.tscn)): a green, winged, limbless dragon drawn as a placeholder, idle, fly, shoot and slash in all four facings (preview: rows are those actions, facing right then down) | ![wyrm](docs/pending_assets/enemy_wyrm.png) |
 | `assets/sprites/wyrm/wyvern_*.png` (all 16 sheets) | Wyvern ([Wyvern.tscn](src/enemies/Wyvern.tscn)): a red, winged, two-legged dragon drawn as a placeholder, same actions and facings | ![wyvern](docs/pending_assets/enemy_wyvern.png) |
+| Spin attack (no art of its own) | The player's charged spin ([Player.gd](src/player/Player.gd) `_start_spin`) holds frame 6 of `jason_*_slash.png` and rotates the whole sprite once. Needs a real spin animation, all four facings | ![spin](docs/pending_assets/player_spin.gif) |
+| `assets/sprites/goblin/goblin_*_slash.png` | The goblin's attack ([Goblin.tscn](src/enemies/Goblin.tscn) `slash_*`; Troll and Orc borrow it too). Needs redoing | ![goblin slash](docs/pending_assets/enemy_goblin_slash.gif) |
+| `assets/sprites/wizard/wizard_*.png` (stand, walk, shoot) | Every wizard sprite ([Wizard.tscn](src/enemies/Wizard.tscn); Warlock and Necromancer borrow them too). Need redoing | ![wizard](docs/pending_assets/enemy_wizard.gif) |
+| `assets/sprites/skelly/skeleton_knight_*.png` (idle, walking, shooting, slashing) | Every boss sprite ([Boss.tscn](src/enemies/Boss.tscn)). Need redoing | ![boss](docs/pending_assets/enemy_boss.gif) |
+| `assets/sprites/hud/arrow_count.png` | Icon next to the arrow count on the HUD ([GameCamera.tscn](src/world/GameCamera.tscn) `Hud/Arrows/Icon`) | ![arrow count](docs/pending_assets/hud_arrow_count.png) |
 
 ## Sound effects
 

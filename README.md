@@ -280,6 +280,17 @@ example:
 The other preset names are `Windows Desktop 32 bit`, `Linux 64 bit`, `Linux 32 bit` and
 `macOS`. Export templates must be installed first (see Setup).
 
+`tools/export_builds.sh` does what a release needs in one go. It exports every preset as a
+debug build (so the F2 menu works), after emptying each output folder. Then it zips each
+folder on its own into `builds/InfiniteLabyrinth-<folder>.zip`.
+
+### Releases
+
+Releases are GitHub releases tagged `v<major>.<moderate>.<minor>` and titled
+`Version <x.y.z>`. Each has a bulleted list of changes and every build zip attached. AI agents
+make them with the `make-release` skill ([.claude/skills/make-release/SKILL.md](.claude/skills/make-release/SKILL.md)),
+which also has the [guide to writing release notes](.claude/skills/make-release/release-notes-style.md).
+
 ## Code style
 
 Scripts follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)

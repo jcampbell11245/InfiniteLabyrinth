@@ -58,12 +58,21 @@ func test_options_panel_saves_on_window_close_while_visible() -> void:
 func test_reset_keeps_audio_preferences() -> void:
 	var save_data := autoload("SaveData")
 	var old_write: bool = save_data.write_to_disk
+	# reset() clears progress in memory, which a later save would write out, so everything
+	# it touches is put back afterwards (tools/run_tests.gd also restores SaveData).
+	var old := {}
+	for field: String in ["floor_number", "coins", "damage_level", "time_level", "looting_level",
+			"music_volume", "sfx_volume"]:
+		old[field] = save_data.get(field)
 	save_data.write_to_disk = false
 	save_data.set_music_volume(0.2)
 	save_data.set_sfx_volume(0.4)
 	save_data.reset()
-	expect_near(save_data.music_volume, 0.2, 0.01, "resetting progress keeps the music volume")
-	expect_near(save_data.sfx_volume, 0.4, 0.01, "resetting progress keeps the SFX volume")
-	save_data.set_music_volume(1.0)
-	save_data.set_sfx_volume(1.0)
+	var music_after: float = save_data.music_volume
+	var sfx_after: float = save_data.sfx_volume
+	for field: String in old:
+		save_data.set(field, old[field])
+	save_data.apply_audio_settings()
 	save_data.write_to_disk = old_write
+	expect_near(music_after, 0.2, 0.01, "resetting progress keeps the music volume")
+	expect_near(sfx_after, 0.4, 0.01, "resetting progress keeps the SFX volume")

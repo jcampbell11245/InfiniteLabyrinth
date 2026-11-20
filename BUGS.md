@@ -4,6 +4,11 @@
 
 ## Fixed
 
+- Running the tests (`tools/check.sh`) wipes the developer's save file. One test cleared
+  progress in memory with saving switched off, then switched it back on without restoring
+  anything, and a later test that saves (a game over) wrote the cleared progress and full
+  volumes to `user://save.cfg`. The test runner now never writes the save file and puts
+  SaveData back to what it loaded after every test, and the test restores what it changes.
 - The boss can move through walls and clip out of bounds. The boss only collided with
   physics layer 1, but the wall tiles on the Top and TopWalls layers are on layer 9; it now
   collides with walls and pits like the other enemies.
