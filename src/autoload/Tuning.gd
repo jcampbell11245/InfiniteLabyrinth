@@ -84,11 +84,18 @@ var curse_speed_multiplier := 0.55 # Walk and roll speed while slowed
 var troll_steal := 5.0 # Coins per floor number a troll takes with each hit that lands
 var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back when the troll dies
 # Dragons (Wyrm.gd): wyrms and the bigger wyverns circle the player, now and then stopping
-# to breathe a fireball or charge. Only their combat timings are in the F2 menu (FIELDS);
-# the movement, distance and chance values here are left out of it on purpose.
+# to breathe a fireball or charge. In the F2 menu their combat timings sit under Enemies,
+# and how they move (distances, speeds, chances) under a Dragons tab of their own.
 var wyrm_orbit_radius := 100.0 # Pixels from the player they circle at
 var wyrm_orbit_flip_min := 1.0 # Seconds before it may turn round and circle the other way, rolled each time
 var wyrm_orbit_flip_max := 2.5
+var wyrm_orbit_flip_chance := 0.5 # Chance it does turn round each time it may
+var wyrm_orbit_lead := 0.5 # Radians ahead round the circle it aims for while circling
+var wyrm_back_off_lead := 0.3 # Share of wyrm_orbit_lead while backing off: mostly straight away, sliding round a little
+var wyrm_orbit_stuck_time := 0.4 # Seconds pressed against something before it circles the other way
+var wyrm_separation := 30.0 # Pixels: closer than this to another enemy, it steers away from it
+var wyrm_cornered_share := 0.8 # Backing off, a target the floor's edge keeps closer than this share of its circle means it's cornered
+var wyrm_escape_turn := 1.4 # Radians round the player a cornered dragon heads to slip out along the wall
 var wyrm_keep_away := 0.85 # Share of the circle radius: a player closer than this sends it backing off
 var wyrm_hit_back_off := 0.8 # Seconds it backs off without attacking after a hit lands (or a stun wears off)
 var wyrm_first_attack_delay := 1.5 # Seconds it flies off, without attacking, after first noticing the player
@@ -102,7 +109,7 @@ var wyrm_charge_hold_max := 0.5
 var wyrm_charge_speed := 420.0 # Pixels/sec while charging
 var wyrm_charge_overshoot := 28.0 # Pixels past the player a charge carries on
 var wyrm_charge_max_distance := 240.0 # Pixels: longest a charge goes, overshoot included
-var wyrm_clash_reach := 22.0 # Pixels short of the player where a charge strikes; its twinkle comes a parry window before
+var wyrm_clash_reach := 22.0 # Pixels short of the player where a charge bites
 var wyrm_charge_recovery := 0.2 # Seconds it hovers after a charge before circling again
 var wyrm_fireball_speed := 175.0 # Wyrm and wyvern fireballs, before any hit back
 var wyrm_fireball_charge_time := 0.5 # Seconds it holds still glowing before breathing a fireball
@@ -291,6 +298,26 @@ const FIELDS := [
 	["Enemies", "wyrm_breath_parry_window", "Wyrm fireball glint parry window (s)", 0.02, 1, 0.01, "new (Wyrm._pulse_breath)"],
 	["Enemies", "wyvern_heavy_end_lag", "Wyvern unparryable charge end lag (s)", 0, 5, 0.05, "new (Wyrm._end_attack)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
+
+	["Dragons", "wyrm_orbit_radius", "Circle radius (px)", 20, 200, 1, "new (Wyrm._circle)"],
+	["Dragons", "wyrm_orbit_flip_min", "Circle direction change min (s)", 0.1, 10, 0.1, "new (Wyrm._circle)"],
+	["Dragons", "wyrm_orbit_flip_max", "Circle direction change max (s)", 0.1, 10, 0.1, "new (Wyrm._circle)"],
+	["Dragons", "wyrm_orbit_flip_chance", "Circle direction change chance", 0, 1, 0.05, "Wyrm._circle (was a fixed 0.5)"],
+	["Dragons", "wyrm_orbit_lead", "Circling lead (rad)", 0, 2, 0.05, "Wyrm.gd ORBIT_LEAD"],
+	["Dragons", "wyrm_back_off_lead", "Back-off lead (x circling lead)", 0, 1, 0.05, "Wyrm.gd BACK_OFF_LEAD"],
+	["Dragons", "wyrm_keep_away", "Back-off distance (x circle radius)", 0, 1.5, 0.05, "new (Wyrm._circle)"],
+	["Dragons", "wyrm_first_back_off_radius", "First back-off radius (x circle radius)", 0.5, 3, 0.05, "new (Wyrm._circle)"],
+	["Dragons", "wyrm_orbit_stuck_time", "Stuck time before turning round (s)", 0, 3, 0.05, "Wyrm.gd ORBIT_STUCK_TIME"],
+	["Dragons", "wyrm_separation", "Separation from other enemies (px)", 0, 100, 1, "Wyrm.gd SEPARATION"],
+	["Dragons", "wyrm_cornered_share", "Cornered below (x circle radius)", 0, 1, 0.05, "Wyrm.gd CORNERED_SHARE"],
+	["Dragons", "wyrm_escape_turn", "Corner escape turn (rad)", 0, 3.1, 0.05, "Wyrm.gd ESCAPE_TURN"],
+	["Dragons", "wyrm_charge_chance", "Charge (vs fireball) chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
+	["Dragons", "wyvern_heavy_charge_chance", "Wyvern unparryable charge chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
+	["Dragons", "wyrm_charge_speed", "Charge speed (px/s)", 50, 800, 10, "new (Wyrm._charge)"],
+	["Dragons", "wyrm_charge_overshoot", "Charge overshoot (px)", 0, 150, 1, "new (Wyrm._begin_dash)"],
+	["Dragons", "wyrm_charge_max_distance", "Charge max distance (px)", 20, 500, 5, "new (Wyrm._begin_dash)"],
+	["Dragons", "wyrm_clash_reach", "Charge bite distance (px)", 0, 80, 1, "new (Wyrm._ahead_of_strike)"],
+	["Dragons", "wyrm_fireball_speed", "Fireball speed (px/s)", 10, 600, 10, "new (Wyrm.breathe_fire)"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],
 	["AI", "pack_max_attackers", "Max attackers at once", 1, 6, 1, "new (AttackCoordinator)"],

@@ -58,17 +58,11 @@ extends Enemy
 const Fireball := preload("res://src/projectiles/Fireball.tscn")
 const CHARGE_SOUND := preload("res://assets/sfx/slash1.wav")
 const CHARGE_PITCH := 0.6
-const ORBIT_LEAD := 0.5 # Radians ahead round the circle it aims for
-const BACK_OFF_LEAD := 0.3 # Share of ORBIT_LEAD while backing off: mostly straight away, sliding round a little
 const ORBIT_WALL_MARGIN := 14.0 # Circle targets stay this far inside the floor
 const ORBIT_ARRIVE := 2.0 # Pixels from a circle target that count as there
-const ORBIT_STUCK_TIME := 0.4 # Seconds pressed against something before circling the other way
-# Backing off, a target the floor's edge keeps closer to the player than this share of its
-# circle means it's cornered; it then heads ESCAPE_TURN radians round the player instead.
-const CORNERED_SHARE := 0.8
-const ESCAPE_TURN := 1.4
-const ESCAPE_TIE := 4.0 # Pixels: the other way round has to be this much better to switch
-const SEPARATION := 30.0 # Pixels: closer than this to another enemy, it steers away from it
+# Cornered (Tuning.wyrm_cornered_share), the other way round the player has to get it this
+# many pixels further off to be taken instead.
+const ESCAPE_TIE := 4.0
 const FIRE_FLASH := Color(1, 0.6, 0.2) # Glow as it draws breath, warning of the fireball
 const BREATH_FRAME := 1 # "shoot" frame it draws breath on
 # Batting fireballs back (FireballReturner), in its own (unscaled) units: this far ahead of
@@ -127,7 +121,9 @@ var _breath_timer: Timer # Running while it holds its breath before a fireball
 var _breath_pulse_in := 0.0 # Seconds to the next warning glow while holding its breath
 var _breath_glinted := false # The glint before this breath has shown
 var _breath_glint_at := -1 # Ticks (ms) that glint showed; -1 before it does
-var _fireball: Projectile # Its last fireball, while it's still about
+# Its last fireball. Like a wizard, it won't breathe another while this one is still about
+# (flying, rallying or breaking); it charges instead.
+var _fireball: Projectile
 var _returner: FireballReturner # Bats back fireballs the player hits at it
 
 @onready var _hitbox_pivot: Node2D = $HitboxPivot
@@ -331,7 +327,7 @@ func _on_reset() -> void:
 func _circle(delta: float) -> void:
 	_orbit_flip_in -= delta
 	if _orbit_flip_in <= 0:
-		if randf() < 0.5:
+		if randf() < Tuning.wyrm_orbit_flip_chance:
 			_orbit_dir = -_orbit_dir
 		_orbit_flip_in = randf_range(Tuning.wyrm_orbit_flip_min,
 			maxf(Tuning.wyrm_orbit_flip_min, Tuning.wyrm_orbit_flip_max))
@@ -346,11 +342,11 @@ func _circle(delta: float) -> void:
 	var opening := !_opening.is_stopped()
 	var radius := Tuning.wyrm_orbit_radius * (Tuning.wyrm_first_back_off_radius if opening else 1.0)
 	var backing_off := offset.length() < radius * (1.0 if opening else Tuning.wyrm_keep_away)
-	var lead := ORBIT_LEAD * (BACK_OFF_LEAD if backing_off else 1.0)
+	var lead := Tuning.wyrm_orbit_lead * (Tuning.wyrm_back_off_lead if backing_off else 1.0)
 	var target := _circle_target(centre, offset, _orbit_dir * lead, radius)
 	# Backed into a wall or corner, the floor's edge stops it getting away: it slips out
 	# sideways round the player instead, along the wall.
-	if backing_off && target.distance_to(centre) < radius * CORNERED_SHARE:
+	if backing_off && target.distance_to(centre) < radius * Tuning.wyrm_cornered_share:
 		target = _escape_target(centre, offset, radius)
 	var to_target := target - position
 	if to_target.length() <= ORBIT_ARRIVE:
@@ -363,7 +359,7 @@ func _circle(delta: float) -> void:
 	if collision != null:
 		move_and_collide(collision.get_remainder().slide(collision.get_normal()))
 		_stuck_for += delta
-		if _stuck_for >= ORBIT_STUCK_TIME: # Pinned on a rock or wall: go round the other way
+		if _stuck_for >= Tuning.wyrm_orbit_stuck_time: # Pinned on a rock or wall: go round the other way
 			_orbit_dir = -_orbit_dir
 			_stuck_for = 0.0
 	else:
@@ -382,7 +378,7 @@ func _escape_target(centre: Vector2, offset: Vector2, radius: float) -> Vector2:
 	var best := Vector2.ZERO
 	var best_distance := -1.0
 	for dir: float in [_orbit_dir, -_orbit_dir]:
-		var target := _circle_target(centre, offset, dir * ESCAPE_TURN, radius)
+		var target := _circle_target(centre, offset, dir * Tuning.wyrm_escape_turn, radius)
 		var distance := target.distance_to(centre)
 		if distance > best_distance + ESCAPE_TIE:
 			best = target
@@ -398,8 +394,8 @@ func _separation() -> Vector2:
 		if other == null || other == self:
 			continue
 		var away := position - other.position
-		if away.length() < SEPARATION:
-			push += away.normalized() * (SEPARATION - away.length()) if away != Vector2.ZERO else Vector2.RIGHT
+		if away.length() < Tuning.wyrm_separation:
+			push += away.normalized() * (Tuning.wyrm_separation - away.length()) if away != Vector2.ZERO else Vector2.RIGHT
 	return push
 
 # --- Attacks ---
@@ -409,7 +405,7 @@ func _can_attack(coordinator: AttackCoordinator) -> bool:
 		&& !coordinator.rush_active() && !_other_dragon_attacking()
 
 func _start_attack() -> void:
-	if randf() < Tuning.wyrm_charge_chance:
+	if randf() < Tuning.wyrm_charge_chance || is_instance_valid(_fireball):
 		_start_charge(has_heavy_charge && randf() < Tuning.wyvern_heavy_charge_chance)
 	else:
 		_start_fireball()
@@ -459,6 +455,9 @@ func _animation_done() -> bool:
 # --- Fireball ---
 
 func _start_fireball() -> void:
+	# Fresh glint state, so a swing in this rear-back isn't timed against the last fireball's glint.
+	_breath_glinted = false
+	_breath_glint_at = -1
 	_face_player()
 	_play("shoot")
 	animator.frame = 0

@@ -507,3 +507,44 @@ func test_charge_glint_matches_the_facing_shown() -> void:
 	await wait_for_glint(wyrm)
 	expect(wyrm._twinkled_at >= 0, "the charge glints")
 	expect_equal(String(wyrm.animator.animation), "slash_" + wyrm.direction, "the lunge pose faces the way it charges")
+
+# The glint time from one fireball mustn't carry over to the next: a swing as it rears back
+# for its second fireball is early, and is blocked, not a parry.
+func test_early_swing_at_a_second_fireball_is_blocked() -> void:
+	eager(false)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_fireball_charge_time = 0.4
+	var wyrm := await wait_for_breath(await boot_dragon("wyrm"))
+	for i in 120: # First fireball: let it glint and breathe
+		if wyrm._fireball != null:
+			break
+		await tree.physics_frame
+	expect(wyrm._breath_glint_at >= 0, "the first fireball glinted")
+	var first: Projectile = wyrm._fireball
+	if is_instance_valid(first):
+		first.queue_free() # So the second can be breathed
+	await tree.physics_frame
+	player().swing_started_at = Time.get_ticks_msec() # Swung after the first glint...
+	player().swing_started_frame = Engine.get_physics_frames()
+	wyrm._end_attack(0.0)
+	wyrm.attack_cooldown.stop()
+	wyrm._start_fireball() # ...as it rears back for the second
+	expect(wyrm._charging_fireball(), "rearing back for the second fireball")
+	wyrm._on_player_sword(head_on(wyrm))
+	await physics_frames(2)
+	expect(!wyrm.is_stunned(), "the early swing doesn't parry it")
+	expect(player().is_dazed(), "it's blocked and staggers the player")
+
+# Like a wizard, it won't breathe a second fireball while its last is still about.
+func test_no_second_fireball_while_one_is_about() -> void:
+	eager(false)
+	autoload("Tuning").wyrm_fireball_charge_time = 0.3
+	var wyrm := await boot_dragon("wyrm")
+	for i in 300:
+		if wyrm._fireball != null:
+			break
+		await tree.physics_frame
+	expect(is_instance_valid(wyrm._fireball), "its fireball is out")
+	wyrm._end_attack(0.0)
+	wyrm._start_attack()
+	expect(wyrm._animation_is("slash"), "so its next attack is a charge")
