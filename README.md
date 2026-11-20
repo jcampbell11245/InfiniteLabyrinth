@@ -294,8 +294,8 @@ src/core/      Constants (room ids, grid size, physics layers) and Direction hel
 src/player/    player scene and script, the level timer, curses
 src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), RangedEnemy
                (wizard), Caster (warlock, necromancer), Wyrm (wyrm and wyvern, flying
-               dragons) and Boss; AttackCoordinator takes
-               turns and group rushes between a room's enemies
+               dragons) and Boss; AttackCoordinator takes turns and group rushes
+               between a room's enemies; FireballReturner bats fireballs back
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups

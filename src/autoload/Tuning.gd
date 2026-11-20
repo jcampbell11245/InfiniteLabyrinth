@@ -66,8 +66,8 @@ var wizard_burst_cooldown := 2.5 # Seconds after each fireball
 var wizard_melee_range := 32.0 # Pixels: a player this close gets the staff instead of fireballs
 var wizard_melee_cooldown := 1.2 # Seconds between staff swipes
 var wizard_melee_damage := 0.5 # Before the enemy damage multiplier
-var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard
-var wizard_volley_reaction_time := 0.1 # Seconds the player needs on top of the sword cooldown to return a fireball; less and the wizard takes the hit
+var wizard_deflect_miss_chance := 0.3 # Chance a returned fireball gets past a wizard or dragon (FireballReturner)
+var wizard_volley_reaction_time := 0.1 # Seconds the player needs on top of the sword cooldown to return a fireball; less and the wizard or dragon takes the hit
 # Support casters (Caster.gd): the warlock and the curses it casts (Curses.gd), and the
 # necromancer, which raises the room's dead (Room.raise_fallen).
 var warlock_curse_cooldown_min := 3.0 # Seconds between curses, rolled each time
@@ -106,7 +106,7 @@ var wyrm_clash_reach := 22.0 # Pixels short of the player where a charge strikes
 var wyrm_charge_recovery := 0.2 # Seconds it hovers after a charge before circling again
 var wyrm_fireball_speed := 175.0 # Wyrm and wyvern fireballs, before any hit back
 var wyrm_fireball_charge_time := 0.5 # Seconds it holds still glowing before breathing a fireball
-var wyrm_fireball_counter_window := 0.35 # Seconds after a fireball comes out that hitting it back counts as a counter, stunning the dragon
+var wyrm_breath_parry_window := 0.15 # Seconds from the glint at its mouth to the fireball; a sword hit on it in that time parries
 var wyvern_heavy_charge_chance := 0.4 # Share of a wyvern's charges that glint red and can't be parried
 var wyvern_heavy_end_lag := 1.0 # Seconds a wyvern hangs in the air, open, after an unparryable charge
 var boss_laser_cooldown := 1.0
@@ -275,8 +275,8 @@ const FIELDS := [
 	["Enemies", "curse_defense_multiplier", "Lowered defense: damage taken x", 1, 5, 0.25, "new (Curses)"],
 	["Enemies", "curse_attack_multiplier", "Lowered attack: damage dealt x", 0, 1, 0.05, "new (Curses)"],
 	["Enemies", "curse_speed_multiplier", "Slowed: speed x", 0.1, 1, 0.05, "new (Curses)"],
-	["Enemies", "wizard_deflect_miss_chance", "Wizard deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
-	["Enemies", "wizard_volley_reaction_time", "Wizard volley reaction time (s)", 0, 2, 0.05, "new (RangedEnemy._player_could_return)"],
+	["Enemies", "wizard_deflect_miss_chance", "Wizard/dragon deflect miss chance", 0, 1, 0.05, "RangedEnemy.gd DEFLECT_MISS_CHANCE"],
+	["Enemies", "wizard_volley_reaction_time", "Wizard/dragon volley reaction time (s)", 0, 2, 0.05, "new (RangedEnemy._player_could_return)"],
 	["Enemies", "troll_steal", "Troll coins stolen per hit (x floor)", 0, 50, 1, "new (Troll.landed_hit)"],
 	["Enemies", "troll_coin_loss_chance", "Troll stolen coin lost chance", 0, 1, 0.05, "new (Troll.die)"],
 	["Enemies", "wyrm_hit_back_off", "Wyrm back-off after being hit (s)", 0, 5, 0.05, "new (Wyrm._back_off)"],
@@ -288,7 +288,7 @@ const FIELDS := [
 	["Enemies", "wyrm_charge_hold_max", "Wyrm hold before a charge max (s)", 0, 6, 0.1, "new (Wyrm._start_charge)"],
 	["Enemies", "wyrm_charge_recovery", "Wyrm recovery after a charge (s)", 0, 3, 0.05, "new (Wyrm._end_attack)"],
 	["Enemies", "wyrm_fireball_charge_time", "Wyrm fireball charge-up (s)", 0, 6, 0.1, "new (Wyrm._hold_breath)"],
-	["Enemies", "wyrm_fireball_counter_window", "Wyrm fireball counter window (s)", 0, 2, 0.05, "new (Wyrm._watch_fireball)"],
+	["Enemies", "wyrm_breath_parry_window", "Wyrm fireball glint parry window (s)", 0.02, 1, 0.01, "new (Wyrm._pulse_breath)"],
 	["Enemies", "wyvern_heavy_end_lag", "Wyvern unparryable charge end lag (s)", 0, 5, 0.05, "new (Wyrm._end_attack)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 

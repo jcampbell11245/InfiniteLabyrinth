@@ -22,15 +22,17 @@ extends Enemy
 #
 # Fireball (the "shoot" animation): it rears back and holds its breath, rooted and glowing
 # faster and faster, for Tuning.wyrm_fireball_charge_time, long enough for the player to
-# close in. A glint at its mouth comes a parry window before it breathes, and the sword is
-# timed against it like any parry: a swing at it while it rears back or holds its breath,
-# before the glint, is blocked and staggers the player; one on the glint parries it, choking
-# off the fireball and stunning it. An arrow or spin that lands chokes the fireball off too.
-# A wyrm's fireball flies straight; a wyvern's homes like a wizard's (homing_fireball).
-# Either can be hit back with the sword, and then homes on the dragon that breathed it;
-# dragons don't bat it back again the way wizards do. Hit back within
-# Tuning.wyrm_fireball_counter_window of coming out it's a counter, and stuns the dragon
-# like a parry when it lands.
+# close in. A glint at its mouth comes Tuning.wyrm_breath_parry_window before it breathes,
+# and the sword is timed against it like any parry: a swing at it while it rears back or
+# holds its breath, before the glint, is blocked and staggers the player; one on the glint
+# parries it, choking off the fireball and stunning it. An arrow or spin that lands chokes
+# the fireball off too. A wyrm's fireball flies straight; a wyvern's homes like a wizard's
+# (homing_fireball). Either can be hit back with the sword, and then homes on the dragon
+# that breathed it, which bats it back again the way wizards do (FireballReturner); one that
+# gets through only damages it.
+#
+# Its stuns, from a parry or a wall, give the player no damage bonus on the next hit (see
+# stagger).
 #
 # Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
 # coils (frame 0), then hangs still in its lunge pose (frame 1) for about a second
@@ -45,7 +47,7 @@ extends Enemy
 # Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
 #
 # A charge that slams into a wall or stalagmite dazes it exactly as a parry would (stars,
-# Tuning.parried_stun_time, the next hit multiplied, the player's sword cooldown skipped).
+# Tuning.parried_stun_time, the player's sword cooldown skipped).
 #
 # Dragons check in with the room's AttackCoordinator, so a goblin won't start a swing while
 # a dragon is mid-charge (and the other way round), but never take melee turns. Dragons in
@@ -63,6 +65,11 @@ const ORBIT_STUCK_TIME := 0.4 # Seconds pressed against something before circlin
 const SEPARATION := 30.0 # Pixels: closer than this to another enemy, it steers away from it
 const FIRE_FLASH := Color(1, 0.6, 0.2) # Glow as it draws breath, warning of the fireball
 const BREATH_FRAME := 1 # "shoot" frame it draws breath on
+# Batting fireballs back (FireballReturner), in its own (unscaled) units: this far ahead of
+# it, and this far either side of the fireball's path. Wider than its hurtbox, so a fast
+# fireball can't skip past the point it's batted in one frame.
+const RETURN_REACH := 36.0
+const RETURN_WIDTH := 16.0
 # Where fireballs leave its mouth, in its own (unscaled) units: this far out the way it
 # faces, and MOUTH_HEIGHT above its origin.
 const MOUTH_REACH := 16.0
@@ -115,8 +122,7 @@ var _breath_pulse_in := 0.0 # Seconds to the next warning glow while holding its
 var _breath_glinted := false # The glint before this breath has shown
 var _breath_glint_at := -1 # Ticks (ms) that glint showed; -1 before it does
 var _fireball: Projectile # Its last fireball, while it's still about
-var _fireball_out_at := -1 # Ticks (ms) _fireball came out
-var _fireball_countered := false # The player hit _fireball back within the counter window
+var _returner: FireballReturner # Bats back fireballs the player hits at it
 
 @onready var _hitbox_pivot: Node2D = $HitboxPivot
 @onready var _hitbox: CollisionShape2D = $HitboxPivot/Hitbox/CollisionShape2D
@@ -129,6 +135,7 @@ func _ready() -> void:
 	_wall_sound = _add_sound(WALL_HIT_SOUND)
 	_breath_sound = _add_sound(BREATH_SOUND)
 	_breath_timer = _add_timer(_release_breath)
+	_returner = FireballReturner.new(self, RETURN_REACH * scale.x, RETURN_WIDTH * scale.x, FIRE_FLASH)
 	_stun_timer.timeout.connect(_back_off) # Parried or dazed: once it comes round, it backs off
 	if starting_direction == MeleeEnemy.AUTO_FACING:
 		direction = Direction.RIGHT # Until the player comes in
@@ -187,38 +194,25 @@ func take_damage(from_direction: String, amount: float) -> void:
 		_back_off()
 
 # The sword meets it while it charges a fireball: timed like a parry against the glint at
-# its mouth. Swung before the glint, the swing is blocked and the player staggered, as when
-# swinging early at any attack; swung on the glint, it's parried and stunned, the fireball
-# choked off. Otherwise as for any enemy.
-#
-# A swing on the glint can connect a moment after the fireball has come out (the glint is
-# only a parry window ahead of it). That still counts as the parry, and the fireball that
-# just came out goes too, so it can't fly on or be hit back.
+# its mouth, which comes Tuning.wyrm_breath_parry_window before the fireball. Swung before
+# the glint, the swing is blocked and the player staggered, as when swinging early at any
+# attack; swung on the glint and connecting before the fireball comes out, it's parried and
+# stunned, the fireball choked off (so none ever appears). A swing on the glint that only
+# connects once the fireball is out is late and does nothing to the dragon, as a late swing
+# does nothing to any attack. Otherwise as for any enemy.
 func _on_player_sword(from_direction: String) -> void:
 	var on_glint := _breath_glint_at >= 0 && player.swing_started_at >= _breath_glint_at
-	if !_charging_fireball() && !(on_glint && _fireball_just_out()):
+	if _charging_fireball():
+		if on_glint:
+			player.mark_swing_parried()
+			_choke_breath()
+			_parry_feedback()
+			_explode_in_mouth()
+			stagger(from_direction)
+		else:
+			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
+	elif !(on_glint && _animation_is("shoot")): # Late: nothing
 		super(from_direction)
-		return
-	if on_glint:
-		player.mark_swing_parried()
-		_choke_breath()
-		_snuff_fireball()
-		_parry_feedback()
-		_explode_in_mouth()
-		stagger(from_direction)
-	else:
-		_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
-
-# Its fireball came out within Tuning.wyrm_fireball_counter_window and no one has hit it yet.
-func _fireball_just_out() -> bool:
-	return is_instance_valid(_fireball) && _fireball.deflections == 0 \
-		&& Time.get_ticks_msec() - _fireball_out_at <= Tuning.wyrm_fireball_counter_window * 1000.0
-
-# Removes the fireball it just breathed, without a trace: it burst in its mouth instead.
-func _snuff_fireball() -> void:
-	if is_instance_valid(_fireball):
-		_fireball.queue_free()
-	_fireball = null
 
 # Parried on the glint: the fireball it was about to breathe bursts in its mouth instead.
 func _explode_in_mouth() -> void:
@@ -272,7 +266,6 @@ func _physics_process(delta: float) -> void:
 	_moving = false
 	if player.in_transition:
 		return
-	_watch_fireball()
 	if !room.player_active || !is_player_in_room():
 		noticed = false
 		_was_noticed = false
@@ -289,6 +282,8 @@ func _physics_process(delta: float) -> void:
 	if is_stunned(): # Parried, or slammed into a wall
 		_apply_knockback(delta)
 		return
+	if _returner.try_return():
+		_face_along(Direction.to_vector(direction)) # Draw order for the way it now faces
 	var coordinator := AttackCoordinator.for_room(room)
 	coordinator.check_in(self)
 	if _animation_is("slash"):
@@ -318,6 +313,7 @@ func _on_reset() -> void:
 	_stuck_for = 0.0
 	_recover.stop()
 	_opening.stop()
+	_returner.reset()
 	_recover_rooted = false
 	_breath_timer.stop()
 	_breath_sound.stop()
@@ -458,10 +454,10 @@ func _breath_held() -> bool:
 func _charging_fireball() -> bool:
 	return _animation_is("shoot") && animator.frame < attack_frame
 
-# The warning glow, quickening as the breath comes, and a parry window before it the glint
-# at its mouth that a counter is timed on.
+# The warning glow, quickening as the breath comes, and Tuning.wyrm_breath_parry_window
+# before it the glint at its mouth that a parry is timed on.
 func _pulse_breath(delta: float) -> void:
-	if !_breath_glinted && _breath_timer.time_left <= Tuning.parry_window:
+	if !_breath_glinted && _breath_timer.time_left <= Tuning.wyrm_breath_parry_window:
 		_breath_glinted = true
 		_breath_glint_at = Time.get_ticks_msec()
 		Juice.twinkle(self, _mouth_offset() / scale)
@@ -481,28 +477,6 @@ func _release_breath() -> void:
 func _mouth_offset() -> Vector2:
 	return (Direction.to_vector(direction) * MOUTH_REACH + Vector2(0, MOUTH_HEIGHT)) * scale
 
-# Notes whether the player has hit its fireball back, and if so whether in time to count as a
-# counter. Called every physics frame; a deflect happens at most a frame before it's seen.
-func _watch_fireball() -> void:
-	if !is_instance_valid(_fireball):
-		_fireball = null
-		return
-	if _fireball.deflections == 1 && !_fireball.hostile_to_player && !_fireball_countered \
-			&& Time.get_ticks_msec() - _fireball_out_at <= Tuning.wyrm_fireball_counter_window * 1000.0:
-		_fireball_countered = true
-
-# A countered fireball (see _watch_fireball) landing on it stuns it like a parry, on top of
-# the damage.
-func _on_hurtbox_area_shape_entered(area_id: RID, area: Area2D, area_shape: int, self_shape: int) -> void:
-	var shot := area.get_parent() as Projectile
-	var countered := area.get_name() == "ProjectileHitbox" && shot != null && shot == _fireball \
-		&& _fireball_countered && !shot.hostile_to_player
-	super(area_id, area, area_shape, self_shape)
-	if countered && health > 0 && !is_stunned():
-		_fireball_countered = false
-		_parry_feedback()
-		stagger(shot.direction)
-
 func breathe_fire() -> void:
 	if !is_player_in_room():
 		return
@@ -511,8 +485,6 @@ func breathe_fire() -> void:
 	room.add_child(fireball)
 	fireball.position = room.clamp_to_floor(position + _mouth_offset(), Projectile.SPAWN_MARGIN)
 	_fireball = fireball
-	_fireball_out_at = Time.get_ticks_msec()
-	_fireball_countered = false
 	fireball.direction = direction
 	fireball.damage = damage
 	fireball.speed = Tuning.wyrm_fireball_speed
@@ -619,6 +591,9 @@ func _hit_interrupts_attack() -> bool:
 	return !_unparryable
 
 func _on_staggered() -> void:
+	# Unlike other enemies, a stunned dragon takes no extra damage from the next hit
+	# (Tuning.stagger_damage_multiplier): the stun itself is the reward.
+	_set_vulnerable(false)
 	_dashing = false
 	_dash_left = 0.0
 	_roll_cooldown()

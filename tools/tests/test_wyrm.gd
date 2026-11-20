@@ -106,7 +106,7 @@ func test_charging_into_a_rock_dazes_it() -> void:
 			break
 		await tree.physics_frame
 	expect(wyrm.is_stunned(), "slamming into the stalagmite stuns it")
-	expect(wyrm.is_vulnerable(), "and its next hit taken is multiplied, as after a parry")
+	expect(!wyrm.is_vulnerable(), "with no bonus damage on the next hit, as for any dragon stun")
 	expect(!wyrm._animation_is("slash"), "the charge is over")
 
 func test_circles_the_player() -> void:
@@ -227,30 +227,6 @@ func test_backs_off_before_attacking_after_a_hit() -> void:
 	expect(!wyrm._recover.is_stopped(), "backs off after being hit")
 	expect(wyrm.attack_cooldown.time_left > 0, "and can't attack meanwhile")
 	expect(!wyrm._animation_is("slash") && !wyrm._animation_is("shoot"), "so no attack starts at once")
-
-func test_fireball_hit_back_as_it_comes_out_is_a_counter() -> void:
-	eager(false)
-	autoload("Tuning").wyrm_fireball_charge_time = 0.5
-	var wyrm := await boot_dragon("wyrm")
-	var fireball: Projectile = null
-	for i in 300:
-		fireball = wyrm._fireball
-		if fireball != null:
-			break
-		await tree.physics_frame
-	expect(fireball != null, "the wyrm breathes a fireball")
-	if fireball == null:
-		return
-	wyrm.health = 100.0 # So the fireball coming back stuns it rather than killing it
-	# Sent straight back at once, as a swing on the glint would.
-	fireball.deflect(Wyrm._nearest_direction(wyrm.global_position - fireball.global_position))
-	await physics_frames(2)
-	expect(wyrm._fireball_countered, "hit back as it comes out counts as a counter")
-	for i in 120:
-		if wyrm.is_stunned():
-			break
-		await tree.physics_frame
-	expect(wyrm.is_stunned(), "and stuns the wyrm when it lands")
 
 func has_fireball(room: Room) -> bool:
 	for child in room.get_children():
@@ -374,6 +350,7 @@ func test_holds_still_before_charging() -> void:
 # mustn't break on the shadow without hurting it.
 func test_volleyed_fireball_from_below_hurts_a_wyvern() -> void:
 	calm()
+	autoload("Tuning").wizard_deflect_miss_chance = 1.0 # Lets it through
 	var wyvern := await boot_dragon("wyvern")
 	player().invincibility_cooldown.start(100.0)
 	wyvern.health = 100.0
@@ -408,9 +385,66 @@ func test_flies_off_before_its_first_attack() -> void:
 	var now := wyrm.global_position.distance_to(player().global_position)
 	expect(now > start + 20.0, "it has flown off: %s px to %s px" % [start, now])
 
-# A swing on the glint that connects just after the fireball comes out still parries, and
-# the fireball goes: it can't fly on or be hit back.
-func test_glint_parry_just_after_the_breath_removes_the_fireball() -> void:
+# Breathes a fireball, waits for it to be near the player and hits it back at the dragon.
+# Returns the fireball, or null if it never got there.
+func volley(dragon: Wyrm) -> Projectile:
+	var fireball: Projectile = null
+	for i in 300:
+		fireball = dragon._fireball
+		if fireball != null:
+			break
+		await tree.physics_frame
+	for i in 300:
+		if !is_instance_valid(fireball) || fireball.global_position.distance_to(player().global_position) < 20:
+			break
+		await tree.physics_frame
+	if !is_instance_valid(fireball):
+		return null
+	fireball.deflect(Wyrm._nearest_direction(dragon.global_position - fireball.global_position))
+	return fireball
+
+# A fireball hit back that gets through only damages the dragon: no stun.
+func test_volleyed_fireball_only_damages_the_dragon() -> void:
+	eager(false)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_fireball_charge_time = 0.3
+	tuning.wizard_deflect_miss_chance = 1.0 # Never bats it back
+	var wyrm := await boot_dragon("wyrm")
+	player().invincibility_cooldown.start(100.0)
+	var fireball := await volley(wyrm)
+	expect(fireball != null, "the fireball reaches the player and is hit back")
+	wyrm.health = 100.0
+	var hurt := false
+	for i in 300:
+		await tree.physics_frame
+		if wyrm.health < 100.0:
+			hurt = true
+			break
+	expect(hurt, "it hurts the dragon")
+	expect(!wyrm.is_stunned(), "without stunning it")
+
+# Like a wizard, a dragon bats a fireball hit back at it back at the player.
+func test_dragon_bats_a_volleyed_fireball_back() -> void:
+	eager(false)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_fireball_charge_time = 0.3
+	tuning.wizard_deflect_miss_chance = 0.0 # Never fumbles
+	tuning.wizard_volley_reaction_time = 0.0
+	var wyvern := await boot_dragon("wyvern")
+	player().invincibility_cooldown.start(100.0)
+	var fireball := await volley(wyvern)
+	expect(fireball != null, "the fireball reaches the player and is hit back")
+	wyvern.health = 100.0
+	for i in 300:
+		await tree.physics_frame
+		if !is_instance_valid(fireball) || fireball.hostile_to_player:
+			break
+	expect(is_instance_valid(fireball) && fireball.hostile_to_player, "the wyvern bats it back at the player")
+	expect(fireball != null && is_instance_valid(fireball) && fireball.deflections == 2, "a second return")
+	expect_equal(wyvern.health, 100.0, "and takes no damage")
+
+# A swing on the glint that only connects once the fireball is out is late: it does nothing.
+func test_late_swing_after_the_breath_does_nothing() -> void:
 	eager(false)
 	autoload("Tuning").wyrm_fireball_charge_time = 0.5
 	var wyrm := await wait_for_breath(await boot_dragon("wyrm"))
@@ -425,10 +459,20 @@ func test_glint_parry_just_after_the_breath_removes_the_fireball() -> void:
 		if wyrm._fireball != null:
 			break
 		await tree.physics_frame
-	var fireball: Projectile = wyrm._fireball
-	expect(fireball != null, "the fireball comes out before the swing connects")
-	wyrm._on_player_sword(head_on(wyrm)) # ...and connects now
+	expect(wyrm._fireball != null, "the fireball comes out before the swing connects")
+	var health := wyrm.health
+	wyrm._on_player_sword(head_on(wyrm)) # ...but connects only now
 	await physics_frames(2)
-	expect(wyrm.is_stunned(), "it still parries the dragon")
-	expect(!is_instance_valid(fireball), "and the fireball is gone")
-	expect(!has_fireball(wyrm.room), "with none left in the room")
+	expect(!wyrm.is_stunned(), "too late to parry")
+	expect_equal(wyrm.health, health, "and does no damage")
+
+# A stunned dragon takes ordinary damage from the next hit: no stun bonus.
+func test_stunned_dragon_takes_no_bonus_damage() -> void:
+	calm()
+	var wyrm := await boot_dragon("wyrm")
+	wyrm.health = 100.0
+	wyrm.stagger(Direction.RIGHT)
+	expect(wyrm.is_stunned(), "stunned")
+	expect(!wyrm.is_vulnerable(), "but not open to extra damage")
+	wyrm.take_damage(Direction.RIGHT, 1.0)
+	expect(wyrm.health >= 98.0, "a 1-damage hit takes about 1: %s left" % wyrm.health)
