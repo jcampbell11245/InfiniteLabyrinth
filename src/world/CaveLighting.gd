@@ -12,7 +12,10 @@ const LIGHT_NAME := &"CaveLight"
 const ARROW_PICKUP_SCRIPT := preload("res://src/effects/ArrowPickup.gd")
 # Projectile scenes that glow; arrows don't.
 const GLOWING_PROJECTILES := ["Fireball", "Laser"]
-const TEXTURE_SIZE := 256 # Pixels across the generated light texture
+# Pixels across the generated light texture. Big, because the player's light stretches it
+# over most of a room and coarse texels show up as rings.
+const TEXTURE_SIZE := 512
+const FALLOFF_STOPS := 32 # Gradient points along the falloff curve; few points show as bands
 
 const PLAYER_COLOR := Color(1.0, 0.86, 0.62) # Torch-warm
 const FIREBALL_COLOR := Color(1.0, 0.55, 0.2)
@@ -35,15 +38,22 @@ func _ready() -> void:
 		_on_node_added(node)
 	_apply_all()
 
-# The soft round falloff every light uses: bright in the middle, fading smoothly to nothing
-# at the edge. Made once per floor in code and shared by its lights (not static, so it
-# is freed with the floor instead of outliving the game at exit).
+# The soft round falloff every light uses: bright in the middle, fading to nothing at the
+# edge along a smootherstep curve, which has no corners for the eye to pick out as rings.
+# Made once per floor in code and shared by its lights (not static, so it is freed with
+# the floor instead of outliving the game at exit).
 func light_texture() -> GradientTexture2D:
 	if _texture == null:
+		var offsets := PackedFloat32Array()
+		var colors := PackedColorArray()
+		for i in FALLOFF_STOPS + 1:
+			var t := float(i) / FALLOFF_STOPS
+			var fade := 1.0 - t
+			offsets.append(t)
+			colors.append(Color(1, 1, 1, fade * fade * fade * (fade * (fade * 6.0 - 15.0) + 10.0)))
 		var gradient := Gradient.new()
-		gradient.offsets = PackedFloat32Array([0.0, 0.35, 0.7, 1.0])
-		gradient.colors = PackedColorArray([
-			Color(1, 1, 1, 1), Color(1, 1, 1, 0.7), Color(1, 1, 1, 0.2), Color(1, 1, 1, 0)])
+		gradient.offsets = offsets
+		gradient.colors = colors
 		_texture = GradientTexture2D.new()
 		_texture.gradient = gradient
 		_texture.fill = GradientTexture2D.FILL_RADIAL
@@ -75,6 +85,9 @@ func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
 	var light := PointLight2D.new()
 	light.name = LIGHT_NAME
 	light.texture = light_texture()
+	# The project samples textures nearest-pixel for crisp sprites; a light stretched that way
+	# shows its texels as steps, so lights blend between them instead.
+	light.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	light.color = color
 	light.set_meta(&"kind", kind)
 	owner_node.add_child.call_deferred(light)
