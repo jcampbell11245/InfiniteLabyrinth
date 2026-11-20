@@ -15,7 +15,7 @@ extends Enemy
 #
 # Fighting, it circles at Tuning.wyrm_orbit_radius, now and then turning round to circle the
 # other way. It keeps its distance: a player who gets inside Tuning.wyrm_keep_away of the
-# circle sends it backing straight off at Tuning.wyrm_retreat_speed times its speed. A hit
+# circle sends it backing straight off at the player's walking speed. A hit
 # that lands, or coming round from a stun, sends it backing off for Tuning.wyrm_hit_back_off
 # before it can attack again. Only its attacks hurt: there's no damage for touching it. Every
 # so often (Tuning.wyrm_attack_cooldown_min/max) it stops to attack, one of two ways:
@@ -350,7 +350,9 @@ func _circle(delta: float) -> void:
 	var to_target := target - position
 	if to_target.length() <= ORBIT_ARRIVE:
 		return
-	var fly_speed := speed * (Tuning.wyrm_retreat_speed if backing_off else 1.0)
+	# Backing off it matches the player's walking pace, so it keeps a steady distance from a
+	# player walking at it instead of darting off and stopping.
+	var fly_speed := Tuning.player_speed if backing_off else speed
 	var motion := to_target.normalized() * minf(fly_speed * delta, to_target.length())
 	var collision := move_and_collide(motion)
 	if collision != null:

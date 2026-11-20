@@ -89,7 +89,6 @@ var troll_coin_loss_chance := 0.1 # Chance each stolen coin isn't dropped back w
 var wyrm_orbit_radius := 100.0 # Pixels from the player they circle at
 var wyrm_orbit_flip_min := 1.0 # Seconds before it may turn round and circle the other way, rolled each time
 var wyrm_orbit_flip_max := 2.5
-var wyrm_retreat_speed := 1.8 # Times its speed while backing off a player inside its circle
 var wyrm_keep_away := 0.85 # Share of the circle radius: a player closer than this sends it backing off
 var wyrm_hit_back_off := 0.8 # Seconds it backs off without attacking after a hit lands (or a stun wears off)
 var wyrm_first_attack_delay := 1.5 # Seconds it flies off, without attacking, after first noticing the player
