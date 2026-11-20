@@ -117,16 +117,14 @@ func test_circles_the_player() -> void:
 	var distance := wyrm.global_position.distance_to(player().global_position)
 	expect_near(distance, autoload("Tuning").wyrm_orbit_radius, 12.0, "circles at the orbit radius")
 
-func test_charge_glints_near_the_player_and_can_be_parried() -> void:
+func test_charge_glints_as_it_sets_off_and_can_be_parried() -> void:
 	eager(true)
 	var wyrm := await boot_dragon("wyrm")
 	await wait_for_glint(wyrm)
 	expect(wyrm._twinkled_at >= 0, "the charge glints")
 	expect(!wyrm._unparryable, "a wyrm's charge can be parried")
-	var tuning := autoload("Tuning")
-	var lead: float = tuning.wyrm_charge_speed * tuning.parry_window
-	var ahead := wyrm._to_player().dot(wyrm._charge_dir)
-	expect(ahead <= lead + tuning.wyrm_clash_reach + 6.0, "glints as it closes on the player: %s px out" % ahead)
+	expect(wyrm._dashing, "glints as it sets off")
+	expect(wyrm.animator.frame < wyrm.attack_frame, "before the bite")
 	player().swing_started_at = Time.get_ticks_msec()
 	player().swing_started_frame = Engine.get_physics_frames()
 	wyrm._on_player_sword(head_on(wyrm))
@@ -349,7 +347,8 @@ func test_charge_bites_straight_after_the_glint() -> void:
 		last = wyrm.global_position
 	var waited := (Time.get_ticks_msec() - glinted_at) / 1000.0
 	var tuning := autoload("Tuning")
-	expect(waited <= tuning.parry_window + 0.1, "bites within the window of the glint: %s s" % waited)
+	var flight: float = tuning.wyrm_charge_max_distance / tuning.wyrm_charge_speed
+	expect(waited <= flight + 0.1, "bites as soon as it gets there: %s s after the glint" % waited)
 	expect(stalled <= 1, "without stopping on the way: %s frames still" % stalled)
 
 # Before a charge it hangs still for Tuning.wyrm_charge_hold_min/max, then sets off.

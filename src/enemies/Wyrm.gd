@@ -32,14 +32,14 @@ extends Enemy
 # like a parry when it lands.
 #
 # Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
-# coils (frame 0), then hangs still in its lunge pose (frame 1) for a few seconds
-# (Tuning.wyrm_charge_hold_min/max), aims at the player and dashes straight at them at Tuning.wyrm_charge_speed without
-# stopping. A parry window's flight before it gets within Tuning.wyrm_clash_reach of them it
-# glints, and it bites (frame 2, its Hitbox live for that frame only) the moment it gets
-# there, then carries on through, harmless, for Tuning.wyrm_charge_overshoot. A swing begun
-# after the glint that meets it up to the bite parries it: knocked back and stunned like any
-# parried enemy. One that meets it before the glint is blocked and staggers the player. A wyvern's charges glint red
-# Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
+# coils (frame 0), then hangs still in its lunge pose (frame 1) for about a second
+# (Tuning.wyrm_charge_hold_min/max). Then it glints, aims at the player and dashes straight
+# at them at Tuning.wyrm_charge_speed without stopping, biting (frame 2, its Hitbox live for
+# that frame only) the moment it gets within Tuning.wyrm_clash_reach of them, and carries on
+# through, harmless, for Tuning.wyrm_charge_overshoot. A swing begun after the glint that
+# meets it up to the bite parries it: knocked back and stunned like any parried enemy. One
+# that meets it before the glint is blocked and staggers the player. A wyvern's charges
+# glint red Tuning.wyvern_heavy_charge_chance of the time: those can't be parried (Enemy._on_player_sword),
 # so the player rolls through and hits it from behind, and it hangs in the air open for
 # Tuning.wyvern_heavy_end_lag afterwards. Arrows don't stop a red charge either.
 #
@@ -501,13 +501,21 @@ func _aim_charge() -> void:
 	_face_along(_charge_dir)
 	_hitbox_pivot.rotation = _charge_dir.angle()
 
-# The windup hold ends by setting off on the charge instead of glinting: the glint comes
-# from _charge as it nears the player.
+# The windup hold ends by setting off on the charge, glinting as it goes (see _glint).
 func _twinkle() -> void:
 	if _animation_is("slash") && !_dashing:
 		_begin_dash()
+		_glint()
 	else:
 		super()
+
+# The charge's glint, white or red, at the start of the dash. Unlike other enemies it opens
+# no fixed window: the lunge pose holds until the charge reaches the player and bites, and
+# any swing begun after the glint that meets it before then parries it (_parry_timing).
+func _glint() -> void:
+	_twinkled_at = Time.get_ticks_msec()
+	Juice.twinkle(self, _twinkle_position(),
+		UNPARRYABLE_TWINKLE_COLOR if _unparryable else Color(0, 0, 0, 0))
 
 func _begin_dash() -> void:
 	_aim_charge() # Re-aimed now, so the hold isn't a free head start to dodge
@@ -527,12 +535,10 @@ func _charge(delta: float) -> void:
 		if collision != null || !is_equal_approx(position.x, before_clamp):
 			_slam_into_wall()
 			return
-	if _dashing && _twinkled_at < 0 && _due_to_glint():
-		super._twinkle()
-	# Reached the player after the glint: it bites at once, without waiting out the window.
-	# Straight to the bite frame: playing on from the lunge pose, it would fly through them
-	# before the bite came round.
-	if _dashing && _twinkled_at >= 0 && animator.frame < attack_frame && _ahead_of_strike() <= 0:
+	# Reached the player (or the end of the charge, dodged): it bites at once, going straight
+	# to the bite frame. Playing on from the lunge pose, it would fly through them before the
+	# bite came round.
+	if _dashing && animator.frame < attack_frame && (_ahead_of_strike() <= 0 || _dash_left <= 0):
 		_end_windup_hold()
 		animator.frame = attack_frame
 	if _animation_done() && _dash_left <= 0:
@@ -554,15 +560,7 @@ func _slam_into_wall() -> void:
 func _ahead_of_strike() -> float:
 	return _to_player().dot(_charge_dir) - Tuning.wyrm_clash_reach
 
-# Glints a window's flight before reaching the player, or before running out of charge, so
-# against a player standing still the window closes as it arrives.
-func _due_to_glint() -> bool:
-	var window := Tuning.unparryable_window if _unparryable else Tuning.parry_window
-	var lead := Tuning.wyrm_charge_speed * window
-	return _ahead_of_strike() <= lead || _dash_left <= lead
-
-# A charge bites as soon as it reaches the player, which can be before the window closes,
-# and the sword only meets it as it arrives. So any swing begun after the glint that
+# A charge has no fixed parry window (see _glint): any swing begun after the glint that
 # connects up to the bite parries it, rather than counting as late.
 func _parry_timing() -> Parry:
 	var timing := super()
