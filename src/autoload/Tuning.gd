@@ -116,6 +116,18 @@ var wyrm_fireball_charge_time := 0.5 # Seconds it holds still glowing before bre
 var wyrm_breath_parry_window := 0.15 # Seconds from the glint at its mouth to the fireball; a sword hit on it in that time parries
 var wyvern_heavy_charge_chance := 0.4 # Share of a wyvern's charges that glint red and can't be parried
 var wyvern_heavy_end_lag := 1.0 # Seconds a wyvern hangs in the air, open, after an unparryable charge
+# Centaurs (Centaur.gd): combos of clashes and kicks, and the Bucentaur's and Taurtaur's charges.
+# Combat timings and damage sit under Enemies in the F2 menu, the rest under Centaurs.
+var centaur_combo_hold := 0.6 # Seconds of windup hold on each combo hit after the first; outlasts the sword cooldown
+var centaur_charge_hold_min := 0.3 # Seconds it holds still before a charge sets off, rolled each time
+var centaur_charge_hold_max := 0.6
+var centaur_clash_damage := 1.5 # Damage of a clash hit (the weapon, or a taurtaur's stomp)
+var centaur_kick_damage := 2.0 # Damage of a kick (roll-only)
+var centaur_charge_damage := 2.0 # Damage of a charge's strike
+var centaur_charge_chance := 0.4 # Share of a Bucentaur's or Taurtaur's attacks that are charges
+var centaur_charge_speed := 300.0 # Pixels/sec while charging
+var centaur_charge_overshoot := 24.0 # Pixels past the player a charge would carry on
+var centaur_charge_max_distance := 200.0 # Pixels: longest a charge runs
 var boss_laser_cooldown := 1.0
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
@@ -299,6 +311,12 @@ const FIELDS := [
 	["Enemies", "wyrm_fireball_charge_time", "Wyrm fireball charge-up (s)", 0, 6, 0.1, "new (Wyrm._hold_breath)"],
 	["Enemies", "wyrm_breath_parry_window", "Wyrm fireball glint parry window (s)", 0.02, 1, 0.01, "new (Wyrm._pulse_breath)"],
 	["Enemies", "wyvern_heavy_end_lag", "Wyvern unparryable charge end lag (s)", 0, 5, 0.05, "new (Wyrm._end_attack)"],
+	["Enemies", "centaur_combo_hold", "Centaur combo hit hold (s)", 0, 2, 0.05, "new (Centaur._next_hit)"],
+	["Enemies", "centaur_charge_hold_min", "Centaur hold before a charge min (s)", 0, 3, 0.05, "new (Centaur._set_up_hit)"],
+	["Enemies", "centaur_charge_hold_max", "Centaur hold before a charge max (s)", 0, 3, 0.05, "new (Centaur._set_up_hit)"],
+	["Enemies", "centaur_clash_damage", "Centaur clash damage", 0, 10, 0.25, "new (Centaur.melee_damage)"],
+	["Enemies", "centaur_kick_damage", "Centaur kick damage", 0, 10, 0.25, "new (Centaur.melee_damage)"],
+	["Enemies", "centaur_charge_damage", "Centaur charge damage", 0, 10, 0.25, "new (Centaur.melee_damage)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 
 	["Dragons", "wyrm_orbit_radius", "Circle radius (px)", 20, 200, 1, "new (Wyrm._circle)"],
@@ -320,6 +338,11 @@ const FIELDS := [
 	["Dragons", "wyrm_charge_max_distance", "Charge max distance (px)", 20, 500, 5, "new (Wyrm._begin_dash)"],
 	["Dragons", "wyrm_clash_reach", "Charge bite distance (px)", 0, 80, 1, "new (Wyrm._ahead_of_strike)"],
 	["Dragons", "wyrm_fireball_speed", "Fireball speed (px/s)", 10, 600, 10, "new (Wyrm.breathe_fire)"],
+
+	["Centaurs", "centaur_charge_chance", "Charge (vs combo) chance", 0, 1, 0.05, "new (Centaur._pick_attack)"],
+	["Centaurs", "centaur_charge_speed", "Charge speed (px/s)", 50, 800, 10, "new (Centaur._charge_step)"],
+	["Centaurs", "centaur_charge_overshoot", "Charge overshoot (px)", 0, 150, 1, "new (Centaur._set_off)"],
+	["Centaurs", "centaur_charge_max_distance", "Charge max distance (px)", 20, 500, 5, "new (Centaur._set_off)"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],
 	["AI", "pack_max_attackers", "Max attackers at once", 1, 6, 1, "new (AttackCoordinator)"],

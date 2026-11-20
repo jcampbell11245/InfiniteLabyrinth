@@ -127,6 +127,9 @@ const TOOLS := [
 	["Necromancer", "object", "necromancer"],
 	["Wyrm", "object", "wyrm"],
 	["Wyvern", "object", "wyvern"],
+	["Centaur", "object", "centaur"],
+	["Bucentaur", "object", "bucentaur"],
+	["Taurtaur", "object", "taurtaur"],
 ]
 
 var design: RoomDesign

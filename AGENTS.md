@@ -74,7 +74,8 @@ See README → Layout for the folder map. The parts you'll touch most:
   load), **`Juice`** (hit-stop, slow motion, shake, flashes, particle bursts, sound pitch
   variation), **`Music`**.
 - **Enemies**: `Enemy` is the base; `MeleeEnemy` (goblin, knight families), `RangedEnemy`
-  (wizard), `Caster` (warlock, necromancer), `Wyrm` (wyrm, wyvern; they fly), `Boss`.
+  (wizard), `Caster` (warlock, necromancer), `Wyrm` (wyrm, wyvern; they fly), `Boss`;
+  `Centaur` (centaur, bucentaur, taurtaur) extends `MeleeEnemy` with combos.
   Melee turns and group rushes are shared through `AttackCoordinator`, one per room;
   wizards and dragons bat fireballs back through `FireballReturner`.
 - **Rooms**: every `.tscn` in `src/world/rooms/` is picked up by `WorldGenerator`, which
