@@ -201,23 +201,18 @@ func test_bite_only_hurts_on_the_bite_frame() -> void:
 	expect(bit, "the bite's hitbox goes live")
 	expect(!live_after_bite, "and is off again once the bite frame is over")
 
-func test_hit_while_charging_a_fireball_stuns_it() -> void:
+func test_arrow_hit_while_charging_a_fireball_chokes_it_off() -> void:
 	eager(false)
 	var tuning := autoload("Tuning")
 	tuning.wyrm_fireball_charge_time = 2.0
-	var wyrm := await boot_dragon("wyrm")
-	for i in 300:
-		if wyrm._breath_held():
-			break
-		await tree.physics_frame
-	expect(wyrm._breath_held(), "holds its breath before breathing fire")
+	var wyrm := await wait_for_breath(await boot_dragon("wyrm"))
 	await wait_real(1.0)
 	expect(wyrm._breath_held(), "still holding it a second later")
 	expect(!has_fireball(wyrm.room), "with no fireball out yet")
-	wyrm.take_damage(Direction.LEFT, 0.1)
+	wyrm.take_damage(Direction.LEFT, 0.1) # As an arrow does
 	await physics_frames(2)
-	expect(!wyrm._breath_held(), "a hit chokes off the breath")
-	expect(wyrm.is_stunned(), "and stuns it like a parry")
+	expect(!wyrm._breath_held(), "a hit that lands chokes off the breath")
+	expect(!wyrm._recover.is_stopped(), "and sends it backing off")
 	await wait_real(1.5)
 	expect(!has_fireball(wyrm.room), "no fireball comes")
 
@@ -265,29 +260,57 @@ func has_fireball(room: Room) -> bool:
 			return true
 	return false
 
-# The same with a real sword swing, the way a player does it.
-func test_sword_swing_while_charging_a_fireball_stuns_it() -> void:
-	eager(false)
-	var tuning := autoload("Tuning")
-	tuning.wyrm_fireball_charge_time = 3.0
-	var wyrm := await boot_dragon("wyrm")
+# Waits (up to 300 physics frames) for the dragon to hold its breath before a fireball.
+func wait_for_breath(dragon: Wyrm) -> Wyrm:
 	for i in 300:
-		if wyrm._breath_held():
+		if dragon._breath_held():
 			break
 		await tree.physics_frame
-	expect(wyrm._breath_held(), "holds its breath before breathing fire")
-	await wait_real(0.5)
+	expect(dragon._breath_held(), "holds its breath before breathing fire")
+	return dragon
+
+# Stands the player just in front of the dragon (which faces left), facing it.
+func stand_in_front(dragon: Wyrm) -> void:
 	var p := player()
-	p.global_position = wyrm.global_position + Vector2(-24, 0)
+	p.global_position = dragon.global_position + Vector2(-24, 0)
 	p.direction = Direction.RIGHT
 	await physics_frames(2)
-	var health := wyrm.health
+
+func swing() -> void:
 	Input.action_press("melee_attack")
 	await physics_frames(4)
 	Input.action_release("melee_attack")
 	await physics_frames(6)
-	expect(wyrm.health < health, "the swing lands")
-	expect(wyrm.is_stunned(), "and stuns it")
+
+# Swinging at it as it glows, before the glint, is blocked like any early swing.
+func test_early_swing_at_a_charging_dragon_staggers_the_player() -> void:
+	eager(false)
+	autoload("Tuning").wyrm_fireball_charge_time = 3.0
+	var wyrm := await wait_for_breath(await boot_dragon("wyrm"))
+	await wait_real(0.5)
+	await stand_in_front(wyrm)
+	var health := wyrm.health
+	await swing()
+	expect(player().is_dazed(), "the player is staggered")
+	expect(wyrm.health > health - 0.5, "the dragon only takes the chip a block gives")
+	expect(wyrm._breath_held(), "and keeps charging its fireball")
+
+# Swinging on the glint parries it: stunned, the fireball choked off.
+func test_swing_on_the_glint_parries_a_charging_dragon() -> void:
+	eager(false)
+	autoload("Tuning").wyrm_fireball_charge_time = 1.5
+	var wyrm := await wait_for_breath(await boot_dragon("wyrm"))
+	await stand_in_front(wyrm)
+	for i in 300:
+		if wyrm._breath_glinted:
+			break
+		await tree.physics_frame
+	expect(wyrm._breath_glinted, "the glint shows")
+	await swing()
+	expect(!player().is_dazed(), "the player isn't staggered")
+	expect(wyrm.is_stunned(), "the dragon is stunned")
+	await wait_real(0.5)
+	expect(!has_fireball(wyrm.room), "and no fireball comes")
 
 # When one dragon's attack ends, the others in the room wait Tuning.wyrm_pack_attack_gap
 # before attacking.
