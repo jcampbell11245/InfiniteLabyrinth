@@ -87,6 +87,7 @@ func _ready() -> void:
 		_drain_voices.append(voice)
 	Game.player_died.connect(_on_player_died)
 	Game.time_lost.connect(_on_time_lost)
+	Game.time_gained.connect(_on_time_gained)
 
 func _process(_delta: float) -> void:
 	if Game.player == null:
@@ -205,6 +206,12 @@ func _on_time_lost(seconds: float, fatal: bool) -> void:
 		_jolt_tween.tween_property(holder, "position", corner_position + offset, step_time)
 	_jolt_tween.tween_property(holder, "position", corner_position, step_time)
 
+# Time added (e.g. a chest key): stop any drain so the display doesn't count up through
+# the falling ticks, and show the amount gained.
+func _on_time_gained(seconds: float) -> void:
+	_draining = false
+	_float_gain(roundi(seconds))
+
 # Counts the display down from what it shows now to the countdown's time, over `length`
 # real seconds, ticking from `pitch_start` to `pitch_end` (see _process and _drain_tick).
 func _start_drain(length: float, pitch_start: float, pitch_end: float) -> void:
@@ -261,17 +268,24 @@ func _drain_tick() -> void:
 
 # "-0:10" in red, just under the timer, drifting down and fading.
 func _float_loss(seconds: int) -> void:
+	_float_change(seconds, "-", HURT_COLOR)
+
+# "+0:30" in green when time is added, mirroring a loss.
+func _float_gain(seconds: int) -> void:
+	_float_change(seconds, "+", Color(0.2, 1.0, 0.2))
+
+func _float_change(seconds: int, prefix: String, color: Color) -> void:
 	var marker := Node2D.new()
 	marker.position = corner_position + LOSS_OFFSET
 	marker.scale = corner_scale * LOSS_SCALE
 	var label := Label.new()
 	label.add_theme_font_override("font", get_theme_font("normal_font"))
-	label.add_theme_color_override("font_color", HURT_COLOR)
+	label.add_theme_color_override("font_color", color)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(160, 30)
 	label.position = Vector2(-80, 0)
 	@warning_ignore("integer_division")
-	label.text = "-%d:%02d" % [seconds / 60, seconds % 60]
+	label.text = "%s%d:%02d" % [prefix, seconds / 60, seconds % 60]
 	marker.add_child(label)
 	holder.get_parent().add_child(marker)
 	_losses.append(marker)
