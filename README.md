@@ -22,7 +22,8 @@ it reaches 0:00. Between floors, and after a game over, coins buy upgrades: **Lu
 
 Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
 strike. Swing as it glints to **parry** and stun it; swing too early and you're the one
-staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
+staggered. A red glint can't be parried: roll through it and hit the enemy from behind to
+stun it the same way. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
