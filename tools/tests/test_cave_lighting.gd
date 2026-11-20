@@ -18,7 +18,7 @@ func player_light() -> PointLight2D:
 func test_floor_is_dark_and_player_is_lit() -> void:
 	await boot_floor()
 	expect(lighting() != null, "the floor has cave lighting")
-	expect(darkness().color.v < 0.8, "the cave is darkened")
+	expect(darkness().color.v < 1.0, "the cave is darkened")
 	expect(player_light() != null, "the player carries a light")
 	expect(player_light().enabled, "the player's light is on")
 

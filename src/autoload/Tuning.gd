@@ -206,9 +206,9 @@ var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its d
 
 # --- Lighting (CaveLighting) ---
 var lighting_enabled := true # Off shows the cave at full brightness, as before lighting
-var cave_brightness := 0.55 # 0..1: how much of its colour the unlit cave keeps
+var cave_brightness := 0.75 # 0..1: how much of its colour the unlit cave keeps
 var light_player_radius := 150.0 # Pixels from the player to where their light fades out
-var light_player_energy := 0.9 # Strength of the player's light (added to cave_brightness where it falls)
+var light_player_energy := 0.5 # Strength of the player's light (added to cave_brightness where it falls)
 var light_projectile_radius := 40.0 # Pixels; glow round fireballs and lasers
 var light_pickup_radius := 18.0 # Pixels; glow round dropped coins and arrows
 var light_small_energy := 0.8 # Strength of the projectile and pickup glows
