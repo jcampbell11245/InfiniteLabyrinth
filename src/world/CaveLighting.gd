@@ -5,13 +5,17 @@ extends Node
 # floor. A CanvasModulate dims everything drawn on the world canvas (the HUD sits on its own
 # CanvasLayers, so it stays bright), and PointLight2Ds add light back: a warm one carried by
 # the player, and small coloured ones on fireballs and lasers so they stand out in the
-# dark. Dropped loot doesn't glow. Lights are attached as nodes spawn, so nothing else needs to know about
-# lighting. Every number is in Tuning (the F2 menu's Lighting tab) and applies live.
+# dark. Dropped loot doesn't glow. Inner walls block the light: each room gets light
+# occluders over its wall cells, so they cast shadows. Lights and occluders are attached as
+# nodes spawn, so nothing else needs to know about lighting. Every number is in Tuning (the
+# F2 menu's Lighting tab) and applies live.
 #
 # The start and end rooms stay fully lit: walking into one fades the darkness (and the
 # lights, which would only wash it out) away, and walking out brings them back.
 
 const LIGHT_NAME := &"CaveLight"
+const OCCLUDER_NAME := &"WallShadow"
+const WALL_INSET := 6.0 # Pixels a wall's shadow starts inside its open edges
 # Projectile scenes that glow; arrows don't.
 const GLOWING_PROJECTILES := ["Fireball", "Laser"]
 # Pixels across the generated light texture. Big, because the player's light stretches it
@@ -104,6 +108,46 @@ func _on_node_added(node: Node) -> void:
 		var scene := node.scene_file_path.get_file().get_basename()
 		if scene in GLOWING_PROJECTILES:
 			_add_light(node, Kind.PROJECTILE, LASER_COLOR if scene == "Laser" else FIREBALL_COLOR)
+	elif node is Room:
+		# Deferred so the room's children (its wall map among them) are all in place.
+		_add_wall_occluders.call_deferred(node)
+
+# Covers a room's inner walls with light occluders, so the walls cast shadows. Each is
+# inset by WALL_INSET from edges that face open floor, so the side of a wall facing a light
+# is lit and only the far side falls into shadow; edges against another wall stay flush so
+# no light leaks between them. Cells in a row with the same walls above and below share
+# one occluder, so a floor has far fewer for the lights to test.
+func _add_wall_occluders(room: Room) -> void:
+	var walls := room.get_node_or_null("InnerWalls") as TileMap
+	if walls == null || walls.has_node(NodePath(OCCLUDER_NAME)):
+		return
+	var cell_size := Vector2(walls.tile_set.tile_size)
+	var is_wall := {}
+	for cell in walls.get_used_cells(0):
+		is_wall[cell] = true
+	var same_row := func(a: Vector2i, b: Vector2i) -> bool:
+		return is_wall.has(b) && is_wall.has(a + Vector2i.UP) == is_wall.has(b + Vector2i.UP) 				&& is_wall.has(a + Vector2i.DOWN) == is_wall.has(b + Vector2i.DOWN)
+	for cell: Vector2i in is_wall:
+		if same_row.call(cell, cell + Vector2i.LEFT):
+			continue # Not the start of a run
+		var last := cell
+		while same_row.call(cell, last + Vector2i.RIGHT):
+			last += Vector2i.RIGHT
+		var top_left := walls.map_to_local(cell) - cell_size / 2.0
+		var bottom_right := walls.map_to_local(last) + cell_size / 2.0
+		top_left += Vector2(
+			0.0 if is_wall.has(cell + Vector2i.LEFT) else WALL_INSET,
+			0.0 if is_wall.has(cell + Vector2i.UP) else WALL_INSET)
+		bottom_right -= Vector2(
+			0.0 if is_wall.has(last + Vector2i.RIGHT) else WALL_INSET,
+			0.0 if is_wall.has(cell + Vector2i.DOWN) else WALL_INSET)
+		var shape := OccluderPolygon2D.new()
+		shape.polygon = PackedVector2Array([top_left, Vector2(bottom_right.x, top_left.y),
+				bottom_right, Vector2(top_left.x, bottom_right.y)])
+		var occluder := LightOccluder2D.new()
+		occluder.name = OCCLUDER_NAME
+		occluder.occluder = shape
+		walls.add_child(occluder)
 
 func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
 	var light := PointLight2D.new()
@@ -113,6 +157,9 @@ func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
 	# shows its texels as steps, so lights blend between them instead.
 	light.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	light.color = color
+	# Soft-edged shadows, so a wall's shadow fades in rather than cutting a hard line.
+	light.shadow_filter = Light2D.SHADOW_FILTER_PCF5
+	light.shadow_filter_smooth = 2.0
 	light.set_meta(&"kind", kind)
 	owner_node.add_child.call_deferred(light)
 	light.ready.connect(_apply_light.bind(light), CONNECT_ONE_SHOT)
@@ -137,6 +184,7 @@ func _apply_light(light: PointLight2D) -> void:
 			light.energy = Tuning.light_small_energy
 	light.energy *= 1.0 - _brightness_lift
 	light.enabled = Tuning.lighting_enabled
+	light.shadow_enabled = Tuning.light_shadows
 	# The texture's radius is half its width; undo any scale the owner has.
 	var parent_scale := (light.get_parent() as Node2D).global_scale.x if light.get_parent() is Node2D else 1.0
 	light.texture_scale = radius * 2.0 / TEXTURE_SIZE / maxf(absf(parent_scale), 0.01)

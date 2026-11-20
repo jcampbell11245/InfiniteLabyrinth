@@ -61,3 +61,20 @@ func test_dropped_loot_does_not_glow() -> void:
 	expect(!arrow.has_node(NodePath(CaveLighting.LIGHT_NAME)), "a dropped arrow has no light")
 	coin.queue_free()
 	arrow.queue_free()
+
+func test_inner_walls_block_light() -> void:
+	await boot_floor()
+	await tree.process_frame
+	var checked := false
+	for room: Room in (tree.current_scene as Overworld).rooms_by_id.values():
+		var walls := room.get_node_or_null("InnerWalls") as TileMap
+		if walls == null || walls.get_used_cells(0).is_empty():
+			continue
+		var occluders := walls.find_children(CaveLighting.OCCLUDER_NAME + "*", "LightOccluder2D", false, false)
+		expect(!occluders.is_empty(), "%s's inner walls cast shadows" % room.name)
+		checked = true
+	expect(checked, "the floor has a room with inner walls to check")
+	await enter_room(cave_room_id())
+	expect(player_light().shadow_enabled, "the player's light is blocked by walls")
+	autoload("Tuning").set_value("light_shadows", false)
+	expect(!player_light().shadow_enabled, "turning shadows off lets light through walls")

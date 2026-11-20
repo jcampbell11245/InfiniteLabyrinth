@@ -210,6 +210,7 @@ var cave_brightness := 0.75 # 0..1: how much of its colour the unlit cave keeps
 var light_player_radius := 220.0 # Pixels from the player to where their light fades out
 var light_player_energy := 0.5 # Strength of the player's light (added to cave_brightness where it falls)
 var light_projectile_radius := 40.0 # Pixels; glow round fireballs and lasers
+var light_shadows := true # Inner walls block the lights and cast shadows
 var light_small_energy := 0.8 # Strength of the fireball and laser glows
 
 # --- Game feel ---
@@ -404,6 +405,7 @@ const FIELDS := [
 
 	["Lighting", "lighting_enabled", "Lighting on", 0, 0, 0, "new (CaveLighting)"],
 	["Lighting", "cave_brightness", "Cave brightness", 0, 1, 0.05, "new (CaveLighting.ambient_color)"],
+	["Lighting", "light_shadows", "Walls cast shadows", 0, 0, 0, "new (CaveLighting)"],
 	["Lighting", "light_player_radius", "Player light radius (px)", 0, 400, 5, "new (CaveLighting)"],
 	["Lighting", "light_player_energy", "Player light strength", 0, 3, 0.05, "new (CaveLighting)"],
 	["Lighting", "light_projectile_radius", "Fireball glow radius (px)", 0, 200, 2, "new (CaveLighting)"],
