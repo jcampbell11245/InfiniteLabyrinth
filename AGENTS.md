@@ -82,6 +82,31 @@ See README → Layout for the folder map. The parts you'll touch most:
 - **HUD**: `src/world/GameCamera.tscn` (HudLayer is scaled 5×, so HUD units are 5 screen
   pixels; the screen is 376 units across) and the scripts in `src/ui/hud/`.
 
+## Assets
+
+Every asset in the finished game is either **hand made** or from an **open-source library**
+whose licence allows it. That covers sprites, textures, tiles, icons, animations, sound
+effects, music and fonts. It doesn't cover work done in code or simple edits of existing
+assets:
+
+- particle effects, tints, flashes and other shader or code-drawn effects;
+- slices, flips, crops and recolours of existing sprites;
+- sounds that are pitched, reversed, filtered or spliced versions of existing sounds.
+
+A change often needs an asset before the real one exists. When it does, make a **temporary
+placeholder** and use it, so the work isn't blocked. You can draw it, generate it by
+script, or reuse another asset tinted or scaled. Then, in the same change, **list it in
+[PENDING_ASSETS.md](PENDING_ASSETS.md)** with its name, what it's used for, and a preview: a
+PNG for still art, a GIF for an animation, or a link to the sound file. Previews go in
+`docs/pending_assets/`. Say in the pull request which placeholders you added. An asset you
+made yourself (by AI, script or synthesis) is always a placeholder: never record it as
+final art.
+
+When a real asset replaces a placeholder, delete its row and preview from
+PENDING_ASSETS.md, and record where the real one came from. For a library asset, that's its
+licence and link. For a hand-made one, say who made it. Sounds go in
+`assets/sfx/SOURCE.txt`, everything else in the PR and commit message.
+
 ## Conventions
 
 - **GDScript**: follow the official style guide and type everything statically (the
@@ -99,9 +124,9 @@ See README → Layout for the folder map. The parts you'll touch most:
   `ext_resource` when nothing uses it any more, and run the smoke test after. Prefer the
   Godot editor for anything structural. Don't let a different Godot version re-save them.
 - **Line endings are LF** (`.gitattributes`). Scripts that rewrite files must keep them.
-- **Assets**: reuse what exists before adding. A new or derived sound gets a line in
-  `assets/sfx/SOURCE.txt` saying where it came from (licence) or how it was made. Keep
-  pixel art on whole pixels; when you edit art, say so in the PR.
+- **Assets**: follow [Assets](#assets) above. Reuse what exists before adding. A new or
+  derived sound gets a line in `assets/sfx/SOURCE.txt` saying where it came from (licence)
+  or how it was made. Keep pixel art on whole pixels; when you edit art, say so in the PR.
 - **Docs**: update README.md when behaviour a player or developer would notice changes
   (controls, room creator, debug menu, setup), and BUGS.md when you find or fix a bug.
 - **Don't commit** `builds/` (exports), `.godot/`, screenshots of your own checks, or
