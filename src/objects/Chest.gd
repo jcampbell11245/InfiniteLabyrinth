@@ -1,6 +1,9 @@
 extends Node2D
 
-# Key chest: opens and gives a key the first time the player's sword hits it.
+# Key chest: opens the first time the player's sword hits it and releases a key that
+# floats toward the player. Collecting the key adds it and extends the level timer.
+
+const KeyPickup := preload("res://src/effects/KeyPickup.gd")
 
 @export var direction := "down" # Which way the chest faces, an animation suffix
 
@@ -14,8 +17,14 @@ func _on_area_2d_area_entered(area: Area2D) -> void:
 		Juice.play($Open, 0.04)
 		open = true
 		$AnimatedSprite2D.animation = "open_" + direction
-		Game.add_keys(1)
+		_release_key()
 		_burst_open()
+
+# Spawns the key pickup so it can float around before being collected.
+func _release_key() -> void:
+	var pickup: Node2D = KeyPickup.new()
+	get_parent().add_child(pickup)
+	pickup.global_position = global_position
 
 # Squash and stretch, a spray of gold and a small thump.
 func _burst_open() -> void:
