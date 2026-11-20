@@ -129,6 +129,23 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	expect(reset.position.y + reset.size.y <= dialog.size.y + 0.01 \
 		&& back.position.y + back.size.y <= dialog.size.y + 0.01,
 		"the buttons fit inside the dialog")
+	var key_header := controls.get_node("Panel/KeyHeader") as Control
+	var pad_header := controls.get_node("Panel/PadHeader") as Control
+	var first_row := rows.get_child(0) as Control
+	var key_column := first_row.get_node("Key") as Control
+	var pad_column := first_row.get_node("Pad") as Control
+	expect(absf(key_header.get_global_rect().get_center().x
+		- key_column.get_global_rect().get_center().x) < 0.5,
+		"KEYBOARD is centred over the keyboard column")
+	expect(absf(pad_header.get_global_rect().get_center().x
+		- pad_column.get_global_rect().get_center().x) < 0.5,
+		"CONTROLLER is centred over the controller column")
+	for path: String in ["Panel/Reset", "Panel/Back"]:
+		var footer := controls.get_node(path) as Button
+		var footer_font := footer.get_theme_font(&"font")
+		var footer_width := footer_font.get_string_size(footer.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+			footer.get_theme_font_size(&"font_size")).x
+		expect(footer_width <= footer.size.x, "%s label is not clipped" % footer.name)
 	for child: Node in rows.get_children():
 		var row := child as Control
 		expect(row.position.y >= -0.01 && row.position.y + row.size.y <= rows.size.y + 0.01,
@@ -265,7 +282,14 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 	panel.show()
 	panel.controls_button.pressed.emit()
 	var controls := panel.controls_panel
-	var labels: Array[String] = [controls.status_label.text]
+	var labels: Array[String] = [
+		(controls.get_node("Panel/Heading") as Label).text,
+		(controls.get_node("Panel/KeyHeader") as Label).text,
+		(controls.get_node("Panel/PadHeader") as Label).text,
+		controls.status_label.text,
+		(controls.get_node("Panel/Reset") as Button).text,
+		(controls.get_node("Panel/Back") as Button).text,
+	]
 	for child: Node in controls.get_node("Panel/Rows").get_children():
 		var row := child as Control
 		for button_name: String in ["Key", "Pad"]:

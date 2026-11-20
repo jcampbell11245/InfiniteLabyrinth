@@ -88,6 +88,8 @@ func _build_rows() -> void:
 		var row := HBoxContainer.new()
 		row.name = "Row_%s" % action
 		row.custom_minimum_size.y = 20.0
+		# A default gap would shift the buttons away from the centred column headers.
+		row.add_theme_constant_override(&"separation", 0)
 		var label := Label.new()
 		label.text = Bindings.action_label(action)
 		label.custom_minimum_size.x = 200.0
