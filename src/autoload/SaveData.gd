@@ -15,6 +15,8 @@ var time_level := 0 # Extra seconds on the level timer
 var looting_level := 0 # Extra coins per kill
 var music_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
 var sfx_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
+# Persistent input choices, owned by the Bindings autoload: action -> {key, button}
+var bindings := {}
 # Testing aid, debug builds only: when above 0, the level timer starts at this many
 # seconds instead of the upgrade-based limit. Set it by hand in the save file under
 # [debug] time_limit; it survives saves and is ignored by exported release builds.
@@ -39,6 +41,9 @@ func load_from_disk() -> void:
 	looting_level = file.get_value("upgrades", "looting", looting_level)
 	music_volume = clampf(float(file.get_value("audio", "music_volume", music_volume)), 0.0, 1.0)
 	sfx_volume = clampf(float(file.get_value("audio", "sfx_volume", sfx_volume)), 0.0, 1.0)
+	var saved_bindings: Variant = file.get_value("controls", "bindings", {})
+	if saved_bindings is Dictionary:
+		bindings = saved_bindings as Dictionary
 	debug_time_limit = file.get_value("debug", "time_limit", debug_time_limit)
 
 # Applies the saved linear sliders to their buses. Muting at zero avoids relying on a
@@ -75,11 +80,13 @@ func save() -> void:
 	file.set_value("upgrades", "looting", looting_level)
 	file.set_value("audio", "music_volume", music_volume)
 	file.set_value("audio", "sfx_volume", sfx_volume)
+	file.set_value("controls", "bindings", bindings)
 	if debug_time_limit > 0:
 		file.set_value("debug", "time_limit", debug_time_limit)
 	file.save(PATH)
 
-# Clears progress only. Audio levels are a preference, so they survive a run reset.
+# Clears progress only. Audio levels and control bindings are preferences, so they survive
+# a run reset.
 func reset() -> void:
 	floor_number = 1
 	coins = 0

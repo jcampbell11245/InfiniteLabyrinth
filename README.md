@@ -26,17 +26,24 @@ staggered. A red glint can't be parried: roll behind it. Hold the sword button t
 a **spin attack**, which also breaks up group rushes.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
-volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.
+volume separately, or open **Controls** to change keys and controller buttons. In Controls,
+select a KEY or PAD button and press the new input; Escape cancels the capture. A key or
+button can only belong to one action, and **DEFAULTS** restores the starting layout. Bindings
+are saved with the volumes and survive a run reset. The arrow keys, left stick and the extra
+attack keys stay active alongside your chosen inputs. In the pause menu, the pause key or
+**Back** returns to the previous page, then to the pause buttons.
 
 | Action | Keyboard | Controller |
 |---|---|---|
-| Move | WASD or arrow keys | D-pad |
+| Move | WASD or arrow keys | D-pad or left stick |
 | Sword (hold to charge a spin) | J or Z | X / Square |
 | Bow (hold to charge) | K or X | Y / Triangle |
-| Roll | Space | RB / R1 |
+| Roll | Space | RB / R1 or right trigger |
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
+
+Every action in the table except F1 and F2 can be rebound in Options → Controls.
 
 ## Setup
 
@@ -285,9 +292,10 @@ See [BUGS.md](BUGS.md) and the open issues.
 ```
 assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts
 src/autoload/  Tuning (every gameplay number, edited live by the debug menu), SaveData (save
-               file), Game (coins, keys, game-wide signals and references to the player,
-               camera and rooms), Music, Juice (hit-stop, slow motion, screen shake, sound
-               pitch variation, flashes and particle bursts), DebugMenu
+               file), Bindings (keyboard/controller bindings applied to InputMap), Game (coins,
+               keys, game-wide signals and references to the player, camera and rooms), Music,
+               Juice (hit-stop, slow motion, screen shake, sound pitch variation, flashes and
+               particle bursts), DebugMenu
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script, the level timer, curses
 src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), RangedEnemy
@@ -305,7 +313,7 @@ src/world/     floor layout (WorldGenerator), building it (Overworld), room scri
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
 src/ui/        HUD widgets (timer, counters, minimap) and menus (title, boot, pause,
-               upgrades, game over)
+               upgrades, game over); OptionsPanel holds the audio and controls pages
 src/audio/     enemy death sound players
 tools/         smoke test, test runner and tests, check script, screenshot tool
 .github/       pull request checks (workflows) and the Godot setup they share
