@@ -228,7 +228,7 @@ player from spikes and shocks.
 |---|---|
 | Exposed wires | Rest, spark as a warning, then go live (with an enemy-style twinkle) and shock whoever is on them. Swing the sword into them while live to break them for good. |
 | Pressure plate | Clicks down when stepped on (and pops back up as soon as it's left), then goes live like wires and re-arms. Breaks the same way. |
-| Spikes | Hurt on stepping on, and again every second while stood on. Rolling right over them in one roll is safe; a roll that ends on them isn't. |
+| Spikes | Lie flat until stepped on, then show their tips for half a second and stab up. Up, they hurt on stepping on and again every second while stood on, and stay up until a second after everyone's off. Rolling right over them in one roll doesn't set them off; a roll that ends on them does. |
 | Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
 | Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
 | Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Enemies caught in it walk as usual inside that area, run on the spot at its edge, and after a couple of seconds there are slowly hauled back to the middle; the third time they reach the edge they tear free. It never wears off: three rolls break free, counted down by a bar over the player's head. |

@@ -13,11 +13,16 @@ extends TileMap
 # which cell:
 #
 #   Wires     cycle: resting, sparking (the warning), live (shocks whoever is on them).
+#             The sparking and live frames are animated (ANIMATIONS).
 #   Plate     is stepped on, clicks down, then goes live like wires, then re-arms.
 #             Swinging the sword into live wires or a live plate breaks it for good. Both
 #             twinkle as they go live, as an enemy does when its parry window opens.
-#   Spikes    hurt on stepping on, and again every Tuning.spike_interval while stood on.
-#   Cracked   cracks when stood on, then opens into a pit, then mends.
+#   Spikes    lie flat until stepped on, then show their tips (the warning) for
+#             Tuning.spike_warning_time and stab up. Up, they hurt whoever is on them, on
+#             stepping on and again every Tuning.spike_interval, and stay up while anyone
+#             is on them; Tuning.spike_up_time after the last one leaves, they go back down.
+#   Cracked   cracks when stood on (two frames, deeper halfway), then opens into a pit,
+#             then mends.
 #   Paste     holds whoever steps in within Tuning.paste_reach of its edge, pulling them back
 #             when they stop. It never wears off: the player breaks free with
 #             Tuning.paste_rolls_to_escape rolls, counted down by a bar over their head
@@ -36,7 +41,9 @@ extends TileMap
 # and rolling is the way out of paste. Enemies are hurt and moved the same way, but walk
 # round the dangerous tiles when they can (RoomNav reads avoided_cells()).
 
-# Atlas columns of assets/sprites/tiles/special_tiles.png.
+# Atlas columns of assets/sprites/tiles/special_tiles.png. A tile is painted with the first
+# frame of its kind; frames after TELEPORT_4 are only ever shown by the rules, and go on the
+# end so the columns rooms are painted with never move.
 enum Frame {
 	WIRES, WIRES_SPARK, WIRES_LIVE, WIRES_BROKEN,
 	SPIKES,
@@ -46,7 +53,19 @@ enum Frame {
 	PASTE,
 	SLOW, FAST,
 	TELEPORT_1, TELEPORT_2, TELEPORT_3, TELEPORT_4,
+	WIRES_SPARK_2, WIRES_SPARK_3, WIRES_SPARK_4, WIRES_SPARK_5, WIRES_SPARK_6,
+	WIRES_LIVE_2, WIRES_LIVE_3,
+	SPIKES_TIPS, SPIKES_STAB, SPIKES_UP,
+	CRACKING_2,
 }
+# Frames that loop while shown, ANIMATION_FPS a second: the first frame -> the whole loop.
+const ANIMATIONS := {
+	Frame.WIRES_SPARK: [Frame.WIRES_SPARK, Frame.WIRES_SPARK_2, Frame.WIRES_SPARK_3,
+		Frame.WIRES_SPARK_4, Frame.WIRES_SPARK_5, Frame.WIRES_SPARK_6],
+	Frame.WIRES_LIVE: [Frame.WIRES_LIVE, Frame.WIRES_LIVE_2, Frame.WIRES_LIVE_3],
+}
+const ANIMATION_FPS := 10.0
+const SPIKE_STAB_TIME := 0.1 # Seconds the spikes show their stab frame on coming up
 const TEXTURE := preload("res://assets/sprites/tiles/special_tiles.png")
 const NODE_NAME := "SpecialTiles"
 const SCENE := "res://src/world/tiles/SpecialTiles.tscn"
@@ -157,7 +176,9 @@ static func is_teleport(frame: int) -> bool:
 static func icon(frame: int) -> AtlasTexture:
 	var texture := AtlasTexture.new()
 	texture.atlas = TEXTURE
-	texture.region = Rect2(frame * Room.CELL_SIZE, 0, Room.CELL_SIZE, Room.CELL_SIZE)
+	# Flat spikes would read as a grate, so their button shows them up.
+	var shown := Frame.SPIKES_UP if frame == Frame.SPIKES else frame
+	texture.region = Rect2(shown * Room.CELL_SIZE, 0, Room.CELL_SIZE, Room.CELL_SIZE)
 	return texture
 
 # The room's layer, made (empty) if it has none yet.
@@ -397,6 +418,11 @@ func _update_tile(cell: Vector2i, delta: float) -> void:
 		Frame.WIRES: _update_wires(cell, tile, delta)
 		Frame.PLATE: _update_plate(cell, tile, delta)
 		Frame.CRACKED: _update_cracked(cell, tile, delta)
+		Frame.SPIKES: _update_spikes(cell, tile, delta)
+	if tile.frame in [Frame.WIRES, Frame.CRACKED, Frame.SPIKES]: # Their frames change with time
+		var frame := _frame_for(tile)
+		if get_cell_atlas_coords(0, cell).x != frame:
+			_show_frame(cell, frame)
 
 
 # A plate is drawn raised whenever nobody's standing on it (even while it re-arms), and
@@ -449,6 +475,23 @@ func _update_cracked(cell: Vector2i, tile: Dictionary, delta: float) -> void:
 	elif tile.phase == Phase.LIVE:
 		_mend_hole(cell)
 
+# Up while anyone's on them (_occupied is still last frame's here), then down a while after.
+func _update_spikes(cell: Vector2i, tile: Dictionary, delta: float) -> void:
+	if tile.phase == Phase.RESTING:
+		return # Waits to be stepped on (_step_on)
+	if tile.phase == Phase.LIVE && _occupied.has(cell):
+		tile.left = Tuning.spike_up_time
+		return
+	tile.left -= delta
+	if tile.left > 0:
+		return
+	if tile.phase == Phase.WARNING:
+		tile.cycle += 1
+		tile.live_at = _time
+		_set_phase(cell, Phase.LIVE, Tuning.spike_up_time)
+	else:
+		_set_phase(cell, Phase.RESTING)
+
 func _go_live(cell: Vector2i) -> void:
 	var tile: Dictionary = _tiles[cell]
 	tile.cycle += 1
@@ -491,16 +534,27 @@ func _set_phase(cell: Vector2i, phase: Phase, left := 0.0) -> void:
 		if nav != null:
 			nav.set_avoided(cell, false)
 
+# The frame `tile` shows now: by its phase, then by how far into the phase it is.
 func _frame_for(tile: Dictionary) -> int:
 	var phase: Phase = tile.phase
+	var frame: int = tile.frame
 	match tile.frame:
 		Frame.WIRES:
-			return [Frame.WIRES, Frame.WIRES_SPARK, Frame.WIRES_LIVE, Frame.WIRES_BROKEN][phase]
+			frame = [Frame.WIRES, Frame.WIRES_SPARK, Frame.WIRES_LIVE, Frame.WIRES_BROKEN][phase]
 		Frame.PLATE:
-			return [Frame.PLATE, Frame.PLATE_DOWN, Frame.PLATE_LIVE, Frame.PLATE_BROKEN][phase]
+			frame = [Frame.PLATE, Frame.PLATE_DOWN, Frame.PLATE_LIVE, Frame.PLATE_BROKEN][phase]
 		Frame.CRACKED:
-			return [Frame.CRACKED, Frame.CRACKING, Frame.HOLE, Frame.CRACKED][phase]
-	return tile.frame
+			frame = [Frame.CRACKED, Frame.CRACKING, Frame.HOLE, Frame.CRACKED][phase]
+			if phase == Phase.WARNING && tile.left < Tuning.crack_time / 2.0:
+				frame = Frame.CRACKING_2
+		Frame.SPIKES:
+			frame = [Frame.SPIKES, Frame.SPIKES_TIPS, Frame.SPIKES_UP, Frame.SPIKES][phase]
+			if phase == Phase.LIVE && _time - float(tile.get("live_at", 0.0)) < SPIKE_STAB_TIME:
+				frame = Frame.SPIKES_STAB
+	if ANIMATIONS.has(frame):
+		var loop: Array = ANIMATIONS[frame]
+		frame = loop[floori(_time * ANIMATION_FPS) % loop.size()]
+	return frame
 
 func _show_frame(cell: Vector2i, frame: int) -> void:
 	if frame < 0:
@@ -510,13 +564,14 @@ func _show_frame(cell: Vector2i, frame: int) -> void:
 
 # --- What happens to whoever stands on them ---
 
-# A body's own state: the cell its feet were on, when its spikes next hurt, the wire or
+# A body's own state: the cell its feet were on, when its spikes next hurt, the spikes
+# cycle (cell -> times they've come up) that last hurt it, the wire or
 # plate cycle that last shocked it, the paste holding it, and the teleporter it arrived on
 # (it has to step off before that one works again).
 func _record(body: Node2D) -> Dictionary:
 	var id := body.get_instance_id()
 	if !_bodies.has(id):
-		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, shocked = {}, stuck = null,
+		_bodies[id] = {cell = Vector2i(-1, -1), spike_next = 0.0, spiked = {}, shocked = {}, stuck = null,
 			paste_free_until = 0.0, arrived = null,
 			stretching = false, snapped = false, snaps = 0, rolls = 0, was_rolling = false,
 			strain = 0.0, hauling = false, edges = 0}
@@ -602,7 +657,12 @@ func _step_on(body: CharacterBody2D, record: Dictionary, cell: Vector2i, feet: V
 	var tile: Dictionary = _tiles[cell]
 	match tile.frame:
 		Frame.SPIKES:
-			if !rolling && (entered || _time >= record.spike_next):
+			# A roll passes over flat spikes without setting them off.
+			if tile.phase == Phase.RESTING && !rolling:
+				_set_phase(cell, Phase.WARNING, Tuning.spike_warning_time)
+			elif tile.phase == Phase.LIVE && !rolling && (entered || _time >= record.spike_next \
+					|| record.spiked.get(cell, -1) != tile.cycle):
+				record.spiked[cell] = tile.cycle
 				record.spike_next = _time + Tuning.spike_interval
 				_hurt(body, Tuning.spike_damage)
 		Frame.WIRES, Frame.PLATE:

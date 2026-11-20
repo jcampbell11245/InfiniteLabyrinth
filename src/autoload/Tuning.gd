@@ -173,8 +173,10 @@ var pickup_collect_distance := 6.0 # Pixels; raise it for a coin magnet
 var pickup_home_accel := 900.0 # Pixels/sec² pickups fly towards the player
 
 # --- Special floor tiles (SpecialTiles) ---
-var spike_damage := 0.5 # Damage on stepping onto spikes, and again each spike_interval stood on them
+var spike_damage := 0.5 # Damage on stepping onto raised spikes, and again each spike_interval stood on them
 var spike_interval := 1.0 # Seconds between spike hits while standing on them
+var spike_warning_time := 0.5 # Seconds flat spikes show their tips after being stepped on, before stabbing up
+var spike_up_time := 1.0 # Seconds spikes stay up after the last one standing on them leaves
 var shock_damage := 1.0 # Damage from live wires or a live pressure plate
 var shock_daze := 0.3 # Seconds the player can't act after a shock
 var wire_idle_time := 2.5 # Seconds exposed wires rest between shocks
@@ -367,6 +369,8 @@ const FIELDS := [
 
 	["Tiles", "spike_damage", "Spike damage", 0, 5, 0.25, "new (SpecialTiles)"],
 	["Tiles", "spike_interval", "Spike hit interval (s)", 0.1, 5, 0.05, "new (SpecialTiles)"],
+	["Tiles", "spike_warning_time", "Spikes warning (s)", 0, 3, 0.05, "new (SpecialTiles)"],
+	["Tiles", "spike_up_time", "Spikes stay up (s)", 0, 5, 0.05, "new (SpecialTiles)"],
 	["Tiles", "shock_damage", "Shock damage", 0, 5, 0.25, "new (SpecialTiles)"],
 	["Tiles", "shock_daze", "Shock daze (s)", 0, 3, 0.05, "new (SpecialTiles)"],
 	["Tiles", "wire_idle_time", "Wires rest (s)", 0.1, 20, 0.1, "new (SpecialTiles)"],

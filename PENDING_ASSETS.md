@@ -25,10 +25,7 @@ line in `assets/sfx/SOURCE.txt`.
 
 | Name | Used for | Preview |
 | --- | --- | --- |
-| `assets/sprites/tiles/special_tiles.png` frames 0-3 (`WIRES`, `WIRES_SPARK`, `WIRES_LIVE`, `WIRES_BROKEN`) | Exposed-wire trap: resting, sparking, live, broken by a sword ([SpecialTiles.gd](src/world/SpecialTiles.gd)) | ![wires](docs/pending_assets/tile_wires.png) ![wires cycle](docs/pending_assets/tile_wires_cycle.gif) |
-| `special_tiles.png` frame 4 (`SPIKES`) | Spike trap | ![spikes](docs/pending_assets/tile_spikes.png) |
-| `special_tiles.png` frames 5-7 (`CRACKED`, `CRACKING`, `HOLE`) | Cracked floor that gives way into a pit and then mends | ![cracked](docs/pending_assets/tile_cracked.png) ![cracked cycle](docs/pending_assets/tile_cracked_cycle.gif) |
-| `special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
+| `assets/sprites/tiles/special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
 | `special_tiles.png` frames 9-12 (`PLATE`, `PLATE_DOWN`, `PLATE_LIVE`, `PLATE_BROKEN`) | Pressure plate: armed, pressed, live, broken | ![plate](docs/pending_assets/tile_plate.png) ![plate cycle](docs/pending_assets/tile_plate_cycle.gif) |
 | `special_tiles.png` frame 13 (`PASTE`) | Thermal paste that holds whoever steps in | ![paste](docs/pending_assets/tile_paste.png) |
 | `special_tiles.png` frames 14-15 (`SLOW`, `FAST`) | Slow and speed tiles | ![slow and fast](docs/pending_assets/tile_slow_fast.png) |
