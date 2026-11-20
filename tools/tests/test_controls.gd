@@ -93,8 +93,20 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	expect(host_rect.encloses(dialog_rect), "the controls dialog stays inside the options panel")
 	expect(dialog_rect.has_point(host_rect.position + host_rect.size / 2.0),
 		"the controls dialog is centred in the options panel")
+	var dialog := controls.get_node("Panel") as Control
 	var rows: VBoxContainer = controls.get_node("Panel/Rows")
+	var status := controls.get_node("Panel/Status") as Control
+	var reset := controls.get_node("Panel/Reset") as Control
+	var back := controls.get_node("Panel/Back") as Control
 	expect(rows.get_child_count() == autoload("Bindings").ACTIONS.size(), "one row per action")
+	expect(rows.position.y + rows.size.y <= status.position.y + 0.01,
+		"the last bind row does not overlap the status caption")
+	expect(status.position.y + status.size.y <= reset.position.y + 0.01 \
+		&& status.position.y + status.size.y <= back.position.y + 0.01,
+		"the status caption does not overlap the buttons")
+	expect(reset.position.y + reset.size.y <= dialog.size.y + 0.01 \
+		&& back.position.y + back.size.y <= dialog.size.y + 0.01,
+		"the buttons fit inside the dialog")
 	for child: Node in rows.get_children():
 		var row := child as Control
 		expect(row.position.y >= -0.01 && row.position.y + row.size.y <= rows.size.y + 0.01,

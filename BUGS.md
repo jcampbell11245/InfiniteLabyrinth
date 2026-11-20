@@ -4,6 +4,9 @@
 
 ## Fixed
 
+- The Controls page's status caption overlapped the last bind row. The row container grew
+  past its authored height to fit the buttons, so the caption is now lower in a taller
+  dialog with clear gaps above and below it.
 - The Controls page opened off-screen in the bottom-right corner. Its instanced root was
   anchored to the options panel's bottom-right while keeping its own 704x396 size, so the
   dialog started outside the window. It now fills the options panel from its top-left.

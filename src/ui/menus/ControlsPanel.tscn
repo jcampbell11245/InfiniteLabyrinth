@@ -32,9 +32,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -280.0
-offset_top = -160.0
+offset_top = -175.0
 offset_right = 280.0
-offset_bottom = 160.0
+offset_bottom = 175.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Heading" type="Label" parent="Panel" unique_id=1726394504]
@@ -75,15 +75,15 @@ layout_mode = 0
 offset_left = 20.0
 offset_top = 50.0
 offset_right = 540.0
-offset_bottom = 250.0
+offset_bottom = 280.0
 theme_override_constants/separation = 0
 
 [node name="Status" type="Label" parent="Panel" unique_id=1726394508]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 256.0
+offset_top = 286.0
 offset_right = 540.0
-offset_bottom = 276.0
+offset_bottom = 306.0
 theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
 theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 12
@@ -92,9 +92,9 @@ text = "PRESS A KEY OR PAD BUTTON - ESC CANCELS"
 [node name="Reset" type="Button" parent="Panel" unique_id=1726394509]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 282.0
+offset_top = 312.0
 offset_right = 180.0
-offset_bottom = 312.0
+offset_bottom = 342.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
 theme_override_fonts/font = ExtResource("2")
@@ -104,9 +104,9 @@ text = "DEFAULTS"
 [node name="Back" type="Button" parent="Panel" unique_id=1726394510]
 layout_mode = 0
 offset_left = 380.0
-offset_top = 282.0
+offset_top = 312.0
 offset_right = 540.0
-offset_bottom = 312.0
+offset_bottom = 342.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
 theme_override_fonts/font = ExtResource("2")
