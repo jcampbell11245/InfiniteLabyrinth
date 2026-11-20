@@ -210,8 +210,7 @@ var cave_brightness := 0.75 # 0..1: how much of its colour the unlit cave keeps
 var light_player_radius := 220.0 # Pixels from the player to where their light fades out
 var light_player_energy := 0.5 # Strength of the player's light (added to cave_brightness where it falls)
 var light_projectile_radius := 40.0 # Pixels; glow round fireballs and lasers
-var light_pickup_radius := 18.0 # Pixels; glow round dropped arrows (coins don't glow)
-var light_small_energy := 0.8 # Strength of the projectile and arrow pickup glows
+var light_small_energy := 0.8 # Strength of the fireball and laser glows
 
 # --- Game feel ---
 var game_speed := 1.0 # Engine.time_scale outside hit-stop
@@ -408,8 +407,7 @@ const FIELDS := [
 	["Lighting", "light_player_radius", "Player light radius (px)", 0, 400, 5, "new (CaveLighting)"],
 	["Lighting", "light_player_energy", "Player light strength", 0, 3, 0.05, "new (CaveLighting)"],
 	["Lighting", "light_projectile_radius", "Fireball glow radius (px)", 0, 200, 2, "new (CaveLighting)"],
-	["Lighting", "light_pickup_radius", "Dropped arrow glow radius (px)", 0, 100, 1, "new (CaveLighting)"],
-	["Lighting", "light_small_energy", "Fireball / arrow glow strength", 0, 3, 0.05, "new (CaveLighting)"],
+	["Lighting", "light_small_energy", "Fireball glow strength", 0, 3, 0.05, "new (CaveLighting)"],
 
 	["Feel", "game_speed", "Game speed", 0.1, 3, 0.05, "new (Engine.time_scale)"],
 	["Feel", "hitstop_enabled", "Hit-stop", 0, 0, 0, "new (Juice.hitstop)"],

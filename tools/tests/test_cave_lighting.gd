@@ -49,7 +49,7 @@ func test_tuning_applies_live() -> void:
 	expect_equal(darkness().color, Color.WHITE, "lighting off shows the cave at full brightness")
 	expect(!player_light().enabled, "lighting off turns the player's light off")
 
-func test_coins_do_not_glow_but_arrows_do() -> void:
+func test_dropped_loot_does_not_glow() -> void:
 	await boot_floor()
 	var coin: Node2D = (load("res://src/effects/CoinPickup.gd") as GDScript).new()
 	var arrow: Node2D = (load("res://src/effects/ArrowPickup.gd") as GDScript).new()
@@ -58,6 +58,6 @@ func test_coins_do_not_glow_but_arrows_do() -> void:
 	room.add_child(arrow)
 	await tree.process_frame
 	expect(!coin.has_node(NodePath(CaveLighting.LIGHT_NAME)), "a dropped coin has no light")
-	expect(arrow.has_node(NodePath(CaveLighting.LIGHT_NAME)), "a dropped arrow glows")
+	expect(!arrow.has_node(NodePath(CaveLighting.LIGHT_NAME)), "a dropped arrow has no light")
 	coin.queue_free()
 	arrow.queue_free()

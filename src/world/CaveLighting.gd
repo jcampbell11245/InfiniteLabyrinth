@@ -4,15 +4,14 @@ extends Node
 # Darkens the cave and lights it with a few soft 2D lights. Overworld adds one to every
 # floor. A CanvasModulate dims everything drawn on the world canvas (the HUD sits on its own
 # CanvasLayers, so it stays bright), and PointLight2Ds add light back: a warm one carried by
-# the player, and small coloured ones on fireballs, lasers and dropped arrows so they stand
-# out in the dark. Coins don't glow. Lights are attached as nodes spawn, so nothing else needs to know about
+# the player, and small coloured ones on fireballs and lasers so they stand out in the
+# dark. Dropped loot doesn't glow. Lights are attached as nodes spawn, so nothing else needs to know about
 # lighting. Every number is in Tuning (the F2 menu's Lighting tab) and applies live.
 #
 # The start and end rooms stay fully lit: walking into one fades the darkness (and the
 # lights, which would only wash it out) away, and walking out brings them back.
 
 const LIGHT_NAME := &"CaveLight"
-const ARROW_PICKUP_SCRIPT := preload("res://src/effects/ArrowPickup.gd")
 # Projectile scenes that glow; arrows don't.
 const GLOWING_PROJECTILES := ["Fireball", "Laser"]
 # Pixels across the generated light texture. Big, because the player's light stretches it
@@ -23,9 +22,8 @@ const FALLOFF_STOPS := 32 # Gradient points along the falloff curve; few points 
 const PLAYER_COLOR := Color(1.0, 0.86, 0.62) # Torch-warm
 const FIREBALL_COLOR := Color(1.0, 0.55, 0.2)
 const LASER_COLOR := Color(1.0, 0.3, 0.3)
-const PICKUP_COLOR := Color(1.0, 0.9, 0.5)
 
-enum Kind { PLAYER, PROJECTILE, PICKUP }
+enum Kind { PLAYER, PROJECTILE }
 
 const BRIGHT_ROOMS := [Constants.START_ROOM, Constants.END_ROOM]
 const BRIGHT_FADE_TIME := 0.5 # Real seconds the darkness takes to lift or fall on changing rooms
@@ -106,8 +104,6 @@ func _on_node_added(node: Node) -> void:
 		var scene := node.scene_file_path.get_file().get_basename()
 		if scene in GLOWING_PROJECTILES:
 			_add_light(node, Kind.PROJECTILE, LASER_COLOR if scene == "Laser" else FIREBALL_COLOR)
-	elif node.get_script() == ARROW_PICKUP_SCRIPT:
-		_add_light(node, Kind.PICKUP, PICKUP_COLOR)
 
 func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
 	var light := PointLight2D.new()
@@ -136,11 +132,8 @@ func _apply_light(light: PointLight2D) -> void:
 		Kind.PLAYER:
 			radius = Tuning.light_player_radius
 			light.energy = Tuning.light_player_energy
-		Kind.PROJECTILE:
-			radius = Tuning.light_projectile_radius
-			light.energy = Tuning.light_small_energy
 		_:
-			radius = Tuning.light_pickup_radius
+			radius = Tuning.light_projectile_radius
 			light.energy = Tuning.light_small_energy
 	light.energy *= 1.0 - _brightness_lift
 	light.enabled = Tuning.lighting_enabled
