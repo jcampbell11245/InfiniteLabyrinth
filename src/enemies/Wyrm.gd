@@ -21,7 +21,8 @@ extends Enemy
 #
 # Fireball (the "shoot" animation): it rears back and holds its breath, rooted and glowing
 # faster and faster, for Tuning.wyrm_fireball_charge_time, long enough for the player to
-# close in; a hit that lands then chokes off the fireball and stuns it like a parry. A glint at its mouth comes a parry
+# close in; a hit that lands while it rears back or holds its breath chokes off the
+# fireball and stuns it like a parry. A glint at its mouth comes a parry
 # window before it breathes. A wyrm's fireball flies straight; a wyvern's homes like a
 # wizard's (homing_fireball). Either can be hit back with the sword, and then homes on the
 # dragon that breathed it; dragons don't bat it back again the way wizards do. Hit back
@@ -46,7 +47,8 @@ extends Enemy
 #
 # Dragons check in with the room's AttackCoordinator, so a goblin won't start a swing while
 # a dragon is mid-charge (and the other way round), but never take melee turns. Dragons in
-# the same room attack one at a time.
+# the same room attack one at a time, the others waiting Tuning.wyrm_pack_attack_gap after
+# each attack.
 
 const Fireball := preload("res://src/projectiles/Fireball.tscn")
 const CHARGE_SOUND := preload("res://assets/sfx/slash1.wav")
@@ -166,12 +168,14 @@ func take_damage(from_direction: String, amount: float) -> void:
 	if is_player_in_room():
 		noticed = true
 	var before := health
-	var was_holding_breath := _breath_held()
+	var was_charging_fireball := _charging_fireball()
 	super(from_direction, amount)
 	if health >= before || health <= 0:
 		return
-	if was_holding_breath:
-		_end_attack(0.0)
+	if was_charging_fireball:
+		# Not _end_attack: this runs inside the sword's collision callback, where the bite
+		# hitbox can't be switched (it's off anyway while breathing fire).
+		_breath_timer.stop()
 		_parry_feedback()
 		stagger(from_direction)
 		return
@@ -323,6 +327,16 @@ func _other_dragon_attacking() -> bool:
 			return true
 	return false
 
+# Its attack is over (finished, or cut short by a stun): every other dragon in the room waits
+# at least Tuning.wyrm_pack_attack_gap before attacking, so their attacks don't come one on
+# the heels of another.
+func _hold_off_other_dragons() -> void:
+	var gap := Tuning.wyrm_pack_attack_gap * Tuning.enemy_attack_cooldown_multiplier
+	for node in room.get_children():
+		var other := node as Wyrm
+		if other != null && other != self && other.attack_cooldown.time_left < gap:
+			other.attack_cooldown.start(gap)
+
 func _roll_cooldown() -> void:
 	attack_cooldown.start(randf_range(Tuning.wyrm_attack_cooldown_min,
 		maxf(Tuning.wyrm_attack_cooldown_min, Tuning.wyrm_attack_cooldown_max))
@@ -340,6 +354,7 @@ func _end_attack(lag: float, rooted := false) -> void:
 	if lag > 0:
 		_recover.start(lag)
 	_roll_cooldown()
+	_hold_off_other_dragons()
 
 # The attack animation has played to its last frame.
 func _animation_done() -> bool:
@@ -366,6 +381,10 @@ func _hold_breath() -> void:
 
 func _breath_held() -> bool:
 	return _animation_is("shoot") && !_breath_timer.is_stopped()
+
+# Rearing back or holding its breath: the fireball isn't out yet.
+func _charging_fireball() -> bool:
+	return _animation_is("shoot") && animator.frame < attack_frame
 
 # The warning glow, quickening as the breath comes, and a parry window before it the glint
 # at its mouth that a counter is timed on.
@@ -517,6 +536,7 @@ func _on_staggered() -> void:
 	_dashing = false
 	_dash_left = 0.0
 	_roll_cooldown()
+	_hold_off_other_dragons()
 
 # --- Facing ---
 

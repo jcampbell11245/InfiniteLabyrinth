@@ -91,8 +91,9 @@ var wyrm_orbit_flip_max := 2.5
 var wyrm_retreat_speed := 1.8 # Times its speed while backing off a player inside its circle
 var wyrm_keep_away := 0.85 # Share of the circle radius: a player closer than this sends it backing off
 var wyrm_hit_back_off := 0.8 # Seconds it backs off without attacking after a hit lands (or a stun wears off)
-var wyrm_attack_cooldown_min := 0.6 # Seconds of circling between attacks, rolled each time
-var wyrm_attack_cooldown_max := 1.3
+var wyrm_attack_cooldown_min := 1.6 # Seconds of circling between its attacks, rolled each time
+var wyrm_attack_cooldown_max := 2.6
+var wyrm_pack_attack_gap := 1.2 # Seconds every other dragon in the room waits after one finishes an attack
 var wyrm_charge_chance := 0.6 # Share of attacks that are charges; the rest are fireballs
 var wyrm_charge_speed := 420.0 # Pixels/sec while charging
 var wyrm_charge_overshoot := 28.0 # Pixels past the player a charge carries on
@@ -282,6 +283,7 @@ const FIELDS := [
 	["Enemies", "wyrm_hit_back_off", "Wyrm back-off after being hit (s)", 0, 5, 0.05, "new (Wyrm._back_off)"],
 	["Enemies", "wyrm_attack_cooldown_min", "Wyrm attack cooldown min (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
 	["Enemies", "wyrm_attack_cooldown_max", "Wyrm attack cooldown max (s)", 0.1, 10, 0.1, "new (Wyrm._roll_cooldown)"],
+	["Enemies", "wyrm_pack_attack_gap", "Wyrm gap after another dragon attacks (s)", 0, 10, 0.1, "new (Wyrm._hold_off_other_dragons)"],
 	["Enemies", "wyrm_charge_chance", "Wyrm charge (vs fireball) chance", 0, 1, 0.05, "new (Wyrm._start_attack)"],
 	["Enemies", "wyrm_charge_speed", "Wyrm charge speed (px/s)", 50, 800, 10, "new (Wyrm._dash)"],
 	["Enemies", "wyrm_charge_overshoot", "Wyrm charge overshoot (px)", 0, 150, 1, "new (Wyrm._begin_dash)"],

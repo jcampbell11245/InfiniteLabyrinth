@@ -264,3 +264,45 @@ func has_fireball(room: Room) -> bool:
 		if child is Projectile:
 			return true
 	return false
+
+# The same with a real sword swing, the way a player does it.
+func test_sword_swing_while_charging_a_fireball_stuns_it() -> void:
+	eager(false)
+	var tuning := autoload("Tuning")
+	tuning.wyrm_fireball_charge_time = 3.0
+	var wyrm := await boot_dragon("wyrm")
+	for i in 300:
+		if wyrm._breath_held():
+			break
+		await tree.physics_frame
+	expect(wyrm._breath_held(), "holds its breath before breathing fire")
+	await wait_real(0.5)
+	var p := player()
+	p.global_position = wyrm.global_position + Vector2(-24, 0)
+	p.direction = Direction.RIGHT
+	await physics_frames(2)
+	var health := wyrm.health
+	Input.action_press("melee_attack")
+	await physics_frames(4)
+	Input.action_release("melee_attack")
+	await physics_frames(6)
+	expect(wyrm.health < health, "the swing lands")
+	expect(wyrm.is_stunned(), "and stuns it")
+
+# When one dragon's attack ends, the others in the room wait Tuning.wyrm_pack_attack_gap
+# before attacking.
+func test_other_dragons_wait_after_one_attacks() -> void:
+	calm()
+	var tuning := autoload("Tuning")
+	tuning.wyrm_pack_attack_gap = 1.5
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(10, 3), "wyvern")
+	var wyrm := await boot_dragon("wyrm", design)
+	var wyvern: Wyrm = null
+	for child in wyrm.room.get_children():
+		if child is Wyrm && child != wyrm:
+			wyvern = child
+	expect(wyvern != null, "the wyvern is in the room too")
+	wyvern.attack_cooldown.stop()
+	wyrm._end_attack(0.0)
+	expect(wyvern.attack_cooldown.time_left >= 1.4, "the wyvern waits after the wyrm's attack")
