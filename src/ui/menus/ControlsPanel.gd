@@ -12,7 +12,7 @@ signal back_pressed
 const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
-const CAPTION := "PRESS A KEY OR PAD BUTTON - ESC CANCELS"
+const CAPTION := "PRESS A KEY OR PAD BUTTON   ESC CANCELS"
 
 @onready var rows: VBoxContainer = $Panel/Rows
 @onready var status_label: Label = $Panel/Status
@@ -32,8 +32,8 @@ func _ready() -> void:
 
 func refresh() -> void:
 	for action: String in _key_buttons:
-		(_key_buttons[action] as Button).text = "KEY: %s" % Bindings.key_name(Bindings.key_for(action))
-		(_pad_buttons[action] as Button).text = "PAD: %s" % Bindings.button_name(Bindings.button_for(action))
+		(_key_buttons[action] as Button).text = Bindings.key_name(Bindings.key_for(action))
+		(_pad_buttons[action] as Button).text = Bindings.button_name(Bindings.button_for(action))
 
 func focus_first() -> void:
 	var first: Button = _key_buttons.get(String(Bindings.ACTIONS[0]["action"])) as Button
@@ -52,8 +52,8 @@ func start_capture(action: String, device: String) -> void:
 	refresh()
 	var button := _button_for_device(action, device)
 	if button != null:
-		button.text = "PRESS KEY..." if device == DEVICE_KEY else "PRESS PAD..."
-	status_label.text = "%s: %s" % [Bindings.action_label(action), CAPTION]
+		button.text = "PRESS KEY" if device == DEVICE_KEY else "PRESS PAD"
+	status_label.text = "%s  %s" % [Bindings.action_label(action), CAPTION]
 
 func _input(event: InputEvent) -> void:
 	if !is_listening():
@@ -132,7 +132,7 @@ func _finish_key(keycode: int) -> void:
 	if keycode == Bindings.key_for(_listening_action):
 		_stop_capture()
 		return
-	var owner := Bindings.key_owner(keycode)
+	var owner := Bindings.key_owner(keycode, _listening_action)
 	if !owner.is_empty() && owner != _listening_action:
 		status_label.text = "%s IS ALREADY USED BY %s" % [Bindings.key_name(keycode), Bindings.action_label(owner)]
 		return

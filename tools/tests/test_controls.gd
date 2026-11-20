@@ -224,6 +224,67 @@ func test_fixed_alternate_keys_are_reserved() -> void:
 	panel.free()
 	_restore(snapshot)
 
+func test_shared_j_is_only_free_for_sword_and_select() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	panel.controls_panel.start_capture("melee_attack", "key")
+	_send_key(panel, KEY_L)
+	expect(bindings.key_for("melee_attack") == KEY_L, "Sword moves off J")
+	expect(bindings.key_owner(KEY_J, "ranged_attack") == "select",
+		"J still belongs to Select when Sword moves away")
+	bindings.set_key("ranged_attack", KEY_J)
+	expect(bindings.key_owner(KEY_J, "melee_attack") == "ranged_attack",
+		"an old save with Bow already on J still conflicts")
+	bindings.set_key("ranged_attack", KEY_K)
+	panel.controls_panel.start_capture("ranged_attack", "key")
+	_send_key(panel, KEY_J)
+	expect(bindings.key_for("ranged_attack") == KEY_K, "Bow cannot take the shared J")
+	expect(panel.controls_panel.is_listening(), "the rejected capture keeps listening")
+	panel.controls_panel.cancel_capture()
+	panel.controls_panel.start_capture("melee_attack", "key")
+	_send_key(panel, KEY_J)
+	expect(bindings.key_for("melee_attack") == KEY_J, "Sword can take J back")
+	panel.controls_panel.start_capture("select", "key")
+	_send_key(panel, KEY_J)
+	expect(bindings.key_for("select") == KEY_J, "Select can use its fixed alternate")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
+func test_controls_labels_use_supported_font_glyphs() -> void:
+	var font := load("res://assets/fonts/8-BIT WONDER.TTF") as FontFile
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	var labels: Array[String] = [controls.status_label.text]
+	for child: Node in controls.get_node("Panel/Rows").get_children():
+		var row := child as Control
+		for button_name: String in ["Key", "Pad"]:
+			labels.append((row.get_node(button_name) as Button).text)
+	controls.start_capture("roll", "key")
+	labels.append((controls.get_node("Panel/Rows/Row_roll/Key") as Button).text)
+	labels.append(controls.status_label.text)
+	controls.start_capture("roll", "button")
+	labels.append((controls.get_node("Panel/Rows/Row_roll/Pad") as Button).text)
+	labels.append(controls.status_label.text)
+	for text: String in labels:
+		for i in text.length():
+			var codepoint := text.unicode_at(i)
+			expect(font.has_char(codepoint),
+				"the Controls font can draw %d in '%s'" % [codepoint, text])
+	controls.cancel_capture()
+	panel.hide()
+	panel.free()
+
 func test_escape_closes_capture_then_controls_then_options() -> void:
 	var save_data := autoload("SaveData")
 	var old_write: bool = save_data.write_to_disk

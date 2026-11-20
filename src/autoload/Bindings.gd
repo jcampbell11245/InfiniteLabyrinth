@@ -9,9 +9,9 @@ extends Node
 # persistent copy.
 
 const UNBOUND := -1
-# J is Sword's replaceable key and Select's fixed alternate by design. The primary-key pass
-# in key_owner() already reports it, so the fixed-alternate pass must not claim it as well.
-const SHARED_FIXED_KEYS := [KEY_J]
+# J is Sword's replaceable key and Select's fixed alternate by design. Only those two actions
+# may bind it: any other action taking J would fire Select as well.
+const SHARED_FIXED_KEYS := {KEY_J: ["melee_attack", "select"]}
 const BUTTON_NAMES := {
 	JOY_BUTTON_A: "A",
 	JOY_BUTTON_B: "B",
@@ -134,21 +134,25 @@ func action_label(action: String) -> String:
 			return String(entry["label"])
 	return action.to_upper()
 
-# Returns the other action already using this key, or an empty string when it is free.
-# Fixed alternates count too: letting a player bind Move Left to the Right arrow would make
-# one press fire both actions. Deliberately shared keys are reported by their primary owner.
-func key_owner(keycode: int) -> String:
+# Returns the action that already uses this key, or an empty string when it is free for
+# `action`. Fixed alternates count too: binding Move Left to the Right arrow would fire both
+# actions. J stays free only for Sword and Select, which already share it by design.
+func key_owner(keycode: int, action := "") -> String:
+	var candidates: Array[String] = []
 	for entry: Dictionary in ACTIONS:
-		var primary_action := String(entry["action"])
-		if key_for(primary_action) == keycode:
-			return primary_action
-	if SHARED_FIXED_KEYS.has(keycode):
-		return ""
-	for entry: Dictionary in ACTIONS:
-		var alternate_action := String(entry["action"])
+		var candidate := String(entry["action"])
+		if key_for(candidate) == keycode:
+			candidates.append(candidate)
 		for fixed_key: int in entry.get("keys", []):
 			if fixed_key == keycode:
-				return alternate_action
+				candidates.append(candidate)
+	var shared_owners: Array = SHARED_FIXED_KEYS.get(keycode, [])
+	for candidate: String in candidates:
+		if candidate == action:
+			continue
+		if shared_owners.has(candidate) && shared_owners.has(action):
+			continue
+		return candidate
 	return ""
 
 func button_owner(button_index: int) -> String:
