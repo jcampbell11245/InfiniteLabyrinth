@@ -1,0 +1,24 @@
+# Infinite Labyrinth room design, made with the room creator.
+# Give this file to Claude to add the room to src/world/rooms/.
+version: 1
+floor_size: 13
+completion: none
+enemy_count: 3
+# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):
+#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)
+#   G  goblin   K  knight     W  wizard     O  switch
+# Goblins, knights, wizards and switches stand on floor.
+grid:
+SSSS.....SSSS
+SSSS.....SSSS
+SSS##...##SSS
+SS###...###SS
+..##.....##..
+.....SSS.....
+...G.SWS.G...
+.....SSS.....
+..##.....##..
+SS###...###SS
+SSS##...##SSS
+SSSS.....SSSS
+SSSS.....SSSS
