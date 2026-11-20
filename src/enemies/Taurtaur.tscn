@@ -817,6 +817,28 @@ collision_mask = 291
 motion_mode = 1
 script = ExtResource("1_ou01w")
 combos = Array[PackedInt32Array]([PackedInt32Array(1, 1, 1), PackedInt32Array(1, 1, 1, 1)])
+sprite_bounds = {
+"idle_down": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 47)]),
+"idle_left": Array[Rect2]([Rect2(-16, -22, 40, 47), Rect2(-16, -21, 40, 46)]),
+"idle_right": Array[Rect2]([Rect2(-24, -22, 40, 47), Rect2(-24, -21, 40, 46)]),
+"idle_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 47)]),
+"slash_charge_down": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"slash_charge_left": Array[Rect2]([Rect2(-16, -23, 40, 49), Rect2(-17, -22, 40, 47), Rect2(-17, -22, 40, 47), Rect2(-18, -22, 40, 47), Rect2(-17, -23, 40, 48), Rect2(-16, -23, 40, 49)]),
+"slash_charge_right": Array[Rect2]([Rect2(-24, -23, 40, 49), Rect2(-23, -22, 40, 47), Rect2(-23, -22, 40, 47), Rect2(-22, -22, 40, 47), Rect2(-23, -23, 40, 48), Rect2(-24, -23, 40, 49)]),
+"slash_charge_up": Array[Rect2]([Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"slash_down": Array[Rect2]([Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"slash_kick_down": Array[Rect2]([Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 50), Rect2(-9, -22, 18, 50), Rect2(-9, -22, 18, 49)]),
+"slash_kick_left": Array[Rect2]([Rect2(-23, -22, 40, 47), Rect2(-23, -23, 40, 49), Rect2(-23, -23, 40, 49), Rect2(-25, -22, 43, 47), Rect2(-23, -22, 40, 48), Rect2(-24, -22, 40, 48)]),
+"slash_kick_right": Array[Rect2]([Rect2(-17, -22, 40, 47), Rect2(-17, -23, 40, 49), Rect2(-17, -23, 40, 49), Rect2(-18, -22, 43, 47), Rect2(-17, -22, 40, 48), Rect2(-16, -22, 40, 48)]),
+"slash_kick_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"slash_left": Array[Rect2]([Rect2(-16, -22, 40, 47), Rect2(-15, -23, 40, 49), Rect2(-15, -22, 40, 47), Rect2(-17, -23, 40, 49), Rect2(-17, -22, 40, 47), Rect2(-16, -22, 40, 47)]),
+"slash_right": Array[Rect2]([Rect2(-24, -22, 40, 47), Rect2(-25, -23, 40, 49), Rect2(-25, -22, 40, 47), Rect2(-23, -23, 40, 49), Rect2(-23, -22, 40, 47), Rect2(-24, -22, 40, 47)]),
+"slash_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"walk_down": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 49), Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 49)]),
+"walk_left": Array[Rect2]([Rect2(-16, -22, 40, 47), Rect2(-16, -21, 40, 46), Rect2(-16, -22, 40, 47), Rect2(-16, -21, 40, 46)]),
+"walk_right": Array[Rect2]([Rect2(-24, -22, 40, 47), Rect2(-24, -21, 40, 46), Rect2(-24, -22, 40, 47), Rect2(-24, -21, 40, 46)]),
+"walk_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 49), Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 49)])
+}
 charge = 2
 kick_tips = {
 "down": Vector2(5, 19),

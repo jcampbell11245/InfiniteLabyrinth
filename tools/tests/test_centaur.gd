@@ -21,7 +21,8 @@ func physics_frames(count: int) -> void:
 	for i in count:
 		await tree.physics_frame
 
-# A room with one `kind` of centaur in it, and the centaur.
+# A room with one `kind` of centaur in it, and the centaur, with the player standing in
+# reach of it (so its combos don't break off).
 func boot_centaur(kind: String, design := RoomDesign.new()) -> Centaur:
 	design.set_object(CENTAUR_AT, kind)
 	design.set_facing(CENTAUR_AT, Direction.LEFT)
@@ -29,6 +30,7 @@ func boot_centaur(kind: String, design := RoomDesign.new()) -> Centaur:
 	var room: Room = await boot_design(design)
 	for child in room.get_children():
 		if child is Centaur:
+			player().global_position = child.global_position + Vector2(-child._engage_distance(true), 0)
 			return child
 	return null
 
@@ -210,3 +212,59 @@ func test_taurtaur_lunge_is_roll_only() -> void:
 		await tree.physics_frame
 	expect(lagged, "it stands frozen afterwards")
 	expect(!centaur.is_stunned(), "but isn't stunned")
+
+func test_centaur_combos() -> void:
+	var centaur: Centaur = (load("res://src/enemies/Centaur.tscn") as PackedScene).instantiate()
+	expect(centaur.combos.has(PackedInt32Array([KICK, CLASH, KICK])), "its short combo is kick, clash, kick")
+	expect(centaur.combos.has(PackedInt32Array([CLASH, CLASH, KICK, CLASH])), "its long one clash, clash, kick, clash")
+	centaur.free()
+
+# Where it can be hit follows the drawn body, frame by frame.
+func test_hurtbox_follows_the_sprite() -> void:
+	var centaur := await boot_centaur("centaur")
+	only_combo(centaur, [KICK])
+	await tree.process_frame
+	var idle_size: Vector2 = (centaur.hurtbox.shape as RectangleShape2D).size
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	await tree.process_frame
+	var anim := String(centaur.animator.animation)
+	var drawn: Rect2 = centaur.sprite_bounds[anim][centaur.animator.frame]
+	expect_equal((centaur.hurtbox.shape as RectangleShape2D).size, drawn.size, "the hurtbox is the drawn body's size")
+	expect_equal(centaur.hurtbox.position, drawn.get_center(), "and sits on it")
+	expect((centaur.hurtbox.shape as RectangleShape2D).size != idle_size, "which changes as it kicks")
+
+# A player who gets away mid-combo breaks it off: no stun, and it starts over.
+func test_getting_away_breaks_off_the_combo() -> void:
+	var tuning := autoload("Tuning")
+	tuning.centaur_chase_charge_chance = 0.0 # Walks back up
+	tuning.centaur_charge_chance = 0.0 # Opens with the combo
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	centaur.charge = Centaur.Charge.ROLL
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	player().global_position = centaur.global_position + Vector2(-150, 0) # Far off
+	await wait_for_hit_after(centaur, 0)
+	expect(centaur._combo.is_empty(), "the combo is dropped")
+	expect(!centaur.is_stunned(), "with no stun")
+	expect(centaur._skip_charge, "and its next attack is a fresh combo")
+
+func test_getting_away_from_a_charger_may_set_it_charging() -> void:
+	var tuning := autoload("Tuning")
+	tuning.centaur_chase_charge_chance = 1.0
+	tuning.centaur_charge_chance = 0.0 # Opens with the combo
+	var centaur := await boot_centaur("bucentaur")
+	only_combo(centaur, [CLASH, CLASH, KICK, CLASH])
+	centaur.charge = Centaur.Charge.CLASH
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	# Parried, with the player already backing off out of reach (the next hit would start
+	# at the parry).
+	player().global_position = centaur.global_position + Vector2(-150, 0)
+	swing_at(centaur)
+	await tree.physics_frame
+	await tree.physics_frame
+	expect_equal(centaur._combo, PackedInt32Array([Centaur.Hit.CHARGE]), "it charges instead of going on")
+	expect(!centaur.is_stunned(), "and the parry didn't stun it")

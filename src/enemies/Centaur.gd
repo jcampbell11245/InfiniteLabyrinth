@@ -28,7 +28,14 @@ extends MeleeEnemy
 # dazes it. A Taurtaur's lunge (Charge.ROLL) sparks red and can't be parried; it ploughs on
 # and stands frozen for Tuning.heavy_end_lag afterwards, like a knight's red swing.
 #
+# A player who gets out of reach mid-combo breaks it off (_break_off): no stun, and it starts
+# over, walking back up for a fresh combo or, if it can charge,
+# Tuning.centaur_chase_charge_chance of the time charging straight away.
+#
 # In a group rush it makes a single clash, so a rush stays one parry per enemy.
+#
+# Its hurtbox follows the drawn body frame by frame (sprite_bounds), so a hit lands wherever
+# the sprite is: the rider, a taurtaur's top horse, legs thrown out in a kick.
 #
 # Kicks and charges play "slash_kick" and "slash_charge" animations. Their names start with
 # "slash", so all the shared attack code (windups, parries, hitbox, turning) treats them as
@@ -45,6 +52,9 @@ const COMBO_FLASH := Color(0.6, 0.9, 1.0) # Shown as a cleared hit flows into th
 # Spark points, as weapon_tips (which places a clash's spark), for its kicks and charges.
 @export var kick_tips := {}
 @export var charge_tips := {}
+# Each attack animation's drawn body, frame by frame (Rect2s in its own units, ground shadow
+# left out), measured from the sprite sheets: the hurtbox follows it (_fit_hurtbox).
+@export var sprite_bounds := {}
 
 var _combo := PackedInt32Array() # The attack under way; empty when not attacking
 var _combo_index := 0 # Hit of _combo under way
@@ -53,12 +63,38 @@ var _rush_pending := false # Starting a group-rush strike: a single clash
 var _dashing := false # A charge under way has set off
 var _dash_left := 0.0 # Pixels of the charge still to run
 var _charge_dir := Vector2.RIGHT
+var _next_attack := PackedInt32Array() # Set to make the next attack this, not a random pick
+var _skip_charge := false # The next attack is a combo, not a charge
+var _hurt_rect: RectangleShape2D # Its own copy of the hurtbox shape, resized every frame
+var _fitted := "" # Animation and frame the hurtbox was last fitted to
+
+func _ready() -> void:
+	super()
+	_hurt_rect = (hurtbox.shape as RectangleShape2D).duplicate() as RectangleShape2D
+	hurtbox.shape = _hurt_rect
+	_fit_hurtbox()
 
 func _process(delta: float) -> void:
 	super(delta)
 	if !_animation_is("slash"): # Finished, interrupted or parried
 		_dashing = false
 		_combo = PackedInt32Array()
+	_fit_hurtbox()
+
+# The hurtbox covers whatever the sprite draws this frame (sprite_bounds): the rider, a
+# taurtaur's top horse, legs thrown out in a kick. Where that isn't measured it keeps the
+# scene's box.
+func _fit_hurtbox() -> void:
+	var key := "%s %d" % [animator.animation, animator.frame]
+	if key == _fitted:
+		return
+	_fitted = key
+	var frames: Array = sprite_bounds.get(String(animator.animation), [])
+	if animator.frame >= frames.size():
+		return
+	var bounds: Rect2 = frames[animator.frame]
+	_hurt_rect.size = bounds.size
+	hurtbox.position = bounds.get_center()
 
 func _physics_process(delta: float) -> void:
 	super(delta)
@@ -81,7 +117,13 @@ func rush_strike() -> void:
 func _pick_attack() -> PackedInt32Array:
 	if _rush_pending || combos.is_empty():
 		return PackedInt32Array([Hit.CLASH])
-	if charge != Charge.NONE && randf() < Tuning.centaur_charge_chance:
+	if !_next_attack.is_empty():
+		var forced := _next_attack
+		_next_attack = PackedInt32Array()
+		return forced
+	var skip_charge := _skip_charge
+	_skip_charge = false
+	if charge != Charge.NONE && !skip_charge && randf() < Tuning.centaur_charge_chance:
 		return PackedInt32Array([Hit.CHARGE])
 	return combos.pick_random()
 
@@ -104,8 +146,11 @@ func _has_next_hit() -> bool:
 	return _combo_index < _combo.size() - 1
 
 # Starts the combo's next hit at once, its windup held so its spark comes after the
-# player's sword cooldown.
+# player's sword cooldown. With the player out of reach it breaks off instead.
 func _next_hit() -> void:
+	if _out_of_reach():
+		_break_off()
+		return
 	_combo_index += 1
 	_set_up_hit()
 	Juice.flash(animator, 0.12, COMBO_FLASH)
@@ -127,9 +172,28 @@ func _on_swing_finished() -> void:
 		if _has_next_hit():
 			_next_hit()
 			return
-		_combo_cleared()
+		if !_out_of_reach(): # Walking away from the last kick isn't clearing it
+			_combo_cleared()
 	_combo = PackedInt32Array()
 	super()
+
+# Further off than it could swing from, even closing in (MeleeEnemy._player_in_threat_range).
+func _out_of_reach() -> bool:
+	return !_player_in_threat_range()
+
+# The player got out of reach mid-combo: the combo is dropped (no stun) and it starts over.
+# A centaur that can charge does, Tuning.centaur_chase_charge_chance of the time; otherwise it
+# walks back up (MeleeEnemy's usual approach) and opens with a fresh combo.
+func _break_off() -> void:
+	_combo = PackedInt32Array()
+	_swings_left -= 1
+	_end_windup_hold()
+	_play("idle")
+	if charge != Charge.NONE && randf() < Tuning.centaur_chase_charge_chance:
+		_next_attack = PackedInt32Array([Hit.CHARGE])
+		_start_swing(_is_player_mostly_horizontal())
+	else:
+		_skip_charge = true
 
 # The player hit by this enemy's hitbox (Player reads this after damage that counted).
 func landed_hit() -> void:

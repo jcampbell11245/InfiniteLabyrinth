@@ -125,6 +125,7 @@ var centaur_clash_damage := 1.5 # Damage of a clash hit (the weapon, or a taurta
 var centaur_kick_damage := 2.0 # Damage of a kick (roll-only)
 var centaur_charge_damage := 2.0 # Damage of a charge's strike
 var centaur_charge_chance := 0.4 # Share of a Bucentaur's or Taurtaur's attacks that are charges
+var centaur_chase_charge_chance := 0.3 # A bucentaur or taurtaur the player got away from mid-combo charges this share of the time (else it walks back up)
 var centaur_charge_speed := 300.0 # Pixels/sec while charging
 var centaur_charge_overshoot := 24.0 # Pixels past the player a charge would carry on
 var centaur_charge_max_distance := 200.0 # Pixels: longest a charge runs
@@ -340,6 +341,7 @@ const FIELDS := [
 	["Dragons", "wyrm_fireball_speed", "Fireball speed (px/s)", 10, 600, 10, "new (Wyrm.breathe_fire)"],
 
 	["Centaurs", "centaur_charge_chance", "Charge (vs combo) chance", 0, 1, 0.05, "new (Centaur._pick_attack)"],
+	["Centaurs", "centaur_chase_charge_chance", "Charge (vs walk up) after a broken-off combo", 0, 1, 0.05, "new (Centaur._break_off)"],
 	["Centaurs", "centaur_charge_speed", "Charge speed (px/s)", 50, 800, 10, "new (Centaur._charge_step)"],
 	["Centaurs", "centaur_charge_overshoot", "Charge overshoot (px)", 0, 150, 1, "new (Centaur._set_off)"],
 	["Centaurs", "centaur_charge_max_distance", "Charge max distance (px)", 20, 500, 5, "new (Centaur._set_off)"],
