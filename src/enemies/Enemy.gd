@@ -366,6 +366,10 @@ func _safe_step(motion: Vector2) -> bool:
 
 # --- Overridable hooks ---
 
+# True for enemies that fly (wyrms): the floor's tiles and pits leave them alone.
+func flies() -> bool:
+	return false
+
 # True when a hit should be shrugged off (any Tuning.hit_knockback still applies).
 func _blocks_hit() -> bool:
 	return false

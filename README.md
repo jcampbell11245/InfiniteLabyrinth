@@ -175,14 +175,15 @@ Press **F1** on the title screen to open the room creator. It starts with a blan
 Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
 **Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
 pitfalls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
-knights, dual knights, wizards, warlocks, necromancers) and switches; right-click erases.
-Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin or knight you place, or click with the **Select** tool, shows its detection
+knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns) and switches;
+right-click erases.
+Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight or dragon you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
 the side it watches, since enemies can't see behind themselves. Wizards have no radius: they
 react to the player anywhere in the room. In room scenes the value is each enemy's
 `detection_radius`.
 
-**Facing** sets which way the selected goblin or knight faces when the room starts: **Up**,
+**Facing** sets which way the selected goblin, knight or dragon faces when the room starts: **Up**,
 **Down**, **Left**, **Right** (the default) or **Auto**, which turns it to face the player as
 they come into the room, so it looks at the door they used (unless it has already noticed
 them). The editor sprite turns to match, an Auto enemy is marked "auto", and the shaded half
@@ -199,8 +200,9 @@ the enemy walks round the same way, pausing each time it's back at the start.
 For an area, drag the box's edges or corners to resize it; the enemy wanders between random
 spots inside it. Seeing the player, being hit (arrows included) or being alerted by another
 enemy ends roaming and it fights as usual. Wizards can't roam, since they react to the
-player anywhere in the room. In room scenes these are each enemy's `roam_mode`, `roam_path`
-and `roam_area`; roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
+player anywhere in the room, and nor can dragons, which hover where they start. In room
+scenes these are each enemy's `roam_mode`, `roam_path` and `roam_area`;
+roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
 
 **Tileset** switches the preview (and the play-test) between each floor's art, so a room can
 be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10 that the room
@@ -312,8 +314,9 @@ src/autoload/  Tuning (every gameplay number, edited live by the debug menu), Sa
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script, the level timer, curses
 src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), RangedEnemy
-               (wizard), Caster (warlock, necromancer) and Boss; AttackCoordinator takes
-               turns and group rushes between a room's enemies
+               (wizard), Caster (warlock, necromancer), Wyrm (wyrm and wyvern, flying
+               dragons) and Boss; AttackCoordinator takes turns and group rushes
+               between a room's enemies; FireballReturner bats fireballs back
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
