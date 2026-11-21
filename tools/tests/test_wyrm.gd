@@ -414,6 +414,7 @@ func test_volleyed_fireball_only_damages_the_dragon() -> void:
 	var fireball := await volley(wyrm)
 	expect(fireball != null, "the fireball reaches the player and is hit back")
 	wyrm.health = 100.0
+	wyrm.speed = 0.0 # Stops circling, so the fireball coming back doesn't miss it going round
 	var hurt := false
 	for i in 300:
 		await tree.physics_frame
