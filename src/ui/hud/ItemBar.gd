@@ -8,8 +8,8 @@ extends Node2D
 #
 # It is styled as a partner to the minimap in the opposite corner and borrows its colours
 # and frame: a translucent dark backing with a grey rim, a black outer line and notched
-# corners, the same margin from the screen's edges, and the minimap's red "you are here"
-# outline round the highlighted box, with the same white shine on its top-left pixel.
+# corners, the same margin from the screen's edges, and the unselected boxes outlined in
+# the grey of an unvisited room's dot. The highlighted box has a plain white outline.
 #
 # Everything is drawn in code in HUD units (HudLayer is scaled 5x, so one unit is one of the
 # minimap's art pixels) and kept on whole units so the edges stay crisp pixels. The node
@@ -25,7 +25,8 @@ const PAD := 2 # Backing between the boxes and the grey rim, as on the minimap
 const MARGIN := Minimap.SCREEN_MARGIN / Minimap.PIXEL
 
 const SLOT_FILL := Color(0, 0, 0, 0.35) # Sunk a little darker than the backing
-const SELECTED_FILL := Color(Minimap.CURRENT_OUTLINE, 0.18)
+const SELECTED_EDGE := Color.WHITE
+const SELECTED_FILL := Color(1, 1, 1, 0.12) # A faint lift behind the white outline
 const FLASH_COLOR := Color(1, 1, 1, 0.8)
 
 const POP := 1.2 # Scale the highlighted box jumps to when the highlight moves onto it
@@ -105,9 +106,7 @@ func _draw() -> void:
 		draw_rect(box, SLOT_FILL)
 		if selected:
 			draw_rect(box.grow(-1), SELECTED_FILL)
-			_draw_frame(box, Minimap.CURRENT_OUTLINE)
-			draw_rect(Rect2(box.position, Vector2.ONE),
-				Minimap.CURRENT_OUTLINE.lerp(Color.WHITE, Minimap.SHINE))
+			_draw_frame(box, SELECTED_EDGE)
 		else:
 			_draw_frame(box, Minimap.UNLIT)
 		if i == _flash_slot && _flash > 0.0:
