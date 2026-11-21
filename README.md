@@ -33,7 +33,9 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Move | WASD or arrow keys | D-pad |
 | Sword (hold to charge a spin) | J or Z | X / Square |
 | Bow (hold to charge) | K or X | Y / Triangle |
-| Roll | Space | RB / R1 |
+| Roll | Space | RT / R2 |
+| Choose item (bar at the bottom) | Q / E | LB / RB (L1 / R1) |
+| Use item | L | LT / L2 |
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |

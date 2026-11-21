@@ -204,6 +204,9 @@ var slow_tile_multiplier := 0.6 # Walk, roll and attack speed on a slow tile
 var fast_tile_multiplier := 1.4 # Walk, roll and attack speed on a speed tile
 var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its destination lights up
 
+# --- Items ---
+var item_slots := 3 # Boxes on the item bar at the bottom of the screen
+
 # --- Game feel ---
 var game_speed := 1.0 # Engine.time_scale outside hit-stop
 var hitstop_enabled := true
@@ -393,6 +396,8 @@ const FIELDS := [
 	["Tiles", "slow_tile_multiplier", "Slow tile speed x", 0.1, 1, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "teleport_glow_range", "Teleporter destination glow range (px)", 0, 200, 4, "new (SpecialTiles._update_glow)"],
+
+	["Items", "item_slots", "Item bar boxes", 1, 9, 1, "new (ItemBar)"],
 
 	["Feel", "game_speed", "Game speed", 0.1, 3, 0.05, "new (Engine.time_scale)"],
 	["Feel", "hitstop_enabled", "Hit-stop", 0, 0, 0, "new (Juice.hitstop)"],

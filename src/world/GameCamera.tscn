@@ -14,6 +14,7 @@
 [ext_resource type="AudioStream" uid="uid://egis46cfyppe" path="res://assets/sfx/game_over1.wav" id="10"]
 [ext_resource type="Script" uid="uid://n3igqi2urmex" path="res://src/world/ShakeCamera.gd" id="11"]
 [ext_resource type="Script" path="res://src/ui/hud/Minimap.gd" id="minimap_script"]
+[ext_resource type="Script" path="res://src/ui/hud/ItemBar.gd" id="item_bar_script"]
 
 [sub_resource type="FontFile" id="1"]
 fallbacks = Array[Font]([ExtResource("1")])
@@ -330,6 +331,10 @@ offset_right = 80.0
 offset_bottom = 40.0
 theme_override_fonts/normal_font = SubResource("7")
 text = "0"
+
+[node name="ItemBar" type="Node2D" parent="HudLayer/Hud"]
+position = Vector2(184, 194)
+script = ExtResource("item_bar_script")
 
 [node name="MinimapLayer" type="CanvasLayer" parent="."]
 
