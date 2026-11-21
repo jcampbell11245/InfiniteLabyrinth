@@ -1,8 +1,8 @@
 extends Control
 
 # First screen on launch. Start begins a run through Boot; Options opens the shared audio
-# settings panel; Quit closes the game. Works with the mouse (hovering selects, clicking
-# presses), the D-pad/stick/arrow keys and ui_accept (A, Enter, Space). ui_cancel (Escape
+# and controls settings panel; Quit closes the game. Works with the mouse (hovering selects,
+# clicking presses), the D-pad/stick/arrow keys and ui_accept (A, Enter, Space). ui_cancel (Escape
 # or B) closes the options panel. F1 opens the room creator.
 
 const BOOT_SCENE := "res://src/ui/menus/Boot.tscn"
@@ -31,9 +31,17 @@ func _ready() -> void:
 	WorldGenerator.preload_rooms() # In the background, so Start doesn't wait on them
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Escape cancels a capture; B is held by the controls panel. Neither closes the menus yet.
+	if options_panel.visible && options_panel.cancel_capture_if_listening(event):
+		get_viewport().set_input_as_handled()
+		return
+	# While a control is being captured, the key press belongs to the rebinding UI.
+	if options_panel.visible && options_panel.is_listening():
+		return
 	# ui_cancel covers Escape and the controller's B button, like the pause menu.
 	if options_panel.visible && event.is_action_pressed("ui_cancel"):
-		_hide_options()
+		if !options_panel.handle_cancel():
+			_hide_options()
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey && event.pressed && (event as InputEventKey).keycode == KEY_F1:

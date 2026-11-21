@@ -1,10 +1,10 @@
 extends Control
 class_name OptionsPanel
 
-# Shared audio settings panel for the title and pause menus. Sliders change the buses
-# through SaveData as they move, but the disk write happens once when the parent closes
-# the panel or the window is closed with it open. The parent decides when to show it and
-# handles Back through the signal.
+# Shared audio and control settings panel for the title and pause menus. Sliders change the
+# buses through SaveData as they move, and the controls sub-panel changes Bindings, but the
+# disk write happens once when the parent closes the panel or the window is closed with it
+# open. The parent decides when to show it and handles Back through the signal.
 
 signal back_pressed
 
@@ -12,21 +12,54 @@ const VOLUME_PERCENT := 100.0
 
 @onready var music_slider: HSlider = $Panel/MusicSlider
 @onready var sfx_slider: HSlider = $Panel/SfxSlider
+@onready var controls_button: Button = $Panel/Controls
 @onready var back_button: Button = $Panel/Back
+@onready var controls_panel: ControlsPanel = $ControlsPanel
 
 func _ready() -> void:
 	music_slider.value_changed.connect(_on_music_volume_changed)
 	sfx_slider.value_changed.connect(_on_sfx_volume_changed)
+	controls_button.pressed.connect(_show_controls)
 	back_button.pressed.connect(back_pressed.emit)
+	controls_panel.back_pressed.connect(_hide_controls)
 
 # Reads the saved values each time so the panel matches settings changed elsewhere.
 # Setting .value emits value_changed, which only updates the buses, not the save file.
 func refresh() -> void:
 	music_slider.value = SaveData.music_volume * VOLUME_PERCENT
 	sfx_slider.value = SaveData.sfx_volume * VOLUME_PERCENT
+	controls_panel.refresh()
 
 func focus_first() -> void:
-	music_slider.grab_focus()
+	if controls_panel.visible:
+		controls_panel.focus_first()
+	else:
+		music_slider.grab_focus()
+
+func is_listening() -> bool:
+	return controls_panel.is_listening()
+
+# Escape cancels a capture before it can close a menu. B is held by the controls panel
+# instead, so a stray press cannot end a rebind. Returns true when Escape did that.
+func cancel_capture_if_listening(event: InputEvent) -> bool:
+	if !controls_panel.is_listening() || !_is_cancel_event(event):
+		return false
+	controls_panel.cancel_capture()
+	return true
+
+func _is_cancel_event(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		return key_event.pressed && key_event.keycode == KEY_ESCAPE
+	return false
+
+# Called by the hosts for Escape/B once no capture is active. Returns true when it closed the
+# controls sub-panel, so the host leaves the rest of the options screen (and pause) alone.
+func handle_cancel() -> bool:
+	if controls_panel.visible:
+		_hide_controls()
+		return true
+	return false
 
 # Called by the menus when the panel closes, so all changes land in one disk write.
 func save_changes() -> void:
@@ -36,6 +69,17 @@ func _notification(what: int) -> void:
 	# Closing the window never reaches the parent's Back path, so save here while open.
 	if what == NOTIFICATION_WM_CLOSE_REQUEST && visible:
 		save_changes()
+
+func _show_controls() -> void:
+	$Panel.hide()
+	controls_panel.show()
+	controls_panel.refresh()
+	controls_panel.focus_first()
+
+func _hide_controls() -> void:
+	controls_panel.hide()
+	$Panel.show()
+	controls_button.grab_focus()
 
 func _on_music_volume_changed(value: float) -> void:
 	SaveData.set_music_volume(value / VOLUME_PERCENT)
