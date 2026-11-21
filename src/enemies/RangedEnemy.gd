@@ -161,7 +161,8 @@ func _is_my_turn() -> bool:
 			return false
 		if !other.is_stunned() && !other._in_melee_range():
 			someone_else_ready = true
-	var last: Variant = room.get_meta(LAST_CASTER_META, null)
+	# get_meta treats a null default as none, and logs an error for a missing key.
+	var last: Variant = room.get_meta(LAST_CASTER_META) if room.has_meta(LAST_CASTER_META) else null
 	return !(someone_else_ready && is_instance_valid(last) && last == self)
 
 # Mid-cast, before the fireball is out.
