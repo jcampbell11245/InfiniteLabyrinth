@@ -155,6 +155,30 @@ case where it goes wrong, and a fix; one point per comment; plain sentences. Don
 the findings again after posting: give the developer a short table of where each comment
 went, with a link to the review.
 
+## Running in CI
+
+`.github/workflows/claude-review.yml` runs this skill on GitHub when a pull request is
+opened or marked ready, and when a collaborator comments `@claude review`. Nobody is there
+to answer questions, so the steps above change like this:
+
+- **Step 1**: the branch is already checked out and `origin/master` fetched. Don't switch
+  branches.
+- **Step 5**: there's no save file to protect on a fresh runner; skip the backup. Do run
+  the trial merge if master has moved on (`git config user.email`/`user.name` first, any
+  value, so the merge can commit).
+- **Step 6**: `$DISPLAY` points at a virtual screen with software OpenGL, so real-window
+  screenshots work; write them under `$RUNNER_TEMP`. You can't attach them to the review,
+  so describe what you saw. If Godot can't open a window, say so in the review and carry on.
+- **Steps 7 and 8**: don't ask; post the review yourself. If the pull request already has
+  a review from an earlier run (`gh pr view <n> --json reviews`), re-review as below and
+  only comment on what's new or still not fixed. Post one review with `event` `"COMMENT"`
+  (never `APPROVE` or `REQUEST_CHANGES`): the report from step 7 goes in its `body`
+  (verdict, size, findings by heading, what was checked and not verified), and findings
+  tied to a line also go in `comments`. Questions you'd have put to the developer go in a
+  **Your call** section for the owner to decide. Start the body with
+  "Automatic review by Claude; a person still needs to approve."
+- Never push, edit the pull request or its issue, or comment anywhere else.
+
 ## Re-reviewing after new commits
 
 When asked to look at a PR again:

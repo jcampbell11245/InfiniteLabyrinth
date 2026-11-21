@@ -149,6 +149,11 @@ tools/check.sh
 Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (see
 [Tools](#tools)) and playtest.
 
+**Claude review** (not required to merge): when a pull request is opened or marked ready
+for review, Claude Code reviews it with the review-pr skill and posts its findings as review
+comments. Comment `@claude review` on the pull request to have it look again after new
+commits. It never approves; a person still has to. Pull requests from forks aren't reviewed.
+
 ## Contributing
 
 1. **Claim the work.** Find the GitHub issue for what you want to do. If someone else is
