@@ -46,7 +46,9 @@ extra attack keys stay active alongside your chosen inputs. In the pause menu, t
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
 
-Every action in the table except F1 and F2 can be rebound in Options → Controls.
+Every action in the table except F1 and F2 can be rebound in Options → Controls. Escape can be
+rebound off Pause and bound back: while capturing Pause's key, a tap of Escape restores it and
+holding Escape (or B) cancels instead.
 
 The pause menu's **Return to Title** button returns to the title screen, so a run can be
 left without closing the game. **Quit to Desktop** closes the game, as does the title

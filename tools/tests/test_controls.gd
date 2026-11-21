@@ -340,6 +340,52 @@ func test_tapping_b_binds_it_but_holding_b_cancels() -> void:
 	panel.free()
 	_restore(snapshot)
 
+func test_escape_can_be_rebound_to_pause_but_a_hold_cancels() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	bindings.set_key("pause", KEY_P)
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	var release := InputEventKey.new()
+	release.keycode = KEY_ESCAPE
+	release.pressed = false
+
+	controls.start_capture("pause", "key")
+	expect(controls.status_label.text == ControlsPanel.PAUSE_KEY_HINT,
+		"the Pause key capture explains that Escape binds")
+	controls._input(escape)
+	expect(controls.is_listening(), "a tap of Escape does not cancel a Pause capture")
+	controls._input(release)
+	expect(bindings.key_for("pause") == KEY_ESCAPE, "a tap of Escape restores Pause")
+	expect(!controls.is_listening(), "binding Escape ends the capture")
+	expect(controls.status_label.text.find(
+			"PAUSE KEY SET TO %s" % bindings.key_name(KEY_ESCAPE)) >= 0,
+		"the Pause capture confirms the change")
+
+	bindings.set_key("pause", KEY_P)
+	controls.start_capture("pause", "key")
+	controls._input(escape)
+	_finish_escape_hold(controls)
+	controls._input(release)
+	expect(bindings.key_for("pause") == KEY_P, "holding Escape cancels instead of binding")
+	expect(!controls.is_listening(), "the hold ends the Pause capture")
+	expect(controls.status_label.text == "CAPTURE CANCELLED",
+		"the hold shows the cancellation blurb")
+
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
 func test_status_blurbs_clear_after_three_seconds_and_reset_on_new_messages() -> void:
 	var panel := _add_options_panel()
 	panel.show()
@@ -547,9 +593,15 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 	labels.append(controls.status_label.text)
 	controls.cancel_capture()
 	labels.append(controls.status_label.text)
-	var hint_width := font.get_string_size(ControlsPanel.CANCEL_HINT, HORIZONTAL_ALIGNMENT_LEFT, -1,
-		controls.status_label.get_theme_font_size(&"font_size")).x
-	expect(hint_width <= controls.status_label.size.x, "the cancel hint fits the blurb strip")
+	controls.start_capture("pause", "key")
+	expect(controls.status_label.text == ControlsPanel.PAUSE_KEY_HINT,
+		"the Pause capture shows its own hint")
+	labels.append(controls.status_label.text)
+	controls.cancel_capture()
+	var font_size := controls.status_label.get_theme_font_size(&"font_size")
+	for text: String in [ControlsPanel.CANCEL_HINT, ControlsPanel.PAUSE_KEY_HINT]:
+		var hint_width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		expect(hint_width <= controls.status_label.size.x, "%s fits the blurb strip" % text)
 	for text: String in labels:
 		for i in text.length():
 			var codepoint := text.unicode_at(i)
@@ -580,6 +632,42 @@ func test_escape_closes_capture_then_controls_then_options() -> void:
 	save_data.write_to_disk = old_write
 	tree.root.remove_child(screen)
 	screen.free()
+
+func test_escape_binds_pause_without_closing_the_options_panel() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	bindings.set_key("pause", KEY_P)
+	var screen := _add_title_screen()
+	var panel := screen.get_node("Canvas/OptionsPanel") as OptionsPanel
+	(screen.get_node("Canvas/Options") as BaseButton).pressed.emit()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	controls.start_capture("pause", "key")
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+
+	screen._unhandled_input(escape)
+	expect(panel.is_listening(), "Escape does not cancel a Pause capture in the title menu")
+	expect(panel.visible && controls.visible, "the controls page stays open")
+	controls._input(escape)
+	var release := InputEventKey.new()
+	release.keycode = KEY_ESCAPE
+	release.pressed = false
+	controls._input(release)
+	expect(bindings.key_for("pause") == KEY_ESCAPE, "the title menu lets Escape bind Pause")
+	expect(panel.visible && controls.visible, "binding Escape leaves the page open")
+	screen._unhandled_input(escape)
+	expect(panel.visible && !controls.visible, "the next Escape returns to audio options")
+
+	save_data.write_to_disk = old_write
+	tree.root.remove_child(screen)
+	screen.free()
+	_restore(snapshot)
 
 func test_controller_b_cancels_capture_then_controls_then_options() -> void:
 	var save_data := autoload("SaveData")
@@ -674,7 +762,12 @@ func _cancel_button_event() -> InputEventJoypadButton:
 
 func _finish_pad_hold(controls: ControlsPanel) -> void:
 	controls._pad_cancel_started_msec = Time.get_ticks_msec() \
-		- int(ControlsPanel.PAD_CANCEL_HOLD_SECONDS * 1000.0) - 1
+		- int(ControlsPanel.CANCEL_HOLD_SECONDS * 1000.0) - 1
+	controls._process(0.0)
+
+func _finish_escape_hold(controls: ControlsPanel) -> void:
+	controls._escape_cancel_started_msec = Time.get_ticks_msec() \
+		- int(ControlsPanel.CANCEL_HOLD_SECONDS * 1000.0) - 1
 	controls._process(0.0)
 
 func _send_key(panel: OptionsPanel, keycode: int) -> void:

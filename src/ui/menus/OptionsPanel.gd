@@ -39,19 +39,13 @@ func focus_first() -> void:
 func is_listening() -> bool:
 	return controls_panel.is_listening()
 
-# Escape cancels a capture before it can close a menu. B is held by the controls panel
-# instead, so a stray press cannot end a rebind. Returns true when Escape did that.
+# Escape cancels a capture before it can close a menu. While Pause's key is being rebound,
+# a tap of Escape binds it instead; holding it still cancels inside the controls panel.
 func cancel_capture_if_listening(event: InputEvent) -> bool:
-	if !controls_panel.is_listening() || !_is_cancel_event(event):
+	if !controls_panel.should_cancel_with_escape(event):
 		return false
 	controls_panel.cancel_capture()
 	return true
-
-func _is_cancel_event(event: InputEvent) -> bool:
-	if event is InputEventKey:
-		var key_event := event as InputEventKey
-		return key_event.pressed && key_event.keycode == KEY_ESCAPE
-	return false
 
 # Called by the hosts for Escape/B once no capture is active. Returns true when it closed the
 # controls sub-panel, so the host leaves the rest of the options screen (and pause) alone.

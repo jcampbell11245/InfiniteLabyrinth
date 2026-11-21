@@ -36,6 +36,9 @@
 - A controller-only player could get stuck capturing a bind: B was treated as a new button
   press instead of cancel. Escape and B now cancel a capture in both the title and pause
   menus without closing the options screen.
+- Once Pause was moved off Escape, Escape always cancelled a capture, so it could only be
+  restored through RESET TO DEFAULTS. A Pause key capture now treats a quick tap of Escape as
+  the binding, with a hold cancelling like B; other captures still cancel on Escape at once.
 - Rebinding rebuilt joypad events with device 0, so gameplay ignored a second controller or
   one that reconnected with a new id. Rebuilt button and axis events now use device -1, like
   the defaults in project.godot.

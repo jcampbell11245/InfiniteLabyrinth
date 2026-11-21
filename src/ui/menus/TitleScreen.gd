@@ -31,7 +31,8 @@ func _ready() -> void:
 	WorldGenerator.preload_rooms() # In the background, so Start doesn't wait on them
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Escape cancels a capture; B is held by the controls panel. Neither closes the menus yet.
+	# Escape cancels a capture except while rebinding Pause, where it binds unless held.
+	# B is held by the controls panel. Neither closes the menus yet.
 	if options_panel.visible && options_panel.cancel_capture_if_listening(event):
 		get_viewport().set_input_as_handled()
 		return
