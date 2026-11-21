@@ -374,6 +374,17 @@ func test_escape_can_be_rebound_to_pause_but_a_hold_cancels() -> void:
 	bindings.set_key("pause", KEY_P)
 	controls.start_capture("pause", "key")
 	controls._input(escape)
+	var other_key := InputEventKey.new()
+	other_key.keycode = KEY_K
+	other_key.pressed = true
+	controls._input(other_key)
+	expect(bindings.key_for("pause") == KEY_P, "a key press while Escape is held is ignored")
+	var other_pad := InputEventJoypadButton.new()
+	other_pad.button_index = JOY_BUTTON_LEFT_SHOULDER
+	other_pad.pressed = true
+	controls._input(other_pad)
+	expect(bindings.button_for("pause") == JOY_BUTTON_START,
+		"pad input while Escape is held is ignored")
 	_finish_escape_hold(controls)
 	controls._input(release)
 	expect(bindings.key_for("pause") == KEY_P, "holding Escape cancels instead of binding")

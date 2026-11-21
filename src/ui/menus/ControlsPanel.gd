@@ -140,6 +140,10 @@ func _handle_key_input(key_event: InputEventKey) -> void:
 	if key_event.keycode == KEY_ESCAPE && _binds_escape():
 		_handle_escape_key(key_event)
 		return
+	# A held Escape owns the capture, so no other key can change it before the cancel fires.
+	if _escape_cancel_started_msec >= 0:
+		_consume()
+		return
 	# Escape is reserved for the host to cancel every other capture.
 	if !key_event.pressed || key_event.keycode == KEY_ESCAPE:
 		return
