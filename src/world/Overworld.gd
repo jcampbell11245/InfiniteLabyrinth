@@ -119,7 +119,7 @@ func _build_test(design: RoomDesign) -> void:
 	var hint := Label.new()
 	hint.text = "Testing room  -  F1: back to the room creator"
 	hint.add_theme_font_size_override("font_size", 26)
-	hint.position = Vector2(40, 1080 - 70)
+	hint.position = Vector2(40, get_viewport().get_visible_rect().size.y - 70)
 	var layer := CanvasLayer.new()
 	layer.add_child(hint)
 	add_child(layer)

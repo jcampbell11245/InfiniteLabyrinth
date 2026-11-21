@@ -7,11 +7,14 @@ extends Node2D
 # Items don't exist yet, so the boxes are empty and using one only flashes its box.
 #
 # Everything is drawn in code in HUD units (HudLayer is scaled 5x), centred on this node,
-# and kept on whole units so the edges stay crisp pixels.
+# and kept on whole units so the edges stay crisp pixels. The node places itself against
+# the bottom of the screen, which is lower on screens taller than 16:9 (stretch aspect
+# "expand"), so its position in the scene is only a starting point.
 
 const BOX := 16 # Outer size of one box
 const GAP := 3 # Between boxes
 const PAD := 3 # Between the boxes and the edge of the panel behind them
+const BOTTOM_GAP := 1 # Between the panel and the bottom of the screen
 
 const PANEL_FILL := Color(0.06, 0.05, 0.09, 0.75)
 const PANEL_EDGE := Color(0.3, 0.27, 0.36)
@@ -35,6 +38,15 @@ func _ready() -> void:
 	Game.item_selected.connect(_on_item_selected)
 	Game.item_used.connect(_on_item_used)
 	Tuning.changed.connect(_on_tuning_changed)
+	get_viewport().size_changed.connect(_place)
+	_place()
+
+# Centres the bar along the bottom of the screen, on whole HUD units.
+func _place() -> void:
+	var screen := get_viewport().get_visible_rect().size
+	var to_parent := (get_parent() as CanvasItem).get_global_transform_with_canvas().affine_inverse()
+	var bottom_centre := to_parent * Vector2(screen.x / 2.0, screen.y)
+	position = Vector2(roundf(bottom_centre.x), floorf(bottom_centre.y) - BOTTOM_GAP - PAD - BOX / 2.0)
 
 func _on_item_selected(_slot: int) -> void:
 	if _pop_tween:
