@@ -25,6 +25,11 @@ strike. Swing as it glints to **parry** and stun it; swing too early and you're 
 staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
+**Items** sit in the bar in the bottom-left corner: choose one and use it. For now every
+floor starts with a **skeleton key**, which opens the locked doors of the room you're in,
+and a **metal detector**, which shows one key room you haven't found on the minimap. An
+item that would do nothing (no locked door, every key room already showing) isn't used up.
+
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
 volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.
 
@@ -34,7 +39,7 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Sword (hold to charge a spin) | J or Z | X / Square |
 | Bow (hold to charge) | K or X | Y / Triangle |
 | Roll | Space | RT / R2 |
-| Choose item (bar at the bottom) | Q / E | LB / RB (L1 / R1) |
+| Choose item (bar, bottom left) | Q / E | LB / RB (L1 / R1) |
 | Use item | L | LT / L2 |
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
@@ -339,6 +344,7 @@ src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), Ra
                between a room's enemies; FireballReturner bats fireballs back
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
+src/items/     the consumable items and what using each one does
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
 src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room),
                special tiles (SpecialTiles), camera and HUD (GameCamera)

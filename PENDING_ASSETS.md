@@ -32,6 +32,8 @@ line in `assets/sfx/SOURCE.txt`.
 | `special_tiles.png` frames 16-19 (`TELEPORT_1`-`TELEPORT_4`) | The four teleporter pairs | ![teleporters](docs/pending_assets/tile_teleporters.png) |
 | `assets/sprites/hud/status_icons.png` cell 12 (`Icon.FAST`) | Status-bar icon over the player while on a speed tile ([StatusBars.gd](src/effects/StatusBars.gd)) | ![fast icon](docs/pending_assets/icon_fast.png) |
 | `status_icons.png` cell 13 (`Icon.PASTE`) | Status-bar icon over whoever paste is holding | ![paste icon](docs/pending_assets/icon_paste.png) |
+| `assets/sprites/hud/item_skeleton_key.png` | Skeleton key icon in the item bar ([Items.gd](src/items/Items.gd)), drawn by script | ![skeleton key](docs/pending_assets/item_skeleton_key.png) |
+| `assets/sprites/hud/item_metal_detector.png` | Metal detector icon in the item bar ([Items.gd](src/items/Items.gd)), drawn by script | ![metal detector](docs/pending_assets/item_metal_detector.png) |
 | Troll (no art of its own) | [Troll.tscn](src/enemies/Troll.tscn) uses the goblin's sprites with a gold `self_modulate`. Needs its own sprite set (stand, walk, slash, all four facings) | ![troll](docs/pending_assets/enemy_troll.gif) |
 | Orc (no art of its own) | [Orc.tscn](src/enemies/Orc.tscn) uses the goblin's sprites scaled 1.5x (shown on the right, with a goblin on the left). Needs its own sprite set | ![orc](docs/pending_assets/enemy_orc.gif) |
 | Warlock (no art of its own) | [Warlock.tscn](src/enemies/Warlock.tscn) uses the wizard's sprites with a green `self_modulate` (see [Caster.gd](src/enemies/Caster.gd)). Needs its own sprite set (stand, walk, shoot) | ![warlock](docs/pending_assets/enemy_warlock.gif) |

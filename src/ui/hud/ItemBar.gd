@@ -2,9 +2,11 @@ class_name ItemBar
 extends Node2D
 
 # The row of consumable item boxes in the bottom-left corner: Tuning.item_slots boxes, one
-# of them highlighted (Game.item_slot). The player moves the highlight with item_previous /
-# item_next and uses what's in it with use_item (Player._handle_input). Items don't exist
-# yet, so the boxes are empty and using one only flashes its box.
+# of them highlighted (Game.item_slot), each showing the icon of the item in it
+# (Game.items, see Items). The player moves the highlight with item_previous / item_next
+# and uses what's in it with use_item (Player._handle_input). A used item flashes its box
+# white as it goes; one that can't be used, or an empty box, shakes the box red with a dull
+# click instead.
 #
 # It is styled as a partner to the minimap in the opposite corner and borrows its colours
 # and frame: a translucent dark backing with a grey rim, a black outer line and notched
@@ -28,21 +30,41 @@ const SLOT_FILL := Color(0, 0, 0, 0.35) # Sunk a little darker than the backing
 const SELECTED_EDGE := Color.WHITE
 const SELECTED_FILL := Color(1, 1, 1, 0.12) # A faint lift behind the white outline
 const FLASH_COLOR := Color(1, 1, 1, 0.8)
+const REFUSED_COLOR := Color(1, 0.25, 0.25)
 
 const POP := 1.2 # Scale the highlighted box jumps to when the highlight moves onto it
 const POP_TIME := 0.15
 const FLASH_TIME := 0.25
+const SHAKE_DISTANCE := 2.0 # HUD units the refused box swings each way at first
+const SHAKE_SWINGS := 2 # Full side-to-side swings while it shakes
+const REFUSE_TIME := 0.3
+
+const REFUSED_SOUND := preload("res://assets/sfx/clank_bad.wav") # Pitched up: the curse jam's click
+const REFUSED_PITCH := 1.6
+const REFUSED_VOLUME_DB := -8.0
+# The key unlocking a room plays the room's own unlock sound; the detector gets a ding.
+const DETECTOR_SOUND := preload("res://assets/sfx/twinkle.wav")
 
 var _pop := 1.0 # Current scale of the highlighted box
 var _flash := 0.0 # How much white is over the used box, 0 to 1
 var _flash_slot := 0
+var _refused := 0.0 # How far through the refused shake, 1 to 0
+var _refused_slot := 0
 var _pop_tween: Tween
 var _flash_tween: Tween
+var _refused_tween: Tween
+var _refused_sound: AudioStreamPlayer
+var _detector_sound: AudioStreamPlayer
 
 func _ready() -> void:
 	Game.item_selected.connect(_on_item_selected)
 	Game.item_used.connect(_on_item_used)
+	Game.item_refused.connect(_on_item_refused)
+	Game.items_changed.connect(queue_redraw)
 	Tuning.changed.connect(_on_tuning_changed)
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_refused_sound = _add_sound(REFUSED_SOUND, REFUSED_VOLUME_DB)
+	_detector_sound = _add_sound(DETECTOR_SOUND, 0.0)
 	get_viewport().size_changed.connect(_place)
 	_place()
 
@@ -64,12 +86,30 @@ func _on_item_selected(_slot: int) -> void:
 	_pop_tween.tween_method(_set_pop, POP, 1.0, POP_TIME) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-func _on_item_used(slot: int) -> void:
+func _add_sound(stream: AudioStream, volume_db: float) -> AudioStreamPlayer:
+	var sound := AudioStreamPlayer.new()
+	sound.bus = &"SFX"
+	sound.stream = stream
+	sound.volume_db = volume_db
+	add_child(sound)
+	return sound
+
+func _on_item_used(slot: int, kind: Items.Kind) -> void:
 	_flash_slot = slot
 	if _flash_tween:
 		_flash_tween.kill()
 	_flash_tween = create_tween().set_ignore_time_scale()
 	_flash_tween.tween_method(_set_flash, 1.0, 0.0, FLASH_TIME)
+	if kind == Items.Kind.METAL_DETECTOR:
+		Juice.play(_detector_sound, 0.05)
+
+func _on_item_refused(slot: int) -> void:
+	_refused_slot = slot
+	if _refused_tween:
+		_refused_tween.kill()
+	_refused_tween = create_tween().set_ignore_time_scale()
+	_refused_tween.tween_method(_set_refused, 1.0, 0.0, REFUSE_TIME)
+	Juice.play(_refused_sound, 0.06, REFUSED_PITCH)
 
 # Changing the box count from the debug menu (F2) keeps the highlight on a box that exists.
 func _on_tuning_changed(key: String) -> void:
@@ -84,6 +124,14 @@ func _set_pop(value: float) -> void:
 func _set_flash(value: float) -> void:
 	_flash = value
 	queue_redraw()
+
+func _set_refused(value: float) -> void:
+	_refused = value
+	queue_redraw()
+
+# Sideways offset of the refused box: a swing that dies away, on whole units.
+func _refused_offset() -> float:
+	return roundf(sin((1.0 - _refused) * TAU * SHAKE_SWINGS) * SHAKE_DISTANCE * _refused)
 
 func _slot_count() -> int:
 	return maxi(Tuning.item_slots, 1)
@@ -103,14 +151,27 @@ func _draw() -> void:
 		if selected:
 			# Whole units only, so the pop doesn't blur the edges.
 			box = box.grow(roundf(BOX * (_pop - 1.0) / 2.0))
+		var refused := i == _refused_slot && _refused > 0.0
+		if refused:
+			box.position.x += _refused_offset()
 		draw_rect(box, SLOT_FILL)
+		var edge := SELECTED_EDGE if selected else Minimap.UNLIT
 		if selected:
 			draw_rect(box.grow(-1), SELECTED_FILL)
-			_draw_frame(box, SELECTED_EDGE)
-		else:
-			_draw_frame(box, Minimap.UNLIT)
+		if refused:
+			edge = edge.lerp(REFUSED_COLOR, _refused)
+		_draw_frame(box, edge)
+		_draw_icon(Game.item_in(i), box)
 		if i == _flash_slot && _flash > 0.0:
 			draw_rect(box, FLASH_COLOR * Color(1, 1, 1, _flash))
+
+# The item's icon centred in `box`, on whole units.
+func _draw_icon(kind: Items.Kind, box: Rect2) -> void:
+	var icon: Texture2D = Items.ICONS.get(kind)
+	if icon == null:
+		return
+	var at := (box.get_center() - icon.get_size() / 2.0).floor()
+	draw_texture(icon, at)
 
 # The minimap's frame round a rectangle: translucent backing, a grey rim with its corner
 # pixels notched off, and a black line outside that follows the notches round.

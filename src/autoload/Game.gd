@@ -13,7 +13,10 @@ signal time_lost(seconds: float, fatal: bool) # Taken off the level timer by dam
 signal fatal_countdown_finished # The timer has shown a killing hit draining it to 0:00
 signal player_died
 signal item_selected(slot: int) # The highlighted box on the item bar moved
-signal item_used(slot: int) # The use-item button was pressed on that slot
+signal item_used(slot: int, kind: Items.Kind) # The item in that box did its thing and is gone
+signal item_refused(slot: int) # Use pressed on an empty box, or on an item that would do nothing
+signal items_changed # What's in the item bar's boxes changed
+signal room_marked(room_id: int) # A metal detector showed this key room on the minimap
 
 var coins := 0 # Banked into SaveData when the floor ends
 var keys := 0 # Held now; Tuning.keys_to_finish open the end room
@@ -22,6 +25,7 @@ var keys := 0 # Held now; Tuning.keys_to_finish open the end room
 var carried_keys := 0
 var arrows := 0 # Left to shoot; refilled to Tuning.start_arrows each floor
 var item_slot := 0 # Highlighted box on the item bar, 0 to Tuning.item_slots - 1
+var items: Array[Items.Kind] = [] # What's in each box of the item bar; refilled each floor
 
 # Keys given at the start of each floor and the floor a new run starts on are
 # Tuning.start_keys and Tuning.start_floor (debug menu, F2).
@@ -42,6 +46,8 @@ func register(world: Overworld) -> void:
 	keys = Tuning.start_keys + carried_keys
 	carried_keys = 0
 	arrows = Tuning.start_arrows
+	items = Items.STARTING.duplicate()
+	items_changed.emit()
 
 func unregister(world: Overworld) -> void:
 	if overworld == world:
@@ -75,6 +81,16 @@ func cycle_item(step: int) -> void:
 	item_slot = posmod(item_slot + step, maxi(Tuning.item_slots, 1))
 	item_selected.emit(item_slot)
 
-# Items don't exist yet: for now using one only tells the HUD, which flashes the box.
+# The item in box `slot`, or NONE for an empty box (or one past the end of `items`).
+func item_in(slot: int) -> Items.Kind:
+	return items[slot] if slot >= 0 && slot < items.size() else Items.Kind.NONE
+
+# Uses the highlighted item. It's only used up if it did something (see Items.use).
 func use_item() -> void:
-	item_used.emit(item_slot)
+	var kind := item_in(item_slot)
+	if kind == Items.Kind.NONE || !Items.use(kind):
+		item_refused.emit(item_slot)
+		return
+	items[item_slot] = Items.Kind.NONE
+	item_used.emit(item_slot, kind)
+	items_changed.emit()
