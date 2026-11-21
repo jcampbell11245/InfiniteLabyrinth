@@ -17,9 +17,10 @@ position = Vector2(0, -3)
 shape = SubResource("feet")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-texture_filter = 1
+texture_filter = 4
+scale = Vector2(0.095, 0.095)
 texture = ExtResource("merchant_sprite")
-offset = Vector2(0, -19)
+offset = Vector2(0, -200)
 
 [node name="Prompt" type="Node2D" parent="."]
 z_index = 50

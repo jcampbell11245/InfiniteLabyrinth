@@ -89,6 +89,43 @@ func test_shop_buys_the_selected_row_and_unpauses_on_close() -> void:
 	shop.close()
 	expect(!tree.paused && !shop.visible, "closing it unpauses")
 
+func test_shop_guards_against_double_buys() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var merchant := _merchant()
+	if merchant == null:
+		return
+	var shop: ShopMenu = merchant.find_children("*", "ShopMenu", true, false)[0]
+	game.coins = 1000
+	Input.action_press("interact") # Still held from opening the shop
+	shop.open()
+	await _frames(3)
+	Input.action_release("interact")
+	await _frames(2)
+	expect_equal(game.item_in(0), Items.Kind.NONE, "the press that opened the shop buys nothing")
+	await _tap("interact")
+	expect_equal(game.item_in(0), Items.Kind.SKELETON_KEY, "a fresh press buys")
+	await _tap("interact")
+	expect_equal(game.item_in(1), Items.Kind.NONE, "a second press straight after is ignored")
+	await wait_real(autoload("Tuning").shop_buy_cooldown + 0.1)
+	await _frames(1) # A timer resumes us after this frame's _process has run
+	await _tap("interact")
+	expect_equal(game.item_in(1), Items.Kind.SKELETON_KEY, "after the cooldown another press buys")
+	shop.close()
+
+func test_shop_shows_several_rows_before_scrolling() -> void:
+	expect(ShopMenu.VISIBLE_ROWS >= 5, "at least five items fit before the list scrolls")
+
+func _frames(count: int) -> void:
+	for i in count:
+		await tree.process_frame
+
+func _tap(action: String) -> void:
+	Input.action_press(action)
+	await _frames(2)
+	Input.action_release(action)
+	await _frames(2)
+
 func _merchant() -> Merchant:
 	var start := (tree.current_scene as Overworld).rooms_by_id[Constants.START_ROOM] as Room
 	for child in start.get_children():

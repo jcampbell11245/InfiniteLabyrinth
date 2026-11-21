@@ -208,6 +208,7 @@ var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its d
 var item_slots := 3 # Boxes on the item bar in the bottom-left corner of the screen
 var skeleton_key_price := 50 # Coins the merchant asks for a skeleton key
 var metal_detector_price := 50 # Coins the merchant asks for a metal detector
+var shop_buy_cooldown := 0.5 # Seconds after a purchase before the shop takes another, against double buys
 var merchant_reach := 30.0 # Pixels from the merchant's feet to the player's within which they can talk
 
 # --- Lighting (CaveLighting) ---
@@ -414,6 +415,7 @@ const FIELDS := [
 	["Items", "item_slots", "Item bar boxes", 1, 9, 1, "new (ItemBar)"],
 	["Items", "skeleton_key_price", "Skeleton key price", 0, 1000, 5, "new (Items.price)"],
 	["Items", "metal_detector_price", "Metal detector price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "shop_buy_cooldown", "Shop purchase cooldown (s)", 0, 3, 0.05, "new (ShopMenu)"],
 	["Items", "merchant_reach", "Merchant reach (px)", 5, 100, 1, "new (Merchant.in_reach)"],
 
 	["Lighting", "lighting_enabled", "Lighting on", 0, 0, 0, "new (CaveLighting)"],

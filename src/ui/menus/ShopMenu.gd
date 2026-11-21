@@ -3,33 +3,40 @@ extends Control
 
 # The merchant's shop (Merchant): a square panel in the HUD's frame style with a row of
 # tabs along the top and, under the selected tab, a list of things for sale. Each row shows
-# the item's icon, name, description and price in coins. Up and down pick a row, the
-# previous / next item buttons (or left and right) change tab, confirm buys and back
-# closes. A bought item goes into the first empty box of the item bar (Game.buy_item); a
-# purchase that can't happen (too few coins, no empty box) shakes the row red and says why.
+# the item's icon, name, a one-line description and price in coins; the list scrolls when
+# there are more than VISIBLE_ROWS. Up and down pick a row, the previous / next item buttons
+# (or left and right) change tab, confirm buys and back closes. A bought item goes into the
+# first empty box of the item bar (Game.buy_item); a purchase that can't happen (too few
+# coins, no empty box) shakes the row red and says why.
+#
+# Buying is guarded against accidental double purchases: the confirm button has to be let
+# go after opening the shop and after each purchase, and a purchase can't follow another
+# within Tuning.shop_buy_cooldown seconds.
 #
 # The game is paused while it's open, so it runs with PROCESS_MODE_ALWAYS and real-time
 # tweens. It's drawn in code on an unscaled layer, in art pixels UNIT screen pixels across,
 # so the frame matches the 5x HUD while the text is rendered at full resolution.
 
 const UNIT := 5.0 # Screen pixels per art pixel, matching HudLayer's scale
-const SIZE := Vector2(140, 116) # The panel, in art pixels
+const SIZE := Vector2(180, 160) # The panel, in art pixels
 const MARGIN := 6.0
 const TAB_SIZE := Vector2(40, 11)
 const TAB_TOP := 6.0
 const LIST_TOP := 24.0
-const ROW_HEIGHT := 30.0
-const ROW_GAP := 3.0
-const SLOT := 16.0 # The icon's box, like the item bar's
-const TEXT_LEFT := 24.0 # From a row's left edge to its name and description
+const ROW_HEIGHT := 16.0
+const ROW_GAP := 2.0
+const SLOT := 14.0 # The icon's box: the 12-pixel icon and a one-pixel outline
+const TEXT_LEFT := 19.0 # From a row's left edge to its name and description
 const HINTS_TOP := SIZE.y - 15.0
 const MESSAGE_TOP := HINTS_TOP - 9.0
+const VISIBLE_ROWS := int((MESSAGE_TOP - 2.0 - LIST_TOP + ROW_GAP) / (ROW_HEIGHT + ROW_GAP))
+const ARROW := 5 # Art pixels across the "more above / below" arrows
 
 # Font sizes, in art pixels.
 const TITLE_SIZE := 5.0
-const NAME_SIZE := 5.0
-const TEXT_SIZE := 4.0
-const LINE_HEIGHT := 6.0 # Between description lines; the font's own spacing has them touching
+const NAME_SIZE := 4.0
+const DESCRIPTION_SIZE := 3.0
+const TEXT_SIZE := 4.0 # The message and button hints
 
 # Each tab: its title and the items for sale under it.
 const TABS: Array[Dictionary] = [
@@ -56,11 +63,16 @@ const REFUSED_SOUND := preload("res://assets/sfx/clank_bad.wav")
 const REFUSED_PITCH := 1.6
 const REFUSED_VOLUME_DB := -8.0
 
+const CONFIRM_ACTIONS: Array[String] = ["interact", "select", "ui_accept"]
+
 signal closed
 
 var _tab := 0
 var _row := 0
+var _scroll := 0 # First row shown
 var _opened_frame := -1 # The interact press that opened the shop mustn't also buy
+var _confirm_released := false # Confirm has been let go since opening or the last purchase
+var _next_buy_at := 0 # Ticks (ms, real time) before which another purchase is ignored
 var _flash := 0.0 # White over the row just bought from, 1 to 0
 var _refused := 0.0 # How far through the refused shake, 1 to 0
 var _message := ""
@@ -88,6 +100,8 @@ func open() -> void:
 	get_tree().paused = true
 	_opened_frame = Engine.get_process_frames()
 	_row = 0
+	_scroll = 0
+	_confirm_released = false
 	_message = ""
 	queue_redraw()
 
@@ -114,6 +128,8 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	if Engine.get_process_frames() == _opened_frame:
 		return
+	if !_confirm_released && !_held(CONFIRM_ACTIONS):
+		_confirm_released = true
 	if _pressed(["ui_cancel", "pause"]):
 		close()
 	elif _pressed(["up", "ui_up"]):
@@ -124,7 +140,7 @@ func _process(delta: float) -> void:
 		_change_tab(-1)
 	elif _pressed(["item_next", "ui_right"]):
 		_change_tab(1)
-	elif _pressed(["interact", "select", "ui_accept"]):
+	elif _pressed(CONFIRM_ACTIONS) && _confirm_released && Time.get_ticks_msec() >= _next_buy_at:
 		buy_selected()
 
 func _pressed(actions: Array[String]) -> bool:
@@ -133,13 +149,22 @@ func _pressed(actions: Array[String]) -> bool:
 			return true
 	return false
 
+func _held(actions: Array[String]) -> bool:
+	for action in actions:
+		if Input.is_action_pressed(action):
+			return true
+	return false
+
 func _move(step: int) -> void:
 	_row = posmod(_row + step, maxi(stock().size(), 1))
+	# Scroll just far enough to keep the selected row in view.
+	_scroll = clampi(_scroll, _row - VISIBLE_ROWS + 1, _row)
 	queue_redraw()
 
 func _change_tab(step: int) -> void:
 	_tab = posmod(_tab + step, TABS.size())
 	_row = 0
+	_scroll = 0
 	queue_redraw()
 
 # Buys the selected row's item, or says why it can't.
@@ -147,6 +172,8 @@ func buy_selected() -> void:
 	var kind: Items.Kind = stock()[_row]
 	match Game.buy_item(kind):
 		Game.Purchase.BOUGHT:
+			_confirm_released = false
+			_next_buy_at = Time.get_ticks_msec() + roundi(Tuning.shop_buy_cooldown * 1000.0)
 			_say("Bought", BOUGHT_COLOR)
 			Juice.coin_stolen_sound() # Coins leaving the purse
 			_flash_tween = _restart(_flash_tween, _set_flash, FLASH_TIME)
@@ -195,8 +222,9 @@ func _draw() -> void:
 	HudFrame.fill(self, Rect2(o + Vector2(MARGIN, LIST_TOP - 4), Vector2(SIZE.x - MARGIN * 2, 1)),
 		ItemBar.Minimap.UNLIT, UNIT)
 	var items := stock()
-	for i in items.size():
+	for i in range(_scroll, mini(_scroll + VISIBLE_ROWS, items.size())):
 		_draw_row(o, i, items[i])
+	_draw_scroll_arrows(o, items.size())
 	if _message != "":
 		_text(_message, o + Vector2(0, MESSAGE_TOP), TEXT_SIZE, _message_color,
 			HORIZONTAL_ALIGNMENT_CENTER, SIZE.x)
@@ -221,7 +249,7 @@ func _draw_coins(o: Vector2) -> void:
 	_coin(Vector2(right - width - COIN_FRAME.size.x - 2, top - 1))
 
 func _draw_row(o: Vector2, index: int, kind: Items.Kind) -> void:
-	var row := Rect2(o + Vector2(MARGIN, LIST_TOP + index * (ROW_HEIGHT + ROW_GAP)),
+	var row := Rect2(o + Vector2(MARGIN, LIST_TOP + (index - _scroll) * (ROW_HEIGHT + ROW_GAP)),
 		Vector2(SIZE.x - MARGIN * 2, ROW_HEIGHT))
 	var selected := index == _row
 	var refused := selected && _refused > 0.0
@@ -233,7 +261,7 @@ func _draw_row(o: Vector2, index: int, kind: Items.Kind) -> void:
 	HudFrame.fill(self, row, ItemBar.SELECTED_FILL if selected else ItemBar.SLOT_FILL, UNIT)
 	HudFrame.outline(self, row, edge, UNIT)
 
-	var slot := Rect2(row.position + Vector2(4, (ROW_HEIGHT - SLOT) / 2.0).floor(), Vector2(SLOT, SLOT))
+	var slot := Rect2(row.position + Vector2(2, (ROW_HEIGHT - SLOT) / 2.0).floor(), Vector2(SLOT, SLOT))
 	HudFrame.fill(self, slot, ItemBar.SLOT_FILL, UNIT)
 	HudFrame.outline(self, slot, ItemBar.Minimap.UNLIT, UNIT)
 	var icon: Texture2D = Items.ICONS[kind]
@@ -243,9 +271,7 @@ func _draw_row(o: Vector2, index: int, kind: Items.Kind) -> void:
 	var info: Dictionary = Items.INFO[kind]
 	var text_left := row.position.x + TEXT_LEFT
 	_text(String(info.name), Vector2(text_left, row.position.y + 3), NAME_SIZE, TEXT_COLOR)
-	var lines := _wrap(String(info.text), TEXT_SIZE, row.end.x - 3 - text_left)
-	for i in mini(lines.size(), 3):
-		_text(lines[i], Vector2(text_left, row.position.y + 11 + i * LINE_HEIGHT), TEXT_SIZE, DIM_TEXT)
+	_text(String(info.text), Vector2(text_left, row.position.y + 10), DESCRIPTION_SIZE, DIM_TEXT)
 
 	var price := Items.price(kind)
 	var price_text := str(price)
@@ -253,10 +279,24 @@ func _draw_row(o: Vector2, index: int, kind: Items.Kind) -> void:
 	var right := row.end.x - 3
 	_text(price_text, Vector2(right - width, row.position.y + 3), NAME_SIZE,
 		TEXT_COLOR if Game.coins >= price else TOO_DEAR)
-	_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + 2))
+	_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + 1))
 
 	if selected && _flash > 0.0:
 		HudFrame.fill(self, row, Color(1, 1, 1, 0.6 * _flash), UNIT)
+
+# Small arrows at the right of the list when rows are hidden above or below it.
+func _draw_scroll_arrows(o: Vector2, count: int) -> void:
+	var x := o.x + SIZE.x - MARGIN - ARROW
+	if _scroll > 0:
+		_arrow(Vector2(x, o.y + LIST_TOP - 3), -1)
+	if _scroll + VISIBLE_ROWS < count:
+		_arrow(Vector2(x, o.y + LIST_TOP + VISIBLE_ROWS * (ROW_HEIGHT + ROW_GAP) - 1), 1)
+
+# A 5-wide, 3-tall triangle with its flat side at `at`, pointing up (-1) or down (1).
+func _arrow(at: Vector2, direction: int) -> void:
+	for i in 3:
+		var y := at.y + (i if direction > 0 else -i)
+		HudFrame.fill(self, Rect2(at.x + i, y, ARROW - i * 2, 1), TEXT_COLOR, UNIT)
 
 # Confirm to buy and back to leave, as buttons for the device in use, centred at the bottom.
 func _draw_hints(o: Vector2) -> void:
@@ -282,21 +322,6 @@ func _text(text: String, at: Vector2, size: float, color: Color,
 	var font_size := roundi(size * UNIT)
 	var baseline := Vector2(at.x * UNIT, at.y * UNIT + FONT.get_ascent(font_size)).round()
 	draw_string(FONT, baseline, text, align, width * UNIT if width > 0 else -1.0, font_size, color)
-
-# `text` broken into lines no wider than `width` art pixels, at word boundaries.
-func _wrap(text: String, size: float, width: float) -> PackedStringArray:
-	var lines := PackedStringArray()
-	var line := ""
-	for word in text.split(" ", false):
-		var longer := word if line == "" else line + " " + word
-		if line != "" && _text_width(longer, size) > width:
-			lines.append(line)
-			line = word
-		else:
-			line = longer
-	if line != "":
-		lines.append(line)
-	return lines
 
 func _text_width(text: String, size: float) -> float:
 	return ceilf(FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(size * UNIT)).x / UNIT)
