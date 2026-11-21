@@ -333,19 +333,37 @@ func _combo_cleared() -> void:
 # charge). Mid-combo it doesn't hurt: it clanks, like a parry, and clears the hit it's on, so
 # the combo goes on (or, on the last hit, it's stunned). Only once that hit has sparked,
 # though, or rolling behind and swinging away would clear every hit in its windup; before
-# that it's a dull clank and nothing more. Outside a combo it's an ordinary hit.
+# that it's a dull clank and nothing more. Outside a combo it's an ordinary hit, and so it is
+# on a hit that can't be cleared any more (_clearable_from_behind).
 #
 # A swing at the front of a kick before its spark is a dull clank too, rather than the
 # stagger a swing at a red attack's front usually gets: right after a hit on a taurtaur's
 # back its next kick turns that side into its front, and a player swinging again there
 # hasn't done anything wrong yet. After the spark the usual rule holds.
+# Whether a hit from behind can still clear the hit under way. Never once it has caught the
+# player: that ends the combo with no stun, and getting round behind it afterwards doesn't
+# undo that. Nor a white hit (a clash, a bucentaur's charge) once it has struck: it had to be
+# parried. A red one the player rolled through (a kick, a taurtaur's lunge) can be, through
+# its follow-through and end lag, since that's when a player who rolled through gets their
+# swing in.
+func _clearable_from_behind() -> bool:
+	if _hit_landed:
+		return false
+	return _unparryable || animator.frame <= attack_frame
+
 func _on_player_sword(from_direction: String) -> void:
 	if !_combo.is_empty() && _animation_is("slash") && from_direction != direction \
 			&& _hit() == Hit.KICK && _twinkled_at < 0 && !_swung_first():
 		Juice.clank(true)
 		player.mark_swing_parried() # Passes through, unblocked, rather than staggering
 		return
-	if _combo.is_empty() || !_animation_is("slash") || from_direction != direction:
+	if !_combo.is_empty() && _animation_is("slash") && from_direction == direction && _hit_landed:
+		# Its hit caught the player: the combo is over, and getting behind it now is just an
+		# ordinary hit (not the daze a red attack's back otherwise gives, Enemy._on_player_sword).
+		take_damage(from_direction, player.sword_damage())
+		return
+	if _combo.is_empty() || !_animation_is("slash") || from_direction != direction \
+			|| !_clearable_from_behind():
 		super(from_direction)
 		return
 	if _twinkled_at < 0:

@@ -640,3 +640,54 @@ func test_roll_lasts_longer_against_a_red_charge() -> void:
 	await tree.physics_frame
 	Input.action_release("roll")
 	expect_near(p.rolling.wait_time, tuning.roll_duration + tuning.roll_charge_bonus, 0.001, "a longer roll")
+
+# A hit that caught the player can't be cleared from behind afterwards: a lone clash that
+# landed, hit from behind in its follow-through, is an ordinary hit and doesn't stun it.
+func test_back_hit_cant_clear_a_hit_that_landed() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("centaur")
+	only_combo(centaur, [CLASH])
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	for i in 300:
+		if centaur.animator.frame > centaur.attack_frame:
+			break
+		await tree.physics_frame
+	centaur.landed_hit() # The clash caught the player
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(!centaur.is_stunned(), "not stunned")
+
+func test_back_hit_cant_clear_a_kick_that_landed() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK])
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	for i in 300: # Its strike
+		if centaur.animator.frame >= centaur.attack_frame:
+			break
+		await tree.physics_frame
+	centaur.landed_hit() # The kick caught the player
+	var health := centaur.health
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(!centaur.is_stunned(), "not stunned")
+	expect(centaur.health < health, "an ordinary hit")
+
+# A kick the player rolled through can still be cleared from behind in its follow-through,
+# when a rolling player's swing comes.
+func test_back_hit_clears_a_rolled_kick_in_its_follow_through() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK])
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	for i in 300:
+		if centaur.animator.frame > centaur.attack_frame:
+			break
+		await tree.physics_frame
+	expect(centaur._animation_is("slash"), "still in the kick's follow-through")
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(centaur.is_stunned(), "cleared, and stunned")
