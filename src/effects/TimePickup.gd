@@ -13,21 +13,11 @@ const FRAME_SIZE := Vector2(11, 20)
 const FRAME_TIME := 0.16 # A calm sand-fall cycle
 
 var seconds := 0.0 # Time granted on collection, set by the spawner
-var _frame := 0
-var _frame_timer := 0.0
 
 func _ready() -> void:
 	super()
 	texture = HOURGLASS_TEXTURE
-	region_enabled = true
-	region_rect = Rect2(FRAMES[0], FRAME_SIZE)
-
-func _animate(delta: float) -> void:
-	_frame_timer += delta
-	if _frame_timer >= FRAME_TIME:
-		_frame_timer = 0.0
-		_frame = (_frame + 1) % FRAMES.size()
-		region_rect = Rect2(FRAMES[_frame], FRAME_SIZE)
+	_set_frames(FRAMES, FRAME_SIZE, FRAME_TIME)
 
 func _credit() -> void:
 	if seconds <= 0.0 || !is_instance_valid(Game.player):

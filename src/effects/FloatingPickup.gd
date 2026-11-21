@@ -1,8 +1,8 @@
 extends "res://src/effects/Pickup.gd"
 
 # Shared float-then-home pickup movement. Subclasses provide the look and what happens on
-# collection; this handles the brief drift around the spawn point, the bob, and the
-# gentle homing toward the player.
+# collection; this handles the brief drift around the spawn point, the bob, optional
+# frame animation, and the gentle homing toward the player.
 
 const FLOAT_TIME := 0.8 # Seconds spent floating around before homing in
 const FLOAT_SPEED := 18.0 # Pixels/sec while drifting around
@@ -12,6 +12,11 @@ const HOME_ACCEL_SCALE := 0.7 # Gentler than other pickups so it feels floaty
 
 var _bob_time := 0.0
 var _float_dir := Vector2.ZERO
+var _frames: Array[Vector2] = []
+var _frame_size := Vector2.ZERO
+var _frame_time := 0.1
+var _frame := 0
+var _frame_timer := 0.0
 
 func _ready() -> void:
 	super()
@@ -60,6 +65,22 @@ func _process(delta: float) -> void:
 	if is_instance_valid(player) && global_position.distance_to(player.global_position) < Tuning.pickup_collect_distance:
 		_collect()
 
-# Subclasses override to animate their sprite.
-func _animate(_delta: float) -> void:
-	pass
+# Configures optional frame animation for a sliced sprite sheet.
+func _set_frames(frames: Array[Vector2], frame_size: Vector2, frame_time: float) -> void:
+	_frames = frames
+	_frame_size = frame_size
+	_frame_time = frame_time
+	_frame = 0
+	_frame_timer = 0.0
+	region_enabled = true
+	region_rect = Rect2(_frames[0], _frame_size)
+
+# Advances the frame animation when configured by a subclass.
+func _animate(delta: float) -> void:
+	if _frames.is_empty():
+		return
+	_frame_timer += delta
+	if _frame_timer >= _frame_time:
+		_frame_timer = 0.0
+		_frame = (_frame + 1) % _frames.size()
+		region_rect = Rect2(_frames[_frame], _frame_size)

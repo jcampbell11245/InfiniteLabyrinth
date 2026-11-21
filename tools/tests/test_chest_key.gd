@@ -62,7 +62,7 @@ func test_chest_key_alone_does_not_grant_time() -> void:
 
 	# Remove the hourglass so only the key can be collected; clear its bonus first so
 	# Pickup._exit_tree does not bank the time.
-	for node in tree.current_scene.get_children():
+	for node in chest.get_parent().get_children():
 		if node.get_script() != null and node.get_script().resource_path == "res://src/effects/TimePickup.gd":
 			node.seconds = 0.0
 			node.queue_free()
