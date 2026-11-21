@@ -280,6 +280,22 @@ func test_status_blurbs_clear_after_three_seconds_and_reset_on_new_messages() ->
 	panel.hide()
 	panel.free()
 
+func test_capture_hint_stays_until_the_rebind_finishes() -> void:
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	controls.start_capture("roll", "key")
+	await wait_real(ControlsPanel.STATUS_SECONDS + 0.2)
+	expect(controls.status_label.text == ControlsPanel.CANCEL_HINT && controls.status_label.visible,
+		"the capture hint stays after three seconds")
+	controls._set_status("BRIEF MESSAGE")
+	await wait_real(ControlsPanel.STATUS_SECONDS + 0.2)
+	expect(controls.status_label.text == ControlsPanel.CANCEL_HINT && controls.status_label.visible,
+		"a transient message gives way to the hint while still capturing")
+	panel.hide()
+	panel.free()
+
 func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	var bindings := autoload("Bindings")
 	var save_data := autoload("SaveData")

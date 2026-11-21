@@ -55,7 +55,8 @@ func start_capture(action: String, device: String) -> void:
 	_listening_action = action
 	_listening_device = device
 	_pad_cancel_started_msec = -1
-	_set_status(CANCEL_HINT)
+	# The hint stays up for as long as the panel waits for input.
+	_set_status(CANCEL_HINT, true)
 	refresh()
 	var button := _button_for_device(action, device)
 	if button != null:
@@ -202,20 +203,25 @@ func cancel_capture() -> void:
 	_set_status("CAPTURE CANCELLED")
 	_stop_capture()
 
-# Feedback is transient: the label stays hidden with no message and clears itself after a
-# short real-time delay, even while the game is paused or slowed down.
-func _set_status(message: String) -> void:
+# Feedback is transient: it clears after a short real-time delay, even while paused or slowed.
+# The capture hint is persistent so players always know how to cancel while choosing an input.
+func _set_status(message: String, persistent := false) -> void:
 	status_label.text = message
 	status_label.visible = !message.is_empty()
 	_status_generation += 1
-	if message.is_empty():
+	if message.is_empty() || persistent:
 		return
 	var generation := _status_generation
 	var timer := get_tree().create_timer(STATUS_SECONDS, true, false, true)
 	timer.timeout.connect(_on_status_timeout.bind(generation))
 
 func _on_status_timeout(generation: int) -> void:
-	if generation == _status_generation:
+	if generation != _status_generation:
+		return
+	# A conflict message can replace the hint during a capture; bring it back afterwards.
+	if is_listening():
+		_set_status(CANCEL_HINT, true)
+	else:
 		_set_status("")
 
 func _stop_capture() -> void:
