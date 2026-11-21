@@ -60,7 +60,8 @@ func test_saved_bindings_load_with_defaults_for_missing_or_bad_values() -> void:
 	var save_data := autoload("SaveData")
 	var snapshot := _snapshot()
 	save_data.bindings = {"roll": {"key": KEY_R, "button": JOY_BUTTON_A},
-		"melee_attack": {"key": 0, "button": 99}}
+		"melee_attack": {"key": 0, "button": 99},
+		"pause": {"key": KEY_F2, "button": JOY_BUTTON_START}}
 	bindings.load_from_save()
 	bindings.apply()
 	expect(bindings.key_for("roll") == KEY_R, "a saved key is loaded")
@@ -68,6 +69,7 @@ func test_saved_bindings_load_with_defaults_for_missing_or_bad_values() -> void:
 	expect(bindings.key_for("left") == KEY_A, "an action missing from an old save keeps its default")
 	expect(bindings.key_for("melee_attack") == KEY_J, "an invalid saved key is ignored")
 	expect(bindings.button_for("melee_attack") == JOY_BUTTON_X, "an invalid saved button is ignored")
+	expect(bindings.key_for("pause") == KEY_ESCAPE, "a reserved saved key is ignored")
 	_restore(snapshot)
 
 func test_reset_keeps_bindings_as_a_preference() -> void:
@@ -417,6 +419,10 @@ func test_fixed_alternate_keys_are_reserved() -> void:
 	expect(bindings.key_owner(KEY_RIGHT) == "right", "the right arrow belongs to Move Right")
 	expect(bindings.key_owner(KEY_X) == "ranged_attack", "X belongs to Bow's fixed alternate")
 	expect(bindings.key_owner(KEY_J) == "melee_attack", "the shared J is reported by Sword")
+	expect(!bindings.is_fixed_alternate(KEY_J, "melee_attack"),
+		"Sword's visible J is not a hidden alternate")
+	expect(bindings.is_fixed_alternate(KEY_J, "select"),
+		"Select's hidden J is a fixed alternate")
 	var panel := _add_options_panel()
 	panel.show()
 	panel.controls_button.pressed.emit()
@@ -435,6 +441,40 @@ func test_fixed_alternate_keys_are_reserved() -> void:
 	panel.free()
 	_restore(snapshot)
 
+func test_f1_and_f2_cannot_be_bound() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	var old_key: int = bindings.key_for("roll")
+
+	controls.start_capture("roll", "key")
+	_send_key(panel, KEY_F1)
+	expect(bindings.key_for("roll") == old_key, "F1 cannot be bound")
+	expect(controls.status_label.text == ControlsPanel.RESERVED_KEY_STATUS,
+		"F1 shows the reserved-key message")
+	expect(controls.is_listening(), "the capture keeps listening after F1")
+	_send_key(panel, KEY_F2)
+	expect(bindings.key_for("roll") == old_key, "F2 cannot be bound")
+	expect(controls.status_label.text == ControlsPanel.RESERVED_KEY_STATUS,
+		"F2 shows the reserved-key message")
+	_send_key(panel, KEY_R)
+	expect(bindings.key_for("roll") == KEY_R, "a normal key still binds afterwards")
+
+	bindings.set_key("roll", KEY_F1)
+	expect(bindings.key_for("roll") == KEY_R, "the save layer also refuses F1")
+	expect(!_has_key("roll", KEY_F1), "F1 never reaches InputMap")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
 func test_shared_j_is_only_free_for_sword_and_select() -> void:
 	var bindings := autoload("Bindings")
 	var save_data := autoload("SaveData")
@@ -445,6 +485,12 @@ func test_shared_j_is_only_free_for_sword_and_select() -> void:
 	var panel := _add_options_panel()
 	panel.show()
 	panel.controls_button.pressed.emit()
+	panel.controls_panel.start_capture("ranged_attack", "key")
+	_send_key(panel, KEY_J)
+	expect(bindings.key_for("ranged_attack") == KEY_K, "Bow cannot take J while Sword shows it")
+	expect(panel.controls_panel.status_label.text.find("USED BY SWORD") >= 0,
+		"a visible binding says USED BY even when another action has J as an alternate")
+	panel.controls_panel.cancel_capture()
 	panel.controls_panel.start_capture("melee_attack", "key")
 	_send_key(panel, KEY_L)
 	expect(bindings.key_for("melee_attack") == KEY_L, "Sword moves off J")
@@ -495,6 +541,9 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "button")
 	labels.append((controls.get_node("Panel/Rows/Row_roll/Pad") as Button).text)
+	labels.append(controls.status_label.text)
+	controls.start_capture("roll", "key")
+	_send_key(panel, KEY_F1)
 	labels.append(controls.status_label.text)
 	controls.cancel_capture()
 	labels.append(controls.status_label.text)

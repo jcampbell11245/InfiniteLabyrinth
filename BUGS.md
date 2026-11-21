@@ -24,7 +24,15 @@
   now ignores the other device, apart from the shared Escape and B cancels.
 - A conflict with a fixed alternate said the key was `USED BY` an action whose row does not
   show that key, which made the message confusing. Fixed alternates are now described as
-  `RESERVED FOR` the action holding them.
+  `RESERVED FOR` the action holding them. The check follows the action that actually owns the
+  key, so J says `USED BY SWORD` while Sword's row shows J, and `RESERVED FOR SELECT` once
+  Sword moves away.
+- F1 and F2 could be bound to a game action even though the room creator and debug menu read
+  them directly, so rolling could also open the debug menu in a debug build. The Controls page
+  now refuses them with a reserved-key message, and saved values using them fall back to the
+  default key.
+- Rebuilding the InputMap kept an unused `used_buttons` map whose duplicate guard never ran.
+  Actions have no fixed pad buttons, so the dead guard is gone.
 - A controller-only player could get stuck capturing a bind: B was treated as a new button
   press instead of cancel. Escape and B now cancel a capture in both the title and pause
   menus without closing the options screen.

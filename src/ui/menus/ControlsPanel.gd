@@ -6,7 +6,8 @@ class_name ControlsPanel
 # changed through the Bindings autoload, which updates InputMap and the save data at once.
 # The host saves to disk when it closes the options screen. Escape cancels a capture at once.
 # B is both a bindable pad button and the pad cancel: a quick tap binds it, while holding it
-# briefly cancels so a stray press cannot abandon a rebind.
+# briefly cancels so a stray press cannot abandon a rebind. F1 and F2 are refused because the
+# room creator and debug menu read them directly.
 
 signal back_pressed
 
@@ -14,6 +15,7 @@ const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
 const CANCEL_HINT := "ESC TO CANCEL   HOLD B TO CANCEL"
+const RESERVED_KEY_STATUS := "F1 AND F2 ARE RESERVED"
 const PAD_CANCEL_HOLD_SECONDS := 0.6
 const STATUS_SECONDS := 3.0
 
@@ -196,10 +198,14 @@ func _finish_key(keycode: int) -> void:
 	if keycode == Bindings.key_for(_listening_action):
 		_stop_capture()
 		return
+	if Bindings.is_reserved_key(keycode):
+		_set_status(RESERVED_KEY_STATUS)
+		return
 	var owner := Bindings.key_owner(keycode, _listening_action)
 	if !owner.is_empty() && owner != _listening_action:
+		# Only say reserved when the owner's row hides the key; a visible binding is "used by".
 		var relation := "USED BY"
-		if Bindings.is_fixed_alternate(keycode, _listening_action):
+		if Bindings.is_fixed_alternate(keycode, owner):
 			relation = "RESERVED FOR"
 		_set_status("%s IS ALREADY %s %s" % [Bindings.key_name(keycode), relation,
 				Bindings.action_label(owner)])

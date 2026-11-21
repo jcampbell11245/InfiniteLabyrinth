@@ -4,14 +4,16 @@ extends Node
 # project.godot supplies the defaults; this autoload re-applies them (or the player's saved
 # choices) to InputMap on every launch. Each action has one replaceable key and button plus
 # fixed alternates - arrow keys, left-stick axes and the extra attack keys - that stay
-# available so rebinding never removes a way to play. Joypad events use device -1 so any
-# controller works, including one that gets a new id after reconnecting. SaveData owns the
-# persistent copy.
+# available so rebinding never removes a way to play. F1 and F2 stay reserved for the room
+# creator and debug menu. Joypad events use device -1 so any controller works, including one
+# that gets a new id after reconnecting. SaveData owns the persistent copy.
 
 const UNBOUND := -1
 # J is Sword's replaceable key and Select's fixed alternate by design. Only those two actions
 # may bind it: any other action taking J would fire Select as well.
 const SHARED_FIXED_KEYS := {KEY_J: ["melee_attack", "select"]}
+# These keys are read directly by the room creator and debug menu, outside InputMap.
+const RESERVED_KEYS := [KEY_F1, KEY_F2]
 const BUTTON_NAMES := {
 	JOY_BUTTON_A: "A",
 	JOY_BUTTON_B: "B",
@@ -83,7 +85,6 @@ func apply() -> void:
 			continue
 		InputMap.action_erase_events(action)
 		var used_keys := {}
-		var used_buttons := {}
 		for key: int in entry.get("keys", []):
 			if used_keys.has(key):
 				continue
@@ -96,7 +97,8 @@ func apply() -> void:
 		if key_value != UNBOUND && !used_keys.has(key_value):
 			InputMap.action_add_event(action, _key_event(key_value))
 		var button_value := int(pair["button"])
-		if button_value != UNBOUND && !used_buttons.has(button_value):
+		# Actions have no fixed pad buttons, so only the replaceable one needs adding.
+		if button_value != UNBOUND:
 			InputMap.action_add_event(action, _button_event(button_value))
 
 func set_key(action: String, keycode: int) -> void:
@@ -155,17 +157,19 @@ func key_owner(keycode: int, action := "") -> String:
 		return candidate
 	return ""
 
-# True when another action keeps this key as an alternate. Those rows don't show the key, so
-# the rebinding panel should say the key is reserved rather than used by a visible binding.
-func is_fixed_alternate(keycode: int, action := "") -> bool:
+# True when the action that owns this key only has it as a fixed alternate. Those rows don't
+# show the key, so the panel should say it is reserved rather than used by a visible binding.
+func is_fixed_alternate(keycode: int, owner: String) -> bool:
 	for entry: Dictionary in ACTIONS:
-		var candidate := String(entry["action"])
-		if candidate == action:
+		if String(entry["action"]) != owner:
 			continue
 		for fixed_key: int in entry.get("keys", []):
 			if fixed_key == keycode:
 				return true
 	return false
+
+func is_reserved_key(keycode: int) -> bool:
+	return RESERVED_KEYS.has(keycode)
 
 func button_owner(button_index: int) -> String:
 	for action: String in bindings:
@@ -186,8 +190,8 @@ func button_name(button_index: int) -> String:
 	return "BTN %d" % button_index
 
 func _valid_key(keycode: int) -> bool:
-	return keycode > 0 && keycode != KEY_CTRL && keycode != KEY_SHIFT \
-		&& keycode != KEY_ALT && keycode != KEY_META
+	return keycode > 0 && !is_reserved_key(keycode) && keycode != KEY_CTRL \
+		&& keycode != KEY_SHIFT && keycode != KEY_ALT && keycode != KEY_META
 
 func _valid_button(button_index: int) -> bool:
 	return button_index == UNBOUND || (button_index >= 0 && button_index <= 31)
