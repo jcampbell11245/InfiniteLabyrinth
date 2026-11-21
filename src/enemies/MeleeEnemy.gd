@@ -18,10 +18,11 @@ extends Enemy
 #
 # Unparryable attacks (unparryable_attack, knights): some swings, Tuning.unparryable_chance of
 # them, glint red instead of white and can't be parried; see Enemy._on_player_sword. The
-# player has to roll through the enemy and hit it from behind. The enemy doesn't turn to
-# follow them until the attack is over. Afterwards it's stuck in end lag: frozen on the
-# attack's last frame for Tuning.heavy_end_lag, unable to move, turn or attack, and hits
-# don't knock it out of the pose (no stun, though: no stars, no extra damage).
+# player has to roll through the enemy and hit it from behind, which dazes it like a parry
+# (no damage; Enemy._dazed_from_behind). The enemy doesn't turn to follow them until the
+# attack is over. Afterwards it's stuck in end lag: frozen on the attack's last frame for
+# Tuning.heavy_end_lag, unable to move, turn or attack. A hit from behind then dazes it the
+# same way; any other hit lands without knocking it out of the pose.
 #
 # Any other attack turns round if the player gets behind the enemy at any point in it,
 # windup or follow-through, carrying on the same swing; the blade is still live after the
@@ -537,6 +538,10 @@ func _on_end_lag_over() -> void:
 func _hit_interrupts_attack() -> bool:
 	return !in_end_lag()
 
+# Frozen after an unparryable attack: a hit from behind dazes it (Enemy._dazed_from_behind).
+func _in_rollable_recovery() -> bool:
+	return in_end_lag()
+
 func _is_player_behind() -> bool:
 	return Direction.to_vector(direction).dot(_to_player()) < 0
 
@@ -920,9 +925,16 @@ func _play_reaction(action: String) -> void:
 	if animator.sprite_frames.has_animation(action + "_" + direction):
 		_play(action)
 
+# Its hit caught the player (Enemy.landed_hit): no more swings this turn, so in a group the
+# turn passes on once this swing is over, and no double attack follows.
+func _end_combo_on_hit() -> void:
+	_swings_left = 0
+	_follow_up_ready = false
+
 # Parried: the turn is over once the stun wears off.
 func _on_staggered() -> void:
 	_swings_left = 0
+	_end_lag.stop() # Dazed out of its end lag, from behind
 	_play_reaction("vuln")
 
 # True while stunned from a parry, in end lag, while a block plays out, or while flashing

@@ -22,7 +22,8 @@ it reaches 0:00. Between floors, and after a game over, coins buy upgrades: **Lu
 
 Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
 strike. Swing as it glints to **parry** and stun it; swing too early and you're the one
-staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
+staggered. A red glint can't be parried: roll through it and hit the enemy from behind to
+stun it the same way. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
@@ -175,22 +176,23 @@ Press **F1** on the title screen to open the room creator. It starts with a blan
 Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
 **Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
 pitfalls, inner walls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
-knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns) and switches;
+knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns, centaurs, bucentaurs,
+taurtaurs) and switches;
 right-click erases.
-Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight or dragon you place, or click with the **Select** tool, shows its detection
+Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight, dragon or centaur you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
 the side it watches, since enemies can't see behind themselves. Wizards have no radius: they
 react to the player anywhere in the room. In room scenes the value is each enemy's
 `detection_radius`.
 
-**Facing** sets which way the selected goblin, knight or dragon faces when the room starts: **Up**,
+**Facing** sets which way the selected goblin, knight, dragon or centaur faces when the room starts: **Up**,
 **Down**, **Left**, **Right** (the default) or **Auto**, which turns it to face the player as
 they come into the room, so it looks at the door they used (unless it has already noticed
 them). The editor sprite turns to match, an Auto enemy is marked "auto", and the shaded half
 of its detection circle follows the facing. In room scenes this is each enemy's
 `starting_direction` (`"auto"` for Auto).
 
-**Roaming** sets what the selected goblin or knight does before it notices the player:
+**Roaming** sets what the selected goblin, knight or centaur does before it notices the player:
 **None** (stands still, the default and what every existing room uses), **Path** or **Area**.
 Picking Path or Area switches to the Select tool. For a path, click or drag on the floor to
 draw it from the enemy outwards (dragging back over the last point takes it off), and
@@ -327,7 +329,8 @@ src/autoload/  Tuning (every gameplay number, edited live by the debug menu), Sa
                pitch variation, flashes and particle bursts), DebugMenu
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script, the level timer, curses
-src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), RangedEnemy
+src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families; Centaur,
+               the centaur family, builds on it), RangedEnemy
                (wizard), Caster (warlock, necromancer), Wyrm (wyrm and wyvern, flying
                dragons) and Boss; AttackCoordinator takes turns and group rushes
                between a room's enemies; FireballReturner bats fireballs back
