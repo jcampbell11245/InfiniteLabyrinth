@@ -155,6 +155,18 @@ func key_owner(keycode: int, action := "") -> String:
 		return candidate
 	return ""
 
+# True when another action keeps this key as an alternate. Those rows don't show the key, so
+# the rebinding panel should say the key is reserved rather than used by a visible binding.
+func is_fixed_alternate(keycode: int, action := "") -> bool:
+	for entry: Dictionary in ACTIONS:
+		var candidate := String(entry["action"])
+		if candidate == action:
+			continue
+		for fixed_key: int in entry.get("keys", []):
+			if fixed_key == keycode:
+				return true
+	return false
+
 func button_owner(button_index: int) -> String:
 	for action: String in bindings:
 		if button_for(action) == button_index:

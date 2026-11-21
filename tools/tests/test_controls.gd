@@ -100,6 +100,83 @@ func test_options_panel_has_a_controls_page() -> void:
 	save_data.write_to_disk = old_write
 	panel.free()
 
+func test_leaving_controls_or_resetting_stops_the_capture() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	var old_key: int = bindings.key_for("left")
+
+	controls.start_capture("left", "key")
+	(controls.get_node("Panel/Back") as Button).pressed.emit()
+	expect(!controls.is_listening(), "Back with the mouse stops the capture")
+	var key := InputEventKey.new()
+	key.keycode = KEY_P
+	key.pressed = true
+	controls._input(key)
+	expect(bindings.key_for("left") == old_key, "a key after Back does not bind anything")
+
+	panel.controls_button.pressed.emit()
+	controls.start_capture("left", "key")
+	(controls.get_node("Panel/Reset") as Button).pressed.emit()
+	expect(!controls.is_listening(), "Reset stops the capture")
+	controls._input(key)
+	expect(bindings.key_for("left") == KEY_A, "Reset restores the default key")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
+func test_a_capture_only_accepts_its_own_device() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	var old_button: int = bindings.button_for("left")
+
+	controls.start_capture("left", "key")
+	var pad := InputEventJoypadButton.new()
+	pad.button_index = JOY_BUTTON_LEFT_SHOULDER
+	pad.pressed = true
+	controls._input(pad)
+	expect(bindings.button_for("left") == old_button,
+		"a pad press during a key capture does not change the pad binding")
+	expect(controls.is_listening(), "the key capture keeps listening")
+	var key := InputEventKey.new()
+	key.keycode = KEY_P
+	key.pressed = true
+	controls._input(key)
+	expect(bindings.key_for("left") == KEY_P, "the selected key still binds")
+
+	controls.start_capture("roll", "button")
+	var old_key: int = bindings.key_for("roll")
+	var other_key := InputEventKey.new()
+	other_key.keycode = KEY_R
+	other_key.pressed = true
+	controls._input(other_key)
+	expect(bindings.key_for("roll") == old_key,
+		"a key press during a pad capture does not change the key binding")
+	expect(controls.is_listening(), "the pad capture keeps listening")
+	controls._input(pad)
+	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_SHOULDER,
+		"the selected pad button still binds")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
 func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	var panel := _add_options_panel()
 	panel.show()
@@ -313,6 +390,8 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	key_event.pressed = true
 	panel.controls_panel._input(key_event)
 	expect(bindings.key_for("left") == KEY_A, "a key used by another action is rejected")
+	expect(panel.controls_panel.status_label.text.find("USED BY ROLL") >= 0,
+		"a replaceable binding is described as used by its action")
 	expect(panel.controls_panel.is_listening(), "the rejected capture keeps listening")
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
@@ -344,9 +423,13 @@ func test_fixed_alternate_keys_are_reserved() -> void:
 	panel.controls_panel.start_capture("left", "key")
 	_send_key(panel, KEY_RIGHT)
 	expect(bindings.key_for("left") == KEY_A, "a fixed alternate cannot be stolen")
+	expect(panel.controls_panel.status_label.text.find("RESERVED FOR MOVE RIGHT") >= 0,
+		"a fixed alternate is described as reserved")
 	panel.controls_panel.start_capture("melee_attack", "key")
 	_send_key(panel, KEY_X)
 	expect(bindings.key_for("melee_attack") == KEY_J, "Bow's alternate cannot be stolen")
+	expect(panel.controls_panel.status_label.text.find("RESERVED FOR BOW") >= 0,
+		"the other fixed alternate is described as reserved")
 	panel.hide()
 	save_data.write_to_disk = old_write
 	panel.free()

@@ -35,6 +35,11 @@ func _ready() -> void:
 	reset_button.pressed.connect(_on_reset_pressed)
 	_set_status("")
 
+func _notification(what: int) -> void:
+	# Mouse clicks, Android go-back and a hidden parent all bypass Back's signal.
+	if what == NOTIFICATION_VISIBILITY_CHANGED && !is_visible_in_tree():
+		_stop_capture()
+
 func refresh() -> void:
 	for action: String in _key_buttons:
 		(_key_buttons[action] as Button).text = Bindings.key_name(Bindings.key_for(action))
@@ -47,6 +52,10 @@ func focus_first() -> void:
 
 func is_listening() -> bool:
 	return !_listening_action.is_empty()
+
+# Public so the host can abandon a capture when it leaves the controls page.
+func stop_capture() -> void:
+	_stop_capture()
 
 # Public so the buttons and tests can start a capture the same way.
 func start_capture(action: String, device: String) -> void:
@@ -82,6 +91,10 @@ func _input(event: InputEvent) -> void:
 		if _pad_cancel_started_msec >= 0:
 			_consume()
 			return
+		# A key capture never accepts pad buttons; B above is the shared cancel exception.
+		if _listening_device != DEVICE_BUTTON:
+			_consume()
+			return
 		if !pad_event.pressed:
 			return
 		_consume()
@@ -96,6 +109,10 @@ func _input(event: InputEvent) -> void:
 			return
 		# Escape is reserved for the host to cancel the capture, never for a binding.
 		if key_event.keycode == KEY_ESCAPE:
+			return
+		# A pad capture never accepts keys; Escape above remains the shared cancel.
+		if _listening_device != DEVICE_KEY:
+			_consume()
 			return
 		_consume()
 		if key_event.ctrl_pressed || key_event.meta_pressed || key_event.alt_pressed \
@@ -170,6 +187,7 @@ func _on_pad_pressed(action: String) -> void:
 	start_capture(action, DEVICE_BUTTON)
 
 func _on_reset_pressed() -> void:
+	stop_capture()
 	Bindings.reset_defaults()
 	refresh()
 	_set_status("DEFAULT BINDINGS RESTORED")
@@ -180,7 +198,11 @@ func _finish_key(keycode: int) -> void:
 		return
 	var owner := Bindings.key_owner(keycode, _listening_action)
 	if !owner.is_empty() && owner != _listening_action:
-		_set_status("%s IS ALREADY USED BY %s" % [Bindings.key_name(keycode), Bindings.action_label(owner)])
+		var relation := "USED BY"
+		if Bindings.is_fixed_alternate(keycode, _listening_action):
+			relation = "RESERVED FOR"
+		_set_status("%s IS ALREADY %s %s" % [Bindings.key_name(keycode), relation,
+				Bindings.action_label(owner)])
 		return
 	Bindings.set_key(_listening_action, keycode)
 	_set_status("%s KEY SET TO %s" % [Bindings.action_label(_listening_action), Bindings.key_name(keycode)])

@@ -9,6 +9,18 @@
   anything, and a later test that saves (a game over) wrote the cleared progress and full
   volumes to `user://save.cfg`. The test runner now never writes the save file and puts
   SaveData back to what it loaded after every test, and the test restores what it changes.
+  It also reloads `Bindings` and reapplies the InputMap, so a test that fails before its own
+  cleanup cannot leak bindings into later tests.
+- Leaving the Controls page with the mouse or Android go-back, or pressing Reset during a
+  capture, left the capture running: the next keypress rebound the action with no visible
+  feedback, and the menus ignored keys until then. Captures now stop whenever the page hides,
+  on Reset and through the host's Back path.
+- A Controls capture accepted input from the other column: a pad press during a key capture
+  rebound the pad button, and a key press during a pad capture rebound the key. Each capture
+  now ignores the other device, apart from the shared Escape and B cancels.
+- A conflict with a fixed alternate said the key was `USED BY` an action whose row does not
+  show that key, which made the message confusing. Fixed alternates are now described as
+  `RESERVED FOR` the action holding them.
 - A controller-only player could get stuck capturing a bind: B was treated as a new button
   press instead of cancel. Escape and B now cancel a capture in both the title and pause
   menus without closing the options screen.

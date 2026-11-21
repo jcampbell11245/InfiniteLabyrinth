@@ -77,6 +77,8 @@ func _show_controls() -> void:
 	controls_panel.focus_first()
 
 func _hide_controls() -> void:
+	# Leaving the page must abandon a capture, whether by Back, Escape or Android go-back.
+	controls_panel.stop_capture()
 	controls_panel.hide()
 	$Panel.show()
 	controls_button.grab_focus()
