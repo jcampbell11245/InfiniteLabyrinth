@@ -80,3 +80,27 @@ func test_inner_walls_block_light() -> void:
 	expect(player_light().shadow_enabled, "the player's light is blocked by walls")
 	autoload("Tuning").set_value("light_shadows", false)
 	expect(!player_light().shadow_enabled, "turning shadows off lets light through walls")
+
+func test_room_brightness_scales_the_cave_light() -> void:
+	await boot_floor()
+	var id := cave_room_id()
+	await enter_room(id)
+	var usual := ambient()
+	var room: Room = autoload("Game").room_by_id(id)
+	room.brightness = 0.5
+	await enter_room(Constants.START_ROOM)
+	await enter_room(id)
+	expect(ambient().v < usual.v, "a darker room is darker than the usual cave")
+	room.brightness = 1.5
+	await enter_room(Constants.START_ROOM)
+	await enter_room(id)
+	expect_equal(ambient(), Color.WHITE, "a room bright enough is fully lit")
+
+func test_room_design_keeps_brightness() -> void:
+	var design := RoomDesign.new()
+	var before := design.snapshot()
+	design.brightness = 0.6
+	design.record(before)
+	expect(design.to_text().contains("brightness: 0.60"), "the export says the room's brightness")
+	design.undo()
+	expect_equal(design.brightness, 1.0, "undo puts the brightness back")

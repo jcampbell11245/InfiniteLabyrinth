@@ -46,6 +46,9 @@ const LIGHT_MAP_MARGIN := 4 # World pixels drawn past each screen edge, so shake
 # (the shader doubles it back); 1 here is "as drawn".
 const LIGHT_MAP_SCALE := 0.5
 
+# How fast each channel darkens, against 1 for grey: blue holds on longest.
+const SHADOW_TINT := Color(1.15, 1.1, 0.8)
+
 const BRIGHT_ROOMS := [Constants.START_ROOM, Constants.END_ROOM]
 const BRIGHT_FADE_TIME := 0.5 # Real seconds the darkness takes to lift or fall on changing rooms
 
@@ -55,6 +58,7 @@ var _receiver: ColorRect # What the lights fall on, in the light map only
 var _overlay: Sprite2D # Multiplies the world by the light map
 var _texture: GradientTexture2D
 var _brightness_lift := 0.0 # 0 in the dark cave, 1 in a room kept fully lit
+var _room_brightness := 1.0 # The current room's Room.brightness, faded between rooms
 var _lift_tween: Tween
 var _seen_room := false # The first room is set at once, not faded to
 
@@ -149,28 +153,39 @@ func light_texture() -> GradientTexture2D:
 		_texture.height = TEXTURE_SIZE
 	return _texture
 
-# The colour the unlit cave is multiplied by: Tuning.cave_brightness in every channel,
-# nudged towards blue so the shadows read as cold stone rather than grey, and blended to
-# white as a bright room's lift comes in.
+# The colour the unlit cave is multiplied by: Tuning.cave_brightness times the room's own
+# brightness, with the darkness leaning blue (red and green fall off faster) so shadows read
+# as cold stone rather than grey. The tint goes with the darkness, so a fully lit room is
+# white. Blended to white as a bright room's lift comes in.
 func ambient_color() -> Color:
 	if !Tuning.lighting_enabled:
 		return Color.WHITE
-	var b := Tuning.cave_brightness
-	return Color(b * 0.85, b * 0.9, b * 1.1).clamp().lerp(Color.WHITE, _brightness_lift)
+	var dark := 1.0 - clampf(Tuning.cave_brightness * _room_brightness, 0.0, 1.0)
+	var shade := Color(1.0 - dark * SHADOW_TINT.r, 1.0 - dark * SHADOW_TINT.g, 1.0 - dark * SHADOW_TINT.b)
+	return shade.clamp().lerp(Color.WHITE, _brightness_lift)
 
+# Fades to the new room's light: fully lit in a bright room, otherwise the room's own
+# brightness.
 func _on_room_entered(room_id: int) -> void:
-	var target := 1.0 if room_id in BRIGHT_ROOMS else 0.0
+	var room := Game.room_by_id(room_id)
+	var lift := 1.0 if room_id in BRIGHT_ROOMS else 0.0
+	var level := room.brightness if room != null else 1.0
 	if _lift_tween != null:
 		_lift_tween.kill()
 	if !_seen_room:
 		_seen_room = true
-		_set_lift(target)
+		_set_room_light(lift, level)
 		return
+	var from_lift := _brightness_lift
+	var from_level := _room_brightness
 	_lift_tween = create_tween().set_ignore_time_scale()
-	_lift_tween.tween_method(_set_lift, _brightness_lift, target, BRIGHT_FADE_TIME)
+	_lift_tween.tween_method(func(t: float) -> void:
+		_set_room_light(lerpf(from_lift, lift, t), lerpf(from_level, level, t)),
+		0.0, 1.0, BRIGHT_FADE_TIME)
 
-func _set_lift(value: float) -> void:
-	_brightness_lift = value
+func _set_room_light(lift: float, level: float) -> void:
+	_brightness_lift = lift
+	_room_brightness = level
 	_apply_all()
 
 func _on_node_added(node: Node) -> void:
