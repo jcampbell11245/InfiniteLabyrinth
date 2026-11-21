@@ -6,6 +6,8 @@ extends Node2D
 
 const KeyPickup := preload("res://src/effects/KeyPickup.gd")
 const TimePickup := preload("res://src/effects/TimePickup.gd")
+const KEY_SPAWN_OFFSET := Vector2(-6, -2) # Where the key floats out, relative to the chest
+const TIME_SPAWN_OFFSET := Vector2(6, -2) # Where the hourglass floats out
 
 @export var direction := "down" # Which way the chest faces, an animation suffix
 
@@ -26,10 +28,11 @@ func _on_area_2d_area_entered(area: Area2D) -> void:
 func _release_pickups() -> void:
 	var key: Node2D = KeyPickup.new()
 	get_parent().add_child(key)
-	key.global_position = global_position + Vector2(-6, -2)
+	key.global_position = global_position + KEY_SPAWN_OFFSET
 	var time_pickup: Node2D = TimePickup.new()
+	time_pickup.seconds = Tuning.chest_time_bonus
 	get_parent().add_child(time_pickup)
-	time_pickup.global_position = global_position + Vector2(6, -2)
+	time_pickup.global_position = global_position + TIME_SPAWN_OFFSET
 
 # Squash and stretch, a spray of gold and a small thump.
 func _burst_open() -> void:

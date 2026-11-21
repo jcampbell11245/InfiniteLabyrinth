@@ -25,7 +25,8 @@ const TICK_PITCH_STEP := 0.1 # Each tick is this much higher than the one before
 # Losing time to damage (see the top of the file). Times are real seconds, so hit-stop
 # doesn't hold the animation up.
 const HURT_COLOR := Color(1, 0.2, 0.2)
-const GAIN_COLOR := Color(0.2, 1.0, 0.2) # Time added, e.g. by a chest key
+const GAIN_COLOR := Color(0.2, 1.0, 0.2) # Time added, e.g. by a chest hourglass
+const GAIN_FLASH_TIME := 0.45 # Seconds the green gain flash takes to fade away
 const DRAIN_TIME_PER_SECOND := 0.03 # The drain takes longer the more time is lost...
 const DRAIN_TIME_MIN := 0.25
 const DRAIN_TIME_MAX := 0.8 # ...within these
@@ -213,8 +214,8 @@ func _on_time_gained(seconds: float) -> void:
 	_draining = false
 	_kill_hurt_tweens()
 	modulate = GAIN_COLOR
-	var flash := create_tween().set_ignore_time_scale()
-	flash.tween_property(self, "modulate", FINAL_COLOR if _final else Color.WHITE, 0.45) \
+	_hurt_tween = create_tween().set_ignore_time_scale()
+	_hurt_tween.tween_property(self, "modulate", FINAL_COLOR if _final else Color.WHITE, GAIN_FLASH_TIME) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_float_gain(roundi(seconds))
 
