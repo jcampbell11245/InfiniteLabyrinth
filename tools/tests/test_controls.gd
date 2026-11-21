@@ -36,6 +36,7 @@ func test_changing_binding_updates_input_map_and_save_data() -> void:
 func test_joypad_events_match_any_controller_device() -> void:
 	var bindings := autoload("Bindings")
 	var snapshot := _snapshot()
+	bindings.reset_defaults()
 	bindings.apply()
 	var found_button := false
 	for event: InputEvent in InputMap.action_get_events("melee_attack"):
@@ -259,6 +260,25 @@ func test_tapping_b_binds_it_but_holding_b_cancels() -> void:
 	save_data.write_to_disk = old_write
 	panel.free()
 	_restore(snapshot)
+
+func test_status_blurbs_clear_after_three_seconds_and_reset_on_new_messages() -> void:
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	controls._set_status("FIRST BLURB")
+	expect(controls.status_label.text == "FIRST BLURB" && controls.status_label.visible,
+		"a status message is shown")
+	await wait_real(1.0)
+	controls._set_status("SECOND BLURB")
+	await wait_real(ControlsPanel.STATUS_SECONDS - 1.0 + 0.2)
+	expect(controls.status_label.text == "SECOND BLURB" && controls.status_label.visible,
+		"a new message restarts the three second timer")
+	await wait_real(1.1)
+	expect(!controls.status_label.visible && controls.status_label.text.is_empty(),
+		"the status message clears after three seconds")
+	panel.hide()
+	panel.free()
 
 func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	var bindings := autoload("Bindings")

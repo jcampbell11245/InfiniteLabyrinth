@@ -28,8 +28,9 @@ a **spin attack**, which also breaks up group rushes.
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
 volume separately, or open **Controls** to change keys and controller buttons. In Controls,
 select a KEY or PAD button and press the new input; Escape cancels. A quick tap of B binds it
-like any other pad button, while holding B briefly still cancels the capture. A key or button
-can only belong to one action, and **RESET TO DEFAULTS** restores the starting layout.
+like any other pad button, while holding B briefly still cancels the capture. Status messages
+clear after three seconds. A key or button can only belong to one action, and **RESET TO
+DEFAULTS** restores the starting layout.
 Bindings are saved with the volumes and survive a run reset. The arrow keys, left stick and the
 extra attack keys stay active alongside your chosen inputs. In the pause menu, the pause key or
 **Back** returns to the previous page, then to the pause buttons.

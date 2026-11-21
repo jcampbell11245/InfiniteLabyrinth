@@ -15,6 +15,7 @@ const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
 const CANCEL_HINT := "ESC TO CANCEL   HOLD B TO CANCEL"
 const PAD_CANCEL_HOLD_SECONDS := 0.6
+const STATUS_SECONDS := 3.0
 
 @onready var rows: VBoxContainer = $Panel/Rows
 @onready var status_label: Label = $Panel/Status
@@ -26,6 +27,7 @@ var _pad_buttons := {}
 var _listening_action := ""
 var _listening_device := ""
 var _pad_cancel_started_msec := -1 # -1 while B is not held; real time so slow motion can't stretch it.
+var _status_generation := 0 # Stale timers from earlier messages must not clear a newer blurb.
 
 func _ready() -> void:
 	_build_rows()
@@ -200,10 +202,21 @@ func cancel_capture() -> void:
 	_set_status("CAPTURE CANCELLED")
 	_stop_capture()
 
-# Feedback is transient, so the label stays hidden until there is something to say.
+# Feedback is transient: the label stays hidden with no message and clears itself after a
+# short real-time delay, even while the game is paused or slowed down.
 func _set_status(message: String) -> void:
 	status_label.text = message
 	status_label.visible = !message.is_empty()
+	_status_generation += 1
+	if message.is_empty():
+		return
+	var generation := _status_generation
+	var timer := get_tree().create_timer(STATUS_SECONDS, true, false, true)
+	timer.timeout.connect(_on_status_timeout.bind(generation))
+
+func _on_status_timeout(generation: int) -> void:
+	if generation == _status_generation:
+		_set_status("")
 
 func _stop_capture() -> void:
 	_listening_action = ""
