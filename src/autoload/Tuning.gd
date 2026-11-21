@@ -133,6 +133,23 @@ var centaur_charge_max_distance := 200.0 # Pixels: longest a charge runs
 var centaur_charge_range := 160.0 # Pixels: a player out of reach but this close may be charged at instead of walked up to
 var centaur_hurtbox_margin := 4.0 # Pixels the hurtbox reaches past the drawn body all round, so near misses count
 var boss_laser_cooldown := 1.0
+# Hobgoblins (Hobgoblin.gd): run at the player and blow themselves up on them.
+var hobgoblin_lunge_range := 44.0 # Pixels from the player at which it stops to wind up its leap
+var hobgoblin_lunge_speed := 240.0 # Pixels/sec while leaping at the player
+var hobgoblin_lunge_overshoot := 20.0 # Pixels past the player a dodged leap carries on
+var hobgoblin_contact_reach := 14.0 # Pixels from the player that count as touching them, setting it off
+var hobgoblin_recover_time := 0.8 # Seconds it stands, dazed, after a leap that missed
+var hobgoblin_blast_radius := 40.0 # Pixels: everything this close to the blast is caught in it
+var hobgoblin_blast_damage := 2.0 # Damage to the player of a hobgoblin going off on them
+var hobgoblin_blast_enemy_damage := 3.0 # Damage to each enemy caught in a blast
+var hobgoblin_fling_speed := 300.0 # Pixels/sec a parried hobgoblin flies at
+var hobgoblin_fling_time := 1.0 # Seconds a flung hobgoblin flies before going off anyway
+# Pilots (Pilot.gd): goblins that ride dragons, centaurs and orcs.
+var pilot_spawn_chance := 0.1 # Chance each dragon, centaur or orc has of starting with a pilot on it
+var pilot_seek_speed := 1.3 # Times its speed while running to a mount
+var pilot_mount_reach := 14.0 # Pixels from a mount's feet at which a pilot climbs on
+var pilot_strike_reach := 40.0 # Pixels from the pilot its follow-up slash reaches; further off it doesn't swing
+var pilot_strike_hold := 0.6 # Seconds of windup hold on its follow-up slash; outlasts the sword cooldown
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
 var engage_margin := 4.0 # Pixels inside the shorter of the two attack reaches to stop at
@@ -437,6 +454,22 @@ const FIELDS := [
 	["Tiles", "slow_tile_multiplier", "Slow tile speed x", 0.1, 1, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "teleport_glow_range", "Teleporter destination glow range (px)", 0, 200, 4, "new (SpecialTiles._update_glow)"],
+
+	["Goblins", "hobgoblin_lunge_range", "Hobgoblin leap range (px)", 0, 150, 1, "new (Hobgoblin._fight)"],
+	["Goblins", "hobgoblin_lunge_speed", "Hobgoblin leap speed (px/s)", 20, 800, 10, "new (Hobgoblin._lunge_step)"],
+	["Goblins", "hobgoblin_lunge_overshoot", "Hobgoblin leap overshoot (px)", 0, 100, 1, "new (Hobgoblin._start_lunge)"],
+	["Goblins", "hobgoblin_contact_reach", "Hobgoblin touch distance (px)", 0, 60, 1, "new (Hobgoblin._touching_player)"],
+	["Goblins", "hobgoblin_recover_time", "Hobgoblin daze after a missed leap (s)", 0, 3, 0.05, "new (Hobgoblin._end_lunge)"],
+	["Goblins", "hobgoblin_blast_radius", "Hobgoblin blast radius (px)", 0, 150, 1, "new (Hobgoblin.explode)"],
+	["Goblins", "hobgoblin_blast_damage", "Hobgoblin blast damage to the player", 0, 10, 0.25, "new (Hobgoblin.explode)"],
+	["Goblins", "hobgoblin_blast_enemy_damage", "Hobgoblin blast damage to enemies", 0, 20, 0.25, "new (Hobgoblin.explode)"],
+	["Goblins", "hobgoblin_fling_speed", "Parried hobgoblin fling speed (px/s)", 20, 800, 10, "new (Hobgoblin._fling)"],
+	["Goblins", "hobgoblin_fling_time", "Parried hobgoblin fuse (s)", 0.1, 5, 0.05, "new (Hobgoblin._fly)"],
+	["Goblins", "pilot_spawn_chance", "Pilot spawn chance on a mount", 0, 1, 0.05, "new (Enemy._maybe_spawn_pilot)"],
+	["Goblins", "pilot_seek_speed", "Pilot run-to-mount speed x", 0.1, 3, 0.05, "new (Pilot._seek_mount)"],
+	["Goblins", "pilot_mount_reach", "Pilot climb-on distance (px)", 0, 60, 1, "new (Pilot._seek_mount)"],
+	["Goblins", "pilot_strike_reach", "Pilot follow-up reach (px)", 0, 120, 1, "new (Pilot._ride)"],
+	["Goblins", "pilot_strike_hold", "Pilot follow-up windup hold (s)", 0, 2, 0.05, "new (Pilot.follow_up_strike)"],
 
 	["Lighting", "lighting_enabled", "Lighting on", 0, 0, 0, "new (CaveLighting)"],
 	["Lighting", "cave_brightness", "Cave brightness", 0, 1, 0.05, "new (CaveLighting.ambient_color)"],

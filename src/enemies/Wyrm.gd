@@ -404,9 +404,10 @@ func _separation() -> Vector2:
 
 func _can_attack(coordinator: AttackCoordinator) -> bool:
 	return attack_cooldown.is_stopped() && !coordinator.other_is_swinging(self) \
-		&& !coordinator.rush_active() && !_other_dragon_attacking()
+		&& !coordinator.rush_active() && !_other_dragon_attacking() && !rider_busy()
 
 func _start_attack() -> void:
+	_combo_started()
 	if randf() < Tuning.wyrm_charge_chance || is_instance_valid(_fireball):
 		_start_charge(has_heavy_charge && randf() < Tuning.wyvern_heavy_charge_chance)
 	else:
@@ -449,6 +450,7 @@ func _end_attack(lag: float, rooted := false) -> void:
 		_recover.start(lag)
 	_roll_cooldown()
 	_hold_off_other_dragons()
+	_combo_finished() # A pilot on it follows up, if the player is in its reach
 
 # The attack animation has played to its last frame.
 func _animation_done() -> bool:
@@ -624,7 +626,7 @@ func _parry_timing() -> Parry:
 # Partway through a charge, up to the bite. Other enemies hold off their own windups
 # meanwhile (AttackCoordinator.other_is_swinging).
 func is_swinging() -> bool:
-	return _animation_is("slash") && animator.frame <= attack_frame
+	return _animation_is("slash") && animator.frame <= attack_frame || rider_busy()
 
 # Dragons never take a melee turn from the AttackCoordinator; they attack on their own clock.
 func can_take_turn() -> bool:

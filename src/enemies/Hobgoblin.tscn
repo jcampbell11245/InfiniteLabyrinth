@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="1"]
+[ext_resource type="Script" path="res://src/enemies/Hobgoblin.gd" id="2"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/hobgoblin/hobgoblin_frames.tres" id="3"]
+
+[node name="Hobgoblin" instance=ExtResource("1")]
+script = ExtResource("2")
+speed = 70.0
+health = 1.0
+coin_reward = 12
+double_attack = false
+voice_pitch = 0.85
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+sprite_frames = ExtResource("3")

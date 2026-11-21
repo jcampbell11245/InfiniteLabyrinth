@@ -22,6 +22,10 @@ extends Node2D
 # The Facing buttons set which way the selected goblin or knight faces when the room
 # starts: Up, Down, Left, Right, or Auto, which turns it to face the player as they come
 # into the room. Its sprite shows the facing; an Auto one is marked "auto".
+#
+# The Pilot switch puts a goblin pilot on the selected orc, dragon or centaur from the start
+# (Enemy.spawn_with_pilot); the pilot is drawn riding it. Without it, any of them may still
+# get one at random in the game (Tuning.pilot_spawn_chance).
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const PLAY_SCENE := "res://src/world/Overworld.tscn"
@@ -125,6 +129,8 @@ const TOOLS := [
 	["Goblin", "object", "goblin"],
 	["Troll", "object", "troll"],
 	["Orc", "object", "orc"],
+	["Hobgoblin", "object", "hobgoblin"],
+	["Pilot", "object", "pilot"],
 	["Knight", "object", "knight"],
 	["Dual Knight", "object", "dual_knight"],
 	["Wizard", "object", "wizard"],
@@ -152,6 +158,8 @@ var _area_drag := 0 # EDGE_ bits of the selected roaming area being dragged, or 
 var _area_hot := 0 # EDGE_ bits of the selected roaming area under the mouse (or being dragged)
 var _roam_buttons := {} # "none"/"path"/"area" -> its Button
 var _facing_buttons := {} # One of RoomDesign.FACINGS -> its Button
+var _pilot_button: Button # The Pilot switch
+var _seat_cache := {} # Mount kind -> where its pilot sits facing right, in room pixels
 var _undo_button: Button
 var _redo_button: Button
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
@@ -725,6 +733,8 @@ func _refresh_objects() -> void:
 			if sprite.sprite_frames.has_animation("idle_" + facing):
 				sprite.animation = "idle_" + facing
 		marker.add_child(sprite)
+		if design.has_pilot(index):
+			marker.add_child(_pilot_sprite(kind, sprite.animation))
 		_objects.add_child(marker)
 
 # A still copy of the first frame `kind`'s scene shows, placed as it is in the scene.
@@ -767,6 +777,10 @@ func _refresh_info() -> void:
 		var button: Button = _facing_buttons[facing]
 		button.disabled = !can_face
 		button.set_pressed_no_signal(can_face && facing == design.facing_at(_selected))
+	var can_carry := design.objects.has(_selected) && RoomDesign.can_carry_pilot(design.objects[_selected])
+	if _pilot_button != null:
+		_pilot_button.disabled = !can_carry
+		_pilot_button.set_pressed_no_signal(can_carry && design.has_pilot(_selected))
 	var can_roam := design.objects.has(_selected) && RoomDesign.can_roam(design.objects[_selected])
 	for mode: String in _roam_buttons:
 		var button: Button = _roam_buttons[mode]
@@ -822,6 +836,7 @@ func _build_ui() -> void:
 	column.add_child(_info)
 	column.add_child(_facing_row())
 	column.add_child(_roam_row())
+	column.add_child(_pilot_row())
 	var clear_label := Label.new()
 	clear_label.text = "Room clears by:"
 	column.add_child(clear_label)
@@ -1162,3 +1177,57 @@ func _add_button(parent: Control, text: String, action: Callable) -> Button:
 	button.pressed.connect(action)
 	parent.add_child(button)
 	return button
+
+# --- Pilots ---
+
+# Turns the selected mount's Pilot switch on or off.
+func _set_pilot(on: bool) -> void:
+	if !design.objects.has(_selected) || !RoomDesign.can_carry_pilot(design.objects[_selected]):
+		_refresh_info()
+		return
+	var before := design.snapshot()
+	design.set_pilot(_selected, on)
+	design.record(before)
+	_status.text = "It starts with a goblin pilot riding it" if on \
+		else "No pilot to start with (it may still get one at random)"
+	_refresh_objects()
+	_refresh_info()
+	_refresh_history()
+
+# "Pilot" switch, for the selected orc, dragon or centaur (disabled otherwise).
+func _pilot_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = "Pilot"
+	row.add_child(label)
+	# Lit like the selected Facing or Roaming button while on.
+	_pilot_button = _add_button(row, "Starts with a pilot",
+		func() -> void: _set_pilot(_pilot_button.button_pressed))
+	_pilot_button.toggle_mode = true
+	_pilot_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pilot_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_pilot_button.tooltip_text = "A goblin pilot rides it from the start (select an orc, dragon or centaur first)"
+	return row
+
+# The pilot's sprite, sitting where it rides a `kind` mount shown playing `mount_animation`
+# (mirrored facing left and centred facing up or down, as Enemy.seat_position does).
+func _pilot_sprite(kind: String, mount_animation: StringName) -> AnimatedSprite2D:
+	var sprite := _sprite_for("pilot")
+	var facing := String(mount_animation).get_slice("_", 1)
+	var seat := _seat_for(kind)
+	if facing == Direction.LEFT:
+		seat.x = -seat.x
+	elif facing == Direction.UP || facing == Direction.DOWN:
+		seat.x = 0.0
+	sprite.position += seat
+	if sprite.sprite_frames.has_animation("idle_" + facing):
+		sprite.animation = "idle_" + facing
+	return sprite
+
+# Where a pilot's origin sits on a `kind` mount facing right, in room pixels.
+func _seat_for(kind: String) -> Vector2:
+	if !_seat_cache.has(kind):
+		var scene: Node2D = (load(RoomDesign.OBJECT_SCENES[kind]) as PackedScene).instantiate()
+		_seat_cache[kind] = (scene.get("pilot_seat") as Vector2) * scene.scale
+		scene.free()
+	return _seat_cache[kind]

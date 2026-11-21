@@ -300,6 +300,7 @@ func _all_cleared() -> bool:
 func _end_combo() -> void:
 	_combo = PackedInt32Array()
 	_swings_left -= 1
+	_combo_finished()
 	_end_windup_hold()
 	_play("idle")
 	# Deferred: a parry sets its own bar value (Enemy._on_player_sword) after this returns.

@@ -77,6 +77,10 @@ See README → Layout for the folder map. The parts you'll touch most:
 - **Enemies**: `Enemy` is the base; `MeleeEnemy` (goblin, knight families), `RangedEnemy`
   (wizard), `Caster` (warlock, necromancer), `Wyrm` (wyrm, wyvern; they fly), `Boss`;
   `Centaur` (centaur, bucentaur, taurtaur) extends `MeleeEnemy` with combos.
+  `Hobgoblin` (kamikaze; a parry flings it into other enemies) and `Pilot` (rides any
+  `mountable` enemy, taking hits first and adding a slash after each of the mount's attacks)
+  extend `MeleeEnemy` too. A new enemy with attacks calls `_combo_started` as one begins and
+  `_combo_finished` as one plays out, so a pilot riding it follows up.
   Melee turns and group rushes are shared through `AttackCoordinator`, one per room;
   wizards and dragons bat fireballs back through `FireballReturner`.
 - **Two combat rules every enemy follows** (keep them in mind when changing or adding one):
