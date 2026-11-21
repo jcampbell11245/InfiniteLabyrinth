@@ -110,3 +110,20 @@ func test_player_light_is_at_their_feet() -> void:
 	await tree.process_frame
 	var feet: Node2D = autoload("Game").player.get_node("CollisionShape2D")
 	expect_equal(player_light().position, feet.position, "the player's light sits on their collision box, which walls keep out")
+
+func test_knights_glow_blue() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(8, 6), "knight")
+	Overworld.test_design = design
+	await boot_floor()
+	Overworld.test_design = null
+	await tree.process_frame
+	var room: Room = autoload("Game").room_by_id(Overworld.TEST_ROOM_ID)
+	var knight: Node = null
+	for child in room.get_children():
+		if child is MeleeEnemy:
+			knight = child
+	expect(knight != null, "the play-test room has a knight")
+	var light := knight.get_node_or_null(NodePath(CaveLighting.LIGHT_NAME)) as PointLight2D
+	expect(light != null && light.color.b > light.color.r, "a knight casts a blue light")
+	expect(knight.has_node("AnimatedSprite2D/GlowMask"), "a knight's visor and sword glow")

@@ -12,7 +12,8 @@ extends Node
 # sampled nearest. It sits in the world canvas, so the HUD's CanvasLayers stay unlit.
 #
 # PointLight2Ds add light: a warm one carried by the player, and small coloured ones on
-# fireballs and lasers so they stand out in the dark. Dropped loot doesn't glow. Inner walls block the light: each room gets light
+# fireballs and lasers so they stand out in the dark, and a blue one on knights, whose
+# visor and sword also glow (GlowMask). Dropped loot doesn't glow. Inner walls block the light: each room gets light
 # occluders over its wall cells, so they cast shadows. Lights and occluders are attached as
 # nodes spawn, so nothing else needs to know about lighting. Every number is in Tuning (the
 # F2 menu's Lighting tab) and applies live.
@@ -25,6 +26,7 @@ const OCCLUDER_NAME := &"WallShadow"
 const WALL_INSET := 6.0 # Pixels a wall's shadow starts inside its open edges
 # Projectile scenes that glow; arrows don't.
 const GLOWING_PROJECTILES := ["Fireball", "Laser"]
+const KNIGHT_SCENES := ["Knight", "DualKnight"] # Their visors and swords glow blue
 # Pixels across the generated light texture. Big, because the player's light stretches it
 # over most of a room and coarse texels show up as rings.
 const TEXTURE_SIZE := 512
@@ -33,8 +35,9 @@ const FALLOFF_STOPS := 32 # Gradient points along the falloff curve; few points 
 const PLAYER_COLOR := Color(1.0, 0.86, 0.62) # Torch-warm
 const FIREBALL_COLOR := Color(1.0, 0.55, 0.2)
 const LASER_COLOR := Color(1.0, 0.3, 0.3)
+const KNIGHT_COLOR := Color(0.3, 0.8, 1.0) # The cyan of their visors
 
-enum Kind { PLAYER, PROJECTILE }
+enum Kind { PLAYER, PROJECTILE, KNIGHT }
 
 # A visibility and light layer of its own for the receiver: only the light map's viewport
 # draws it, and the lights only light it, never the sprites themselves.
@@ -192,13 +195,12 @@ func _on_node_added(node: Node) -> void:
 	if node.has_node(NodePath(LIGHT_NAME)):
 		return
 	if node is Player:
-		var light := _add_light(node, Kind.PLAYER, PLAYER_COLOR)
-		# At the player's feet (their collision box), not the middle of the sprite: walls stop
-		# the feet at their edge, but the sprite's middle can be over a wall, and a light
-		# inside an occluder is cut off.
-		var feet := node.get_node_or_null("CollisionShape2D") as Node2D
-		if feet != null:
-			light.position = feet.position
+		_put_at_feet(_add_light(node, Kind.PLAYER, PLAYER_COLOR), node)
+	elif node is MeleeEnemy && node.scene_file_path.get_file().get_basename() in KNIGHT_SCENES:
+		_put_at_feet(_add_light(node, Kind.KNIGHT, KNIGHT_COLOR), node)
+		var sprite := node.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+		if sprite != null && !sprite.has_node("GlowMask"):
+			GlowMask.attach.call_deferred(sprite)
 	elif node is Projectile:
 		var scene := node.scene_file_path.get_file().get_basename()
 		if scene in GLOWING_PROJECTILES:
@@ -253,6 +255,14 @@ func _add_wall_occluders(room: Room) -> void:
 		occluder.occluder_light_mask = RECEIVER_LAYER
 		holder.add_child(occluder)
 
+# Moves a light to its owner's feet (their collision box), not the middle of the sprite:
+# walls stop the feet at their edge, but the sprite's middle can be over a wall, and a light
+# inside an occluder is cut off.
+func _put_at_feet(light: PointLight2D, owner_node: Node) -> void:
+	var feet := owner_node.get_node_or_null("CollisionShape2D") as Node2D
+	if feet != null:
+		light.position = feet.position
+
 func _add_light(owner_node: Node, kind: Kind, color: Color) -> PointLight2D:
 	var light := PointLight2D.new()
 	light.name = LIGHT_NAME
@@ -287,6 +297,9 @@ func _apply_light(light: PointLight2D) -> void:
 		Kind.PLAYER:
 			radius = Tuning.light_player_radius
 			light.energy = Tuning.light_player_energy
+		Kind.KNIGHT:
+			radius = Tuning.light_knight_radius
+			light.energy = Tuning.light_knight_energy
 		_:
 			radius = Tuning.light_projectile_radius
 			light.energy = Tuning.light_small_energy
