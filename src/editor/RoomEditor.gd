@@ -102,6 +102,7 @@ const TOOLS := [
 	["Select", "select", null],
 	["Floor", "cell", RoomDesign.Cell.FLOOR],
 	["Pitfall", "cell", RoomDesign.Cell.PIT],
+	["Inner Wall", "cell", RoomDesign.Cell.INNER_WALL],
 	["Stalagmite", "cell", RoomDesign.Cell.STALAGMITE],
 	["Switch", "object", "switch"],
 	["Slick", "cell", RoomDesign.Cell.SLICK],
@@ -124,6 +125,11 @@ const TOOLS := [
 	["Wizard", "object", "wizard"],
 	["Warlock", "object", "warlock"],
 	["Necromancer", "object", "necromancer"],
+	["Wyrm", "object", "wyrm"],
+	["Wyvern", "object", "wyvern"],
+	["Centaur", "object", "centaur"],
+	["Bucentaur", "object", "bucentaur"],
+	["Taurtaur", "object", "taurtaur"],
 ]
 
 var design: RoomDesign
@@ -959,12 +965,13 @@ func _refresh_tool_icons() -> void:
 			button.add_theme_color_override(state, tint)
 
 # One tile of `kind` cut from the preview room's tileset: a plain floor tile, a pit, or a
-# stalagmite standing on its own. A special tile's comes from its own art.
+# stalagmite or inner wall standing on its own. A special tile's comes from its own art.
 func _tile_icon(kind: RoomDesign.Cell) -> Texture2D:
 	if RoomDesign.is_special(kind):
 		return SpecialTiles.icon(RoomDesign.SPECIAL_FRAMES[kind])
 	var map_name := "Tiles"
 	var source_id := Room.FLOOR
+	var atlas_cell := Vector2i.ZERO
 	match kind:
 		RoomDesign.Cell.PIT:
 			map_name = "Pitfalls"
@@ -972,13 +979,17 @@ func _tile_icon(kind: RoomDesign.Cell) -> Texture2D:
 		RoomDesign.Cell.STALAGMITE:
 			map_name = "Stalagmites"
 			source_id = Room.STALAGMITE_SOURCES[0]
+		RoomDesign.Cell.INNER_WALL:
+			map_name = "InnerWalls"
+			source_id = 0
+			atlas_cell = InnerWalls.BASE_ATLAS[0]
 	var tile_set: TileSet = (_preview.get_node(map_name) as TileMap).tile_set
 	var source := tile_set.get_source(source_id) as TileSetAtlasSource
 	if source == null || source.texture == null:
 		return null
 	var icon := AtlasTexture.new()
 	icon.atlas = source.texture
-	icon.region = source.get_tile_texture_region(Vector2i.ZERO)
+	icon.region = source.get_tile_texture_region(atlas_cell)
 	return icon
 
 # "Tileset" and a button per floor with its own art.

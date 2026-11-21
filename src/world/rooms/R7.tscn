@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://cv0qynawsd0nn" path="res://src/objects/RoomDetection.tscn" id="9"]
 [ext_resource type="PackedScene" uid="uid://da0qyn5u6l0dl" path="res://src/objects/Void.tscn" id="10"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Spikes.tscn" id="11"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="12"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="13"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="14"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="15"]
@@ -49,11 +49,11 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 
 [node name="Spikes" parent="." unique_id=2108820098 instance=ExtResource("11")]
 format = 2
-layer_0/tile_data = PackedInt32Array(851981, 0, 0, 851982, 0, 0, 851983, 0, 0, 917517, 0, 0, 917518, 0, 0, 917519, 0, 0, 1048589, 0, 0, 1048590, 0, 0, 1048591, 0, 0, 1114125, 0, 0, 1114126, 0, 0, 1114127, 0, 0)
+layer_0/tile_data = PackedInt32Array(1048589, 0, 0, 1048590, 0, 0, 1114125, 0, 0, 1114126, 0, 0)
 
-[node name="Stalagmites" parent="." unique_id=2132193959 instance=ExtResource("12")]
+[node name="InnerWalls" parent="." unique_id=2132193959 instance=ExtResource("12")]
 format = 2
-layer_0/tile_data = PackedInt32Array(655369, 0, 0, 655381, 0, 0, 720905, 0, 0, 720917, 0, 0, 851978, 15, 0, 851979, 15, 0, 851980, 4, 0, 851981, 4, 0, 851982, 4, 0, 851983, 5, 0, 851984, 4, 0, 851985, 4, 0, 851986, 4, 0, 851987, 3, 0, 851988, 3, 0, 917514, 15, 0, 917515, 15, 0, 917516, 4, 0, 917517, 4, 0, 917518, 4, 0, 917519, 5, 0, 917520, 4, 0, 917521, 4, 0, 917522, 4, 0, 917523, 3, 0, 917524, 3, 0, 983050, 8, 0, 983051, 8, 0, 983055, 8, 0, 983059, 8, 0, 983060, 8, 0, 1048586, 8, 0, 1048587, 8, 0, 1048591, 8, 0, 1048595, 8, 0, 1048596, 8, 0, 1114122, 8, 0, 1114123, 8, 0, 1114127, 8, 0, 1114131, 8, 0, 1114132, 8, 0, 1179658, 13, 0, 1179659, 13, 0, 1179660, 4, 0, 1179661, 4, 0, 1179662, 4, 0, 1179663, 11, 0, 1179664, 4, 0, 1179665, 4, 0, 1179666, 4, 0, 1179667, 9, 0, 1179668, 9, 0)
+layer_0/tile_data = PackedInt32Array(655369, 196608, 1, 655381, 196608, 1, 720905, 196608, 3, 720917, 196608, 3, 851978, 0, 1, 851979, 65536, 1, 851980, 65536, 1, 851981, 65536, 1, 851982, 65536, 1, 851983, 65536, 1, 851984, 65536, 1, 851985, 65536, 1, 851986, 65536, 1, 851987, 65536, 1, 851988, 131072, 1, 917514, 0, 2, 917515, 65536, 2, 917516, 65536, 3, 917517, 65536, 3, 917518, 65536, 3, 917519, 65536, 2, 917520, 65536, 3, 917521, 65536, 3, 917522, 65536, 3, 917523, 65536, 2, 917524, 131072, 2, 983050, 0, 2, 983051, 131072, 2, 983055, 196608, 2, 983059, 0, 2, 983060, 131072, 2, 1048586, 0, 2, 1048587, 131072, 2, 1048591, 196608, 2, 1048595, 0, 2, 1048596, 131072, 2, 1114122, 0, 2, 1114123, 131072, 2, 1114127, 196608, 2, 1114131, 0, 2, 1114132, 131072, 2, 1179658, 0, 3, 1179659, 65536, 3, 1179660, 65536, 0, 1179661, 65536, 0, 1179662, 65536, 0, 1179663, 65536, 3, 1179664, 65536, 0, 1179665, 65536, 0, 1179666, 65536, 0, 1179667, 65536, 3, 1179668, 131072, 3)
 
 [node name="Decorations" parent="." unique_id=609418184 instance=ExtResource("13")]
 

@@ -158,6 +158,7 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	_join_stalagmites()
+	_join_inner_walls()
 	_add_decorations(rng)
 	_add_floor_variants(rng)
 	_add_pitfall_edges()
@@ -304,11 +305,24 @@ func _join_stalagmites() -> void:
 	for cell: Vector2i in sources:
 		stalagmites.set_cell(0, cell, sources[cell], Vector2i.ZERO)
 
+# The same for inner walls, whose pieces join diagonal neighbours too (InnerWalls).
+func _join_inner_walls() -> void:
+	var walls: TileMap = get_node_or_null("InnerWalls")
+	if walls == null:
+		return
+	var is_wall := func(c: Vector2i) -> bool: return walls.get_cell_source_id(0, c) != -1
+	var pieces := {} # Cell -> atlas cell to draw, worked out before any cell changes
+	for cell in walls.get_used_cells(0):
+		pieces[cell] = InnerWalls.atlas_cell(cell, is_wall)
+	for cell: Vector2i in pieces:
+		walls.set_cell(0, cell, 0, pieces[cell])
+
 func _add_decorations(rng: RandomNumberGenerator) -> void:
 	var decorations: TileMap = get_node_or_null("Decorations")
 	if decorations == null:
 		return
 	var stalagmites: TileMap = get_node_or_null("Stalagmites")
+	var walls: TileMap = get_node_or_null("InnerWalls")
 	var special := _special_tiles()
 	for x in range(FLOOR_FIRST, floor_last):
 		for y in range(FLOOR_FIRST, floor_last):
@@ -316,6 +330,8 @@ func _add_decorations(rng: RandomNumberGenerator) -> void:
 			if tiles.get_cell_source_id(0, cell) != FLOOR || _is_pit(cell):
 				continue
 			if stalagmites != null && stalagmites.get_cell_source_id(0, cell) != -1:
+				continue
+			if walls != null && walls.get_cell_source_id(0, cell) != -1:
 				continue
 			if special != null && special.painted(cell) != -1: # Would hide the tile
 				continue

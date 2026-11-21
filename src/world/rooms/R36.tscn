@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" path="res://src/world/tiles/TopWalls.tscn" id="9"]
 [ext_resource type="PackedScene" uid="uid://bb226ffelhus6" path="res://src/enemies/Knight.tscn" id="10"]
 [ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="11"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="12"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="13"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="14"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="15"]
@@ -47,9 +47,9 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 layer_0/tile_data = PackedInt32Array()
 format = 2
 
-[node name="Stalagmites" parent="." unique_id=2048835148 instance=ExtResource("12")]
+[node name="InnerWalls" parent="." unique_id=2048835148 instance=ExtResource("12")]
 format = 2
-layer_0/tile_data = PackedInt32Array(655370, 0, 0, 655371, 0, 0, 720906, 0, 0, 720907, 0, 0, 786448, 0, 0, 786449, 0, 0, 851978, 0, 0, 851979, 0, 0, 917514, 0, 0, 917515, 0, 0, 983059, 0, 0, 983060, 0, 0, 1048591, 0, 0, 1114127, 0, 0, 1245194, 0, 0, 1245195, 0, 0, 1245203, 0, 0, 1245204, 0, 0, 1310730, 0, 0, 1310731, 0, 0, 1310739, 0, 0, 1310740, 0, 0)
+layer_0/tile_data = PackedInt32Array(655370, 0, 1, 655371, 131072, 1, 720906, 0, 3, 720907, 131072, 3, 786448, 0, 0, 786449, 131072, 0, 851978, 0, 1, 851979, 131072, 1, 917514, 0, 3, 917515, 131072, 3, 983059, 0, 0, 983060, 131072, 0, 1048591, 196608, 1, 1114127, 196608, 3, 1245194, 0, 1, 1245195, 131072, 1, 1245203, 0, 1, 1245204, 131072, 1, 1310730, 0, 3, 1310731, 131072, 3, 1310739, 0, 3, 1310740, 131072, 3)
 
 [node name="Decorations" parent="." unique_id=1616736780 instance=ExtResource("13")]
 

@@ -22,7 +22,8 @@ it reaches 0:00. Between floors, and after a game over, coins buy upgrades: **Lu
 
 Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
 strike. Swing as it glints to **parry** and stun it; swing too early and you're the one
-staggered. A red glint can't be parried: roll behind it. Hold the sword button to charge
+staggered. A red glint can't be parried: roll through it and hit the enemy from behind to
+stun it the same way. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
@@ -174,22 +175,24 @@ the conventions are in [AGENTS.md](AGENTS.md). Report bugs as issues, or in
 Press **F1** on the title screen to open the room creator. It starts with a blank 13x13 room.
 Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
 **Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
-pitfalls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
-knights, dual knights, wizards, warlocks, necromancers) and switches; right-click erases.
-Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin or knight you place, or click with the **Select** tool, shows its detection
+pitfalls, inner walls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
+knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns, centaurs, bucentaurs,
+taurtaurs) and switches;
+right-click erases.
+Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight, dragon or centaur you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
 the side it watches, since enemies can't see behind themselves. Wizards have no radius: they
 react to the player anywhere in the room. In room scenes the value is each enemy's
 `detection_radius`.
 
-**Facing** sets which way the selected goblin or knight faces when the room starts: **Up**,
+**Facing** sets which way the selected goblin, knight, dragon or centaur faces when the room starts: **Up**,
 **Down**, **Left**, **Right** (the default) or **Auto**, which turns it to face the player as
 they come into the room, so it looks at the door they used (unless it has already noticed
 them). The editor sprite turns to match, an Auto enemy is marked "auto", and the shaded half
 of its detection circle follows the facing. In room scenes this is each enemy's
 `starting_direction` (`"auto"` for Auto).
 
-**Roaming** sets what the selected goblin or knight does before it notices the player:
+**Roaming** sets what the selected goblin, knight or centaur does before it notices the player:
 **None** (stands still, the default and what every existing room uses), **Path** or **Area**.
 Picking Path or Area switches to the Select tool. For a path, click or drag on the floor to
 draw it from the enemy outwards (dragging back over the last point takes it off), and
@@ -199,15 +202,16 @@ the enemy walks round the same way, pausing each time it's back at the start.
 For an area, drag the box's edges or corners to resize it; the enemy wanders between random
 spots inside it. Seeing the player, being hit (arrows included) or being alerted by another
 enemy ends roaming and it fights as usual. Wizards can't roam, since they react to the
-player anywhere in the room. In room scenes these are each enemy's `roam_mode`, `roam_path`
-and `roam_area`; roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
+player anywhere in the room, and nor can dragons, which hover where they start. In room
+scenes these are each enemy's `roam_mode`, `roam_path` and `roam_area`;
+roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
 
 **Tileset** switches the preview (and the play-test) between each floor's art, so a room can
 be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10 that the room
 can appear on (floors after 10 follow Floor 10), with Every floor and No floors to set them
 all at once. In room scenes this is the room's `floors` flags; all existing rooms appear on
 every floor. If too few rooms are allowed on a floor to fill it, some appear twice. Ctrl+Z undoes and Ctrl+Y redoes, or use the Undo and Redo buttons. Clear opens a menu to
-wipe everything, just the enemies, or just the tiles (pitfalls and stalagmites). Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
+wipe everything, just the enemies, or just the tiles (pitfalls, inner walls and stalagmites). Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
 dying) goes back to the editor with the design intact. **Export** writes the design as a
 plain-text grid to a `room_designs` folder and copies it to the clipboard, ready to be turned
 into a scene in `src/world/rooms/`. Run from source, the folder is in the project; in an
@@ -226,7 +230,7 @@ player from spikes and shocks.
 |---|---|
 | Exposed wires | Rest, spark as a warning, then go live (with an enemy-style twinkle) and shock whoever is on them. Swing the sword into them while live to break them for good. |
 | Pressure plate | Clicks down when stepped on (and pops back up as soon as it's left), then goes live like wires and re-arms. Breaks the same way. |
-| Spikes | Hurt on stepping on, and again every second while stood on. Rolling right over them in one roll is safe; a roll that ends on them isn't. |
+| Spikes | Lie flat until stepped on, then show their tips for half a second and stab up. Up, they hurt on stepping on and again every second while stood on, and stay up until a second after everyone's off. Rolling right over them in one roll doesn't set them off; a roll that ends on them does. |
 | Cracked floor | Cracks when stood on, gives way into a pit, then mends. Enemies on it fall. |
 | Slick floor | Keeps momentum: speeding up, slowing down and turning all slide. Enemies slide further than the player and keep drifting after they stop. |
 | Thermal paste | Holds whoever steps in to within half a tile of it, pulling them back when they stop. Enemies caught in it walk as usual inside that area, run on the spot at its edge, and after a couple of seconds there are slowly hauled back to the middle; the third time they reach the edge they tear free. It never wears off: three rolls break free, counted down by a bar over the player's head. |
@@ -253,6 +257,20 @@ resets every row. **Export** writes every Tuning value, changed ones first and m
 clipboard. Hover a row's name to see where its value lives in the code. Changed values last
 until the game closes; copy the ones you want to keep into the defaults in `Tuning.gd`.
 
+### Inner wall art
+
+The hand-drawn inner wall sheet, `assets/sprites/tileset/inner_walls/inner_walls.png`, has a
+piece for each set of side neighbours. The game draws from `inner_walls_joined.png`, which
+adds the inside-corner pieces (where two walls meet round a floor cell) cut and pasted from
+those. After changing the hand-drawn sheet, remake it and import:
+
+```bash
+"$GODOT" --headless --path . -s res://tools/build_inner_walls.gd
+"$GODOT" --headless --path . --import
+```
+
+A test fails if the joined sheet is out of date.
+
 ### Screenshots
 
 `tools/screenshot.gd` boots a floor in a window and saves what it shows, for checking HUD,
@@ -278,6 +296,17 @@ example:
 The other preset names are `Windows Desktop 32 bit`, `Linux 64 bit`, `Linux 32 bit` and
 `macOS`. Export templates must be installed first (see Setup).
 
+`tools/export_builds.sh` does what a release needs in one go. It exports every preset as a
+debug build (so the F2 menu works), after emptying each output folder. Then it zips each
+folder on its own into `builds/InfiniteLabyrinth-<folder>.zip`.
+
+### Releases
+
+Releases are GitHub releases tagged `v<major>.<moderate>.<minor>` and titled
+`Version <x.y.z>`. Each has a bulleted list of changes and every build zip attached. AI agents
+make them with the `make-release` skill ([.claude/skills/make-release/SKILL.md](.claude/skills/make-release/SKILL.md)),
+which also has the [guide to writing release notes](.claude/skills/make-release/release-notes-style.md).
+
 ## Code style
 
 Scripts follow the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)
@@ -300,9 +329,11 @@ src/autoload/  Tuning (every gameplay number, edited live by the debug menu), Sa
                pitch variation, flashes and particle bursts), DebugMenu
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script, the level timer, curses
-src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families), RangedEnemy
-               (wizard), Caster (warlock, necromancer) and Boss; AttackCoordinator takes
-               turns and group rushes between a room's enemies
+src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families; Centaur,
+               the centaur family, builds on it), RangedEnemy
+               (wizard), Caster (warlock, necromancer), Wyrm (wyrm and wyvern, flying
+               dragons) and Boss; AttackCoordinator takes turns and group rushes
+               between a room's enemies; FireballReturner bats fireballs back
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups

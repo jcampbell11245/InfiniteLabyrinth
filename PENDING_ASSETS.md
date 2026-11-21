@@ -25,10 +25,7 @@ line in `assets/sfx/SOURCE.txt`.
 
 | Name | Used for | Preview |
 | --- | --- | --- |
-| `assets/sprites/tiles/special_tiles.png` frames 0-3 (`WIRES`, `WIRES_SPARK`, `WIRES_LIVE`, `WIRES_BROKEN`) | Exposed-wire trap: resting, sparking, live, broken by a sword ([SpecialTiles.gd](src/world/SpecialTiles.gd)) | ![wires](docs/pending_assets/tile_wires.png) ![wires cycle](docs/pending_assets/tile_wires_cycle.gif) |
-| `special_tiles.png` frame 4 (`SPIKES`) | Spike trap | ![spikes](docs/pending_assets/tile_spikes.png) |
-| `special_tiles.png` frames 5-7 (`CRACKED`, `CRACKING`, `HOLE`) | Cracked floor that gives way into a pit and then mends | ![cracked](docs/pending_assets/tile_cracked.png) ![cracked cycle](docs/pending_assets/tile_cracked_cycle.gif) |
-| `special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
+| `assets/sprites/tiles/special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
 | `special_tiles.png` frames 9-12 (`PLATE`, `PLATE_DOWN`, `PLATE_LIVE`, `PLATE_BROKEN`) | Pressure plate: armed, pressed, live, broken | ![plate](docs/pending_assets/tile_plate.png) ![plate cycle](docs/pending_assets/tile_plate_cycle.gif) |
 | `special_tiles.png` frame 13 (`PASTE`) | Thermal paste that holds whoever steps in | ![paste](docs/pending_assets/tile_paste.png) |
 | `special_tiles.png` frames 14-15 (`SLOW`, `FAST`) | Slow and speed tiles | ![slow and fast](docs/pending_assets/tile_slow_fast.png) |
@@ -39,6 +36,16 @@ line in `assets/sfx/SOURCE.txt`.
 | Orc (no art of its own) | [Orc.tscn](src/enemies/Orc.tscn) uses the goblin's sprites scaled 1.5x (shown on the right, with a goblin on the left). Needs its own sprite set | ![orc](docs/pending_assets/enemy_orc.gif) |
 | Warlock (no art of its own) | [Warlock.tscn](src/enemies/Warlock.tscn) uses the wizard's sprites with a green `self_modulate` (see [Caster.gd](src/enemies/Caster.gd)). Needs its own sprite set (stand, walk, shoot) | ![warlock](docs/pending_assets/enemy_warlock.gif) |
 | Necromancer (no art of its own) | [Necromancer.tscn](src/enemies/Necromancer.tscn) uses the wizard's sprites with a purple `self_modulate`. Needs its own sprite set | ![necromancer](docs/pending_assets/enemy_necromancer.gif) |
+| `assets/sprites/wyrm/wyrm_*.png` (all 16 sheets) | Wyrm ([Wyrm.tscn](src/enemies/Wyrm.tscn)): a green, winged, limbless dragon drawn as a placeholder, idle, fly, shoot and slash in all four facings (preview: rows are those actions, facing right then down) | ![wyrm](docs/pending_assets/enemy_wyrm.png) |
+| `assets/sprites/wyrm/wyvern_*.png` (all 16 sheets) | Wyvern ([Wyvern.tscn](src/enemies/Wyvern.tscn)): a red, winged, two-legged dragon drawn as a placeholder, same actions and facings | ![wyvern](docs/pending_assets/enemy_wyvern.png) |
+| `assets/sprites/centaur/centaur_*.png` (all 16 sheets) | Cyber Centaur ([Centaur.tscn](src/enemies/Centaur.tscn)): a horse body with an armoured rider holding a halberd, drawn by script as a placeholder. Idle, walk, slash (the clash hit) and slash_kick (turned away, kicking with its hind legs) in all four facings. The preview rows are those actions; the columns face right, left, up and down. | ![centaur](docs/pending_assets/enemy_centaur.png) |
+| `assets/sprites/centaur/bucentaur_*.png` (all 20 sheets) | Cyber Bucentaur ([Bucentaur.tscn](src/enemies/Bucentaur.tscn)): a bull body with a horned rider. The centaur's actions plus slash_charge, the lance levelled for its charge | ![bucentaur](docs/pending_assets/enemy_bucentaur.png) |
+| `assets/sprites/centaur/taurtaur_*.png` (all 24 sheets) | Cyber Taurtaur ([Taurtaur.tscn](src/enemies/Taurtaur.tscn)): two horse bottoms joined by a shared neck, the top one upside down and facing the other way. Slash is its front-hoof stomp (the group-rush clash), slash_charge is its lunge, slash_kick is the bottom half's hind-leg kick and slash_kick_top the top half's. Its sheets are named by the way the bottom half faces, and it never turns to kick. | ![taurtaur](docs/pending_assets/enemy_taurtaur.png) |
+| Spin attack (no art of its own) | The player's charged spin ([Player.gd](src/player/Player.gd) `_start_spin`) holds frame 6 of `jason_*_slash.png` and rotates the whole sprite once. Needs a real spin animation, all four facings | ![spin](docs/pending_assets/player_spin.gif) |
+| `assets/sprites/goblin/goblin_*_slash.png` | The goblin's attack ([Goblin.tscn](src/enemies/Goblin.tscn) `slash_*`; Troll and Orc borrow it too). Needs redoing | ![goblin slash](docs/pending_assets/enemy_goblin_slash.gif) |
+| `assets/sprites/wizard/wizard_*.png` (stand, walk, shoot) | Every wizard sprite ([Wizard.tscn](src/enemies/Wizard.tscn); Warlock and Necromancer borrow them too). Need redoing | ![wizard](docs/pending_assets/enemy_wizard.gif) |
+| `assets/sprites/skelly/skeleton_knight_*.png` (idle, walking, shooting, slashing) | Every boss sprite ([Boss.tscn](src/enemies/Boss.tscn)). Need redoing | ![boss](docs/pending_assets/enemy_boss.gif) |
+| `assets/sprites/hud/arrow_count.png` | Icon next to the arrow count on the HUD ([GameCamera.tscn](src/world/GameCamera.tscn) `Hud/Arrows/Icon`) | ![arrow count](docs/pending_assets/hud_arrow_count.png) |
 
 ## Sound effects
 

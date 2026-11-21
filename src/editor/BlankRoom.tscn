@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://src/audio/GoblinDeath.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/TopWalls.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="inner_walls"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="14"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="15"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="16"]
@@ -46,6 +47,9 @@ format = 2
 [node name="Stalagmites" parent="." unique_id=702228189 instance=ExtResource("13")]
 format = 2
 layer_0/tile_data = PackedInt32Array()
+
+[node name="InnerWalls" parent="." unique_id=1743498253 instance=ExtResource("inner_walls")]
+format = 2
 
 [node name="Decorations" parent="." unique_id=1919010610 instance=ExtResource("14")]
 

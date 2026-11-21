@@ -14,8 +14,9 @@ follow it step by step, whatever agent you are. In short:
 2. Look for an open issue covering that work. If one exists and **someone else is assigned,
    stop**: tell the developer who has it and don't start. If it's unassigned, assign the
    developer. If there's no issue, create one assigned to them.
-3. Branch from an up-to-date `origin/master`, make the change, run the checks, push, and
-   open a pull request whose description says `Closes #<issue>`.
+3. Branch from an up-to-date `origin/master`, make the change, run the checks, commit and
+   push. Open a pull request (description says `Closes #<issue>`) only when the developer
+   says the work is ready for review; until then, keep adding to the branch.
 
 `master` is protected: a pull request can only merge once **Smoke test**, **Tests** and
 **Linked issue** pass (the last checks the PR closes an open issue assigned to its author),
@@ -74,8 +75,22 @@ See README → Layout for the folder map. The parts you'll touch most:
   load), **`Juice`** (hit-stop, slow motion, shake, flashes, particle bursts, sound pitch
   variation), **`Music`**.
 - **Enemies**: `Enemy` is the base; `MeleeEnemy` (goblin, knight families), `RangedEnemy`
-  (wizard), `Caster` (warlock, necromancer), `Boss`. Melee turns and group rushes are shared
-  through `AttackCoordinator`, one per room.
+  (wizard), `Caster` (warlock, necromancer), `Wyrm` (wyrm, wyvern; they fly), `Boss`;
+  `Centaur` (centaur, bucentaur, taurtaur) extends `MeleeEnemy` with combos.
+  Melee turns and group rushes are shared through `AttackCoordinator`, one per room;
+  wizards and dragons bat fireballs back through `FireballReturner`.
+- **Two combat rules every enemy follows** (keep them in mind when changing or adding one):
+  - *A hit that lands on the player ends the enemy's combo.* Whatever hits it had lined up
+    after that one don't come: `Player` calls `Enemy.landed_hit`, which calls
+    `_end_combo_on_hit` (`MeleeEnemy` drops the rest of its turn's swings and any double
+    attack, `Centaur` ends its combo). A new enemy with multi-hit attacks overrides
+    `_end_combo_on_hit`. It can be switched off with `Tuning.combos_end_on_hit` (F2, AI tab).
+  - *Rolling through a red (unparryable) attack and hitting the enemy from behind dazes it
+    like a parry, with no damage* (`Enemy._dazed_from_behind`). That works during the attack
+    and while the enemy is still stuck recovering from it (`_in_rollable_recovery`: a
+    knight's or taurtaur's end lag, a wyvern hanging after its red charge). A new enemy with
+    a red attack or a recovery after one overrides `_in_rollable_recovery`. Red attacks that
+    hit the player still do damage.
 - **Rooms**: every `.tscn` in `src/world/rooms/` is picked up by `WorldGenerator`, which
   caches loaded room scenes for the session; the room creator (F1 on the title screen)
   exports designs to `room_designs/` that get turned into room scenes.
@@ -106,6 +121,25 @@ When a real asset replaces a placeholder, delete its row and preview from
 PENDING_ASSETS.md, and record where the real one came from. For a library asset, that's its
 licence and link. For a hand-made one, say who made it. Sounds go in
 `assets/sfx/SOURCE.txt`, everything else in the PR and commit message.
+
+## Releases
+
+To publish a new version, follow the **make-release** skill,
+[.claude/skills/make-release/SKILL.md](.claude/skills/make-release/SKILL.md). It asks whether the
+update is major, moderate or minor (unless the developer has said), and builds from an
+up-to-date `master` after `tools/check.sh` passes. It exports and zips every preset with
+`tools/export_builds.sh`, and drafts the notes in the style of
+[release-notes-style.md](.claude/skills/make-release/release-notes-style.md) for the
+developer to approve. Then it creates the GitHub release with the zips attached.
+
+## Reviewing pull requests
+
+To review someone's pull request, follow the **review-pr** skill,
+[.claude/skills/review-pr/SKILL.md](.claude/skills/review-pr/SKILL.md). It reads the whole
+diff, says whether the size of the change is justified, checks it against this file, runs
+the checks (backing up the developer's save file first) and takes real-window screenshots
+of anything visible. It reports findings to the developer and posts them as inline review
+comments only when asked; it never pushes to the author's branch or approves for you.
 
 ## Conventions
 

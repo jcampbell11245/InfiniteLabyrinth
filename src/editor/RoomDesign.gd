@@ -9,12 +9,14 @@ extends RefCounted
 # Cells here are floor indices, (0, 0) to (SIZE - 1, SIZE - 1), top-left first. tile_cell()
 # turns one into the TileMap cell it covers.
 
-# FLOOR to STALAGMITE are drawn on the room's own tile layers; the rest are special tiles,
-# drawn on its SpecialTiles layer over plain floor (see SpecialTiles for what each does).
+# FLOOR to STALAGMITE and INNER_WALL are drawn on the room's own tile layers; the rest are
+# special tiles, drawn on its SpecialTiles layer over plain floor (see SpecialTiles for what
+# each does). INNER_WALL comes last so the values of the others don't change.
 enum Cell {
 	FLOOR, PIT, STALAGMITE,
 	WIRES, SPIKES, CRACKED, SLICK, PLATE, PASTE, SLOW, FAST,
 	TELEPORT_1, TELEPORT_2, TELEPORT_3, TELEPORT_4,
+	INNER_WALL,
 }
 # The SpecialTiles frame each special cell is painted with.
 const SPECIAL_FRAMES := {
@@ -46,6 +48,11 @@ const OBJECT_SCENES := {
 	"warlock": "res://src/enemies/Warlock.tscn",
 	"necromancer": "res://src/enemies/Necromancer.tscn",
 	"wizard": "res://src/enemies/Wizard.tscn",
+	"wyrm": "res://src/enemies/Wyrm.tscn",
+	"wyvern": "res://src/enemies/Wyvern.tscn",
+	"centaur": "res://src/enemies/Centaur.tscn",
+	"bucentaur": "res://src/enemies/Bucentaur.tscn",
+	"taurtaur": "res://src/enemies/Taurtaur.tscn",
 	"switch": "res://src/objects/Switch.tscn",
 }
 const ENEMY_FEET := Vector2(0, 8) # Enemies stand this far below their origin (Enemy.FEET_OFFSET)
@@ -53,18 +60,23 @@ const SWITCH_CENTRE := Vector2(324, 322) # Switch.tscn draws its art here, relat
 
 # Characters in the exported grid.
 const CELL_CHARS := {
-	Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S",
+	Cell.FLOOR: ".", Cell.PIT: "#", Cell.STALAGMITE: "S", Cell.INNER_WALL: "X",
 	Cell.WIRES: "E", Cell.SPIKES: "^", Cell.CRACKED: "%", Cell.SLICK: "=", Cell.PLATE: "P",
 	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
 }
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N"}
-# Enemies with a detection radius (MeleeEnemy.detection_radius). Wizards engage anywhere
-# in the room, so they have none.
-const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight"]
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V", "centaur": "C", "bucentaur": "B", "taurtaur": "U"}
+# Enemies with a detection radius (MeleeEnemy.detection_radius, Wyrm.detection_radius), which
+# also set which way they face at the start. Wizards engage anywhere in the room, so they
+# have none.
+const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "wyrm", "wyvern",
+	"centaur", "bucentaur", "taurtaur"]
+# Of those, the ones that can roam (MeleeEnemy.roam_mode): not the dragons, which hover.
+const ROAMING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "centaur",
+	"bucentaur", "taurtaur"]
 const RADIUS_MIN := 0.0
 const RADIUS_MAX := 400.0
-# Roaming (MeleeEnemy.roam_mode), for the same kinds: "none", "path" or "area".
+# Roaming (MeleeEnemy.roam_mode), for ROAMING_KINDS: "none", "path" or "area".
 const ROAM_MODES: Array[String] = ["none", "path", "area"]
 const AREA_DEFAULT_REACH := 2 # Cells either side of the enemy a new roaming area covers
 # Spawn facing (MeleeEnemy.starting_direction), for the same kinds: a direction, or "auto" to
@@ -123,9 +135,9 @@ func get_cell(index: Vector2i) -> Cell:
 static func is_special(kind: Cell) -> bool:
 	return SPECIAL_FRAMES.has(kind)
 
-# Ground something can walk on: floor and every special tile, but not a pit or rock.
+# Ground something can walk on: floor and every special tile, but not a pit, rock or wall.
 static func is_walkable(kind: Cell) -> bool:
-	return kind != Cell.PIT && kind != Cell.STALAGMITE
+	return kind != Cell.PIT && kind != Cell.STALAGMITE && kind != Cell.INNER_WALL
 
 # Sets the ground on `index`. Anything but floor knocks off an object standing there.
 func set_cell(index: Vector2i, kind: Cell) -> void:
@@ -191,7 +203,7 @@ func clear_enemies() -> void:
 		if objects[index] != "switch":
 			_forget(index)
 
-# Turns every pitfall, stalagmite and special tile back to floor; enemies and switches stay.
+# Turns every pitfall, stalagmite, inner wall and special tile back to floor; enemies and switches stay.
 func clear_tiles() -> void:
 	cells.fill(Cell.FLOOR)
 
@@ -215,7 +227,7 @@ func set_facing(index: Vector2i, facing: String) -> void:
 # --- Roaming ---
 
 static func can_roam(kind: String) -> bool:
-	return has_radius(kind)
+	return kind in ROAMING_KINDS
 
 # "none", "path" or "area" for the enemy on `index`.
 func roam_mode(index: Vector2i) -> String:
@@ -432,13 +444,14 @@ func spawn_index() -> Vector2i:
 
 # --- Drawing onto a room ---
 
-# Draws every cell onto `room`'s Tiles, Pitfalls, Stalagmites and SpecialTiles layers.
+# Draws every cell onto `room`'s Tiles, Pitfalls, Stalagmites, InnerWalls and SpecialTiles layers.
 func paint_all(room: Node) -> void:
 	for y in range(SIZE):
 		for x in range(SIZE):
 			paint(room, Vector2i(x, y))
 
-# Draws `index` onto `room`, and rejoins the stalagmites round it.
+# Draws `index` onto `room`, and rejoins the stalagmites and inner walls round it (inner
+# walls join diagonally too).
 func paint(room: Node, index: Vector2i) -> void:
 	var tile := tile_cell(index)
 	var tiles: TileMap = room.get_node("Tiles")
@@ -459,9 +472,13 @@ func paint(room: Node, index: Vector2i) -> void:
 		tiles.set_cell(0, tile, Room.FLOOR, Vector2i.ZERO)
 		pitfalls.erase_cell(0, tile)
 	var stalagmites: TileMap = room.get_node("Stalagmites")
+	var walls: TileMap = room.get_node("InnerWalls")
 	_paint_stalagmite(stalagmites, index)
 	for step in NEIGHBOURS:
 		_paint_stalagmite(stalagmites, index + step)
+	for y in range(-1, 2):
+		for x in range(-1, 2):
+			_paint_inner_wall(walls, index + Vector2i(x, y))
 
 func _is_stalagmite(index: Vector2i) -> bool:
 	return in_floor(index) && get_cell(index) == Cell.STALAGMITE
@@ -477,6 +494,17 @@ func _paint_stalagmite(stalagmites: TileMap, index: Vector2i) -> void:
 		if _is_stalagmite(index + NEIGHBOURS[i]):
 			mask |= 1 << i
 	stalagmites.set_cell(0, tile_cell(index), Room.STALAGMITE_SOURCES[mask], Vector2i.ZERO)
+
+func _is_inner_wall(index: Vector2i) -> bool:
+	return in_floor(index) && get_cell(index) == Cell.INNER_WALL
+
+func _paint_inner_wall(walls: TileMap, index: Vector2i) -> void:
+	if !in_floor(index):
+		return
+	if !_is_inner_wall(index):
+		walls.erase_cell(0, tile_cell(index))
+		return
+	walls.set_cell(0, tile_cell(index), 0, InnerWalls.atlas_cell(index, _is_inner_wall))
 
 # --- Play-test ---
 
@@ -531,10 +559,13 @@ func to_text() -> String:
 		"floors: %s" % ",".join(PackedStringArray(floor_list().map(func(n: int) -> String: return str(n)))),
 		"# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):",
 		"#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)",
+		"#   X  inner wall (InnerWalls layer; joins its inner wall neighbours)",
 		"#   G  goblin   K  knight     W  wizard     O  switch",
 		"#   T  troll    R  orc        (goblin family: Troll.tscn, Orc.tscn)",
 		"#   D  dual knight             (knight family: DualKnight.tscn)",
 		"#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)",
+		"#   Y  wyrm       V  wyvern       (dragons: Wyrm.tscn, Wyvern.tscn)",
+		"#   C  centaur    B  bucentaur  U  taurtaur  (centaurs: Centaur.tscn, Bucentaur.tscn, Taurtaur.tscn)",
 		"# Special tiles, on a SpecialTiles layer (src/world/tiles/SpecialTiles.tscn) over plain",
 		"# floor, each the SpecialTiles.Frame of the same name as its atlas column:",
 		"#   E  exposed wires   ^  spikes        %  cracked floor   =  slick",
@@ -550,7 +581,7 @@ func to_text() -> String:
 			var index := Vector2i(x, y)
 			row += OBJECT_CHARS[objects[index]] if objects.has(index) else CELL_CHARS[get_cell(index)]
 		lines.append(row)
-	lines.append("# Detection radius in pixels of each goblin and knight (MeleeEnemy.detection_radius),")
+	lines.append("# Detection radius in pixels of each goblin, knight and dragon (MeleeEnemy.detection_radius),")
 	lines.append("# by floor cell as column,row. Any not listed use the default, %d."
 		% MeleeEnemy.DEFAULT_DETECTION_RADIUS)
 	lines.append("detection_radius:")
@@ -562,7 +593,7 @@ func to_text() -> String:
 	lines.append("#         MeleeEnemy.roam_path holds where the enemy stands on each (RoomDesign.object_origin).")
 	lines.append("#   area: wanders the cells from the first corner to the second, inclusive.")
 	lines.append("#         MeleeEnemy.roam_area holds the pixels those cells cover (RoomDesign.area_pixels).")
-	lines.append("# Which way each goblin and knight faces when the room starts (MeleeEnemy.starting_direction),")
+	lines.append("# Which way each goblin, knight and dragon faces when the room starts (starting_direction),")
 	lines.append("# by floor cell as column,row: up, down, left, right, or auto (turns to face the player as")
 	lines.append("# they come into the room). Any not listed face %s." % DEFAULT_FACING)
 	lines.append("facing:")
