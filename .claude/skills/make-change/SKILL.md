@@ -1,6 +1,6 @@
 ---
 name: make-change
-description: Use whenever a developer wants to change anything in the Infinite Labyrinth repository (feature, fix, balance tweak, asset, room, docs). Claims the work in a GitHub issue (refusing if someone else is already assigned), creates the feature branch, makes the change following AGENTS.md, runs the checks CI requires, and opens a pull request that closes the issue.
+description: Use whenever a developer wants to change anything in the Infinite Labyrinth repository (feature, fix, balance tweak, asset, room, docs). Claims the work in a GitHub issue (refusing if someone else is already assigned), creates the feature branch, makes the change following AGENTS.md, runs the checks CI requires, commits and pushes, and opens a pull request that closes the issue only once the developer says it's ready for review.
 ---
 
 # Make a change to Infinite Labyrinth
@@ -130,12 +130,37 @@ For visual changes, take screenshots in a real window and look at them:
 
 You can't hear sounds or feel timing: list those for the developer to playtest.
 
-## 7. Commit, push and open the pull request
+## 7. Commit and push, then stop
 
 ```bash
 git add -A && git status --short        # check nothing unintended is staged (builds/, screenshots)
 git commit -m "<short plain-English subject>" -m "<what changed and why>"
 git push -u origin <branch>
+```
+
+Pushing only backs the branch up; it doesn't ask anyone for review. **Don't open a pull
+request yet.** Tell the developer what changed, what the checks showed and what still needs
+a human (playtest, listening), then ask whether they're ready to submit it for review or
+want to keep working. Wait for their answer.
+
+Until they say it's ready, the work stays on the branch: further requests ("also make it
+faster", "fix that bug too") are more commits on the same branch, each followed by
+`tools/check.sh`, a commit and a push, and you ask again when that round is done. Finishing
+a change, passing the checks or pushing is never by itself a reason to open the pull
+request; only the developer saying so is ("open the PR", "submit it", "it's ready for
+review").
+
+(The owner working straight on `master`: commit, ask before pushing, and there's no pull
+request; skip step 8.)
+
+## 8. Open the pull request when the developer says it's ready
+
+First bring the branch up to date and re-run the checks, since master may have moved:
+
+```bash
+git fetch origin && git merge origin/master
+tools/check.sh
+git push
 gh pr create --base master --head <branch> --title "<title>" --body "<summary>
 
 How it was checked:

@@ -14,8 +14,9 @@ follow it step by step, whatever agent you are. In short:
 2. Look for an open issue covering that work. If one exists and **someone else is assigned,
    stop**: tell the developer who has it and don't start. If it's unassigned, assign the
    developer. If there's no issue, create one assigned to them.
-3. Branch from an up-to-date `origin/master`, make the change, run the checks, push, and
-   open a pull request whose description says `Closes #<issue>`.
+3. Branch from an up-to-date `origin/master`, make the change, run the checks, commit and
+   push. Open a pull request (description says `Closes #<issue>`) only when the developer
+   says the work is ready for review; until then, keep adding to the branch.
 
 `master` is protected: a pull request can only merge once **Smoke test**, **Tests** and
 **Linked issue** pass (the last checks the PR closes an open issue assigned to its author),
