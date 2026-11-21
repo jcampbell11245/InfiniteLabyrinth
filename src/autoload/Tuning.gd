@@ -129,6 +129,7 @@ var centaur_chase_charge_chance := 0.3 # A bucentaur or taurtaur the player got 
 var centaur_charge_speed := 300.0 # Pixels/sec while charging
 var centaur_charge_overshoot := 24.0 # Pixels past the player a charge would carry on
 var centaur_charge_max_distance := 200.0 # Pixels: longest a charge runs
+var centaur_hurtbox_margin := 4.0 # Pixels the hurtbox reaches past the drawn body all round, so near misses count
 var boss_laser_cooldown := 1.0
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
@@ -345,6 +346,7 @@ const FIELDS := [
 	["Centaurs", "centaur_charge_speed", "Charge speed (px/s)", 50, 800, 10, "new (Centaur._charge_step)"],
 	["Centaurs", "centaur_charge_overshoot", "Charge overshoot (px)", 0, 150, 1, "new (Centaur._set_off)"],
 	["Centaurs", "centaur_charge_max_distance", "Charge max distance (px)", 20, 500, 5, "new (Centaur._set_off)"],
+	["Centaurs", "centaur_hurtbox_margin", "Hurtbox padding (px)", 0, 20, 1, "new (Centaur._fit_hurtbox)"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],
 	["AI", "pack_max_attackers", "Max attackers at once", 1, 6, 1, "new (AttackCoordinator)"],

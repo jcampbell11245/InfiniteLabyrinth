@@ -283,8 +283,11 @@ func test_hurtbox_follows_the_sprite() -> void:
 	await tree.process_frame
 	var anim := String(centaur.animator.animation)
 	var drawn: Rect2 = centaur.sprite_bounds[anim][centaur.animator.frame]
-	expect_equal((centaur.hurtbox.shape as RectangleShape2D).size, drawn.size, "the hurtbox is the drawn body's size")
-	expect_equal(centaur.hurtbox.position, drawn.get_center(), "and sits on it")
+	var standing: Rect2 = centaur.sprite_bounds["idle_" + centaur.direction][0]
+	var margin: float = autoload("Tuning").centaur_hurtbox_margin
+	var expected := drawn.merge(standing).grow(margin)
+	expect_equal((centaur.hurtbox.shape as RectangleShape2D).size, expected.size, "the hurtbox covers the drawn body, at least the standing one, padded")
+	expect_equal(centaur.hurtbox.position, expected.get_center(), "and sits on it")
 	expect((centaur.hurtbox.shape as RectangleShape2D).size != idle_size, "which changes as it kicks")
 
 # A player who gets away mid-combo breaks it off: no stun, and it starts over.

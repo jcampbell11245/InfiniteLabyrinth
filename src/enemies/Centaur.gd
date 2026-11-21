@@ -119,17 +119,24 @@ func _show_combo_progress() -> void:
 		_parry_progress = float(_cleared) / _combo.size()
 
 # The hurtbox covers whatever the sprite draws this frame (sprite_bounds): the rider, a
-# taurtaur's top horse, legs thrown out in a kick. Where that isn't measured it keeps the
-# scene's box.
+# taurtaur's top horse, legs thrown out in a kick. It never shrinks below the standing frame
+# for the way it shows (so an attack pose that pulls the body in isn't easier to miss), and
+# it's padded by Tuning.centaur_hurtbox_margin all round so a swing that touches the edge of
+# the sprite counts. Where that isn't measured it keeps the scene's box.
 func _fit_hurtbox() -> void:
-	var key := "%s %d" % [animator.animation, animator.frame]
+	var anim := String(animator.animation)
+	var key := "%s %d %s" % [anim, animator.frame, Tuning.centaur_hurtbox_margin]
 	if key == _fitted:
 		return
 	_fitted = key
-	var frames: Array = sprite_bounds.get(String(animator.animation), [])
+	var frames: Array = sprite_bounds.get(anim, [])
 	if animator.frame >= frames.size():
 		return
 	var bounds: Rect2 = frames[animator.frame]
+	var standing: Array = sprite_bounds.get("idle_" + anim.get_slice("_", anim.get_slice_count("_") - 1), [])
+	if !standing.is_empty():
+		bounds = bounds.merge(standing[0])
+	bounds = bounds.grow(Tuning.centaur_hurtbox_margin)
 	_hurt_rect.size = bounds.size
 	hurtbox.position = bounds.get_center()
 
