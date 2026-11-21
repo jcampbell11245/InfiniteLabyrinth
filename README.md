@@ -17,7 +17,7 @@ hold keys that open the end room; a boss waits behind a door in the start room.
 
 **There's no health: you have time.** Each floor starts with a time limit (longer with the
 Time upgrade). Getting hit takes time off it, more for harder hits, and the run ends when
-it reaches 0:00. Between floors, and after a game over, coins buy upgrades: **Luck**
+it reaches 0:00. The clock stands still in the start and end rooms. Between floors, and after a game over, coins buy upgrades: **Luck**
 (critical hits), **Time** and **Looting** (coins per kill).
 
 Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
