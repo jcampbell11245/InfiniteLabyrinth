@@ -50,6 +50,9 @@ const OBJECT_SCENES := {
 	"wizard": "res://src/enemies/Wizard.tscn",
 	"wyrm": "res://src/enemies/Wyrm.tscn",
 	"wyvern": "res://src/enemies/Wyvern.tscn",
+	"centaur": "res://src/enemies/Centaur.tscn",
+	"bucentaur": "res://src/enemies/Bucentaur.tscn",
+	"taurtaur": "res://src/enemies/Taurtaur.tscn",
 	"switch": "res://src/objects/Switch.tscn",
 }
 const ENEMY_FEET := Vector2(0, 8) # Enemies stand this far below their origin (Enemy.FEET_OFFSET)
@@ -62,13 +65,15 @@ const CELL_CHARS := {
 	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
 }
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V"}
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V", "centaur": "C", "bucentaur": "B", "taurtaur": "U"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius, Wyrm.detection_radius), which
 # also set which way they face at the start. Wizards engage anywhere in the room, so they
 # have none.
-const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "wyrm", "wyvern"]
+const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "wyrm", "wyvern",
+	"centaur", "bucentaur", "taurtaur"]
 # Of those, the ones that can roam (MeleeEnemy.roam_mode): not the dragons, which hover.
-const ROAMING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight"]
+const ROAMING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "centaur",
+	"bucentaur", "taurtaur"]
 const RADIUS_MIN := 0.0
 const RADIUS_MAX := 400.0
 # Roaming (MeleeEnemy.roam_mode), for ROAMING_KINDS: "none", "path" or "area".
@@ -565,6 +570,7 @@ func to_text() -> String:
 		"#   D  dual knight             (knight family: DualKnight.tscn)",
 		"#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)",
 		"#   Y  wyrm       V  wyvern       (dragons: Wyrm.tscn, Wyvern.tscn)",
+		"#   C  centaur    B  bucentaur  U  taurtaur  (centaurs: Centaur.tscn, Bucentaur.tscn, Taurtaur.tscn)",
 		"# Special tiles, on a SpecialTiles layer (src/world/tiles/SpecialTiles.tscn) over plain",
 		"# floor, each the SpecialTiles.Frame of the same name as its atlas column:",
 		"#   E  exposed wires   ^  spikes        %  cracked floor   =  slick",

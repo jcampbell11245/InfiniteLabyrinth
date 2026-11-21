@@ -227,11 +227,19 @@ func _show_fatal() -> void:
 	_shown = ceili(from)
 	_start_drain(FATAL_DRAIN, FATAL_TICK_PITCH_START, FATAL_TICK_PITCH_END)
 	_drain_from = from
+	# Each wait checks the timer is still in the game: leaving it mid-countdown (F1 back to the
+	# room creator from a play-test) takes it out of the tree, and there's nothing to finish.
 	while _draining:
+		if !is_inside_tree():
+			return
 		await get_tree().process_frame
+	if !is_inside_tree():
+		return
 	_land_fatal()
 	Juice.hitstop(FATAL_HOLD) # The world freezes with it
 	await get_tree().create_timer(FATAL_HOLD, true, false, true).timeout
+	if !is_inside_tree():
+		return
 	Game.fatal_countdown_finished.emit()
 
 # 0:00: a heavy tick, a punch in size, a flash and a shake.

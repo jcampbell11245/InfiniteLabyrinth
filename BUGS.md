@@ -8,6 +8,10 @@
   key 'last_wizard_caster'" until one of them casts. The turn-taking check read the room's
   last caster with `get_meta(key, null)`, and Godot treats a null default as no default. It
   now checks `has_meta` first.
+- Pressing F1 after dying in a room creator play-test logs "Invalid access to property or key
+  'process_frame' on a base object of type 'null instance'". The level timer's fatal
+  countdown waited a frame at a time with `get_tree()`, and leaving the game took the timer
+  out of the tree mid-wait. It now stops if it's no longer in the tree.
 - Running the tests (`tools/check.sh`) wipes the developer's save file. One test cleared
   progress in memory with saving switched off, then switched it back on without restoring
   anything, and a later test that saves (a game over) wrote the cleared progress and full

@@ -11,6 +11,7 @@ signal changed(key: String)
 var player_speed := 125.0 # Pixels/sec walking
 var roll_speed_multiplier := 2.0 # Times player_speed while rolling
 var roll_duration := 0.2 # Seconds; with the multiplier this sets the roll distance (just through an enemy)
+var roll_charge_bonus := 0.15 # Extra seconds on a roll begun while a red (roll-only) charge is coming at the player
 var roll_cooldown := 0.5 # Seconds after a roll ends before the next
 var hurt_invincibility := 0.7 # Seconds after being hit before the next hit counts
 var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
@@ -116,6 +117,21 @@ var wyrm_fireball_charge_time := 0.5 # Seconds it holds still glowing before bre
 var wyrm_breath_parry_window := 0.15 # Seconds from the glint at its mouth to the fireball; a sword hit on it in that time parries
 var wyvern_heavy_charge_chance := 0.4 # Share of a wyvern's charges that glint red and can't be parried
 var wyvern_heavy_end_lag := 1.0 # Seconds a wyvern hangs in the air, open, after an unparryable charge
+# Centaurs (Centaur.gd): combos of clashes and kicks, and the Bucentaur's and Taurtaur's charges.
+# Combat timings and damage sit under Enemies in the F2 menu, the rest under Centaurs.
+var centaur_combo_hold := 0.6 # Seconds of windup hold on each combo hit after the first; outlasts the sword cooldown
+var centaur_charge_hold_min := 0.3 # Seconds it holds still before a charge sets off, rolled each time
+var centaur_charge_hold_max := 0.6
+var centaur_clash_damage := 1.5 # Damage of a clash hit (the weapon, or a taurtaur's stomp)
+var centaur_kick_damage := 2.0 # Damage of a kick (roll-only)
+var centaur_charge_damage := 2.0 # Damage of a charge's strike
+var centaur_charge_chance := 0.4 # Share of a Bucentaur's or Taurtaur's attacks that are charges
+var centaur_chase_charge_chance := 0.3 # A bucentaur or taurtaur the player got away from mid-combo charges this share of the time (else it walks back up)
+var centaur_charge_speed := 300.0 # Pixels/sec while charging
+var centaur_charge_overshoot := 24.0 # Pixels past the player a charge would carry on
+var centaur_charge_max_distance := 200.0 # Pixels: longest a charge runs
+var centaur_charge_range := 160.0 # Pixels: a player out of reach but this close may be charged at instead of walked up to
+var centaur_hurtbox_margin := 4.0 # Pixels the hurtbox reaches past the drawn body all round, so near misses count
 var boss_laser_cooldown := 1.0
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
@@ -131,6 +147,7 @@ var pack_circle_speed := 0.6 # Times the enemy's speed while circling
 var alert_radius := 100.0 # Pixels: noticing the player alerts the rest of the room this close
 var threat_reach := 28.0 # Pixels past its swing distance at which a player closing in sets off its windup
 var counter_attack := true # A hit outside a parry makes it swing back at once, cooldown or not
+var combos_end_on_hit := true # An enemy whose hit lands on the player ends its combo: no more hits lined up after it (Enemy.landed_hit)
 var roam_speed := 0.5 # Times the enemy's speed while roaming, before it notices the player
 var roam_pause_min := 0.5 # Seconds it stands at each end of its path, or between wanders in its area
 var roam_pause_max := 1.5
@@ -242,6 +259,7 @@ const FIELDS := [
 	["Player", "player_speed", "Walk speed", 0, 600, 1, "Player.gd speed"],
 	["Player", "roll_speed_multiplier", "Roll speed multiplier", 0, 6, 0.05, "Player.gd (literal 2)"],
 	["Player", "roll_duration", "Roll duration (s)", 0.02, 2, 0.01, "Player.gd rolling.start(0.25)"],
+	["Player", "roll_charge_bonus", "Roll extra time against red charges (s)", 0, 1, 0.01, "new (Player._red_charge_coming)"],
 	["Player", "roll_cooldown", "Roll cooldown (s)", 0, 5, 0.05, "Player.gd roll_cooldown.start(1)"],
 	["Player", "hurt_invincibility", "Invincibility after hit (s)", 0, 5, 0.05, "Player.gd invincibility_cooldown.start(1)"],
 	["Player", "player_knockback", "Knockback when hit", 0, 600, 5, "Player.gd KNOCKBACK_SPEED"],
@@ -317,6 +335,12 @@ const FIELDS := [
 	["Enemies", "wyrm_fireball_charge_time", "Wyrm fireball charge-up (s)", 0, 6, 0.1, "new (Wyrm._hold_breath)"],
 	["Enemies", "wyrm_breath_parry_window", "Wyrm fireball glint parry window (s)", 0.02, 1, 0.01, "new (Wyrm._pulse_breath)"],
 	["Enemies", "wyvern_heavy_end_lag", "Wyvern unparryable charge end lag (s)", 0, 5, 0.05, "new (Wyrm._end_attack)"],
+	["Enemies", "centaur_combo_hold", "Centaur combo hit hold (s)", 0, 2, 0.05, "new (Centaur._next_hit)"],
+	["Enemies", "centaur_charge_hold_min", "Centaur hold before a charge min (s)", 0, 3, 0.05, "new (Centaur._set_up_hit)"],
+	["Enemies", "centaur_charge_hold_max", "Centaur hold before a charge max (s)", 0, 3, 0.05, "new (Centaur._set_up_hit)"],
+	["Enemies", "centaur_clash_damage", "Centaur clash damage", 0, 10, 0.25, "new (Centaur.melee_damage)"],
+	["Enemies", "centaur_kick_damage", "Centaur kick damage", 0, 10, 0.25, "new (Centaur.melee_damage)"],
+	["Enemies", "centaur_charge_damage", "Centaur charge damage", 0, 10, 0.25, "new (Centaur.melee_damage)"],
 	["Enemies", "boss_laser_cooldown", "Boss laser cooldown (s)", 0.1, 10, 0.1, "Boss.gd LASER_COOLDOWN"],
 
 	["Dragons", "wyrm_orbit_radius", "Circle radius (px)", 20, 200, 1, "new (Wyrm._circle)"],
@@ -339,6 +363,14 @@ const FIELDS := [
 	["Dragons", "wyrm_clash_reach", "Charge bite distance (px)", 0, 80, 1, "new (Wyrm._ahead_of_strike)"],
 	["Dragons", "wyrm_fireball_speed", "Fireball speed (px/s)", 10, 600, 10, "new (Wyrm.breathe_fire)"],
 
+	["Centaurs", "centaur_charge_chance", "Charge (vs combo) chance", 0, 1, 0.05, "new (Centaur._pick_attack)"],
+	["Centaurs", "centaur_chase_charge_chance", "Charge (vs walk up) after a broken-off combo", 0, 1, 0.05, "new (Centaur._break_off)"],
+	["Centaurs", "centaur_charge_speed", "Charge speed (px/s)", 50, 800, 10, "new (Centaur._charge_step)"],
+	["Centaurs", "centaur_charge_overshoot", "Charge overshoot (px)", 0, 150, 1, "new (Centaur._set_off)"],
+	["Centaurs", "centaur_charge_max_distance", "Charge max distance (px)", 20, 500, 5, "new (Centaur._set_off)"],
+	["Centaurs", "centaur_charge_range", "Charge from afar range (px)", 0, 400, 5, "new (Centaur._try_charge_from_afar)"],
+	["Centaurs", "centaur_hurtbox_margin", "Hurtbox padding (px)", 0, 20, 1, "new (Centaur._fit_hurtbox)"],
+
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],
 	["AI", "pack_max_attackers", "Max attackers at once", 1, 6, 1, "new (AttackCoordinator)"],
 	["AI", "pack_swings_min", "Swings per turn (min)", 1, 6, 1, "new (MeleeEnemy)"],
@@ -351,6 +383,7 @@ const FIELDS := [
 	["AI", "alert_radius", "Alert others radius (px)", 0, 300, 1, "new (MeleeEnemy._alert_pack)"],
 	["AI", "threat_reach", "Windup on approach reach (px)", 0, 80, 1, "new (MeleeEnemy._player_in_threat_range)"],
 	["AI", "counter_attack", "Counter-attack when hit", 0, 0, 0, "new (MeleeEnemy._after_hit)"],
+	["AI", "combos_end_on_hit", "Enemy combos end on player hit", 0, 0, 0, "new (Enemy.landed_hit)"],
 	["AI", "roam_speed", "Roam speed multiplier", 0, 2, 0.05, "new (MeleeEnemy._roam)"],
 	["AI", "roam_pause_min", "Roam pause min (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],
 	["AI", "roam_pause_max", "Roam pause max (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],

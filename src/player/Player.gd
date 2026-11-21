@@ -131,6 +131,7 @@ var _ground_sound: AudioStreamPlayer # Speeding up or slowing down on a tile
 var last_tile := Vector2.ZERO # Where the player respawns after falling down a pitfall
 var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene started
 var _ghost_timer := 0.0
+var _roll_dir := Vector2.ZERO # The way the last roll went, for _enemy_push
 var _roll_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
 var _charge_sound: AudioStreamPlayer
@@ -358,8 +359,10 @@ func _handle_input(input: FrameInput) -> void:
 		_end_spin()
 		_cancel_spin_charge()
 		velocity += Direction.to_vector(direction)
+		_roll_dir = Direction.to_vector(direction)
 		speed = Tuning.player_speed * Tuning.roll_speed_multiplier
-		rolling.start(Tuning.roll_duration)
+		# Longer against a red charge, whose arrival is harder to time than a swing's.
+		rolling.start(Tuning.roll_duration + (Tuning.roll_charge_bonus if _red_charge_coming() else 0.0))
 		_cancel_charge()
 		# Rolls pass through enemies (to get behind a knight mid-slash), never walls.
 		set_collision_mask_value(Constants.Layer.ENEMY, false)
@@ -715,8 +718,9 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 		var attacker: Node = area.get_parent().get_parent()
 		# A wizard's staff hits for its own melee damage; `damage` is its fireballs'.
 		var amount: float = attacker.melee_damage() if attacker.has_method("melee_damage") else attacker.damage
-		if take_damage(amount, attacker.direction, false) && attacker.has_method("landed_hit"):
-			attacker.landed_hit() # A troll's hit steals coins
+		if take_damage(amount, attacker.direction, false) && attacker is Enemy:
+			# Ends its combo (Tuning.combos_end_on_hit); a troll's also steals coins.
+			(attacker as Enemy).landed_hit()
 	elif area.get_name() == "ProjectileHitbox":
 		var shot: Projectile = area.get_parent()
 		if shot.deflectable:
@@ -946,10 +950,19 @@ func _on_rolling_timeout() -> void:
 	if $FeetBox.has_overlapping_bodies():
 		_fall()
 
+# An enemy in this room has a red (roll-only) charge coming (Enemy.red_charge_coming).
+func _red_charge_coming() -> bool:
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := node as Enemy
+		if enemy != null && enemy.is_player_in_room() && enemy.red_charge_coming():
+			return true
+	return false
+
 # Rolls pass through enemies, so one can end with the player's feet inside an enemy's,
-# where turning enemy collision back on wouldn't move them. Nudges them out the shortest
-# way that's clear (no wall, enemy, pit or doorway), one enemy at a time, since a nudge out
-# of one can land in another. If no way out is clear they stay put.
+# where turning enemy collision back on wouldn't move them. Nudges them out, one enemy at a
+# time, since a nudge out of one can land in another: on through, the way they rolled, if
+# that's clear (no wall, enemy, pit or doorway), as a roll through an enemy should end on its
+# far side; otherwise the shortest way that's clear. If no way out is clear they stay put.
 func _push_out_of_enemies() -> void:
 	for i in PUSH_OUT_TRIES:
 		var push := _enemy_push()
@@ -983,6 +996,9 @@ func _enemy_push() -> Vector2:
 			Vector2(0, theirs.position.y - mine.end.y - PUSH_OUT_GAP),
 		]
 		ways.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.length() < b.length())
+		for way in ways: # Finishing the roll comes first
+			if way.dot(_roll_dir) > 0 && _clear_at(way):
+				return way
 		for way in ways:
 			if _clear_at(way):
 				return way
