@@ -26,7 +26,8 @@ func _exit_tree() -> void:
 
 func _ready() -> void:
 	floor_number = SaveData.floor_number
-	
+	add_child(CaveLighting.new())
+
 	if is_test():
 		_build_test(test_design)
 	else:
