@@ -192,7 +192,13 @@ func _on_node_added(node: Node) -> void:
 	if node.has_node(NodePath(LIGHT_NAME)):
 		return
 	if node is Player:
-		_add_light(node, Kind.PLAYER, PLAYER_COLOR)
+		var light := _add_light(node, Kind.PLAYER, PLAYER_COLOR)
+		# At the player's feet (their collision box), not the middle of the sprite: walls stop
+		# the feet at their edge, but the sprite's middle can be over a wall, and a light
+		# inside an occluder is cut off.
+		var feet := node.get_node_or_null("CollisionShape2D") as Node2D
+		if feet != null:
+			light.position = feet.position
 	elif node is Projectile:
 		var scene := node.scene_file_path.get_file().get_basename()
 		if scene in GLOWING_PROJECTILES:
@@ -247,7 +253,7 @@ func _add_wall_occluders(room: Room) -> void:
 		occluder.occluder_light_mask = RECEIVER_LAYER
 		holder.add_child(occluder)
 
-func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
+func _add_light(owner_node: Node, kind: Kind, color: Color) -> PointLight2D:
 	var light := PointLight2D.new()
 	light.name = LIGHT_NAME
 	light.texture = light_texture()
@@ -262,6 +268,7 @@ func _add_light(owner_node: Node, kind: Kind, color: Color) -> void:
 	light.visibility_layer |= RECEIVER_LAYER # Or the light map's viewport culls it
 	owner_node.add_child.call_deferred(light)
 	light.ready.connect(_apply_light.bind(light), CONNECT_ONE_SHOT)
+	return light
 
 func _on_tuning_changed(key: String) -> void:
 	if key.begins_with("light") || key == "cave_brightness":

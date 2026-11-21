@@ -104,3 +104,9 @@ func test_room_design_keeps_brightness() -> void:
 	expect(design.to_text().contains("brightness: 0.60"), "the export says the room's brightness")
 	design.undo()
 	expect_equal(design.brightness, 1.0, "undo puts the brightness back")
+
+func test_player_light_is_at_their_feet() -> void:
+	await boot_floor()
+	await tree.process_frame
+	var feet: Node2D = autoload("Game").player.get_node("CollisionShape2D")
+	expect_equal(player_light().position, feet.position, "the player's light sits on their collision box, which walls keep out")
