@@ -1,7 +1,7 @@
 extends "res://src/effects/Pickup.gd"
 
 # A key released from a chest. It floats around briefly, then drifts toward the player.
-# When collected it adds a key and extends the level timer.
+# When collected it adds a key.
 
 const KEY_TEXTURE := preload("res://assets/sprites/hud/key.png")
 # key.png is a 3x4 sheet of 7px frames; the HUD uses the first ten for its spin.
@@ -83,13 +83,6 @@ func _animate(delta: float) -> void:
 
 func _credit() -> void:
 	Game.add_keys(1)
-	if !is_instance_valid(Game.player):
-		return
-	var countdown: Timer = Game.player.level_countdown
-	if countdown != null && !countdown.is_stopped():
-		var bonus := Tuning.key_time_bonus
-		countdown.start(countdown.time_left + bonus)
-		Game.time_gained.emit(bonus)
 
 func _feedback() -> void:
 	# Reuse the coin pickup sound; there is no dedicated key sound yet.

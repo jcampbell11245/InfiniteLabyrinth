@@ -207,10 +207,15 @@ func _on_time_lost(seconds: float, fatal: bool) -> void:
 		_jolt_tween.tween_property(holder, "position", corner_position + offset, step_time)
 	_jolt_tween.tween_property(holder, "position", corner_position, step_time)
 
-# Time added (e.g. a chest key): stop any drain so the display doesn't count up through
-# the falling ticks, and show the amount gained.
+# Time added (e.g. a chest hourglass): stop any drain so the display doesn't count up
+# through the falling ticks, flash green, and show the amount gained.
 func _on_time_gained(seconds: float) -> void:
 	_draining = false
+	_kill_hurt_tweens()
+	modulate = GAIN_COLOR
+	var flash := create_tween().set_ignore_time_scale()
+	flash.tween_property(self, "modulate", FINAL_COLOR if _final else Color.WHITE, 0.45) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_float_gain(roundi(seconds))
 
 # Counts the display down from what it shows now to the countdown's time, over `length`

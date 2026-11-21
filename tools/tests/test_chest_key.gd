@@ -1,7 +1,7 @@
 extends "res://tools/tests/test_case.gd"
 
-# Opening a key chest releases a floating key: it doesn't grant the key at once, but adds
-# one and extends the level timer when it reaches the player.
+# Opening a key chest releases a floating key and hourglass: neither grants its effect at
+# once, but collecting them adds a key and extends the level timer.
 
 func test_chest_key_floats_then_grants_key_and_time() -> void:
 	await boot_floor()
@@ -28,12 +28,12 @@ func test_chest_key_floats_then_grants_key_and_time() -> void:
 	expect_equal(game.keys, keys_before, "key not granted immediately when chest opens")
 	expect_near(countdown.time_left, 60.0, 0.2, "timer unchanged before key is collected")
 
-	# Wait for the key to float over and be collected.
+	# Wait for the pickups to float over and be collected.
 	for i in 240:
 		await tree.process_frame
-		if game.keys == keys_before + 1:
+		if game.keys == keys_before + 1 and countdown.time_left > 60.5:
 			break
 
 	expect_equal(game.keys, keys_before + 1, "key granted after pickup reaches the player")
 	expect_near(countdown.time_left, 60.0 + tuning.key_time_bonus, 0.3,
-		"time bonus added when key is collected")
+		"time bonus added when hourglass is collected")
