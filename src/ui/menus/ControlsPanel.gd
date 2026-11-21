@@ -12,7 +12,6 @@ signal back_pressed
 const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
-const CANCEL_HINT := "ESC TO CANCEL"
 
 @onready var rows: VBoxContainer = $Panel/Rows
 @onready var status_label: Label = $Panel/Status
@@ -49,8 +48,8 @@ func start_capture(action: String, device: String) -> void:
 		return
 	_listening_action = action
 	_listening_device = device
-	# The hint is only useful while the panel is waiting for a press.
-	_set_status(CANCEL_HINT)
+	# Clear any earlier conflict so the panel stays quiet while it waits for a press.
+	_set_status("")
 	refresh()
 	var button := _button_for_device(action, device)
 	if button != null:
@@ -89,11 +88,11 @@ func _build_rows() -> void:
 		var row := HBoxContainer.new()
 		row.name = "Row_%s" % action
 		row.custom_minimum_size.y = 20.0
-		# A default gap would shift the buttons away from the centred column headers.
+		# The spacer supplies the column gap; a container gap would also indent the labels.
 		row.add_theme_constant_override(&"separation", 0)
 		var label := Label.new()
 		label.text = Bindings.action_label(action)
-		label.custom_minimum_size.x = 200.0
+		label.custom_minimum_size.x = 180.0
 		_style_control(label)
 		row.add_child(label)
 		var key_button := Button.new()
@@ -103,6 +102,11 @@ func _build_rows() -> void:
 		_style_control(key_button)
 		row.add_child(key_button)
 		_key_buttons[action] = key_button
+		# A spacer keeps the two columns apart without also indenting the action labels.
+		var gap := Control.new()
+		gap.name = "Gap"
+		gap.custom_minimum_size.x = 16.0
+		row.add_child(gap)
 		var pad_button := Button.new()
 		pad_button.name = "Pad"
 		pad_button.custom_minimum_size.x = 160.0
@@ -140,7 +144,6 @@ func _finish_key(keycode: int) -> void:
 		_set_status("%s IS ALREADY USED BY %s" % [Bindings.key_name(keycode), Bindings.action_label(owner)])
 		return
 	Bindings.set_key(_listening_action, keycode)
-	_set_status("%s KEY SET TO %s" % [Bindings.action_label(_listening_action), Bindings.key_name(keycode)])
 	_stop_capture()
 
 func _finish_button(button_index: int) -> void:
@@ -152,12 +155,10 @@ func _finish_button(button_index: int) -> void:
 		_set_status("%s IS ALREADY USED BY %s" % [Bindings.button_name(button_index), Bindings.action_label(owner)])
 		return
 	Bindings.set_button(_listening_action, button_index)
-	_set_status("%s PAD SET TO %s" % [Bindings.action_label(_listening_action), Bindings.button_name(button_index)])
 	_stop_capture()
 
 # Called by the hosts when Escape arrives while a capture is active.
 func cancel_capture() -> void:
-	_set_status("CAPTURE CANCELLED")
 	_stop_capture()
 
 # Feedback is transient, so the label stays hidden until there is something to say.
@@ -168,6 +169,7 @@ func _set_status(message: String) -> void:
 func _stop_capture() -> void:
 	_listening_action = ""
 	_listening_device = ""
+	_set_status("")
 	refresh()
 
 func _button_for_device(action: String, device: String) -> Button:

@@ -139,6 +139,8 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	var pad_column := first_row.get_node("Pad") as Control
 	expect(second_row.position.y - (first_row.position.y + first_row.size.y) >= 4.0,
 		"the bind rows are spaced out")
+	expect(pad_column.position.x - (key_column.position.x + key_column.size.x) >= 8.0,
+		"the keyboard and controller buttons have a horizontal gap")
 	expect(absf(rows.get_global_rect().get_center().y - dialog_rect.get_center().y) < 10.0,
 		"the bind list is centred vertically in the dialog")
 	expect(absf(key_header.get_global_rect().get_center().x
@@ -177,17 +179,18 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	panel.show()
 	panel.controls_button.pressed.emit()
 	panel.controls_panel.start_capture("roll", "key")
-	expect(panel.controls_panel.status_label.text == "ESC TO CANCEL" \
-		&& panel.controls_panel.status_label.visible,
-		"starting a capture shows the Esc hint")
+	expect(panel.controls_panel.status_label.text.is_empty() \
+		&& !panel.controls_panel.status_label.visible,
+		"starting a capture shows no Esc hint")
 	var key_event := InputEventKey.new()
 	key_event.keycode = KEY_R
 	key_event.pressed = true
 	panel.controls_panel._input(key_event)
 	expect(bindings.key_for("roll") == KEY_R, "capturing a key rebinds the action")
 	expect(!panel.controls_panel.is_listening(), "the capture ends after one press")
-	expect(panel.controls_panel.status_label.text != "ESC TO CANCEL",
-		"the Esc hint is replaced once the key is captured")
+	expect(panel.controls_panel.status_label.text.is_empty() \
+		&& !panel.controls_panel.status_label.visible,
+		"capturing a key shows no confirmation blurb")
 	panel.controls_panel.start_capture("roll", "button")
 	var pad_event := InputEventJoypadButton.new()
 	pad_event.button_index = JOY_BUTTON_LEFT_SHOULDER
@@ -195,6 +198,9 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	panel.controls_panel._input(pad_event)
 	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_SHOULDER,
 		"capturing a pad button rebinds the action")
+	expect(panel.controls_panel.status_label.text.is_empty() \
+		&& !panel.controls_panel.status_label.visible,
+		"capturing a pad button shows no confirmation blurb")
 	panel.hide()
 	save_data.write_to_disk = old_write
 	panel.free()
@@ -223,6 +229,9 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	escape.pressed = true
 	panel.controls_panel.cancel_capture()
 	expect(!panel.controls_panel.is_listening(), "Escape cancels the capture")
+	expect(panel.controls_panel.status_label.text.is_empty() \
+		&& !panel.controls_panel.status_label.visible,
+		"cancelling a capture shows no blurb")
 	expect(panel.controls_panel.visible, "cancelling keeps the controls page open")
 	panel.hide()
 	save_data.write_to_disk = old_write
@@ -307,8 +316,8 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 		for button_name: String in ["Key", "Pad"]:
 			labels.append((row.get_node(button_name) as Button).text)
 	controls.start_capture("roll", "key")
-	expect(controls.status_label.text == "ESC TO CANCEL" && controls.status_label.visible,
-		"starting a capture shows the cancel hint")
+	expect(controls.status_label.text.is_empty() && !controls.status_label.visible,
+		"starting a capture adds no caption")
 	labels.append((controls.get_node("Panel/Rows/Row_roll/Key") as Button).text)
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "button")
