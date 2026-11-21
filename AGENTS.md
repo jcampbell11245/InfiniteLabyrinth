@@ -18,9 +18,11 @@ follow it step by step, whatever agent you are. In short:
    push. Open a pull request (description says `Closes #<issue>`) only when the developer
    says the work is ready for review; until then, keep adding to the branch.
 
-`master` is protected: a pull request can only merge once **Smoke test**, **Tests** and
-**Linked issue** pass (the last checks the PR closes an open issue assigned to its author),
-the branch is up to date with `master`, and someone else has approved it.
+`master` is protected: a pull request can only merge once **Smoke test**, **Tests**,
+**Linked issue** (the PR closes an open issue assigned to its author) and **Claude approval**
+(an automatic Claude review of the latest commit found nothing blocking; see
+`.github/workflows/claude-review.yml`) pass, the branch is up to date with `master`, and
+someone else has approved it.
 The owner may commit to `master` directly and is exempt from the issue rule.
 
 Never close, reassign or edit other people's issues, and never push to someone else's

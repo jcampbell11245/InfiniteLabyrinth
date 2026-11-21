@@ -105,6 +105,7 @@ var roams := {}
 var facings := {}
 var clear_by := "none" # What opens the room's doors: "none" (never locked), "enemies" or "switches"
 var floors := Room.ALL_FLOORS # Room.floors: bit n - 1 set if it can appear on floor n
+var brightness := 1.0 # Room.brightness: times the cave's brightness while in the room
 # Which floor's tileset the room creator and its play-test draw with. Only for looking at;
 # not part of the design, so it isn't undone or exported.
 var preview_floor := 1
@@ -332,7 +333,7 @@ var _redo_steps: Array[Dictionary] = []
 func snapshot() -> Dictionary:
 	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "radii": radii.duplicate(),
 		"roams": roams.duplicate(true), "facings": facings.duplicate(), "clear_by": clear_by,
-		"floors": floors}
+		"floors": floors, "brightness": brightness}
 
 func restore(state: Dictionary) -> void:
 	cells = (state.cells as PackedByteArray).duplicate()
@@ -341,6 +342,7 @@ func restore(state: Dictionary) -> void:
 	roams = (state.roams as Dictionary).duplicate(true)
 	facings = (state.get("facings", {}) as Dictionary).duplicate()
 	floors = state.floors
+	brightness = state.get("brightness", 1.0)
 	clear_by = state.clear_by
 
 # Records a change made since `before` (a snapshot()) as one undo step. Does nothing if
@@ -543,6 +545,7 @@ func build_room() -> Room:
 	room.completion_criteria = completion()
 	room.enemy_count = enemy_count()
 	room.floors = floors
+	room.brightness = brightness
 	return room
 
 # --- Export ---
@@ -551,12 +554,14 @@ func to_text() -> String:
 	var lines: PackedStringArray = [
 		"# Infinite Labyrinth room design, made with the room creator.",
 		"# Give this file to Claude to add the room to src/world/rooms/.",
-		"version: 5",
+		"version: 6",
 		"floor_size: %d" % SIZE,
 		"completion: %s" % completion(),
 		"enemy_count: %d" % enemy_count(),
 		"# Floors the room can appear on (Room.floors, 1-10; later floors follow floor 10):",
 		"floors: %s" % ",".join(PackedStringArray(floor_list().map(func(n: int) -> String: return str(n)))),
+		"# How lit the room is, times the cave's brightness (Room.brightness; 1 is the usual cave):",
+		"brightness: %.2f" % brightness,
 		"# One character per floor cell, top row first (cell 0,0 is the top-left floor tile):",
 		"#   .  floor    #  pitfall    S  stalagmite (joins its stalagmite neighbours)",
 		"#   X  inner wall (InnerWalls layer; joins its inner wall neighbours)",

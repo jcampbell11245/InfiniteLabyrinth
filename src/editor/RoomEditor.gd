@@ -35,6 +35,11 @@ const ZOOM := 2.5
 const PANEL_WIDTH := 500.0 # Screen pixels; the room is centred in the space right of it
 const FONT_SIZE := 26
 const FACING_FONT_SIZE := 22 # Five buttons share the Facing row
+# The Brightness slider's range and step, as Room.brightness (times the cave's brightness).
+const BRIGHTNESS_MIN := 0.25
+const BRIGHTNESS_MAX := 1.5
+const BRIGHTNESS_STEP := 0.05
+const BRIGHTNESS_LABEL_WIDTH := 80.0 # Screen pixels for the "100%" beside the slider
 const GRID_COLOR := Color(1, 1, 1, 0.08)
 const HOVER_COLOR := Color(1, 0.9, 0.3, 0.9)
 const ERASE_COLOR := Color(1, 0.3, 0.3, 0.9)
@@ -67,7 +72,7 @@ const SPECIAL_TIPS := {
 	RoomDesign.Cell.SLOW: "Slow tile: slower walking, rolling and attacking",
 	RoomDesign.Cell.FAST: "Speed tile: faster walking, rolling and attacking",
 }
-const TOOL_TABS_HEIGHT := 300.0 # Screen pixels, tabs included; each tab scrolls inside it
+const TOOL_TABS_HEIGHT := 250.0 # Screen pixels, tabs included; each tab scrolls inside it
 const TOOL_GRID_COLUMNS := 4
 const TOOL_ICON_BUTTON := Vector2(100, 112)
 const TOOL_ICON_SIZE := 72 # Widest the picture on a tool button gets
@@ -157,6 +162,9 @@ var _warning: Label
 var _clear_buttons := {} # "none"/"enemies"/"switches" -> its Button
 var _tileset_buttons: Array[Button] = [] # One per FloorTheme.ART_FLOORS, floor 1 first
 var _floors_menu: MenuButton # Checklist of the floors the room can appear on
+var _brightness_slider: HSlider
+var _brightness_value: Label
+var _brightness_before := {} # Snapshot from when a slider drag started, for its undo step
 var _status: Label
 var _open_folder: Button
 var _export_dir := "" # Absolute folder the last export went to
@@ -769,6 +777,8 @@ func _refresh_info() -> void:
 	for i in range(_tileset_buttons.size()):
 		_tileset_buttons[i].set_pressed_no_signal(design.preview_floor == i + 1)
 	_floors_menu.text = design.floors_text() + "  ▾"
+	_brightness_slider.set_value_no_signal(design.brightness)
+	_brightness_value.text = "%d%%" % roundi(design.brightness * 100.0)
 	var popup := _floors_menu.get_popup()
 	for n in range(1, Room.FLOOR_CHOICES + 1):
 		popup.set_item_checked(popup.get_item_index(n), Room.allowed_on(n, design.floors))
@@ -806,6 +816,7 @@ func _build_ui() -> void:
 	column.add_child(HSeparator.new())
 	column.add_child(_tileset_row())
 	column.add_child(_floors_row())
+	column.add_child(_brightness_row())
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
@@ -1079,6 +1090,46 @@ func _floors_row() -> HBoxContainer:
 	popup.id_pressed.connect(_on_floor_item)
 	row.add_child(_floors_menu)
 	return row
+
+# "Brightness" and a slider for how lit the room is, times the cave's brightness. Only
+# the play-test shows it; the editor draws the room fully lit so it's easy to paint.
+func _brightness_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = "Brightness"
+	row.add_child(label)
+	_brightness_slider = HSlider.new()
+	_brightness_slider.min_value = BRIGHTNESS_MIN
+	_brightness_slider.max_value = BRIGHTNESS_MAX
+	_brightness_slider.step = BRIGHTNESS_STEP
+	_brightness_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_brightness_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_brightness_slider.focus_mode = Control.FOCUS_NONE
+	_brightness_slider.tooltip_text = "How lit the room is: 100% is the usual cave, higher is lighter " 		+ "(about 120% is fully lit). Play the room to see it."
+	_brightness_slider.value_changed.connect(_on_brightness_changed)
+	_brightness_slider.drag_started.connect(func() -> void: _brightness_before = design.snapshot())
+	_brightness_slider.drag_ended.connect(_on_brightness_drag_ended)
+	row.add_child(_brightness_slider)
+	_brightness_value = Label.new()
+	_brightness_value.custom_minimum_size.x = BRIGHTNESS_LABEL_WIDTH
+	_brightness_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(_brightness_value)
+	return row
+
+# A drag is one undo step, recorded when it ends; a click on the track is one on its own.
+func _on_brightness_changed(value: float) -> void:
+	var dragging := !_brightness_before.is_empty()
+	var before := design.snapshot()
+	design.brightness = value
+	if !dragging:
+		design.record(before)
+		_refresh_history()
+	_refresh_info()
+
+func _on_brightness_drag_ended(_value_changed: bool) -> void:
+	design.record(_brightness_before)
+	_brightness_before = {}
+	_refresh_history()
 
 # The Clear button, which opens a menu: clear everything, just the enemies, or just the tiles.
 func _clear_menu() -> MenuButton:

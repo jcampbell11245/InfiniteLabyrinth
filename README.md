@@ -131,7 +131,7 @@ Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through th
 
 ## Checks
 
-Pull requests can only merge into `master` when three checks pass (see
+Pull requests can only merge into `master` when four checks pass (see
 `.github/workflows/`), the branch is up to date with `master`, and another developer has
 approved it. Run the first two checks yourself before pushing:
 
@@ -149,6 +149,13 @@ tools/check.sh
 
 Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (see
 [Tools](#tools)) and playtest.
+
+**Claude approval** is also required: when a pull request is opened, marked ready for
+review or pushed to, Claude Code reviews that commit with the review-pr skill, posts its
+findings as review comments, and passes the **Claude approval** status only when nothing it
+found is blocking or a bug to fix. Fix what it raised and push to get a new review; comment
+`@claude review` to re-run it without pushing (after a failed run, say). It doesn't replace
+the person's approval: a pull request needs both. Pull requests from forks aren't reviewed.
 
 ## Contributing
 
@@ -211,7 +218,11 @@ roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
 be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10 that the room
 can appear on (floors after 10 follow Floor 10), with Every floor and No floors to set them
 all at once. In room scenes this is the room's `floors` flags; all existing rooms appear on
-every floor. If too few rooms are allowed on a floor to fill it, some appear twice. Ctrl+Z undoes and Ctrl+Y redoes, or use the Undo and Redo buttons. Clear opens a menu to
+every floor. If too few rooms are allowed on a floor to fill it, some appear twice.
+**Brightness** sets how lit the room is, as a percentage of the cave's usual light (the
+debug menu's Cave brightness): lower is darker, and about 120% is fully lit. The editor
+always draws the room fully lit; play the room to see it. In room scenes this is the
+room's `brightness` (1 = 100%). Ctrl+Z undoes and Ctrl+Y redoes, or use the Undo and Redo buttons. Clear opens a menu to
 wipe everything, just the enemies, or just the tiles (pitfalls, inner walls and stalagmites). Choose what clears the room: None (the default; the doors never lock), beating its enemies, or hitting its switches. **Play** (F5) builds the room on its own to try it out, with every door shut; F1 (or
 dying) goes back to the editor with the design intact. **Export** writes the design as a
 plain-text grid to a `room_designs` folder and copies it to the clipboard, ready to be turned

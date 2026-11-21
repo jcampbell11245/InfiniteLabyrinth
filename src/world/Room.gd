@@ -70,6 +70,9 @@ const TransitionDetector := preload("res://src/world/tiles/TransitionDetector.ts
 @export var floor_size := STANDARD_FLOOR_SIZE
 ## Camera zoom while the player is in this room.
 @export var camera_zoom := 2.5
+## How lit the room is, times the cave's brightness (Tuning.cave_brightness; see
+## CaveLighting). 1 is the usual cave; higher is lighter, up to fully lit.
+@export_range(0.25, 1.5, 0.05) var brightness := 1.0
 const FLOOR_CHOICES := 10 # Floors the checklist covers; later floors follow the last one
 const ALL_FLOORS := (1 << FLOOR_CHOICES) - 1
 
