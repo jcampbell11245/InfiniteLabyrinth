@@ -123,6 +123,8 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	expect(rows.get_child_count() == autoload("Bindings").ACTIONS.size(), "one row per action")
 	expect(!status.visible && (status as Label).text.is_empty(),
 		"the standing 'press a key' caption is gone")
+	expect((status as Label).horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER,
+		"the blurb is centred above the footer buttons")
 	expect(rows.position.y + rows.size.y <= status.position.y + 0.01,
 		"the last bind row does not overlap the status caption")
 	expect(status.position.y + status.size.y <= reset.position.y + 0.01 \
@@ -179,18 +181,18 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	panel.show()
 	panel.controls_button.pressed.emit()
 	panel.controls_panel.start_capture("roll", "key")
-	expect(panel.controls_panel.status_label.text.is_empty() \
-		&& !panel.controls_panel.status_label.visible,
-		"starting a capture shows no Esc hint")
+	expect(panel.controls_panel.status_label.text == ControlsPanel.CANCEL_HINT \
+		&& panel.controls_panel.status_label.visible,
+		"starting a capture shows the Esc and hold-B hint")
 	var key_event := InputEventKey.new()
 	key_event.keycode = KEY_R
 	key_event.pressed = true
 	panel.controls_panel._input(key_event)
 	expect(bindings.key_for("roll") == KEY_R, "capturing a key rebinds the action")
 	expect(!panel.controls_panel.is_listening(), "the capture ends after one press")
-	expect(panel.controls_panel.status_label.text.is_empty() \
-		&& !panel.controls_panel.status_label.visible,
-		"capturing a key shows no confirmation blurb")
+	expect(panel.controls_panel.status_label.text.find("KEY SET TO") >= 0 \
+		&& panel.controls_panel.status_label.visible,
+		"capturing a key shows the confirmation blurb")
 	panel.controls_panel.start_capture("roll", "button")
 	var pad_event := InputEventJoypadButton.new()
 	pad_event.button_index = JOY_BUTTON_LEFT_SHOULDER
@@ -198,9 +200,9 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	panel.controls_panel._input(pad_event)
 	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_SHOULDER,
 		"capturing a pad button rebinds the action")
-	expect(panel.controls_panel.status_label.text.is_empty() \
-		&& !panel.controls_panel.status_label.visible,
-		"capturing a pad button shows no confirmation blurb")
+	expect(panel.controls_panel.status_label.text.find("PAD SET TO") >= 0 \
+		&& panel.controls_panel.status_label.visible,
+		"capturing a pad button shows the confirmation blurb")
 	panel.hide()
 	save_data.write_to_disk = old_write
 	panel.free()
@@ -229,9 +231,9 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	escape.pressed = true
 	panel.controls_panel.cancel_capture()
 	expect(!panel.controls_panel.is_listening(), "Escape cancels the capture")
-	expect(panel.controls_panel.status_label.text.is_empty() \
-		&& !panel.controls_panel.status_label.visible,
-		"cancelling a capture shows no blurb")
+	expect(panel.controls_panel.status_label.text == "CAPTURE CANCELLED" \
+		&& panel.controls_panel.status_label.visible,
+		"cancelling a capture shows the cancellation blurb")
 	expect(panel.controls_panel.visible, "cancelling keeps the controls page open")
 	panel.hide()
 	save_data.write_to_disk = old_write
@@ -316,19 +318,23 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 		for button_name: String in ["Key", "Pad"]:
 			labels.append((row.get_node(button_name) as Button).text)
 	controls.start_capture("roll", "key")
-	expect(controls.status_label.text.is_empty() && !controls.status_label.visible,
-		"starting a capture adds no caption")
+	expect(controls.status_label.text == ControlsPanel.CANCEL_HINT && controls.status_label.visible,
+		"starting a capture shows the cancel hint")
 	labels.append((controls.get_node("Panel/Rows/Row_roll/Key") as Button).text)
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "button")
 	labels.append((controls.get_node("Panel/Rows/Row_roll/Pad") as Button).text)
 	labels.append(controls.status_label.text)
+	controls.cancel_capture()
+	labels.append(controls.status_label.text)
+	var hint_width := font.get_string_size(ControlsPanel.CANCEL_HINT, HORIZONTAL_ALIGNMENT_LEFT, -1,
+		controls.status_label.get_theme_font_size(&"font_size")).x
+	expect(hint_width <= controls.status_label.size.x, "the cancel hint fits the blurb strip")
 	for text: String in labels:
 		for i in text.length():
 			var codepoint := text.unicode_at(i)
 			expect(font.has_char(codepoint),
 				"the Controls font can draw %d in '%s'" % [codepoint, text])
-	controls.cancel_capture()
 	panel.hide()
 	panel.free()
 
@@ -357,21 +363,40 @@ func test_escape_closes_capture_then_controls_then_options() -> void:
 
 func test_controller_b_cancels_capture_then_controls_then_options() -> void:
 	var save_data := autoload("SaveData")
+	var bindings := autoload("Bindings")
 	var old_write: bool = save_data.write_to_disk
 	save_data.write_to_disk = false
 	var screen := _add_title_screen()
 	var panel := screen.get_node("Canvas/OptionsPanel") as OptionsPanel
 	(screen.get_node("Canvas/Options") as BaseButton).pressed.emit()
 	panel.controls_button.pressed.emit()
-	panel.controls_panel.start_capture("roll", "key")
+	var controls := panel.controls_panel
+	controls.start_capture("roll", "key")
 	var b_event := _cancel_button_event()
+	var release := _cancel_button_event()
+	release.pressed = false
+
+	controls._input(b_event)
+	controls._input(release)
+	expect(panel.is_listening(), "a tap of B does not cancel the capture")
+	expect(controls.status_label.text == ControlsPanel.CANCEL_HINT,
+		"a tap of B leaves the cancel hint up")
+
+	controls._input(b_event)
+	var old_key: int = bindings.key_for("roll")
+	var other_key := InputEventKey.new()
+	other_key.keycode = KEY_R
+	other_key.pressed = true
+	controls._input(other_key)
+	expect(bindings.key_for("roll") == old_key, "a key press while B is held is ignored")
+	_finish_pad_hold(controls)
+	controls._input(release)
+	expect(!panel.is_listening(), "holding B cancels the capture")
+	expect(controls.status_label.text == "CAPTURE CANCELLED", "the hold shows the cancellation blurb")
 	screen._unhandled_input(b_event)
-	expect(panel.visible && panel.controls_panel.visible, "the first B only cancels the capture")
-	expect(!panel.is_listening(), "B is not stored as a binding")
+	expect(panel.visible && !panel.controls_panel.visible, "the next B returns to audio options")
 	screen._unhandled_input(b_event)
-	expect(panel.visible && !panel.controls_panel.visible, "the second B returns to audio options")
-	screen._unhandled_input(b_event)
-	expect(!panel.visible, "the third B closes the options panel")
+	expect(!panel.visible, "the next B closes the options panel")
 	save_data.write_to_disk = old_write
 	tree.root.remove_child(screen)
 	screen.free()
@@ -387,11 +412,23 @@ func test_controller_b_cancels_capture_in_pause_menu() -> void:
 	menu.show_options()
 	var panel := menu.options_panel
 	panel.controls_button.pressed.emit()
-	panel.controls_panel.start_capture("roll", "key")
+	var controls := panel.controls_panel
+	controls.start_capture("roll", "key")
 	var b_event := _cancel_button_event()
-	menu._input(b_event)
+	var release := _cancel_button_event()
+	release.pressed = false
+
+	controls._input(b_event)
+	controls._input(release)
+	expect(panel.is_listening(), "a tap of B does not cancel the pause capture")
+
+	controls._input(b_event)
+	_finish_pad_hold(controls)
+	controls._input(release)
 	expect(panel.visible && panel.controls_panel.visible && !panel.is_listening(),
-		"B cancels the capture without leaving the pause controls page")
+		"holding B cancels the capture without leaving the pause controls page")
+	expect(controls.status_label.text == "CAPTURE CANCELLED",
+		"the pause capture shows the cancellation blurb")
 	menu._input(b_event)
 	expect(panel.visible && !panel.controls_panel.visible, "the next B returns to audio options")
 	menu._input(b_event)
@@ -414,6 +451,11 @@ func _cancel_button_event() -> InputEventJoypadButton:
 	event.button_index = JOY_BUTTON_B
 	event.pressed = true
 	return event
+
+func _finish_pad_hold(controls: ControlsPanel) -> void:
+	controls._pad_cancel_started_msec = Time.get_ticks_msec() \
+		- int(ControlsPanel.PAD_CANCEL_HOLD_SECONDS * 1000.0) - 1
+	controls._process(0.0)
 
 func _send_key(panel: OptionsPanel, keycode: int) -> void:
 	var event := InputEventKey.new()

@@ -4,14 +4,16 @@ class_name ControlsPanel
 # Controls sub-panel of the shared options screen. Each row has one keyboard key and one
 # controller button to capture; clicking either starts listening for a press. Bindings are
 # changed through the Bindings autoload, which updates InputMap and the save data at once.
-# The host saves to disk when it closes the options screen. Escape and the pad's B button
-# cancel a capture through the host before they can close any menus.
+# The host saves to disk when it closes the options screen. Escape cancels a capture at once,
+# but the pad's B button must be held briefly so a stray press cannot abandon a rebind.
 
 signal back_pressed
 
 const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
+const CANCEL_HINT := "ESC TO CANCEL   HOLD B TO CANCEL"
+const PAD_CANCEL_HOLD_SECONDS := 0.6
 
 @onready var rows: VBoxContainer = $Panel/Rows
 @onready var status_label: Label = $Panel/Status
@@ -22,6 +24,7 @@ var _key_buttons := {}
 var _pad_buttons := {}
 var _listening_action := ""
 var _listening_device := ""
+var _pad_cancel_started_msec := -1 # -1 while B is not held; real time so slow motion can't stretch it.
 
 func _ready() -> void:
 	_build_rows()
@@ -48,8 +51,8 @@ func start_capture(action: String, device: String) -> void:
 		return
 	_listening_action = action
 	_listening_device = device
-	# Clear any earlier conflict so the panel stays quiet while it waits for a press.
-	_set_status("")
+	_pad_cancel_started_msec = -1
+	_set_status(CANCEL_HINT)
 	refresh()
 	var button := _button_for_device(action, device)
 	if button != null:
@@ -57,6 +60,24 @@ func start_capture(action: String, device: String) -> void:
 
 func _input(event: InputEvent) -> void:
 	if !is_listening():
+		return
+	if event is InputEventJoypadButton:
+		var pad_event := event as InputEventJoypadButton
+		if pad_event.button_index == JOY_BUTTON_B:
+			_handle_pad_cancel(pad_event.pressed)
+			_consume()
+			return
+		# A held B owns the capture, so another pad button must not change the binding.
+		if _pad_cancel_started_msec >= 0:
+			_consume()
+			return
+		if !pad_event.pressed:
+			return
+		_consume()
+		_finish_button(pad_event.button_index)
+		return
+	if _pad_cancel_started_msec >= 0:
+		_consume()
 		return
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
@@ -71,16 +92,23 @@ func _input(event: InputEvent) -> void:
 			_set_status("MODIFIER KEYS CANNOT BE BOUND")
 			return
 		_finish_key(key_event.keycode)
+
+func _process(_delta: float) -> void:
+	if _pad_cancel_started_msec < 0 || !is_listening():
 		return
-	if event is InputEventJoypadButton:
-		var pad_event := event as InputEventJoypadButton
-		if !pad_event.pressed:
-			return
-		# B is the controller's cancel, so leave it for the host just like Escape.
-		if pad_event.button_index == JOY_BUTTON_B:
-			return
-		_consume()
-		_finish_button(pad_event.button_index)
+	# Real time matters here: hit-stop and slow motion must not stretch the hold.
+	var held_ms := Time.get_ticks_msec() - _pad_cancel_started_msec
+	if held_ms >= int(PAD_CANCEL_HOLD_SECONDS * 1000.0):
+		_pad_cancel_started_msec = -1
+		cancel_capture()
+
+func _handle_pad_cancel(pressed: bool) -> void:
+	if !pressed:
+		_pad_cancel_started_msec = -1
+		return
+	# Ignore auto-repeat: the hold starts on the first press and ends on release.
+	if _pad_cancel_started_msec < 0:
+		_pad_cancel_started_msec = Time.get_ticks_msec()
 
 func _build_rows() -> void:
 	for entry: Dictionary in Bindings.ACTIONS:
@@ -144,6 +172,7 @@ func _finish_key(keycode: int) -> void:
 		_set_status("%s IS ALREADY USED BY %s" % [Bindings.key_name(keycode), Bindings.action_label(owner)])
 		return
 	Bindings.set_key(_listening_action, keycode)
+	_set_status("%s KEY SET TO %s" % [Bindings.action_label(_listening_action), Bindings.key_name(keycode)])
 	_stop_capture()
 
 func _finish_button(button_index: int) -> void:
@@ -155,10 +184,12 @@ func _finish_button(button_index: int) -> void:
 		_set_status("%s IS ALREADY USED BY %s" % [Bindings.button_name(button_index), Bindings.action_label(owner)])
 		return
 	Bindings.set_button(_listening_action, button_index)
+	_set_status("%s PAD SET TO %s" % [Bindings.action_label(_listening_action), Bindings.button_name(button_index)])
 	_stop_capture()
 
-# Called by the hosts when Escape arrives while a capture is active.
+# Called by the host for Escape and by the hold timer for B.
 func cancel_capture() -> void:
+	_set_status("CAPTURE CANCELLED")
 	_stop_capture()
 
 # Feedback is transient, so the label stays hidden until there is something to say.
@@ -169,7 +200,7 @@ func _set_status(message: String) -> void:
 func _stop_capture() -> void:
 	_listening_action = ""
 	_listening_device = ""
-	_set_status("")
+	_pad_cancel_started_msec = -1
 	refresh()
 
 func _button_for_device(action: String, device: String) -> Button:

@@ -91,6 +91,8 @@ theme_override_colors/font_color = Color(1, 0.9, 0.55, 1)
 theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 12
 text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Reset" type="Button" parent="Panel" unique_id=1726394509]
 layout_mode = 0
