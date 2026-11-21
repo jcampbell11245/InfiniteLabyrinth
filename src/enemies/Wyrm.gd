@@ -634,6 +634,10 @@ func can_take_turn() -> bool:
 func _hit_interrupts_attack() -> bool:
 	return !_unparryable
 
+# A wyvern's red charge, up to its bite (Enemy.red_charge_coming).
+func red_charge_coming() -> bool:
+	return _animation_is("slash") && _unparryable && animator.frame < attack_frame
+
 # Hanging open after a red charge: a hit from behind dazes it (Enemy._dazed_from_behind).
 func _in_rollable_recovery() -> bool:
 	return _recover_rooted && !_recover.is_stopped()

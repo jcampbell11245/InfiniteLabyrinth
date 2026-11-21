@@ -11,6 +11,7 @@ signal changed(key: String)
 var player_speed := 125.0 # Pixels/sec walking
 var roll_speed_multiplier := 2.0 # Times player_speed while rolling
 var roll_duration := 0.2 # Seconds; with the multiplier this sets the roll distance (just through an enemy)
+var roll_charge_bonus := 0.15 # Extra seconds on a roll begun while a red (roll-only) charge is coming at the player
 var roll_cooldown := 0.5 # Seconds after a roll ends before the next
 var hurt_invincibility := 0.7 # Seconds after being hit before the next hit counts
 var player_knockback := 150.0 # Pixels/sec the player is pushed when hit
@@ -240,6 +241,7 @@ const FIELDS := [
 	["Player", "player_speed", "Walk speed", 0, 600, 1, "Player.gd speed"],
 	["Player", "roll_speed_multiplier", "Roll speed multiplier", 0, 6, 0.05, "Player.gd (literal 2)"],
 	["Player", "roll_duration", "Roll duration (s)", 0.02, 2, 0.01, "Player.gd rolling.start(0.25)"],
+	["Player", "roll_charge_bonus", "Roll extra time against red charges (s)", 0, 1, 0.01, "new (Player._red_charge_coming)"],
 	["Player", "roll_cooldown", "Roll cooldown (s)", 0, 5, 0.05, "Player.gd roll_cooldown.start(1)"],
 	["Player", "hurt_invincibility", "Invincibility after hit (s)", 0, 5, 0.05, "Player.gd invincibility_cooldown.start(1)"],
 	["Player", "player_knockback", "Knockback when hit", 0, 600, 5, "Player.gd KNOCKBACK_SPEED"],

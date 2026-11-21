@@ -592,3 +592,51 @@ func test_combos_can_carry_on_after_a_hit_when_switched_off() -> void:
 	centaur.landed_hit()
 	await wait_for_hit_after(centaur, 0)
 	expect_equal(centaur._combo_index, 1, "on to the next kick")
+
+# A lunge hit from behind in its end lag goes on to its kick with the kick's full timing:
+# the end lag mustn't run on into the kick and set it off early.
+func test_kick_after_a_lunge_hit_in_end_lag_keeps_its_timing() -> void:
+	autoload("Tuning").centaur_charge_chance = 1.0
+	var centaur := await boot_centaur("taurtaur")
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	for i in 400:
+		if centaur.in_end_lag():
+			break
+		await tree.physics_frame
+	expect(centaur.in_end_lag(), "the lunge ends in end lag")
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect_equal(centaur._combo_index, 1, "on to the kick")
+	expect(!centaur.in_end_lag(), "with the end lag over")
+	await wait_for_spark(centaur)
+	var sparked := Time.get_ticks_msec()
+	for i in 200:
+		if centaur.animator.frame >= centaur.attack_frame:
+			break
+		await tree.physics_frame
+	var window := (Time.get_ticks_msec() - sparked) / 1000.0
+	var tuning := autoload("Tuning")
+	expect(window >= tuning.unparryable_window - 0.05, "the kick waits its full roll window: %s s" % window)
+
+# A roll begun while a taurtaur's lunge is coming lasts longer than an ordinary one.
+func test_roll_lasts_longer_against_a_red_charge() -> void:
+	var tuning := autoload("Tuning")
+	tuning.centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	var p := player()
+	p.direction = Direction.RIGHT
+	Input.action_press("roll") # An ordinary roll first
+	await tree.physics_frame
+	await tree.physics_frame
+	Input.action_release("roll")
+	expect_near(p.rolling.wait_time, tuning.roll_duration, 0.001, "an ordinary roll")
+	await wait_real(0.9) # Past the roll cooldown
+	tuning.centaur_charge_chance = 1.0
+	centaur._start_swing(true) # A lunge winding up
+	expect(centaur.red_charge_coming(), "a red charge is coming")
+	Input.action_press("roll")
+	await tree.physics_frame
+	await tree.physics_frame
+	Input.action_release("roll")
+	expect_near(p.rolling.wait_time, tuning.roll_duration + tuning.roll_charge_bonus, 0.001, "a longer roll")

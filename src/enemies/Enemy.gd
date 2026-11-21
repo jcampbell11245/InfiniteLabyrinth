@@ -515,6 +515,12 @@ func landed_hit() -> void:
 func _end_combo_on_hit() -> void:
 	pass
 
+# A red (roll-only) charge of its is coming at the player: winding up or under way, not yet
+# struck. A roll begun meanwhile lasts longer (Player, Tuning.roll_charge_bonus), since a
+# charge's arrival is harder to time than a swing's. None by default.
+func red_charge_coming() -> bool:
+	return false
+
 # Still stuck recovering from an unparryable attack it just made (a knight's end lag, a
 # wyvern hanging in the air), when a hit from behind dazes it. None by default.
 func _in_rollable_recovery() -> bool:

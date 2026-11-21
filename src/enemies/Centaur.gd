@@ -215,6 +215,9 @@ func _hit() -> int:
 func _set_up_hit() -> void:
 	var hit := _hit()
 	_hit_landed = false
+	# A lunge hit from behind in its end lag goes straight on to the next hit; the end lag
+	# mustn't run on into it, or its timing out would play this hit's animation on early.
+	_end_lag.stop()
 	_unparryable = hit == Hit.KICK || (hit == Hit.CHARGE && charge == Charge.ROLL)
 	_follow_up_ready = false
 	_dashing = false
@@ -447,6 +450,10 @@ func _add_top_kick_animations() -> void:
 
 func _charging() -> bool:
 	return !_combo.is_empty() && _hit() == Hit.CHARGE && _animation_is("slash")
+
+# A taurtaur's lunge, up to its strike (Enemy.red_charge_coming).
+func red_charge_coming() -> bool:
+	return _charging() && _unparryable && animator.frame < attack_frame
 
 # The windup hold ends by setting off, sparking as it goes, rather than opening the usual
 # parry window: the strike waits until it reaches the player.

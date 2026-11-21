@@ -925,13 +925,13 @@ func _play_reaction(action: String) -> void:
 	if animator.sprite_frames.has_animation(action + "_" + direction):
 		_play(action)
 
-# Parried: the turn is over once the stun wears off.
 # Its hit caught the player (Enemy.landed_hit): no more swings this turn, so in a group the
 # turn passes on once this swing is over, and no double attack follows.
 func _end_combo_on_hit() -> void:
 	_swings_left = 0
 	_follow_up_ready = false
 
+# Parried: the turn is over once the stun wears off.
 func _on_staggered() -> void:
 	_swings_left = 0
 	_end_lag.stop() # Dazed out of its end lag, from behind
