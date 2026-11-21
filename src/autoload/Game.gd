@@ -18,6 +18,8 @@ signal item_refused(slot: int) # Use pressed on an empty box, or on an item that
 signal items_changed # What's in the item bar's boxes changed
 signal room_marked(room_id: int) # A metal detector showed this key room on the minimap
 
+enum Purchase { BOUGHT, TOO_POOR, BAR_FULL } # What came of trying to buy an item
+
 var coins := 0 # Banked into SaveData when the floor ends
 var keys := 0 # Held now; Tuning.keys_to_finish open the end room
 # Spare keys from the floor just finished, added to the next floor's when it starts. Only
@@ -25,7 +27,10 @@ var keys := 0 # Held now; Tuning.keys_to_finish open the end room
 var carried_keys := 0
 var arrows := 0 # Left to shoot; refilled to Tuning.start_arrows each floor
 var item_slot := 0 # Highlighted box on the item bar, 0 to Tuning.item_slots - 1
-var items: Array[Items.Kind] = [] # What's in each box of the item bar; refilled each floor
+var items: Array[Items.Kind] = [] # What's in each box of the item bar
+# The items left when the floor just finished, handed to the next one like carried_keys:
+# a death or a new run starts with an empty bar.
+var carried_items: Array[Items.Kind] = []
 
 # Keys given at the start of each floor and the floor a new run starts on are
 # Tuning.start_keys and Tuning.start_floor (debug menu, F2).
@@ -46,7 +51,8 @@ func register(world: Overworld) -> void:
 	keys = Tuning.start_keys + carried_keys
 	carried_keys = 0
 	arrows = Tuning.start_arrows
-	items = Items.STARTING.duplicate()
+	items = carried_items.duplicate()
+	carried_items = []
 	items_changed.emit()
 
 func unregister(world: Overworld) -> void:
@@ -56,6 +62,14 @@ func unregister(world: Overworld) -> void:
 		camera_rig = null
 		camera = null
 		upgrade_menu = null
+
+func _ready() -> void:
+	player_died.connect(discard_items)
+
+# Every unused item is lost when the player dies.
+func discard_items() -> void:
+	items.clear()
+	items_changed.emit()
 
 func room_by_id(id: int) -> Room:
 	return overworld.rooms_by_id.get(id)
@@ -67,6 +81,7 @@ func add_coins(amount: int) -> void:
 # The floor is done: the keys the end room took are spent, the rest wait for the next floor.
 func finish_floor() -> void:
 	carried_keys = maxi(keys - Tuning.keys_to_finish, 0)
+	carried_items = items.duplicate()
 
 func add_keys(amount: int) -> void:
 	keys += amount
@@ -84,6 +99,29 @@ func cycle_item(step: int) -> void:
 # The item in box `slot`, or NONE for an empty box (or one past the end of `items`).
 func item_in(slot: int) -> Items.Kind:
 	return items[slot] if slot >= 0 && slot < items.size() else Items.Kind.NONE
+
+# The first empty box on the item bar, or -1 when every box is full.
+func free_slot() -> int:
+	for slot in maxi(Tuning.item_slots, 1):
+		if item_in(slot) == Items.Kind.NONE:
+			return slot
+	return -1
+
+# Buys `kind` for Items.price coins into the first empty box, if the player can pay and
+# has room. The coins are banked with the rest when the floor ends (Overworld.reset_world).
+func buy_item(kind: Items.Kind) -> Purchase:
+	var cost := Items.price(kind)
+	if coins < cost:
+		return Purchase.TOO_POOR
+	var slot := free_slot()
+	if slot < 0:
+		return Purchase.BAR_FULL
+	if items.size() <= slot:
+		items.resize(slot + 1) # New boxes are NONE, empty
+	items[slot] = kind
+	add_coins(-cost)
+	items_changed.emit()
+	return Purchase.BOUGHT
 
 # Uses the highlighted item. It's only used up if it did something (see Items.use).
 func use_item() -> void:

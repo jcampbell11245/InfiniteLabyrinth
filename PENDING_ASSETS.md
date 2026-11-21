@@ -32,6 +32,7 @@ line in `assets/sfx/SOURCE.txt`.
 | `special_tiles.png` frames 16-19 (`TELEPORT_1`-`TELEPORT_4`) | The four teleporter pairs | ![teleporters](docs/pending_assets/tile_teleporters.png) |
 | `assets/sprites/hud/status_icons.png` cell 12 (`Icon.FAST`) | Status-bar icon over the player while on a speed tile ([StatusBars.gd](src/effects/StatusBars.gd)) | ![fast icon](docs/pending_assets/icon_fast.png) |
 | `status_icons.png` cell 13 (`Icon.PASTE`) | Status-bar icon over whoever paste is holding | ![paste icon](docs/pending_assets/icon_paste.png) |
+| `assets/sprites/merchant/merchant.png` | The merchant in the start room ([Merchant.tscn](src/npcs/Merchant.tscn)): a still, shrunk and pixelated copy of a reference photo the developer supplied, licence unknown, so it must be replaced. Needs real art (standing, maybe idle) | ![merchant](docs/pending_assets/merchant.png) |
 | `assets/sprites/hud/item_skeleton_key.png` | Skeleton key icon in the item bar ([Items.gd](src/items/Items.gd)), drawn by script | ![skeleton key](docs/pending_assets/item_skeleton_key.png) |
 | `assets/sprites/hud/item_metal_detector.png` | Metal detector icon in the item bar ([Items.gd](src/items/Items.gd)), drawn by script | ![metal detector](docs/pending_assets/item_metal_detector.png) |
 | Troll (no art of its own) | [Troll.tscn](src/enemies/Troll.tscn) uses the goblin's sprites with a gold `self_modulate`. Needs its own sprite set (stand, walk, slash, all four facings) | ![troll](docs/pending_assets/enemy_troll.gif) |
@@ -59,7 +60,8 @@ from a library.
 | `paste_stick.wav` | Thermal paste first catching someone ([SpecialTiles.gd](src/world/SpecialTiles.gd)) | [assets/sfx/paste_stick.wav](assets/sfx/paste_stick.wav) |
 | `paste_stretch.wav` | Someone pulling against paste | [assets/sfx/paste_stretch.wav](assets/sfx/paste_stretch.wav) |
 | `paste_snap.wav` | Paste snapping someone back | [assets/sfx/paste_snap.wav](assets/sfx/paste_snap.wav) |
-| `clank_bad.wav`, reused for the item bar | Pressing use on an item that would do nothing, or on an empty box ([ItemBar.gd](src/ui/hud/ItemBar.gd) `REFUSED_SOUND`, pitched up 1.6x like the jammed bow's click). The sound itself is final for blocked swings; the item bar needs a sound of its own | [assets/sfx/clank_bad.wav](assets/sfx/clank_bad.wav) |
+| `clank_bad.wav`, reused for the item bar | Pressing use on an item that would do nothing, or on an empty box ([ItemBar.gd](src/ui/hud/ItemBar.gd) `REFUSED_SOUND`, pitched up 1.6x like the jammed bow's click), and a purchase the shop refuses ([ShopMenu.gd](src/ui/menus/ShopMenu.gd)). The sound itself is final for blocked swings; the item bar needs a sound of its own | [assets/sfx/clank_bad.wav](assets/sfx/clank_bad.wav) |
+| `coin_bad.wav`, reused for the shop | Buying something from the merchant ([ShopMenu.gd](src/ui/menus/ShopMenu.gd) via `Juice.coin_stolen_sound`). It's the final sound for a troll stealing coins; the shop needs a purchase sound of its own | [assets/sfx/coin_bad.wav](assets/sfx/coin_bad.wav) |
 
 ## Music
 

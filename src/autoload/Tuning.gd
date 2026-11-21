@@ -206,6 +206,9 @@ var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its d
 
 # --- Items ---
 var item_slots := 3 # Boxes on the item bar in the bottom-left corner of the screen
+var skeleton_key_price := 50 # Coins the merchant asks for a skeleton key
+var metal_detector_price := 50 # Coins the merchant asks for a metal detector
+var merchant_reach := 30.0 # Pixels from the merchant's feet to the player's within which they can talk
 
 # --- Lighting (CaveLighting) ---
 var lighting_enabled := true # Off shows the cave at full brightness, as before lighting
@@ -409,6 +412,9 @@ const FIELDS := [
 	["Tiles", "teleport_glow_range", "Teleporter destination glow range (px)", 0, 200, 4, "new (SpecialTiles._update_glow)"],
 
 	["Items", "item_slots", "Item bar boxes", 1, 9, 1, "new (ItemBar)"],
+	["Items", "skeleton_key_price", "Skeleton key price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "metal_detector_price", "Metal detector price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "merchant_reach", "Merchant reach (px)", 5, 100, 1, "new (Merchant.in_reach)"],
 
 	["Lighting", "lighting_enabled", "Lighting on", 0, 0, 0, "new (CaveLighting)"],
 	["Lighting", "cave_brightness", "Cave brightness", 0, 1, 0.05, "new (CaveLighting.ambient_color)"],

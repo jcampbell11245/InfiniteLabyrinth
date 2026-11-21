@@ -33,13 +33,6 @@ func test_item_actions_are_bound() -> void:
 		expect(InputMap.has_action(action) && !InputMap.action_get_events(action).is_empty(),
 			"%s has bindings" % action)
 
-func test_floor_starts_with_the_starting_items() -> void:
-	await boot_floor()
-	var game := autoload("Game")
-	expect_equal(game.item_in(0), Items.Kind.SKELETON_KEY, "the first box holds a skeleton key")
-	expect_equal(game.item_in(1), Items.Kind.METAL_DETECTOR, "the second box holds a metal detector")
-	expect_equal(game.item_in(2), Items.Kind.NONE, "the third box is empty")
-
 func test_empty_box_is_refused() -> void:
 	await boot_floor()
 	var game := autoload("Game")

@@ -6,17 +6,29 @@ extends RefCounted
 # one and only takes it away when use() says it did something, so an item that would be
 # wasted (a skeleton key with no locked door to open) stays in its box.
 #
-# Items can't be found yet: for now every floor starts with STARTING in the first boxes.
+# Items are bought from the merchant in the start room (Merchant, ShopMenu), carried from
+# floor to floor, and lost on death.
 
 enum Kind { NONE, SKELETON_KEY, METAL_DETECTOR }
 
-const STARTING: Array[Kind] = [Kind.SKELETON_KEY, Kind.METAL_DETECTOR]
+# What the shop shows for each item. The HUD font has capitals only and no apostrophes.
+const INFO := {
+	Kind.SKELETON_KEY: {name = "Skeleton key", text = "Opens the locked doors of the room you are in."},
+	Kind.METAL_DETECTOR: {name = "Metal detector", text = "Shows a key room you have not found on the minimap."},
+}
 
 # Placeholders, listed in PENDING_ASSETS.md.
 const ICONS := {
 	Kind.SKELETON_KEY: preload("res://assets/sprites/hud/item_skeleton_key.png"),
 	Kind.METAL_DETECTOR: preload("res://assets/sprites/hud/item_metal_detector.png"),
 }
+
+# Coins the merchant asks for `kind` (Tuning, so the debug menu can change it).
+static func price(kind: Kind) -> int:
+	match kind:
+		Kind.SKELETON_KEY: return Tuning.skeleton_key_price
+		Kind.METAL_DETECTOR: return Tuning.metal_detector_price
+	return 0
 
 # Does what `kind` does, if it can do anything right now. True when it did, and so is used up.
 static func use(kind: Kind) -> bool:

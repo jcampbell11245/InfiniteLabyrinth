@@ -144,7 +144,7 @@ func _backing_size() -> Vector2:
 	return Vector2(count * BOX + (count - 1) * GAP + inset * 2, BOX + inset * 2)
 
 func _draw() -> void:
-	_draw_backing(Rect2(Vector2.ZERO, _backing_size()))
+	HudFrame.backing(self, Rect2(Vector2.ZERO, _backing_size()))
 	var inset := PAD + 1
 	for i in _slot_count():
 		var box := Rect2(inset + i * (BOX + GAP), inset, BOX, BOX)
@@ -161,7 +161,7 @@ func _draw() -> void:
 			draw_rect(box.grow(-1), SELECTED_FILL)
 		if refused:
 			edge = edge.lerp(REFUSED_COLOR, _refused)
-		_draw_frame(box, edge)
+		HudFrame.outline(self, box, edge)
 		_draw_icon(Game.item_in(i), box)
 		if i == _flash_slot && _flash > 0.0:
 			draw_rect(box, FLASH_COLOR * Color(1, 1, 1, _flash))
@@ -173,30 +173,3 @@ func _draw_icon(kind: Items.Kind, box: Rect2) -> void:
 		return
 	var at := (box.get_center() - icon.get_size() / 2.0).floor()
 	draw_texture(icon, at)
-
-# The minimap's frame round a rectangle: translucent backing, a grey rim with its corner
-# pixels notched off, and a black line outside that follows the notches round.
-func _draw_backing(rect: Rect2) -> void:
-	var p := rect.position
-	var e := rect.end
-	var w := rect.size.x
-	var h := rect.size.y
-	draw_rect(rect.grow(-1), Minimap.BACKING)
-	for strip: Rect2 in [Rect2(p.x + 1, p.y, w - 2, 1), Rect2(p.x + 1, e.y - 1, w - 2, 1),
-			Rect2(p.x, p.y + 1, 1, h - 2), Rect2(e.x - 1, p.y + 1, 1, h - 2)]:
-		draw_rect(strip, Minimap.BORDER)
-	for strip: Rect2 in [Rect2(p.x, p.y - 1, w, 1), Rect2(p.x, e.y, w, 1),
-			Rect2(p.x - 1, p.y, 1, h), Rect2(e.x, p.y, 1, h)]:
-		draw_rect(strip, Minimap.OUTER)
-	for corner: Vector2 in [p, Vector2(e.x - 1, p.y), Vector2(p.x, e.y - 1), e - Vector2.ONE]:
-		draw_rect(Rect2(corner, Vector2.ONE), Minimap.OUTER)
-
-# A one-unit outline inside `rect`, drawn as filled strips: draw_rect's own outline is
-# centred on the edge, which would put it on half units and blur it.
-func _draw_frame(rect: Rect2, color: Color) -> void:
-	var p := rect.position
-	var s := rect.size
-	draw_rect(Rect2(p, Vector2(s.x, 1)), color)
-	draw_rect(Rect2(p.x, rect.end.y - 1, s.x, 1), color)
-	draw_rect(Rect2(p.x, p.y + 1, 1, s.y - 2), color)
-	draw_rect(Rect2(rect.end.x - 1, p.y + 1, 1, s.y - 2), color)
