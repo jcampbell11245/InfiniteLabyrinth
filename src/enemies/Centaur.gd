@@ -13,13 +13,14 @@ extends MeleeEnemy
 #   from it) ends the combo.
 # - a kick (Hit.KICK): it turns its back and lashes out with its hind legs, with a red spark
 #   at the hooves. It can't be parried (Enemy._on_player_sword), so the player rolls through
-#   or out of reach. Either way the combo carries on, but only a kick that misses counts as
-#   cleared.
+#   or out of reach. Either way the combo carries on, but a kick only counts as cleared
+#   when the player hits its back (see below), not for being dodged.
 # Each hit goes straight on to the next, its windup held Tuning.centaur_combo_hold so the
-# player's sword cooldown has run out by the next spark. Only clearing every hit of the
-# combo stuns it: parrying a last clash staggers it as any parry does, dodging a last kick
+# player's sword cooldown has run out by the next spark. It takes a hit from the player for
+# every hit of the combo to stun it, a parry for each clash and a hit on its back for each
+# kick: parrying a last clash staggers it as any parry does, hitting the back of a last kick
 # stuns it the same way (_combo_cleared). A parry partway through never does, and a combo
-# with a kick that caught the player ends without a stun. Each hit hurts for its own Tuning
+# with a hit the player didn't clear ends without a stun. Each hit hurts for its own Tuning
 # damage (melee_damage).
 #
 # Instead of a combo it may charge (`charge`, Tuning.centaur_charge_chance of attacks): it
@@ -83,7 +84,6 @@ const CHARGE_COMBO := [Hit.CHARGE, Hit.CLASH]
 
 var _combo := PackedInt32Array() # The attack under way; empty when not attacking
 var _combo_index := 0 # Hit of _combo under way
-var _hit_landed := false # The hit under way has hurt the player
 var _cleared := 0 # Hits of the combo the player has cleared (parried, dodged or hit from behind)
 var _rush_pending := false # Starting a group-rush strike: a single clash
 var _dashing := false # A charge under way has set off
@@ -177,7 +177,6 @@ func _set_up_hit() -> void:
 	var hit := _hit()
 	_unparryable = hit == Hit.KICK || (hit == Hit.CHARGE && charge == Charge.ROLL)
 	_follow_up_ready = false
-	_hit_landed = false
 	_dashing = false
 	# Only a lunge freezes in end lag after; a kick flows on into the rest of the combo.
 	_end_lagged = hit != Hit.CHARGE
@@ -218,16 +217,11 @@ func _parried_follow_up() -> bool:
 func _on_swing_finished() -> void:
 	var hit := _hit()
 	# A kick (or a taurtaur's red lunge) carries the combo on whether it caught the player
-	# or not; only a dodged one counts as cleared (walking out of reach of the last one
-	# doesn't).
-	if hit == Hit.KICK || (hit == Hit.CHARGE && _unparryable):
-		if !_hit_landed && (_has_next_hit() || !_out_of_reach()):
-			_cleared += 1
-		if _has_next_hit():
-			_next_hit()
-			return
-		if _all_cleared():
-			_combo_cleared()
+	# or was dodged. Neither clears it: only a hit on its back does (_on_player_sword), so a
+	# combo whose last hit plays out like this ends without a stun.
+	if (hit == Hit.KICK || (hit == Hit.CHARGE && _unparryable)) && _has_next_hit():
+		_next_hit()
+		return
 	_combo = PackedInt32Array()
 	super()
 
@@ -262,10 +256,6 @@ func _break_off() -> void:
 	else:
 		_skip_charge = true
 
-# The player hit by this enemy's hitbox (Player reads this after damage that counted).
-func landed_hit() -> void:
-	_hit_landed = true
-
 # Every hit of the combo cleared, the last one a dodged kick or a back hit: stunned as if
 # parried, knocked back away from the player.
 func _combo_cleared() -> void:
@@ -287,7 +277,7 @@ func _on_player_sword(from_direction: String) -> void:
 		return
 	player.mark_swing_parried()
 	_cleared += 1
-	if _body_facing != "":
+	if _body_facing != "" && _hit() == Hit.KICK:
 		# The player is round the back now: that side becomes its front, and its other half's
 		# hind legs take the next kick there, the way it came from becoming the back.
 		direction = _direction_of(-Direction.to_vector(direction))
