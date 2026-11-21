@@ -35,8 +35,8 @@ extends MeleeEnemy
 #
 # A sword hit from behind mid-combo (after rolling through a kick, say) doesn't hurt: it
 # clanks like a parry and clears the hit it's on, once that hit has sparked
-# (_on_player_sword). The parry bar steps up with every cleared hit, however it was cleared,
-# and is full when it's stunned.
+# (_on_player_sword). The parry bar is its combo bar: full as a combo starts, a step down for
+# every hit cleared, however it was cleared, and empty when it's stunned.
 #
 # A player who gets out of reach mid-combo breaks it off (_break_off): no stun, and it starts
 # over, walking back up for a fresh combo or, if it can charge,
@@ -116,10 +116,12 @@ func _process(delta: float) -> void:
 		_show_combo_progress()
 	_fit_hurtbox()
 
-# The parry bar shows the combo's cleared hits, a step each, full when it's stunned.
+# The parry bar is its combo bar: the hits still to clear, full as a combo starts (so it's
+# there from the first hit, whichever kind) and a step down for each one cleared, empty once
+# it's stunned.
 func _show_combo_progress() -> void:
 	if !_combo.is_empty() && _animation_is("slash"):
-		_parry_progress = float(_cleared) / _combo.size()
+		_parry_progress = 1.0 - float(_cleared) / _combo.size()
 
 # The hurtbox covers whatever the sprite draws this frame (sprite_bounds): the rider, a
 # taurtaur's top horse, legs thrown out in a kick. It never shrinks below the standing frame
@@ -299,7 +301,6 @@ func _break_off() -> void:
 # parried, knocked back away from the player.
 func _combo_cleared() -> void:
 	_parry_feedback()
-	_parry_progress = 1.0
 	stagger(_direction_of(-_to_player()))
 
 # The sword from behind (travelling the way it faces: the player rolled through a kick or a
@@ -375,6 +376,7 @@ func _on_staggered() -> void:
 	_dashing = false
 	_combo = PackedInt32Array()
 	_body_facing = ""
+	_parry_progress = 0.0 # Its combo bar runs out as it's stunned (Enemy fills it for others)
 
 func _on_reset() -> void:
 	super()

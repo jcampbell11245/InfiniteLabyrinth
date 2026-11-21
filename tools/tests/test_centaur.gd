@@ -110,7 +110,7 @@ func test_a_kick_that_plays_out_carries_the_combo_on() -> void:
 	centaur._start_swing(true)
 	await wait_for_hit_after(centaur, 0)
 	expect_equal(centaur._combo_index, 1, "on to the next kick")
-	expect_near(centaur._parry_progress, 0.0, 0.01, "with nothing cleared on the bar")
+	expect_near(centaur._parry_progress, 1.0, 0.01, "with the combo bar still full")
 	for i in 400:
 		if centaur._combo.is_empty():
 			break
@@ -343,7 +343,7 @@ func test_back_hit_clears_a_hit_without_damage() -> void:
 	await tree.process_frame
 	expect_equal(centaur.health, health, "no damage")
 	expect_equal(centaur._combo_index, 1, "it's on to the next kick")
-	expect_near(centaur._parry_progress, 1.0 / 3.0, 0.01, "the combo bar moves a step")
+	expect_near(centaur._parry_progress, 2.0 / 3.0, 0.01, "the combo bar goes down a step")
 	expect(!centaur.is_stunned(), "not stunned yet")
 
 func test_back_hit_before_the_spark_does_nothing() -> void:
@@ -368,7 +368,7 @@ func test_back_hit_on_the_last_hit_stuns_it() -> void:
 	await tree.process_frame
 	expect(centaur.is_stunned(), "clearing the last hit from behind stuns it")
 	expect_equal(centaur.health, health, "without hurting it")
-	expect_near(centaur._parry_progress, 1.0, 0.01, "the combo bar is full")
+	expect_near(centaur._parry_progress, 0.0, 0.01, "the combo bar has run out")
 
 func test_back_hit_outside_a_combo_hurts() -> void:
 	var centaur := await boot_centaur("centaur")
@@ -381,7 +381,7 @@ func test_back_hit_outside_a_combo_hurts() -> void:
 	await tree.process_frame
 	expect(centaur.health < health, "an ordinary hit")
 
-func test_parried_clash_moves_the_combo_bar_a_step() -> void:
+func test_parried_clash_takes_the_combo_bar_down_a_step() -> void:
 	autoload("Tuning").centaur_charge_chance = 0.0
 	var centaur := await boot_centaur("centaur")
 	only_combo(centaur, [CLASH, CLASH, KICK, CLASH])
@@ -389,7 +389,7 @@ func test_parried_clash_moves_the_combo_bar_a_step() -> void:
 	await wait_for_spark(centaur)
 	swing_at(centaur)
 	await tree.process_frame
-	expect_near(centaur._parry_progress, 0.25, 0.01, "a quarter of the way")
+	expect_near(centaur._parry_progress, 0.75, 0.01, "a quarter of the way down")
 
 # Rolling through a clash as it strikes gets clear: it doesn't swing round after the player,
 # and the follow-through doesn't hurt.
@@ -500,3 +500,13 @@ func test_charges_from_afar() -> void:
 			charged = true
 			break
 	expect(charged, "it charges from 120 px off instead of walking up")
+
+# A taurtaur's combo bar is there from its first kick, before anything is cleared.
+func test_taurtaur_combo_bar_shows_from_the_first_kick() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	centaur._start_swing(true)
+	await tree.process_frame
+	await tree.process_frame
+	expect_near(centaur._parry_progress, 1.0, 0.01, "full as the combo starts")
