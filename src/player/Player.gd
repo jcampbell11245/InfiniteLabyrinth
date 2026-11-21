@@ -129,6 +129,7 @@ var _ground_sound: AudioStreamPlayer # Speeding up or slowing down on a tile
 var last_tile := Vector2.ZERO # Where the player respawns after falling down a pitfall
 var last_velocity := Vector2.ZERO # Walking velocity when the boss-door cutscene started
 var _ghost_timer := 0.0
+var _roll_dir := Vector2.ZERO # The way the last roll went, for _enemy_push
 var _roll_sound: AudioStreamPlayer
 var _land_sound: AudioStreamPlayer
 var _charge_sound: AudioStreamPlayer
@@ -348,6 +349,7 @@ func _handle_input(input: FrameInput) -> void:
 		_end_spin()
 		_cancel_spin_charge()
 		velocity += Direction.to_vector(direction)
+		_roll_dir = Direction.to_vector(direction)
 		speed = Tuning.player_speed * Tuning.roll_speed_multiplier
 		rolling.start(Tuning.roll_duration)
 		_cancel_charge()
@@ -937,9 +939,10 @@ func _on_rolling_timeout() -> void:
 		_fall()
 
 # Rolls pass through enemies, so one can end with the player's feet inside an enemy's,
-# where turning enemy collision back on wouldn't move them. Nudges them out the shortest
-# way that's clear (no wall, enemy, pit or doorway), one enemy at a time, since a nudge out
-# of one can land in another. If no way out is clear they stay put.
+# where turning enemy collision back on wouldn't move them. Nudges them out, one enemy at a
+# time, since a nudge out of one can land in another: on through, the way they rolled, if
+# that's clear (no wall, enemy, pit or doorway), as a roll through an enemy should end on its
+# far side; otherwise the shortest way that's clear. If no way out is clear they stay put.
 func _push_out_of_enemies() -> void:
 	for i in PUSH_OUT_TRIES:
 		var push := _enemy_push()
@@ -973,6 +976,9 @@ func _enemy_push() -> Vector2:
 			Vector2(0, theirs.position.y - mine.end.y - PUSH_OUT_GAP),
 		]
 		ways.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.length() < b.length())
+		for way in ways: # Finishing the roll comes first
+			if way.dot(_roll_dir) > 0 && _clear_at(way):
+				return way
 		for way in ways:
 			if _clear_at(way):
 				return way

@@ -531,3 +531,47 @@ func test_swinging_again_after_a_back_hit_doesnt_stagger() -> void:
 	expect(!player().is_dazed(), "the player isn't staggered")
 	expect_equal(centaur.health, health, "and it takes no damage")
 	expect_equal(centaur._combo_index, 1, "nor is the kick cleared")
+
+# A kick that catches the player ends the combo.
+func test_a_kick_that_lands_ends_the_combo() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	centaur.landed_hit() # As if the kick caught the player
+	await wait_for_hit_after(centaur, 0)
+	expect(centaur._combo.is_empty(), "the combo is over")
+	expect(!centaur.is_stunned(), "with no stun")
+
+# Rolling through a centaur, however close to it the roll would end, comes out on its far
+# side, clear of its feet: not inside its body or pushed back the way the player came.
+func test_rolling_through_a_centaur_comes_out_the_far_side() -> void:
+	for gap: float in [44.0, 52.0, 60.0]:
+		var design := RoomDesign.new()
+		design.set_object(CENTAUR_AT, "bucentaur")
+		design.set_facing(CENTAUR_AT, Direction.RIGHT) # Facing away, seeing nothing: stands still
+		design.set_radius(CENTAUR_AT, 0.0)
+		var room: Room = await boot_design(design)
+		var centaur: Centaur = null
+		for child in room.get_children():
+			if child is Centaur:
+				centaur = child
+		var p := player()
+		var feet: CollisionShape2D = p.get_node("CollisionShape2D")
+		var its_feet: CollisionShape2D = centaur.get_node("CollisionShape2D")
+		# Level with its feet, so the roll goes through them.
+		p.global_position = centaur.global_position + Vector2(-gap, its_feet.global_position.y - feet.global_position.y)
+		p.direction = Direction.RIGHT
+		await physics_frames(3)
+		Input.action_press("right")
+		await tree.physics_frame
+		Input.action_press("roll")
+		await tree.physics_frame
+		Input.action_release("roll")
+		Input.action_release("right") # Just the roll, no walking on after it
+		await physics_frames(25)
+		var mine := Player._shape_rect(feet)
+		var theirs := Player._shape_rect(its_feet)
+		expect(mine.position.x >= theirs.end.x, "from %s px: out past its feet (%s)" % [gap, mine.position.x - theirs.end.x])
