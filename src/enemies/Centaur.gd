@@ -23,7 +23,8 @@ extends MeleeEnemy
 # with a hit the player didn't clear ends without a stun. Each hit hurts for its own Tuning
 # damage (melee_damage).
 #
-# Instead of a combo it may charge (`charge`, Tuning.centaur_charge_chance of attacks): it
+# Instead of a combo it may charge (`charge`, Tuning.centaur_charge_chance of attacks, and
+# from as far off as Tuning.centaur_charge_range, see _try_charge_from_afar): it
 # holds still for Tuning.centaur_charge_hold_min/max, sparks as it sets off, gallops straight
 # at the player at Tuning.centaur_charge_speed and strikes the moment it arrives, like a
 # dragon's charge. A Bucentaur's charge (Charge.CLASH) sparks white: any swing begun after
@@ -48,9 +49,10 @@ extends MeleeEnemy
 #
 # A taurtaur (alternate_halves) never turns round in a kick combo. Its two halves face
 # opposite ways, so it kicks with whichever half's hind legs are on the side it's attacking:
-# its bottom half first (that half faces away from the player), and each time the player
-# hits its back the sides swap (_on_player_sword), the other half's hind legs taking the next
-# kick and the side they came from becoming its back. After the combo it faces as usual.
+# its bottom half first (that half faces away from the player), then its top half on the far
+# side, and so on, swapping with every kick (_next_hit): each kick goes where a player rolling
+# through the last one lands, and the side it came from becomes its back. After the combo it
+# faces as usual.
 #
 # Kicks and charges play "slash_kick" and "slash_charge" animations. Their names start with
 # "slash", so all the shared attack code (windups, parries, hitbox, turning) treats them as
@@ -91,6 +93,7 @@ var _dash_left := 0.0 # Pixels of the charge still to run
 var _charge_dir := Vector2.RIGHT
 var _next_attack := PackedInt32Array() # Set to make the next attack this, not a random pick
 var _skip_charge := false # The next attack is a combo, not a charge
+var _far_charge_roll := -1 # 1 if it charges at this approach from afar, 0 if not, -1 unrolled
 var _hurt_rect: RectangleShape2D # Its own copy of the hurtbox shape, resized every frame
 var _fitted := "" # Animation and frame the hurtbox was last fitted to
 # Taurtaur, mid-combo: the way its bottom half faces, fixed for the combo; "" otherwise.
@@ -141,9 +144,32 @@ func _fit_hurtbox() -> void:
 	hurtbox.position = bounds.get_center()
 
 func _physics_process(delta: float) -> void:
+	_try_charge_from_afar()
 	super(delta)
 	if _dashing:
 		_charge_step(delta)
+
+# A centaur that can charge doesn't have to walk all the way up: with its turn to attack and
+# the player out of reach but within Tuning.centaur_charge_range, it opens with a charge
+# Tuning.centaur_charge_chance of the time. Rolled once each time the player comes into that
+# range, so it isn't nearly certain just for their lingering there.
+func _try_charge_from_afar() -> void:
+	if charge == Charge.NONE || player.in_transition || !is_detected() || _animation_is("slash") \
+			|| _is_reacting():
+		return
+	var coordinator := AttackCoordinator.for_room(room)
+	var distance := _to_player().length()
+	if distance > Tuning.centaur_charge_range || !_out_of_reach():
+		_far_charge_roll = -1 # A fresh roll for the next approach
+		return
+	if !coordinator.is_attacker(self) || !_can_start_swing(coordinator):
+		return
+	if _far_charge_roll < 0:
+		_far_charge_roll = 1 if randf() < Tuning.centaur_charge_chance else 0
+	if _far_charge_roll == 1:
+		_far_charge_roll = 0
+		_next_attack = PackedInt32Array(CHARGE_COMBO)
+		_start_swing(_is_player_mostly_horizontal())
 
 # --- Combos ---
 
@@ -165,7 +191,8 @@ func rush_strike() -> void:
 	_rush_pending = false
 
 func _pick_attack() -> PackedInt32Array:
-	if _rush_pending || combos.is_empty():
+	# During a group rush, anything it starts (its rush strike, or a counter) is one clash.
+	if _rush_pending || combos.is_empty() || AttackCoordinator.for_room(room).rush_active():
 		return PackedInt32Array([Hit.CLASH])
 	if !_next_attack.is_empty():
 		var forced := _next_attack
@@ -200,6 +227,11 @@ func _next_hit() -> void:
 	if _out_of_reach():
 		_break_off()
 		return
+	if _body_facing != "" && _hit() == Hit.KICK && _combo[_combo_index + 1] == Hit.KICK:
+		# A taurtaur's next kick comes from its other half, on the far side, where a player
+		# rolling through the last one lands; the side it came from becomes its back.
+		direction = _direction_of(-Direction.to_vector(direction))
+		_point_pivots()
 	_combo_index += 1
 	_set_up_hit()
 	Juice.flash(animator, 0.12, COMBO_FLASH)
@@ -284,11 +316,6 @@ func _on_player_sword(from_direction: String) -> void:
 		return
 	player.mark_swing_parried()
 	_cleared += 1
-	if _body_facing != "" && _hit() == Hit.KICK:
-		# The player is round the back now: that side becomes its front, and its other half's
-		# hind legs take the next kick there, the way it came from becoming the back.
-		direction = _direction_of(-Direction.to_vector(direction))
-		_point_pivots()
 	if _has_next_hit():
 		_parry_feedback()
 		_next_hit()

@@ -443,28 +443,28 @@ func test_only_the_strike_frame_hurts() -> void:
 	expect(!live_after, "the follow-through doesn't")
 
 # A taurtaur keeps its facing through a kick combo: its bottom half's hind legs kick first,
-# and each hit on its back swaps the side, its top half's hind legs kicking there next.
+# then its top half's on the far side, swapping with every kick.
 func test_taurtaur_kicks_alternate_halves_without_turning() -> void:
 	autoload("Tuning").centaur_charge_chance = 0.0
 	var centaur := await boot_centaur("taurtaur")
 	only_combo(centaur, [KICK, KICK, KICK])
+	player().invincibility_cooldown.start(100.0)
 	centaur._start_swing(true)
 	var body := centaur._body_facing
 	expect_equal(body, Direction.RIGHT, "its bottom half faces away from the player (on its left)")
 	expect_equal(String(centaur.animator.animation), "slash_kick_right", "the bottom half kicks first")
 	await wait_for_spark(centaur)
 	expect_equal(centaur._twinkle_position(), centaur.kick_tips[body], "sparking at the bottom half's hind hooves")
-	swing_from_behind(centaur)
-	await tree.process_frame
+	await wait_for_hit_after(centaur, 0) # Played out, not hit
 	expect_equal(centaur._body_facing, body, "it hasn't turned round")
-	expect_equal(centaur.direction, Direction.RIGHT, "its back swapped: it now attacks the other side")
-	expect_equal(String(centaur.animator.animation), "slash_kick_top_right", "with its top half")
+	expect_equal(centaur.direction, Direction.RIGHT, "the next kick goes to the other side")
+	expect_equal(String(centaur.animator.animation), "slash_kick_top_right", "from its top half")
 	expect_equal(centaur._twinkle_position(), centaur.top_kick_tips[body], "sparking at the top half's hind hooves")
 	await wait_for_spark(centaur)
-	swing_from_behind(centaur)
+	swing_from_behind(centaur) # A hit on its back swaps the side just once
 	await tree.process_frame
-	expect_equal(centaur.direction, Direction.LEFT, "and swaps back again")
-	expect_equal(String(centaur.animator.animation), "slash_kick_right", "to its bottom half")
+	expect_equal(centaur.direction, Direction.LEFT, "the third kick comes back round")
+	expect_equal(String(centaur.animator.animation), "slash_kick_right", "from its bottom half")
 
 func test_taurtaur_faces_as_usual_after_a_combo() -> void:
 	autoload("Tuning").centaur_charge_chance = 0.0
@@ -476,3 +476,27 @@ func test_taurtaur_faces_as_usual_after_a_combo() -> void:
 	await tree.process_frame
 	expect(centaur.is_stunned(), "stunned")
 	expect_equal(centaur._body_facing, "", "back to its usual facing")
+
+# Anything it starts during a group rush is a single clash, even a counter.
+func test_anything_during_a_group_rush_is_one_clash() -> void:
+	var centaur := await boot_centaur("taurtaur")
+	var coordinator := AttackCoordinator.for_room(centaur.room)
+	coordinator._rushers.append(centaur) # A rush under way
+	centaur._start_swing(true) # As a counter would
+	expect_equal(centaur._combo, PackedInt32Array([CLASH]), "one clash")
+	coordinator._rushers.clear()
+
+# A centaur that can charge may open with one from well out of reach.
+func test_charges_from_afar() -> void:
+	var tuning := autoload("Tuning")
+	tuning.centaur_charge_chance = 1.0
+	var centaur := await boot_centaur("bucentaur")
+	centaur.attack_cooldown.stop()
+	player().global_position = centaur.global_position + Vector2(-120, 0)
+	var charged := false
+	for i in 60:
+		await tree.physics_frame
+		if !centaur._combo.is_empty() && centaur._combo[0] == Centaur.Hit.CHARGE:
+			charged = true
+			break
+	expect(charged, "it charges from 120 px off instead of walking up")
