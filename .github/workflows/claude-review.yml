@@ -110,7 +110,13 @@ jobs:
       # A token that's been pasted wrongly only shows up as "Not logged in" from Claude
       # Code, so check its shape first, without printing it: one unbroken line starting
       # sk-ant-oat01- (what `claude setup-token` prints). The problem goes in the comment.
+      # This step and the review below don't fail the job: the outcome is the Claude
+      # approval status, which explains a failure in a comment. A red job would stay on the
+      # pull request as a second, stale Claude check, since a review started by a comment
+      # runs against master's commit and can't replace it.
       - name: Check the Claude token
+        id: token
+        continue-on-error: true
         env:
           TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
@@ -131,6 +137,8 @@ jobs:
           echo "The token looks right: one line, starting sk-ant-oat01-."
 
       - uses: anthropics/claude-code-action@v1
+        if: steps.token.outcome == 'success'
+        continue-on-error: true
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
