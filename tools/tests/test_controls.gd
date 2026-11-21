@@ -208,6 +208,58 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	panel.free()
 	_restore(snapshot)
 
+func test_tapping_b_binds_it_but_holding_b_cancels() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	var b_event := _cancel_button_event()
+	var release := _cancel_button_event()
+	release.pressed = false
+
+	controls.start_capture("roll", "button")
+	controls._input(b_event)
+	expect(controls.is_listening(), "pressing B starts a hold instead of binding at once")
+	controls._input(release)
+	expect(bindings.button_for("roll") == JOY_BUTTON_B, "a quick tap of B binds it")
+	expect(!controls.is_listening(), "the tap ends the capture")
+	expect(controls.status_label.text.find("PAD SET TO B") >= 0,
+		"the tap shows the pad confirmation")
+
+	controls.start_capture("select", "button")
+	controls._input(b_event)
+	controls._input(release)
+	expect(bindings.button_for("select") == JOY_BUTTON_A,
+		"B already used by Roll is rejected for Select")
+	expect(controls.is_listening(), "the conflicting tap keeps listening")
+
+	controls.start_capture("roll", "button")
+	controls._input(b_event)
+	var other_pad := InputEventJoypadButton.new()
+	other_pad.button_index = JOY_BUTTON_LEFT_SHOULDER
+	other_pad.pressed = true
+	controls._input(other_pad)
+	expect(bindings.button_for("roll") == JOY_BUTTON_B,
+		"other pad input is ignored while B is held")
+	_finish_pad_hold(controls)
+	controls._input(release)
+	expect(bindings.button_for("roll") == JOY_BUTTON_B,
+		"holding B cancels without changing the binding")
+	expect(!controls.is_listening(), "the hold ends the capture")
+	expect(controls.status_label.text == "CAPTURE CANCELLED",
+		"the hold shows the cancellation blurb")
+
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
 func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	var bindings := autoload("Bindings")
 	var save_data := autoload("SaveData")
