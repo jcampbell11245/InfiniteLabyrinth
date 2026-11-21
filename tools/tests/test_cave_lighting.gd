@@ -9,8 +9,9 @@ func lighting() -> CaveLighting:
 			return child
 	return null
 
-func darkness() -> CanvasModulate:
-	return lighting().get_node("Darkness")
+# The colour the unlit cave is multiplied by (white: not darkened).
+func ambient() -> Color:
+	return lighting().ambient_color()
 
 func player_light() -> PointLight2D:
 	return autoload("Game").player.get_node(NodePath(CaveLighting.LIGHT_NAME))
@@ -31,12 +32,12 @@ func test_start_room_is_bright_and_the_cave_is_dark() -> void:
 	await boot_floor()
 	expect(lighting() != null, "the floor has cave lighting")
 	expect_equal(autoload("Game").player.current_room, Constants.START_ROOM, "the floor starts in the start room")
-	expect_equal(darkness().color, Color.WHITE, "the start room isn't darkened")
+	expect_equal(ambient(), Color.WHITE, "the start room isn't darkened")
 	await enter_room(cave_room_id())
-	expect(darkness().color.v < 1.0, "the rest of the cave is darkened")
+	expect(ambient().v < 1.0, "the rest of the cave is darkened")
 	expect(player_light().enabled && player_light().energy > 0.0, "the player's light is on in the cave")
 	await enter_room(Constants.END_ROOM)
-	expect_equal(darkness().color, Color.WHITE, "the end room isn't darkened")
+	expect_equal(ambient(), Color.WHITE, "the end room isn't darkened")
 
 func test_tuning_applies_live() -> void:
 	await boot_floor()
@@ -46,7 +47,7 @@ func test_tuning_applies_live() -> void:
 	tuning.set_value("light_player_radius", tuning.light_player_radius * 2.0)
 	expect_near(player_light().texture_scale, before * 2.0, 0.001, "doubling the radius doubles the light")
 	tuning.set_value("lighting_enabled", false)
-	expect_equal(darkness().color, Color.WHITE, "lighting off shows the cave at full brightness")
+	expect_equal(ambient(), Color.WHITE, "lighting off shows the cave at full brightness")
 	expect(!player_light().enabled, "lighting off turns the player's light off")
 
 func test_dropped_loot_does_not_glow() -> void:
@@ -70,7 +71,8 @@ func test_inner_walls_block_light() -> void:
 		var walls := room.get_node_or_null("InnerWalls") as TileMap
 		if walls == null || walls.get_used_cells(0).is_empty():
 			continue
-		var occluders := walls.find_children(CaveLighting.OCCLUDER_NAME + "*", "LightOccluder2D", false, false)
+		var holder := room.get_node_or_null(NodePath(CaveLighting.OCCLUDER_NAME))
+		var occluders := [] if holder == null else holder.find_children("*", "LightOccluder2D", false, false)
 		expect(!occluders.is_empty(), "%s's inner walls cast shadows" % room.name)
 		checked = true
 	expect(checked, "the floor has a room with inner walls to check")
