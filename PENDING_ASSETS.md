@@ -53,12 +53,13 @@ from a library.
 
 | Name | Used for | Preview |
 | --- | --- | --- |
-| `twinkle.wav` | An enemy's "about to strike" twinkle, and traps going live ([Juice.gd](src/autoload/Juice.gd)) | [assets/sfx/twinkle.wav](assets/sfx/twinkle.wav) |
+| `twinkle.wav` | An enemy's "about to strike" twinkle, and traps going live ([Juice.gd](src/autoload/Juice.gd)); also the metal detector finding a key room ([ItemBar.gd](src/ui/hud/ItemBar.gd)) | [assets/sfx/twinkle.wav](assets/sfx/twinkle.wav) |
 | `tile_speed_up.wav` | Stepping onto a speed tile ([Player.gd](src/player/Player.gd)) | [assets/sfx/tile_speed_up.wav](assets/sfx/tile_speed_up.wav) |
 | `tile_slow_down.wav` | Stepping onto a slow tile | [assets/sfx/tile_slow_down.wav](assets/sfx/tile_slow_down.wav) |
 | `paste_stick.wav` | Thermal paste first catching someone ([SpecialTiles.gd](src/world/SpecialTiles.gd)) | [assets/sfx/paste_stick.wav](assets/sfx/paste_stick.wav) |
 | `paste_stretch.wav` | Someone pulling against paste | [assets/sfx/paste_stretch.wav](assets/sfx/paste_stretch.wav) |
 | `paste_snap.wav` | Paste snapping someone back | [assets/sfx/paste_snap.wav](assets/sfx/paste_snap.wav) |
+| `clank_bad.wav`, reused for the item bar | Pressing use on an item that would do nothing, or on an empty box ([ItemBar.gd](src/ui/hud/ItemBar.gd) `REFUSED_SOUND`, pitched up 1.6x like the jammed bow's click). The sound itself is final for blocked swings; the item bar needs a sound of its own | [assets/sfx/clank_bad.wav](assets/sfx/clank_bad.wav) |
 
 ## Music
 

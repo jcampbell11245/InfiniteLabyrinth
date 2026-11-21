@@ -39,7 +39,8 @@ const SHAKE_DISTANCE := 2.0 # HUD units the refused box swings each way at first
 const SHAKE_SWINGS := 2 # Full side-to-side swings while it shakes
 const REFUSE_TIME := 0.3
 
-const REFUSED_SOUND := preload("res://assets/sfx/clank_bad.wav") # Pitched up: the curse jam's click
+# Placeholder (PENDING_ASSETS.md): the jammed bow's click, borrowed until the bar has its own.
+const REFUSED_SOUND := preload("res://assets/sfx/clank_bad.wav")
 const REFUSED_PITCH := 1.6
 const REFUSED_VOLUME_DB := -8.0
 # The key unlocking a room plays the room's own unlock sound; the detector gets a ding.
