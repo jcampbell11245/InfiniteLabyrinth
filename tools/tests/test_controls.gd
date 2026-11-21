@@ -177,12 +177,17 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 	panel.show()
 	panel.controls_button.pressed.emit()
 	panel.controls_panel.start_capture("roll", "key")
+	expect(panel.controls_panel.status_label.text == "ESC TO CANCEL" \
+		&& panel.controls_panel.status_label.visible,
+		"starting a capture shows the Esc hint")
 	var key_event := InputEventKey.new()
 	key_event.keycode = KEY_R
 	key_event.pressed = true
 	panel.controls_panel._input(key_event)
 	expect(bindings.key_for("roll") == KEY_R, "capturing a key rebinds the action")
 	expect(!panel.controls_panel.is_listening(), "the capture ends after one press")
+	expect(panel.controls_panel.status_label.text != "ESC TO CANCEL",
+		"the Esc hint is replaced once the key is captured")
 	panel.controls_panel.start_capture("roll", "button")
 	var pad_event := InputEventJoypadButton.new()
 	pad_event.button_index = JOY_BUTTON_LEFT_SHOULDER
@@ -302,8 +307,8 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 		for button_name: String in ["Key", "Pad"]:
 			labels.append((row.get_node(button_name) as Button).text)
 	controls.start_capture("roll", "key")
-	expect(controls.status_label.text.is_empty() && !controls.status_label.visible,
-		"starting a capture does not bring back the prompt caption")
+	expect(controls.status_label.text == "ESC TO CANCEL" && controls.status_label.visible,
+		"starting a capture shows the cancel hint")
 	labels.append((controls.get_node("Panel/Rows/Row_roll/Key") as Button).text)
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "button")

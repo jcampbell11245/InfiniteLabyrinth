@@ -12,6 +12,7 @@ signal back_pressed
 const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
+const CANCEL_HINT := "ESC TO CANCEL"
 
 @onready var rows: VBoxContainer = $Panel/Rows
 @onready var status_label: Label = $Panel/Status
@@ -48,7 +49,8 @@ func start_capture(action: String, device: String) -> void:
 		return
 	_listening_action = action
 	_listening_device = device
-	_set_status("")
+	# The hint is only useful while the panel is waiting for a press.
+	_set_status(CANCEL_HINT)
 	refresh()
 	var button := _button_for_device(action, device)
 	if button != null:
