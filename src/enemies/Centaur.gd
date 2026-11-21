@@ -28,7 +28,8 @@ extends MeleeEnemy
 # dragon's charge. A Bucentaur's charge (Charge.CLASH) sparks white: any swing begun after
 # the spark that meets it before the strike parries it, and slamming into a wall or rock
 # dazes it. A Taurtaur's lunge (Charge.ROLL) sparks red and can't be parried; it ploughs on
-# and stands frozen for Tuning.heavy_end_lag afterwards, like a knight's red swing.
+# and stands frozen for Tuning.heavy_end_lag afterwards, like a knight's red swing. Either
+# way a clash follows (CHARGE_COMBO), and only parrying that too stuns it.
 #
 # A sword hit from behind mid-combo (after rolling through a kick, say) doesn't hurt: it
 # clanks like a parry and clears the hit it's on, once that hit has sparked
@@ -52,6 +53,9 @@ enum Hit { CLASH, KICK, CHARGE }
 enum Charge { NONE, CLASH, ROLL }
 
 const COMBO_FLASH := Color(0.6, 0.9, 1.0) # Shown as a cleared hit flows into the next
+# A charge is followed by a clash: clearing the charge isn't enough to stun it, the swing
+# after has to be parried too.
+const CHARGE_COMBO := [Hit.CHARGE, Hit.CLASH]
 
 # Its combos, each a run of Hit values. One is picked at random for each attack.
 @export var combos: Array[PackedInt32Array] = []
@@ -140,7 +144,7 @@ func _pick_attack() -> PackedInt32Array:
 	var skip_charge := _skip_charge
 	_skip_charge = false
 	if charge != Charge.NONE && !skip_charge && randf() < Tuning.centaur_charge_chance:
-		return PackedInt32Array([Hit.CHARGE])
+		return PackedInt32Array(CHARGE_COMBO)
 	return combos.pick_random()
 
 func _hit() -> int:
@@ -190,9 +194,10 @@ func _parried_follow_up() -> bool:
 # A hit has played out without being parried (a parried one never gets here).
 func _on_swing_finished() -> void:
 	var hit := _hit()
-	# A kick carries the combo on whether it caught the player or not; only a dodged one
-	# counts as cleared (walking out of reach of the last one doesn't).
-	if hit == Hit.KICK:
+	# A kick (or a taurtaur's red lunge) carries the combo on whether it caught the player
+	# or not; only a dodged one counts as cleared (walking out of reach of the last one
+	# doesn't).
+	if hit == Hit.KICK || (hit == Hit.CHARGE && _unparryable):
 		if !_hit_landed && (_has_next_hit() || !_out_of_reach()):
 			_cleared += 1
 		if _has_next_hit():
@@ -229,7 +234,7 @@ func _break_off() -> void:
 	_end_windup_hold()
 	_play("idle")
 	if charge != Charge.NONE && randf() < Tuning.centaur_chase_charge_chance:
-		_next_attack = PackedInt32Array([Hit.CHARGE])
+		_next_attack = PackedInt32Array(CHARGE_COMBO)
 		_start_swing(_is_player_mostly_horizontal())
 	else:
 		_skip_charge = true
@@ -389,7 +394,17 @@ func _parry_timing() -> Parry:
 		return Parry.IN_WINDOW
 	return timing
 
-# Committed to its line: a charge doesn't turn to follow a player who steps round it.
+# Turning to keep a player who steps round it in front only happens in a hit's windup, before
+# its spark. After the spark it's committed, as a charge is to its line: a player who rolls
+# through on the spark gets clear (though, not having parried, they end the combo without a
+# stun). Swinging round after them read, on a body this big, as being hit from far off.
 func _turn_mid_attack() -> void:
-	if !_charging():
+	if !_charging() && _twinkled_at < 0 && animator.frame < attack_frame:
 		super()
+
+# Only the strike frame itself hurts, not the follow-through after it (a goblin's blade
+# stays live to catch a player rolling through; a centaur's doesn't).
+func _on_animated_sprite_2d_frame_changed() -> void:
+	super()
+	if _animation_is("slash") && animator.frame > attack_frame:
+		hitbox.disabled = true

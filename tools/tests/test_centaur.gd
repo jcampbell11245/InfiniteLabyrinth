@@ -175,7 +175,7 @@ func test_bucentaur_charge_can_be_parried() -> void:
 	var centaur := await boot_centaur("bucentaur")
 	var start := centaur.global_position
 	centaur._start_swing(true)
-	expect_equal(centaur._combo, PackedInt32Array([Centaur.Hit.CHARGE]), "it charges")
+	expect_equal(centaur._combo, PackedInt32Array(Centaur.CHARGE_COMBO), "it charges")
 	await wait_for_spark(centaur)
 	expect(centaur._dashing, "sparking as it sets off")
 	expect(!centaur._unparryable, "a white spark")
@@ -183,7 +183,12 @@ func test_bucentaur_charge_can_be_parried() -> void:
 	expect(centaur.global_position.distance_to(start) > 4.0, "galloping at the player")
 	swing_at(centaur)
 	await tree.physics_frame
-	expect(centaur.is_stunned(), "a swing begun after the spark parries it")
+	expect(!centaur.is_stunned(), "a swing begun after the spark parries it, but doesn't stun it yet")
+	expect_equal(centaur._combo_index, 1, "a clash follows the charge")
+	await wait_for_spark(centaur)
+	swing_at(centaur)
+	await tree.physics_frame
+	expect(centaur.is_stunned(), "parrying the clash after the charge stuns it")
 
 func test_bucentaur_charge_into_a_rock_dazes_it() -> void:
 	autoload("Tuning").centaur_charge_chance = 1.0
@@ -219,6 +224,16 @@ func test_taurtaur_lunge_is_roll_only() -> void:
 		await tree.physics_frame
 	expect(lagged, "it stands frozen afterwards")
 	expect(!centaur.is_stunned(), "but isn't stunned")
+	for i in 300:
+		if centaur._combo_index == 1:
+			break
+		await tree.physics_frame
+	expect_equal(centaur._combo_index, 1, "then a clash (a stomp) follows")
+	expect(!centaur._unparryable, "which can be parried")
+	await wait_for_spark(centaur)
+	swing_at(centaur)
+	await tree.physics_frame
+	expect(centaur.is_stunned(), "and parrying it stuns it")
 
 func test_centaur_combos() -> void:
 	var centaur: Centaur = (load("res://src/enemies/Centaur.tscn") as PackedScene).instantiate()
@@ -273,7 +288,7 @@ func test_getting_away_from_a_charger_may_set_it_charging() -> void:
 	swing_at(centaur)
 	await tree.physics_frame
 	await tree.physics_frame
-	expect_equal(centaur._combo, PackedInt32Array([Centaur.Hit.CHARGE]), "it charges instead of going on")
+	expect_equal(centaur._combo, PackedInt32Array(Centaur.CHARGE_COMBO), "it charges instead of going on")
 	expect(!centaur.is_stunned(), "and the parry didn't stun it")
 
 # A sword hit from behind (travelling the way it faces), as the player rolls through a kick.
@@ -341,3 +356,54 @@ func test_parried_clash_moves_the_combo_bar_a_step() -> void:
 	swing_at(centaur)
 	await tree.process_frame
 	expect_near(centaur._parry_progress, 0.25, 0.01, "a quarter of the way")
+
+# Rolling through a clash as it strikes gets clear: it doesn't swing round after the player,
+# and the follow-through doesn't hurt.
+func test_rolling_through_a_clash_gets_clear() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("centaur")
+	only_combo(centaur, [CLASH, CLASH, KICK, CLASH])
+	var p := player()
+	var health_before := p.invincibility_cooldown.time_left
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	Input.action_press("right")
+	await tree.physics_frame
+	Input.action_press("roll")
+	await tree.physics_frame
+	Input.action_release("roll")
+	var hit := false
+	var last := health_before
+	var struck_facing := ""
+	for i in 60:
+		await tree.physics_frame
+		if i == 20:
+			Input.action_release("right")
+		if struck_facing == "" && centaur._animation_is("slash") && centaur.animator.frame == centaur.attack_frame:
+			struck_facing = centaur.direction
+		var left := p.invincibility_cooldown.time_left
+		if left > last + 0.05: # Hurt: a fresh invincibility
+			hit = true
+		last = left
+	Input.action_release("right")
+	expect(!hit, "the player rolled through without being hit")
+	expect_equal(struck_facing, Direction.LEFT, "it struck the way it faced at the spark")
+
+func test_only_the_strike_frame_hurts() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("centaur")
+	only_combo(centaur, [CLASH])
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	var live_after := false
+	var live_on := false
+	for i in 300:
+		if centaur._animation_is("slash") && centaur.animator.frame == centaur.attack_frame && !centaur.hitbox.disabled:
+			live_on = true
+		if centaur._animation_is("slash") && centaur.animator.frame > centaur.attack_frame && !centaur.hitbox.disabled:
+			live_after = true
+		if live_on && !centaur._animation_is("slash"):
+			break
+		await tree.physics_frame
+	expect(live_on, "the strike frame hurts")
+	expect(!live_after, "the follow-through doesn't")
