@@ -146,6 +146,7 @@ var pack_circle_speed := 0.6 # Times the enemy's speed while circling
 var alert_radius := 100.0 # Pixels: noticing the player alerts the rest of the room this close
 var threat_reach := 28.0 # Pixels past its swing distance at which a player closing in sets off its windup
 var counter_attack := true # A hit outside a parry makes it swing back at once, cooldown or not
+var combos_end_on_hit := true # An enemy whose hit lands on the player ends its combo: no more hits lined up after it (Enemy.landed_hit)
 var roam_speed := 0.5 # Times the enemy's speed while roaming, before it notices the player
 var roam_pause_min := 0.5 # Seconds it stands at each end of its path, or between wanders in its area
 var roam_pause_max := 1.5
@@ -362,6 +363,7 @@ const FIELDS := [
 	["AI", "alert_radius", "Alert others radius (px)", 0, 300, 1, "new (MeleeEnemy._alert_pack)"],
 	["AI", "threat_reach", "Windup on approach reach (px)", 0, 80, 1, "new (MeleeEnemy._player_in_threat_range)"],
 	["AI", "counter_attack", "Counter-attack when hit", 0, 0, 0, "new (MeleeEnemy._after_hit)"],
+	["AI", "combos_end_on_hit", "Enemy combos end on player hit", 0, 0, 0, "new (Enemy.landed_hit)"],
 	["AI", "roam_speed", "Roam speed multiplier", 0, 2, 0.05, "new (MeleeEnemy._roam)"],
 	["AI", "roam_pause_min", "Roam pause min (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],
 	["AI", "roam_pause_max", "Roam pause max (s)", 0, 10, 0.1, "new (MeleeEnemy._roam)"],

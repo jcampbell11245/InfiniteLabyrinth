@@ -844,6 +844,7 @@ sprite_bounds = {
 "walk_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 49), Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 49)])
 }
 charge = 2
+charge_follow_up = 1
 kick_tips = {
 "down": Vector2(6, 3),
 "left": Vector2(3.5, 19),

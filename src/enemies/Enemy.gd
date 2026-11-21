@@ -503,6 +503,18 @@ func _dazed_from_behind(from_direction: String) -> void:
 	_parry_progress = 1.0
 	stagger(from_direction)
 
+# The player calls this when this enemy's hit took health off them. With
+# Tuning.combos_end_on_hit (on by default; F2) the hit ends the enemy's combo: whatever it had
+# lined up after it doesn't come (_end_combo_on_hit), so being hit is never followed by a
+# string of more hits.
+func landed_hit() -> void:
+	if Tuning.combos_end_on_hit:
+		_end_combo_on_hit()
+
+# What a landed hit cuts short. Nothing by default: most attacks are single hits.
+func _end_combo_on_hit() -> void:
+	pass
+
 # Still stuck recovering from an unparryable attack it just made (a knight's end lag, a
 # wyvern hanging in the air), when a hit from behind dazes it. None by default.
 func _in_rollable_recovery() -> bool:

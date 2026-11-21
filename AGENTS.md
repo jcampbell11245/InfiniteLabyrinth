@@ -79,6 +79,18 @@ See README → Layout for the folder map. The parts you'll touch most:
   `Centaur` (centaur, bucentaur, taurtaur) extends `MeleeEnemy` with combos.
   Melee turns and group rushes are shared through `AttackCoordinator`, one per room;
   wizards and dragons bat fireballs back through `FireballReturner`.
+- **Two combat rules every enemy follows** (keep them in mind when changing or adding one):
+  - *A hit that lands on the player ends the enemy's combo.* Whatever hits it had lined up
+    after that one don't come: `Player` calls `Enemy.landed_hit`, which calls
+    `_end_combo_on_hit` (`MeleeEnemy` drops the rest of its turn's swings and any double
+    attack, `Centaur` ends its combo). A new enemy with multi-hit attacks overrides
+    `_end_combo_on_hit`. It can be switched off with `Tuning.combos_end_on_hit` (F2, AI tab).
+  - *Rolling through a red (unparryable) attack and hitting the enemy from behind dazes it
+    like a parry, with no damage* (`Enemy._dazed_from_behind`). That works during the attack
+    and while the enemy is still stuck recovering from it (`_in_rollable_recovery`: a
+    knight's or taurtaur's end lag, a wyvern hanging after its red charge). A new enemy with
+    a red attack or a recovery after one overrides `_in_rollable_recovery`. Red attacks that
+    hit the player still do damage.
 - **Rooms**: every `.tscn` in `src/world/rooms/` is picked up by `WorldGenerator`, which
   caches loaded room scenes for the session; the room creator (F1 on the title screen)
   exports designs to `room_designs/` that get turned into room scenes.

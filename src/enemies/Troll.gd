@@ -15,6 +15,7 @@ var stolen := 0 # Coins taken so far, given back when it dies
 
 # The player called this: one of this troll's slashes just took health off them.
 func landed_hit() -> void:
+	super()
 	var amount := mini(roundi(Tuning.troll_steal * Game.overworld.floor_number), Game.coins)
 	if amount <= 0:
 		return

@@ -190,7 +190,7 @@ func test_bucentaur_charge_can_be_parried() -> void:
 	var centaur := await boot_centaur("bucentaur")
 	var start := centaur.global_position
 	centaur._start_swing(true)
-	expect_equal(centaur._combo, PackedInt32Array(Centaur.CHARGE_COMBO), "it charges")
+	expect_equal(centaur._combo, centaur._charge_combo(), "it charges")
 	await wait_for_spark(centaur)
 	expect(centaur._dashing, "sparking as it sets off")
 	expect(!centaur._unparryable, "a white spark")
@@ -243,15 +243,16 @@ func test_taurtaur_lunge_is_roll_only() -> void:
 		if centaur._combo_index == 1:
 			break
 		await tree.physics_frame
-	expect_equal(centaur._combo_index, 1, "then a clash (a stomp) follows")
-	expect(!centaur._unparryable, "which can be parried")
+	expect_equal(centaur._combo_index, 1, "then a kick follows")
+	expect(centaur._unparryable, "a red one")
+	expect(String(centaur.animator.animation).begins_with("slash_kick"), "one of its kicks, not the stomp")
 	await wait_for_spark(centaur)
-	swing_at(centaur)
-	await tree.physics_frame
-	expect(!centaur.is_stunned(), "and parrying it isn't enough, the lunge wasn't hit")
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(!centaur.is_stunned(), "and hitting its back isn't enough, the lunge wasn't hit")
 
-# Hitting the lunge's back, then parrying the clash after it, stuns it.
-func test_taurtaur_lunge_hit_from_behind_then_clash_stuns() -> void:
+# Hitting the lunge's back, then the back of the kick after it, stuns it.
+func test_taurtaur_lunge_then_kick_hit_from_behind_stuns() -> void:
 	autoload("Tuning").centaur_charge_chance = 1.0
 	var centaur := await boot_centaur("taurtaur")
 	centaur._start_swing(true)
@@ -259,12 +260,12 @@ func test_taurtaur_lunge_hit_from_behind_then_clash_stuns() -> void:
 	var facing := centaur.direction
 	swing_from_behind(centaur)
 	await tree.process_frame
-	expect_equal(centaur._combo_index, 1, "the lunge is cleared, on to the clash")
-	expect_equal(centaur.direction, facing, "without its sides swapping (only kicks do)")
+	expect_equal(centaur._combo_index, 1, "the lunge is cleared, on to the kick")
+	expect(centaur._body_facing != "", "a taurtaur kick, its bottom half to the player")
 	await wait_for_spark(centaur)
-	swing_at(centaur)
-	await tree.physics_frame
-	expect(centaur.is_stunned(), "parrying the clash then stuns it")
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect(centaur.is_stunned(), "hitting the kick's back then stuns it")
 
 func test_centaur_combos() -> void:
 	var centaur: Centaur = (load("res://src/enemies/Centaur.tscn") as PackedScene).instantiate()
@@ -322,7 +323,7 @@ func test_getting_away_from_a_charger_may_set_it_charging() -> void:
 	swing_at(centaur)
 	await tree.physics_frame
 	await tree.physics_frame
-	expect_equal(centaur._combo, PackedInt32Array(Centaur.CHARGE_COMBO), "it charges instead of going on")
+	expect_equal(centaur._combo, centaur._charge_combo(), "it charges instead of going on")
 	expect(!centaur.is_stunned(), "and the parry didn't stun it")
 
 # A sword hit from behind (travelling the way it faces), as the player rolls through a kick.
@@ -553,11 +554,13 @@ func test_rolling_through_a_centaur_comes_out_the_far_side() -> void:
 		design.set_object(CENTAUR_AT, "bucentaur")
 		design.set_facing(CENTAUR_AT, Direction.RIGHT) # Facing away, seeing nothing: stands still
 		design.set_radius(CENTAUR_AT, 0.0)
+		autoload("Tuning").centaur_charge_chance = 0.0
 		var room: Room = await boot_design(design)
 		var centaur: Centaur = null
 		for child in room.get_children():
 			if child is Centaur:
 				centaur = child
+		centaur.speed = 0.0 # Stays where it is once it notices the player rolling past
 		var p := player()
 		var feet: CollisionShape2D = p.get_node("CollisionShape2D")
 		var its_feet: CollisionShape2D = centaur.get_node("CollisionShape2D")
@@ -575,3 +578,17 @@ func test_rolling_through_a_centaur_comes_out_the_far_side() -> void:
 		var mine := Player._shape_rect(feet)
 		var theirs := Player._shape_rect(its_feet)
 		expect(mine.position.x >= theirs.end.x, "from %s px: out past its feet (%s)" % [gap, mine.position.x - theirs.end.x])
+
+# With the setting off, a kick that lands carries the combo on.
+func test_combos_can_carry_on_after_a_hit_when_switched_off() -> void:
+	var tuning := autoload("Tuning")
+	tuning.combos_end_on_hit = false
+	tuning.centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	player().invincibility_cooldown.start(100.0)
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	centaur.landed_hit()
+	await wait_for_hit_after(centaur, 0)
+	expect_equal(centaur._combo_index, 1, "on to the next kick")

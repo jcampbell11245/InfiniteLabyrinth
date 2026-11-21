@@ -14,7 +14,8 @@ extends MeleeEnemy
 # - a kick (Hit.KICK): it turns its back and lashes out with its hind legs, with a red spark
 #   at the hooves. It can't be parried (Enemy._on_player_sword), so the player rolls through
 #   or out of reach. Dodged, the combo carries on, but a kick only counts as cleared when
-#   the player hits its back (see below). Any hit that catches the player ends the combo.
+#   the player hits its back (see below). Any hit that catches the player ends the combo
+#   (Enemy.landed_hit; Tuning.combos_end_on_hit).
 # Each hit goes straight on to the next, its windup held Tuning.centaur_combo_hold so the
 # player's sword cooldown has run out by the next spark. It takes a hit from the player for
 # every hit of the combo to stun it, a parry for each clash and a hit on its back for each
@@ -31,7 +32,8 @@ extends MeleeEnemy
 # the spark that meets it before the strike parries it, and slamming into a wall or rock
 # dazes it. A Taurtaur's lunge (Charge.ROLL) sparks red and can't be parried; it ploughs on
 # and stands frozen for Tuning.heavy_end_lag afterwards, like a knight's red swing. Either
-# way a clash follows (CHARGE_COMBO), and only parrying that too stuns it.
+# way another hit follows (charge_follow_up: the Bucentaur's a clash, the Taurtaur's one of
+# its kicks, turned to face the player), and only clearing that too stuns it.
 #
 # A sword hit from behind mid-combo (after rolling through a kick, say) doesn't hurt: it
 # clanks like a parry and clears the hit it's on, once that hit has sparked
@@ -63,13 +65,12 @@ enum Charge { NONE, CLASH, ROLL }
 
 const COMBO_FLASH := Color(0.6, 0.9, 1.0) # Shown as a cleared hit flows into the next
 const TOP_KICK_FRAME := Vector2i(64, 56) # Frame size in top_kick_sheet
-# A charge is followed by a clash: clearing the charge isn't enough to stun it, the swing
-# after has to be parried too.
-const CHARGE_COMBO := [Hit.CHARGE, Hit.CLASH]
 
 # Its combos, each a run of Hit values. One is picked at random for each attack.
 @export var combos: Array[PackedInt32Array] = []
 @export var charge := Charge.NONE
+# The hit after a charge (see _charge_combo): clearing the charge isn't enough to stun it.
+@export var charge_follow_up := Hit.CLASH
 # Spark points, as weapon_tips (which places a clash's spark), for its kicks and charges.
 @export var kick_tips := {}
 @export var charge_tips := {}
@@ -171,7 +172,7 @@ func _try_charge_from_afar() -> void:
 		_far_charge_roll = 1 if randf() < Tuning.centaur_charge_chance else 0
 	if _far_charge_roll == 1:
 		_far_charge_roll = 0
-		_next_attack = PackedInt32Array(CHARGE_COMBO)
+		_next_attack = _charge_combo()
 		_start_swing(_is_player_mostly_horizontal())
 
 # --- Combos ---
@@ -205,7 +206,7 @@ func _pick_attack() -> PackedInt32Array:
 	var skip_charge := _skip_charge
 	_skip_charge = false
 	if charge != Charge.NONE && !skip_charge && randf() < Tuning.centaur_charge_chance:
-		return PackedInt32Array(CHARGE_COMBO)
+		return _charge_combo()
 	return combos.pick_random()
 
 func _hit() -> int:
@@ -223,6 +224,10 @@ func _set_up_hit() -> void:
 		_next_hold = randf_range(Tuning.centaur_charge_hold_min,
 			maxf(Tuning.centaur_charge_hold_min, Tuning.centaur_charge_hold_max))
 
+# A charge and the hit after it.
+func _charge_combo() -> PackedInt32Array:
+	return PackedInt32Array([Hit.CHARGE, charge_follow_up])
+
 func _has_next_hit() -> bool:
 	return _combo_index < _combo.size() - 1
 
@@ -232,7 +237,16 @@ func _next_hit() -> void:
 	if _out_of_reach():
 		_break_off()
 		return
-	if _body_facing != "" && _hit() == Hit.KICK && _combo[_combo_index + 1] == Hit.KICK:
+	if alternate_halves && _hit() == Hit.CHARGE && _combo[_combo_index + 1] == Hit.KICK:
+		# A taurtaur's kick after its lunge turns to the player (the lunge usually carries it
+		# past them), its bottom half's hind legs kicking first as at a combo's start.
+		if _is_player_mostly_horizontal():
+			_face_player_horizontally()
+		else:
+			_face_player_vertically()
+		_point_pivots()
+		_body_facing = _direction_of(-Direction.to_vector(direction))
+	elif _body_facing != "" && _hit() == Hit.KICK && _combo[_combo_index + 1] == Hit.KICK:
 		# A taurtaur's next kick comes from its other half, on the far side, where a player
 		# rolling through the last one lands; the side it came from becomes its back.
 		direction = _direction_of(-Direction.to_vector(direction))
@@ -269,9 +283,10 @@ func _on_swing_finished() -> void:
 	_combo = PackedInt32Array()
 	super()
 
-# The player hit by this enemy's hitbox (Player calls this after damage that counted): the
-# combo stops with this hit.
-func landed_hit() -> void:
+# Its hit caught the player (Enemy.landed_hit, with Tuning.combos_end_on_hit): the combo
+# stops with this hit.
+func _end_combo_on_hit() -> void:
+	super()
 	_hit_landed = true
 
 # Every hit of the combo was cleared: only then does finishing it stun.
@@ -300,7 +315,7 @@ func _break_off() -> void:
 	_end_windup_hold()
 	_play("idle")
 	if charge != Charge.NONE && randf() < Tuning.centaur_chase_charge_chance:
-		_next_attack = PackedInt32Array(CHARGE_COMBO)
+		_next_attack = _charge_combo()
 		_start_swing(_is_player_mostly_horizontal())
 	else:
 		_skip_charge = true
