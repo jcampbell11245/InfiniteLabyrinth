@@ -1,6 +1,13 @@
 extends Node2D
 
-# Key chest: opens and gives a key the first time the player's sword hits it.
+# Key chest: opens the first time the player's sword hits it and releases a key and an
+# hourglass that float toward the player. The key is added on collection; the hourglass
+# extends the level timer.
+
+const KeyPickup := preload("res://src/effects/KeyPickup.gd")
+const TimePickup := preload("res://src/effects/TimePickup.gd")
+const KEY_SPAWN_OFFSET := Vector2(-6, -2) # Where the key floats out, relative to the chest
+const TIME_SPAWN_OFFSET := Vector2(6, -2) # Where the hourglass floats out
 
 @export var direction := "down" # Which way the chest faces, an animation suffix
 
@@ -14,8 +21,18 @@ func _on_area_2d_area_entered(area: Area2D) -> void:
 		Juice.play($Open, 0.04)
 		open = true
 		$AnimatedSprite2D.animation = "open_" + direction
-		Game.add_keys(1)
+		_release_pickups()
 		_burst_open()
+
+# Spawns the pickups so they can float around before being collected.
+func _release_pickups() -> void:
+	var key: Node2D = KeyPickup.new()
+	get_parent().add_child(key)
+	key.global_position = global_position + KEY_SPAWN_OFFSET
+	var time_pickup: Node2D = TimePickup.new()
+	time_pickup.seconds = Tuning.chest_time_bonus
+	get_parent().add_child(time_pickup)
+	time_pickup.global_position = global_position + TIME_SPAWN_OFFSET
 
 # Squash and stretch, a spray of gold and a small thump.
 func _burst_open() -> void:

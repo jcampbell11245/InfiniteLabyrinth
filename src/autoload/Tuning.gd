@@ -176,6 +176,7 @@ var projectile_lifetime := 5.0 # Seconds before a shot vanishes
 # --- Time limit ---
 var base_time := 90 # Seconds on the level timer before the time upgrade
 var time_per_level := 30 # Seconds added per time upgrade level
+var chest_time_bonus := 30.0 # Seconds added to the level timer when a chest hourglass is collected
 
 # --- Loot & economy ---
 var start_arrows := 10 # Arrows at the start of each floor
@@ -399,6 +400,7 @@ const FIELDS := [
 
 	["Timer", "base_time", "Base time limit (s)", 5, 1800, 5, "LevelCountdown.gd BASE_TIME"],
 	["Timer", "time_per_level", "Seconds per time upgrade", 0, 300, 5, "LevelCountdown.gd TIME_PER_LEVEL"],
+	["Timer", "chest_time_bonus", "Chest hourglass time bonus (s)", 0, 600, 5, "new (Chest/TimePickup)"],
 
 	["Loot", "start_arrows", "Arrows per floor", 0, 99, 1, "Constants.gd START_ARROWS"],
 	["Loot", "start_keys", "Keys per floor", 0, 3, 1, "Game.gd DEBUG_START_KEYS"],

@@ -25,6 +25,8 @@ const TICK_PITCH_STEP := 0.1 # Each tick is this much higher than the one before
 # Losing time to damage (see the top of the file). Times are real seconds, so hit-stop
 # doesn't hold the animation up.
 const HURT_COLOR := Color(1, 0.2, 0.2)
+const GAIN_COLOR := Color(0.2, 1.0, 0.2) # Time added, e.g. by a chest hourglass
+const GAIN_FLASH_TIME := 0.45 # Seconds the green gain flash takes to fade away
 const DRAIN_TIME_PER_SECOND := 0.03 # The drain takes longer the more time is lost...
 const DRAIN_TIME_MIN := 0.25
 const DRAIN_TIME_MAX := 0.8 # ...within these
@@ -36,11 +38,11 @@ const DRAIN_TICK_VOICES := 3 # Tick players to rotate through, so quick ticks do
 const HURT_PUNCH := 1.25 # Extra size the timer jumps to when hit
 const HURT_SHAKE := 1.5 # HUD pixels it jolts
 const HURT_SHAKE_STEPS := 5
-const LOSS_OFFSET := Vector2(0, 17) # Where the floating "-0:10" starts, below the timer
-const LOSS_SCALE := 0.5 # Its size, relative to the timer's
-const LOSS_DRIFT := Vector2(0, 8) # How far it drifts down as it fades
-const LOSS_HOLD := 0.35 # Seconds before it starts to fade...
-const LOSS_FADE := 0.6 # ...and how long it takes
+const FLOAT_OFFSET := Vector2(0, 17) # Where a floating time change starts, below the timer
+const FLOAT_SCALE := 0.5 # Its size, relative to the timer's
+const FLOAT_DRIFT := Vector2(0, 8) # How far it drifts down as it fades
+const FLOAT_HOLD := 0.35 # Seconds before it starts to fade...
+const FLOAT_FADE := 0.6 # ...and how long it takes
 # A killing hit (see the top of the file).
 const FATAL_DRAIN := 1.0 # Seconds to tick down to 0:00
 const FATAL_TICK_PITCH_START := 1.7
@@ -66,7 +68,7 @@ var _drain_from := 0.0 # Seconds shown when the drain started
 var _drain_start_ms := 0
 var _drain_length := 0.0
 var _last_drain_tick_ms := 0
-var _losses: Array[Node2D] = [] # Floating "-0:10"s still on screen
+var _floaters: Array[Node2D] = [] # Floating time changes still on screen
 var _fatal := false # Showing a killing hit
 var _drain_pitch_start := DRAIN_TICK_PITCH_START
 var _drain_pitch_end := DRAIN_TICK_PITCH_END
@@ -87,6 +89,7 @@ func _ready() -> void:
 		_drain_voices.append(voice)
 	Game.player_died.connect(_on_player_died)
 	Game.time_lost.connect(_on_time_lost)
+	Game.time_gained.connect(_on_time_gained)
 
 func _process(_delta: float) -> void:
 	if Game.player == null:
@@ -168,11 +171,11 @@ func _on_player_died() -> void:
 	_fatal = false
 	_draining = false
 	holder.visible = false
-	# A killing blow's "-0:10" would hang frozen over the game over and upgrade menu.
-	for loss in _losses:
-		if is_instance_valid(loss):
-			loss.queue_free()
-	_losses.clear()
+	# A floating time change would hang frozen over the game over and upgrade menu.
+	for floater in _floaters:
+		if is_instance_valid(floater):
+			floater.queue_free()
+	_floaters.clear()
 
 # --- Losing time to damage ---
 
@@ -204,6 +207,17 @@ func _on_time_lost(seconds: float, fatal: bool) -> void:
 		var offset := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * size
 		_jolt_tween.tween_property(holder, "position", corner_position + offset, step_time)
 	_jolt_tween.tween_property(holder, "position", corner_position, step_time)
+
+# Time added (e.g. a chest hourglass): stop any drain so the display doesn't count up
+# through the falling ticks, flash green, and show the amount gained.
+func _on_time_gained(seconds: float) -> void:
+	_draining = false
+	_kill_hurt_tweens()
+	modulate = GAIN_COLOR
+	_hurt_tween = create_tween().set_ignore_time_scale()
+	_hurt_tween.tween_property(self, "modulate", FINAL_COLOR if _final else Color.WHITE, GAIN_FLASH_TIME) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_float_gain(roundi(seconds))
 
 # Counts the display down from what it shows now to the countdown's time, over `length`
 # real seconds, ticking from `pitch_start` to `pitch_end` (see _process and _drain_tick).
@@ -269,26 +283,33 @@ func _drain_tick() -> void:
 
 # "-0:10" in red, just under the timer, drifting down and fading.
 func _float_loss(seconds: int) -> void:
+	_float_change(seconds, "-", HURT_COLOR)
+
+# "+0:30" in green when time is added, mirroring a loss.
+func _float_gain(seconds: int) -> void:
+	_float_change(seconds, "+", GAIN_COLOR)
+
+func _float_change(seconds: int, prefix: String, color: Color) -> void:
 	var marker := Node2D.new()
-	marker.position = corner_position + LOSS_OFFSET
-	marker.scale = corner_scale * LOSS_SCALE
+	marker.position = corner_position + FLOAT_OFFSET
+	marker.scale = corner_scale * FLOAT_SCALE
 	var label := Label.new()
 	label.add_theme_font_override("font", get_theme_font("normal_font"))
-	label.add_theme_color_override("font_color", HURT_COLOR)
+	label.add_theme_color_override("font_color", color)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(160, 30)
 	label.position = Vector2(-80, 0)
 	@warning_ignore("integer_division")
-	label.text = "-%d:%02d" % [seconds / 60, seconds % 60]
+	label.text = "%s%d:%02d" % [prefix, seconds / 60, seconds % 60]
 	marker.add_child(label)
 	holder.get_parent().add_child(marker)
-	_losses.append(marker)
-	marker.tree_exited.connect(_losses.erase.bind(marker))
+	_floaters.append(marker)
+	marker.tree_exited.connect(_floaters.erase.bind(marker))
 	var fade := marker.create_tween().set_ignore_time_scale()
-	fade.tween_interval(LOSS_HOLD)
-	fade.tween_property(marker, "position", marker.position + LOSS_DRIFT, LOSS_FADE) \
+	fade.tween_interval(FLOAT_HOLD)
+	fade.tween_property(marker, "position", marker.position + FLOAT_DRIFT, FLOAT_FADE) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	fade.parallel().tween_property(marker, "modulate:a", 0.0, LOSS_FADE)
+	fade.parallel().tween_property(marker, "modulate:a", 0.0, FLOAT_FADE)
 	fade.tween_callback(marker.queue_free)
 
 # Stops the hurt animation, putting the timer back in its place unless the final-seconds
