@@ -477,13 +477,15 @@ func test_taurtaur_faces_as_usual_after_a_combo() -> void:
 	expect(centaur.is_stunned(), "stunned")
 	expect_equal(centaur._body_facing, "", "back to its usual facing")
 
-# Anything it starts during a group rush is a single clash, even a counter.
-func test_anything_during_a_group_rush_is_one_clash() -> void:
+# Only its own group-rush strike is a single clash: an attack it starts while a rush plays
+# out in the room (a counter, say) is an ordinary combo.
+func test_single_clash_only_as_its_rush_strike() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
 	var centaur := await boot_centaur("taurtaur")
 	var coordinator := AttackCoordinator.for_room(centaur.room)
 	coordinator._rushers.append(centaur) # A rush under way
 	centaur._start_swing(true) # As a counter would
-	expect_equal(centaur._combo, PackedInt32Array([CLASH]), "one clash")
+	expect(centaur._combo.size() > 1, "a combo, not a lone clash")
 	coordinator._rushers.clear()
 
 # A centaur that can charge may open with one from well out of reach.
@@ -510,3 +512,22 @@ func test_taurtaur_combo_bar_shows_from_the_first_kick() -> void:
 	await tree.process_frame
 	await tree.process_frame
 	expect_near(centaur._parry_progress, 1.0, 0.01, "full as the combo starts")
+
+# Swinging again straight after a hit on a taurtaur's back lands on its next kick's windup,
+# from what is now its front: a dull clank, not a stagger (the spark hasn't shown yet).
+func test_swinging_again_after_a_back_hit_doesnt_stagger() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	swing_from_behind(centaur) # Cleared: its next kick faces this side
+	await tree.physics_frame
+	await tree.physics_frame
+	expect(centaur._twinkled_at < 0, "the next kick is still winding up")
+	var health := centaur.health
+	swing_at(centaur) # Same spot, so now from its front
+	await physics_frames(3)
+	expect(!player().is_dazed(), "the player isn't staggered")
+	expect_equal(centaur.health, health, "and it takes no damage")
+	expect_equal(centaur._combo_index, 1, "nor is the kick cleared")

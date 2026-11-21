@@ -193,8 +193,9 @@ func rush_strike() -> void:
 	_rush_pending = false
 
 func _pick_attack() -> PackedInt32Array:
-	# During a group rush, anything it starts (its rush strike, or a counter) is one clash.
-	if _rush_pending || combos.is_empty() || AttackCoordinator.for_room(room).rush_active():
+	# Its group-rush strike is one clash; nothing else is (a counter while a rush plays out
+	# elsewhere in the room is an ordinary combo).
+	if _rush_pending || combos.is_empty():
 		return PackedInt32Array([Hit.CLASH])
 	if !_next_attack.is_empty():
 		var forced := _next_attack
@@ -308,7 +309,17 @@ func _combo_cleared() -> void:
 # the combo goes on (or, on the last hit, it's stunned). Only once that hit has sparked,
 # though, or rolling behind and swinging away would clear every hit in its windup; before
 # that it's a dull clank and nothing more. Outside a combo it's an ordinary hit.
+#
+# A swing at the front of a kick before its spark is a dull clank too, rather than the
+# stagger a swing at a red attack's front usually gets: right after a hit on a taurtaur's
+# back its next kick turns that side into its front, and a player swinging again there
+# hasn't done anything wrong yet. After the spark the usual rule holds.
 func _on_player_sword(from_direction: String) -> void:
+	if !_combo.is_empty() && _animation_is("slash") && from_direction != direction \
+			&& _hit() == Hit.KICK && _twinkled_at < 0 && !_swung_first():
+		Juice.clank(true)
+		player.mark_swing_parried() # Passes through, unblocked, rather than staggering
+		return
 	if _combo.is_empty() || !_animation_is("slash") || from_direction != direction:
 		super(from_direction)
 		return
