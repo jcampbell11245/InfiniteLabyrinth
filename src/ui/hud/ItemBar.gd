@@ -12,8 +12,6 @@ extends Node2D
 const BOX := 16 # Outer size of one box
 const GAP := 3 # Between boxes
 const PAD := 3 # Between the boxes and the edge of the panel behind them
-const CHEVRON_GAP := 3 # Between the panel and the arrows either side of it
-const CHEVRON_SIZE := Vector2(3, 5)
 
 const PANEL_FILL := Color(0.06, 0.05, 0.09, 0.75)
 const PANEL_EDGE := Color(0.3, 0.27, 0.36)
@@ -21,7 +19,6 @@ const BOX_FILL := Color(0.13, 0.11, 0.17, 0.9)
 const BOX_EDGE := Color(0.42, 0.39, 0.5)
 const SELECTED_FILL := Color(0.25, 0.2, 0.13, 0.95)
 const SELECTED_EDGE := Color(1.0, 0.82, 0.3)
-const CHEVRON_COLOR := Color(0.6, 0.57, 0.68)
 const FLASH_COLOR := Color(1, 1, 1, 0.8)
 
 const POP := 1.2 # Scale the highlighted box jumps to when the highlight moves onto it
@@ -76,8 +73,6 @@ func _draw() -> void:
 	var panel := Rect2(left - PAD, top - PAD, width + PAD * 2, BOX + PAD * 2)
 	draw_rect(panel, PANEL_FILL)
 	_draw_frame(panel, PANEL_EDGE)
-	_draw_chevron(Vector2(panel.position.x - CHEVRON_GAP, 0), -1)
-	_draw_chevron(Vector2(panel.end.x + CHEVRON_GAP, 0), 1)
 	for i in count:
 		var box := Rect2(left + i * (BOX + GAP), top, BOX, BOX)
 		var selected := i == Game.item_slot
@@ -100,10 +95,3 @@ func _draw_frame(rect: Rect2, color: Color) -> void:
 	draw_rect(Rect2(p.x, rect.end.y - 1, s.x, 1), color)
 	draw_rect(Rect2(p.x, p.y + 1, 1, s.y - 2), color)
 	draw_rect(Rect2(rect.end.x - 1, p.y + 1, 1, s.y - 2), color)
-
-# A small triangle pointing away from the bar (`side` -1 left, 1 right), its base at `base`.
-func _draw_chevron(base: Vector2, side: int) -> void:
-	var half := CHEVRON_SIZE.y / 2.0
-	var tip := base + Vector2(CHEVRON_SIZE.x * side, 0)
-	draw_colored_polygon(PackedVector2Array([
-		base + Vector2(0, -half), tip, base + Vector2(0, half)]), CHEVRON_COLOR)

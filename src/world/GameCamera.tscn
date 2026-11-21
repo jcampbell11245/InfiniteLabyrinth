@@ -333,7 +333,7 @@ theme_override_fonts/normal_font = SubResource("7")
 text = "0"
 
 [node name="ItemBar" type="Node2D" parent="HudLayer/Hud"]
-position = Vector2(184, 194)
+position = Vector2(184, 196)
 script = ExtResource("item_bar_script")
 
 [node name="MinimapLayer" type="CanvasLayer" parent="."]
