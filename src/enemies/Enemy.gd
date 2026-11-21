@@ -366,6 +366,10 @@ func _safe_step(motion: Vector2) -> bool:
 
 # --- Overridable hooks ---
 
+# True for enemies that fly (wyrms): the floor's tiles and pits leave them alone.
+func flies() -> bool:
+	return false
+
 # True when a hit should be shrugged off (any Tuning.hit_knockback still applies).
 func _blocks_hit() -> bool:
 	return false
@@ -454,7 +458,9 @@ func _parry_timing() -> Parry:
 #
 # An unparryable attack (red twinkle) can't be met head on: before it strikes, a sword hit
 # from the front is blocked and staggers the player, whatever the timing. One from behind
-# (the sword travelling the way the enemy faces, after rolling through it) lands.
+# (the sword travelling the way the enemy faces, after rolling through it) dazes the enemy
+# like a parry instead of hurting it, and so does one from behind while it's still stuck
+# recovering from that attack (_in_rollable_recovery): see _dazed_from_behind.
 #
 # Either way, a swing the player started before the enemy began its attack isn't a clash:
 # the player got in first, so it's an ordinary hit (which cuts the attack short).
@@ -465,9 +471,12 @@ func _on_player_sword(from_direction: String) -> void:
 	if _unparryable && _animation_is(_attack_action()) && animator.frame <= attack_frame \
 			&& !_swung_first():
 		if from_direction == direction:
-			take_damage(from_direction, player.sword_damage())
+			_dazed_from_behind(from_direction)
 		else:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
+		return
+	if from_direction == direction && _in_rollable_recovery():
+		_dazed_from_behind(from_direction)
 		return
 	match _parry_timing():
 		Parry.NONE:
@@ -484,6 +493,38 @@ func _on_player_sword(from_direction: String) -> void:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
 		Parry.LATE:
 			pass
+
+# Caught from behind by a player who rolled through its unparryable attack: dazed as if
+# parried (stars, the stun, the player's sword cooldown skipped), with no damage. The roll
+# is the counter, as the parry is for a white attack.
+func _dazed_from_behind(from_direction: String) -> void:
+	player.mark_swing_parried()
+	_parry_feedback()
+	_parry_progress = 1.0
+	stagger(from_direction)
+
+# The player calls this when this enemy's hit took health off them. With
+# Tuning.combos_end_on_hit (on by default; F2) the hit ends the enemy's combo: whatever it had
+# lined up after it doesn't come (_end_combo_on_hit), so being hit is never followed by a
+# string of more hits.
+func landed_hit() -> void:
+	if Tuning.combos_end_on_hit:
+		_end_combo_on_hit()
+
+# What a landed hit cuts short. Nothing by default: most attacks are single hits.
+func _end_combo_on_hit() -> void:
+	pass
+
+# A red (roll-only) charge of its is coming at the player: winding up or under way, not yet
+# struck. A roll begun meanwhile lasts longer (Player, Tuning.roll_charge_bonus), since a
+# charge's arrival is harder to time than a swing's. None by default.
+func red_charge_coming() -> bool:
+	return false
+
+# Still stuck recovering from an unparryable attack it just made (a knight's end lag, a
+# wyvern hanging in the air), when a hit from behind dazes it. None by default.
+func _in_rollable_recovery() -> bool:
+	return false
 
 # Blocks the player's swing (begun on physics frame `swing_frame`) and staggers them, unless
 # that swing parried another enemy: then it just passes through this one, no block, chip or

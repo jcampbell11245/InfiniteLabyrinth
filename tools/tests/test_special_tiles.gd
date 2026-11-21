@@ -50,16 +50,50 @@ func test_special_tiles_keep_enemy_paths() -> void:
 	design.set_cell(Vector2i(8, 6), RoomDesign.Cell.PIT)
 	expect(design.path_points(Vector2i(6, 6)).is_empty(), "but not a pit")
 
-func test_spikes_hurt_on_stepping_on() -> void:
+func test_spikes_pop_up_when_stepped_on() -> void:
 	var design := RoomDesign.new()
 	design.set_cell(Vector2i(3, 6), RoomDesign.Cell.SPIKES)
 	var room: Room = await boot_design(design)
+	var cell := RoomDesign.tile_cell(Vector2i(3, 6))
+	var tuning := autoload("Tuning")
 	var before := player().level_countdown.time_left
 	stand_on(room, Vector2i(3, 6))
 	await physics_frames(3)
+	expect_equal(layer(room).tile_state(cell).phase, SpecialTiles.Phase.WARNING, "stepping on shows the tips")
+	expect_near(before - player().level_countdown.time_left, 0.0, 0.3, "flat spikes don't hurt")
+	expect_equal(layer(room).get_cell_atlas_coords(0, cell).x, SpecialTiles.Frame.SPIKES_TIPS, "tips drawn")
+	await wait_real(tuning.spike_warning_time + 0.2)
+	expect_equal(layer(room).tile_state(cell).phase, SpecialTiles.Phase.LIVE, "then they stab up")
+	expect(before - player().level_countdown.time_left
+		>= maxf(tuning.spike_damage * tuning.seconds_per_damage, 1.0) * 0.8, "and hurt whoever's on them")
+	stand_on(room, Vector2i(6, 6))
+	await wait_real(tuning.spike_up_time * 0.5)
+	expect_equal(layer(room).tile_state(cell).phase, SpecialTiles.Phase.LIVE, "they stay up a while after")
+	await wait_real(tuning.spike_up_time * 0.5 + 0.2)
+	expect_equal(layer(room).tile_state(cell).phase, SpecialTiles.Phase.RESTING, "then go back down")
+	expect_equal(layer(room).get_cell_atlas_coords(0, cell).x, SpecialTiles.Frame.SPIKES, "drawn flat")
+
+func test_new_frames_animate() -> void:
+	var design := RoomDesign.new()
+	design.set_cell(Vector2i(3, 6), RoomDesign.Cell.WIRES)
+	design.set_cell(Vector2i(5, 6), RoomDesign.Cell.CRACKED)
+	var room: Room = await boot_design(design)
+	var wires := RoomDesign.tile_cell(Vector2i(3, 6))
+	var cracked := RoomDesign.tile_cell(Vector2i(5, 6))
+	layer(room)._set_phase(wires, SpecialTiles.Phase.WARNING, 10.0)
+	var seen := {}
+	for i in 40:
+		await tree.physics_frame
+		seen[layer(room).get_cell_atlas_coords(0, wires).x] = true
+	expect(seen.size() >= 3, "sparking wires run through their frames (%s)" % [seen.keys()])
+	for frame: int in seen:
+		expect(frame in SpecialTiles.ANIMATIONS[SpecialTiles.Frame.WIRES_SPARK], "only sparking frames")
 	var tuning := autoload("Tuning")
-	expect_near(before - player().level_countdown.time_left,
-		maxf(tuning.spike_damage * tuning.seconds_per_damage, 1.0), 0.3, "seconds taken by the spikes")
+	stand_on(room, Vector2i(5, 6))
+	await physics_frames(3)
+	expect_equal(layer(room).get_cell_atlas_coords(0, cracked).x, SpecialTiles.Frame.CRACKING, "starts cracking")
+	await wait_real(tuning.crack_time * 0.75)
+	expect_equal(layer(room).get_cell_atlas_coords(0, cracked).x, SpecialTiles.Frame.CRACKING_2, "cracks deeper")
 
 func test_teleporter_sends_to_its_partner() -> void:
 	var design := RoomDesign.new()
@@ -377,12 +411,15 @@ func test_rolling_over_spikes_in_one_roll_takes_no_hit() -> void:
 	await roll_right()
 	expect(feet_index(room).x >= 6, "the roll cleared the spikes (feet at %s)" % feet_index(room))
 	expect_near(player().level_countdown.time_left, before, 0.6, "no time taken rolling over them")
-	# A roll that ends on spikes still hurts.
+	expect_equal(layer(room).tile_state(RoomDesign.tile_cell(Vector2i(5, 6))).phase, SpecialTiles.Phase.RESTING,
+		"or setting them off")
+	# A roll that ends on spikes sets them off, and they stab whoever stays.
 	stand_on(room, Vector2i(9, 6))
 	await wait_real(0.6) # Roll cooldown
 	before = player().level_countdown.time_left
 	await roll_right()
 	expect(feet_index(room).x in [10, 11], "the roll ended on the spikes (feet at %s)" % feet_index(room))
+	await wait_real(Tuning.spike_warning_time + 0.2)
 	expect(before - player().level_countdown.time_left > 1.0, "hurt for landing on them")
 
 func test_teleporters_squish_the_way_they_are_entered() -> void:

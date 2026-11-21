@@ -12,7 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://cv0qynawsd0nn" path="res://src/objects/RoomDetection.tscn" id="10"]
 [ext_resource type="PackedScene" uid="uid://da0qyn5u6l0dl" path="res://src/objects/Void.tscn" id="11"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/Spikes.tscn" id="12"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="13"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="14"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="15"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="16"]
@@ -51,9 +51,9 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 [node name="Spikes" parent="." unique_id=1334104299 instance=ExtResource("12")]
 format = 2
 
-[node name="Stalagmites" parent="." unique_id=931375465 instance=ExtResource("13")]
+[node name="InnerWalls" parent="." unique_id=931375465 instance=ExtResource("13")]
 format = 2
-layer_0/tile_data = PackedInt32Array(851980, 0, 0, 851986, 0, 0, 917516, 0, 0, 917522, 0, 0)
+layer_0/tile_data = PackedInt32Array(851980, 196608, 1, 851986, 196608, 1, 917516, 196608, 3, 917522, 196608, 3)
 
 [node name="Decorations" parent="." unique_id=41086256 instance=ExtResource("14")]
 

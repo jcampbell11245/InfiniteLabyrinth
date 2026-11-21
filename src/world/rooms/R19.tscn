@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" path="res://src/audio/GoblinDeath.tscn" id="8"]
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="9"]
 [ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="10"]
-[ext_resource type="PackedScene" path="res://src/world/tiles/Stalagmites.tscn" id="11"]
+[ext_resource type="PackedScene" path="res://src/world/tiles/InnerWalls.tscn" id="11"]
 [ext_resource type="PackedScene" uid="uid://ckkcjmyxnjn2a" path="res://src/world/tiles/Decorations.tscn" id="12"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="13"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/PitfallTransitions.tscn" id="14"]
@@ -40,9 +40,9 @@ layer_0/tile_data = PackedInt32Array(458761, 1, 0, 458762, 1, 0, 458763, 1, 0, 4
 
 [node name="Locks" parent="." unique_id=1136851050 instance=ExtResource("13")]
 
-[node name="Stalagmites" parent="." unique_id=792508176 instance=ExtResource("11")]
+[node name="InnerWalls" parent="." unique_id=792508176 instance=ExtResource("11")]
 format = 2
-layer_0/tile_data = PackedInt32Array(589833, 6, 0, 589834, 4, 0, 589835, 4, 0, 589836, 4, 0, 589837, 2, 0, 589838, 2, 0, 589840, 6, 0, 589841, 6, 0, 589842, 4, 0, 589843, 4, 0, 589844, 4, 0, 589845, 2, 0, 1376265, 6, 0, 1376266, 4, 0, 1376267, 4, 0, 1376268, 4, 0, 1376269, 2, 0, 1376270, 2, 0, 1376272, 6, 0, 1376273, 6, 0, 1376274, 4, 0, 1376275, 4, 0, 1376276, 4, 0, 1376277, 2, 0)
+layer_0/tile_data = PackedInt32Array(589833, 0, 0, 589834, 65536, 0, 589835, 65536, 0, 589836, 65536, 0, 589837, 65536, 0, 589838, 131072, 0, 589840, 0, 0, 589841, 65536, 0, 589842, 65536, 0, 589843, 65536, 0, 589844, 65536, 0, 589845, 131072, 0, 1376265, 0, 0, 1376266, 65536, 0, 1376267, 65536, 0, 1376268, 65536, 0, 1376269, 65536, 0, 1376270, 131072, 0, 1376272, 0, 0, 1376273, 65536, 0, 1376274, 65536, 0, 1376275, 65536, 0, 1376276, 65536, 0, 1376277, 131072, 0)
 
 [node name="Decorations" parent="." unique_id=1917966994 instance=ExtResource("12")]
 

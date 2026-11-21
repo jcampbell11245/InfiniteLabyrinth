@@ -3,10 +3,10 @@ extends Enemy
 # Wizard: backs away while the player is lined up with it on either axis, otherwise casts
 # one fireball at a time, launched straight at the player and homing on them (see
 # Projectile.launch_at). It can't turn on a dime, so a hard enough dodge gets out of its
-# way, and it still breaks on stalagmites and walls. A fireball the player hits back homes
+# way, and it still breaks on inner walls, stalagmites and walls. A fireball the player hits back homes
 # on the wizard and is batted back again (homing on the player) just before it lands, unless the wizard fumbles it
 # (Tuning.wizard_deflect_miss_chance each time), or the rally has got too fast for the
-# player's sword cooldown to answer (see _player_could_return). The two can rally a fireball back and
+# player's sword cooldown to answer (see FireballReturner). The two can rally a fireball back and
 # forth, stronger and faster each time. Wizards sharing a room take turns casting (see
 # _is_my_turn), so only one fireball is ever coming at the player.
 #
@@ -23,7 +23,7 @@ const SWIPE_SOUND := preload("res://assets/sfx/slash1.wav")
 # cooldown and damage, and the deflect miss chance are in Tuning.
 const DEFLECT_REACH := 22.0 # Pixels ahead of the wizard where it bats a fireball back
 const DEFLECT_WIDTH := 12.0 # Pixels either side of a fireball's path that still count
-const PLAYER_SWORD_REACH := 20.0 # Pixels from the player out to where their sword meets a fireball
+const DEFLECT_FLASH := Color(0.8, 0.6, 1.0) # It flashes this as it bats a fireball back
 # The staff swipe's hitbox, in the wizard's own (unscaled) units, reaching out to the right
 # before its pivot turns it to face.
 const SWIPE_HITBOX_SIZE := Vector2(40, 48)
@@ -40,7 +40,7 @@ const RETREAT_LIMIT_UP := 214
 const RETREAT_LIMIT_DOWN := 406
 
 var retreat_blocked := false # Backing away ran into something; shoot instead until the next cast
-var _judged: Dictionary = {} # Fireball -> its deflections when last swung at, so each return gets one try
+var _returner: FireballReturner # Bats back fireballs the player hits at it
 # Its fireball still in the room (flying, rallying or breaking). It won't cast another until
 # this one is gone.
 var _fireball: Projectile
@@ -60,6 +60,7 @@ func _ready() -> void:
 	_swipe_sound.stream = SWIPE_SOUND
 	add_child(_swipe_sound)
 	_swipe_cooldown = _add_timer()
+	_returner = FireballReturner.new(self, DEFLECT_REACH, DEFLECT_WIDTH, DEFLECT_FLASH)
 
 func _process(_delta: float) -> void:
 	if player.in_transition:
@@ -82,7 +83,7 @@ func _physics_process(delta: float) -> void:
 		_apply_knockback(delta)
 		return
 
-	_try_deflect()
+	_returner.try_return()
 	if _animation_is("slash"):
 		pass # Rooted and committed to its facing until the swipe is over
 	elif _in_melee_range():
@@ -181,7 +182,7 @@ func _attack_action() -> String:
 
 func _on_reset() -> void:
 	retreat_blocked = false
-	_judged.clear()
+	_returner.reset()
 	_swipe_cooldown.stop()
 	_hitbox.disabled = true
 
@@ -261,54 +262,6 @@ func _add_swipe_hitbox() -> void:
 	area.add_child(_hitbox)
 
 # --- Fireballs ---
-
-# Swings at any player-deflected fireball about to hit, once per return.
-func _try_deflect() -> void:
-	for node in room.get_children():
-		var shot := node as Projectile
-		if shot == null || !shot.deflectable || shot.hostile_to_player || shot._hit:
-			continue
-		if _judged.get(shot, -1) == shot.deflections || !_is_incoming(shot):
-			continue
-		_judged[shot] = shot.deflections
-		if randf() < Tuning.wizard_deflect_miss_chance:
-			continue # Fumbled; it flies on and hits
-		if !_player_could_return(shot):
-			continue # No point; it takes the hit rather than send back an unanswerable one
-		_face(Direction.to_vector(shot.direction) * -1)
-		shot.deflect(direction)
-		Juice.flash(animator, 0.1, Color(0.8, 0.6, 1.0))
-		Juice.deflect_sound()
-	# Forget fireballs that have gone.
-	for shot in _judged.keys():
-		if !is_instance_valid(shot):
-			_judged.erase(shot)
-
-# Batted back now, `shot` would reach the player's sword no sooner than they can swing
-# again plus Tuning.wizard_volley_reaction_time. Once a rally is so fast that the sword
-# cooldown makes it unanswerable, the wizard lets the fireball hit it instead.
-func _player_could_return(shot: Projectile) -> bool:
-	var return_speed := minf(shot.speed * Tuning.deflect_speed_multiplier, Tuning.deflect_max_speed)
-	if return_speed <= 0:
-		return true
-	var distance := maxf(global_position.distance_to(player.global_position) - PLAYER_SWORD_REACH, 0.0)
-	var travel := distance / return_speed
-	return travel >= player.seconds_until_can_swing() + Tuning.wizard_volley_reaction_time
-
-# Heading straight at the wizard and about to arrive. Measured along its real path, since a
-# homing fireball comes in on a diagonal.
-func _is_incoming(shot: Projectile) -> bool:
-	var heading := shot.velocity.normalized() if shot.velocity != Vector2.ZERO \
-		else Direction.to_vector(shot.direction)
-	var to_me := global_position - shot.global_position
-	var ahead := to_me.dot(heading)
-	return ahead > 0 && ahead < DEFLECT_REACH && absf(to_me.cross(heading)) < DEFLECT_WIDTH
-
-# Turns to face along `facing`, one of the four direction vectors.
-func _face(facing: Vector2) -> void:
-	for dir in [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]:
-		if Direction.to_vector(dir).is_equal_approx(facing):
-			direction = dir
 
 # Within CLOSE_RANGE of the player on at least one axis.
 func _is_player_lined_up() -> bool:

@@ -14,12 +14,15 @@ follow it step by step, whatever agent you are. In short:
 2. Look for an open issue covering that work. If one exists and **someone else is assigned,
    stop**: tell the developer who has it and don't start. If it's unassigned, assign the
    developer. If there's no issue, create one assigned to them.
-3. Branch from an up-to-date `origin/master`, make the change, run the checks, push, and
-   open a pull request whose description says `Closes #<issue>`.
+3. Branch from an up-to-date `origin/master`, make the change, run the checks, commit and
+   push. Open a pull request (description says `Closes #<issue>`) only when the developer
+   says the work is ready for review; until then, keep adding to the branch.
 
-`master` is protected: a pull request can only merge once **Smoke test**, **Tests** and
-**Linked issue** pass (the last checks the PR closes an open issue assigned to its author),
-the branch is up to date with `master`, and someone else has approved it.
+`master` is protected: a pull request can only merge once **Smoke test**, **Tests**,
+**Linked issue** (the PR closes an open issue assigned to its author) and **Claude approval**
+(an automatic Claude review of the latest commit found nothing blocking; see
+`.github/workflows/claude-review.yml`) pass, the branch is up to date with `master`, and
+someone else has approved it.
 The owner may commit to `master` directly and is exempt from the issue rule.
 
 Never close, reassign or edit other people's issues, and never push to someone else's
@@ -74,8 +77,22 @@ See README → Layout for the folder map. The parts you'll touch most:
   load), **`Juice`** (hit-stop, slow motion, shake, flashes, particle bursts, sound pitch
   variation), **`Music`**.
 - **Enemies**: `Enemy` is the base; `MeleeEnemy` (goblin, knight families), `RangedEnemy`
-  (wizard), `Caster` (warlock, necromancer), `Boss`. Melee turns and group rushes are shared
-  through `AttackCoordinator`, one per room.
+  (wizard), `Caster` (warlock, necromancer), `Wyrm` (wyrm, wyvern; they fly), `Boss`;
+  `Centaur` (centaur, bucentaur, taurtaur) extends `MeleeEnemy` with combos.
+  Melee turns and group rushes are shared through `AttackCoordinator`, one per room;
+  wizards and dragons bat fireballs back through `FireballReturner`.
+- **Two combat rules every enemy follows** (keep them in mind when changing or adding one):
+  - *A hit that lands on the player ends the enemy's combo.* Whatever hits it had lined up
+    after that one don't come: `Player` calls `Enemy.landed_hit`, which calls
+    `_end_combo_on_hit` (`MeleeEnemy` drops the rest of its turn's swings and any double
+    attack, `Centaur` ends its combo). A new enemy with multi-hit attacks overrides
+    `_end_combo_on_hit`. It can be switched off with `Tuning.combos_end_on_hit` (F2, AI tab).
+  - *Rolling through a red (unparryable) attack and hitting the enemy from behind dazes it
+    like a parry, with no damage* (`Enemy._dazed_from_behind`). That works during the attack
+    and while the enemy is still stuck recovering from it (`_in_rollable_recovery`: a
+    knight's or taurtaur's end lag, a wyvern hanging after its red charge). A new enemy with
+    a red attack or a recovery after one overrides `_in_rollable_recovery`. Red attacks that
+    hit the player still do damage.
 - **Rooms**: every `.tscn` in `src/world/rooms/` is picked up by `WorldGenerator`, which
   caches loaded room scenes for the session; the room creator (F1 on the title screen)
   exports designs to `room_designs/` that get turned into room scenes.
