@@ -6,8 +6,14 @@ extends Control
 # the item's icon, name, a one-line description and price in coins; the list scrolls when
 # there are more than VISIBLE_ROWS. Up and down pick a row, the previous / next item buttons
 # (or left and right) change tab, confirm buys and back closes. A bought item goes into the
-# first empty box of the item bar (Game.buy_item); a purchase that can't happen (too few
-# coins, no empty box) shakes the row red and says why.
+# first empty box of the item bar (Game.buy_item); with too few coins the row shakes red
+# and says so.
+#
+# Buying with every box full offers a swap instead: the shop asks the player to choose a
+# box on the HUD's item bar (left and right, or the previous / next item buttons, move its
+# highlight), and confirm throws that box's item away and puts the new one in its place
+# (Game.replace_item). A box already holding the same item can't be chosen. Back cancels
+# the swap without closing the shop.
 #
 # Buying is guarded against accidental double purchases: the confirm button has to be let
 # go after opening the shop and after each purchase, and a purchase can't follow another
@@ -72,6 +78,7 @@ var _row := 0
 var _scroll := 0 # First row shown
 var _opened_frame := -1 # The interact press that opened the shop mustn't also buy
 var _confirm_released := false # Confirm has been let go since opening or the last purchase
+var _replacing := Items.Kind.NONE # The item waiting for a box to replace, while choosing one
 var _next_buy_at := 0 # Ticks (ms, real time) before which another purchase is ignored
 var _flash := 0.0 # White over the row just bought from, 1 to 0
 var _refused := 0.0 # How far through the refused shake, 1 to 0
@@ -106,12 +113,17 @@ func open() -> void:
 	queue_redraw()
 
 func close() -> void:
+	_stop_replacing()
 	visible = false
 	get_tree().paused = false
 	closed.emit()
 
 func stock() -> Array:
 	return TABS[_tab].stock
+
+# True while the shop is waiting for the player to choose a box on the item bar to replace.
+func is_replacing() -> bool:
+	return _replacing != Items.Kind.NONE
 
 func _input(event: InputEvent) -> void:
 	if visible:
@@ -130,7 +142,9 @@ func _process(delta: float) -> void:
 		return
 	if !_confirm_released && !_held(CONFIRM_ACTIONS):
 		_confirm_released = true
-	if _pressed(["ui_cancel", "pause"]):
+	if is_replacing():
+		_process_replacing()
+	elif _pressed(["ui_cancel", "pause"]):
 		close()
 	elif _pressed(["up", "ui_up"]):
 		_move(-1)
@@ -142,6 +156,53 @@ func _process(delta: float) -> void:
 		_change_tab(1)
 	elif _pressed(CONFIRM_ACTIONS) && _confirm_released && Time.get_ticks_msec() >= _next_buy_at:
 		buy_selected()
+
+# Choosing a box on the item bar to swap for the new item.
+func _process_replacing() -> void:
+	if _pressed(["ui_cancel", "pause"]):
+		_stop_replacing()
+		_message = ""
+		queue_redraw()
+	elif _pressed(["item_previous", "ui_left", "left"]):
+		Game.cycle_item(-1)
+	elif _pressed(["item_next", "ui_right", "right"]):
+		Game.cycle_item(1)
+	elif _pressed(CONFIRM_ACTIONS) && _confirm_released && Time.get_ticks_msec() >= _next_buy_at:
+		replace_selected_box()
+
+# Throws away the item in the item bar's highlighted box and puts the new one there.
+func replace_selected_box() -> void:
+	var kind := _replacing
+	match Game.replace_item(Game.item_slot, kind):
+		Game.Purchase.BOUGHT:
+			_stop_replacing()
+			_bought("Swapped")
+		Game.Purchase.SAME_ITEM:
+			# Still choosing: another box may hold something else.
+			_refuse("That box already holds one. Choose another", false)
+		_:
+			_stop_replacing()
+			_refuse("Not enough coins")
+
+func _start_replacing(kind: Items.Kind) -> void:
+	_replacing = kind
+	# Start on a box that can be swapped, if the highlighted one holds the same item.
+	if Game.item_in(Game.item_slot) == kind:
+		for step in range(1, maxi(Tuning.item_slots, 1)):
+			if Game.item_in(posmod(Game.item_slot + step, maxi(Tuning.item_slots, 1))) != kind:
+				Game.cycle_item(step)
+				break
+	_confirm_released = false # The press that asked to buy mustn't also pick the box
+	Game.set_choosing_item(true)
+	_message = "Item bar full. Choose a box to replace"
+	_message_color = TEXT_COLOR
+	_message_left = 0.0 # Stays until the choice is made
+	queue_redraw()
+
+func _stop_replacing() -> void:
+	if is_replacing():
+		_replacing = Items.Kind.NONE
+		Game.set_choosing_item(false)
 
 func _pressed(actions: Array[String]) -> bool:
 	for action in actions:
@@ -172,18 +233,33 @@ func buy_selected() -> void:
 	var kind: Items.Kind = stock()[_row]
 	match Game.buy_item(kind):
 		Game.Purchase.BOUGHT:
-			_confirm_released = false
-			_next_buy_at = Time.get_ticks_msec() + roundi(Tuning.shop_buy_cooldown * 1000.0)
-			_say("Bought", BOUGHT_COLOR)
-			Juice.coin_stolen_sound() # Coins leaving the purse
-			_flash_tween = _restart(_flash_tween, _set_flash, FLASH_TIME)
+			_bought("Bought")
 		Game.Purchase.TOO_POOR:
 			_refuse("Not enough coins")
 		Game.Purchase.BAR_FULL:
-			_refuse("Your item bar is full")
+			if _every_box_holds(kind):
+				_refuse("Every box already holds one")
+			else:
+				_start_replacing(kind)
 
-func _refuse(why: String) -> void:
+func _every_box_holds(kind: Items.Kind) -> bool:
+	for slot in maxi(Tuning.item_slots, 1):
+		if Game.item_in(slot) != kind:
+			return false
+	return true
+
+func _bought(text: String) -> void:
+	_confirm_released = false
+	_next_buy_at = Time.get_ticks_msec() + roundi(Tuning.shop_buy_cooldown * 1000.0)
+	_say(text, BOUGHT_COLOR)
+	Juice.coin_stolen_sound() # Coins leaving the purse
+	_flash_tween = _restart(_flash_tween, _set_flash, FLASH_TIME)
+
+# Says why, with the refused click and a red shake; `fades` false keeps the message up.
+func _refuse(why: String, fades := true) -> void:
 	_say(why, TOO_DEAR)
+	if !fades:
+		_message_left = 0.0
 	Juice.play(_refused_sound, 0.06, REFUSED_PITCH)
 	_refused_tween = _restart(_refused_tween, _set_refused, REFUSE_TIME)
 
@@ -300,7 +376,8 @@ func _arrow(at: Vector2, direction: int) -> void:
 
 # Confirm to buy and back to leave, as buttons for the device in use, centred at the bottom.
 func _draw_hints(o: Vector2) -> void:
-	var hints := [[InputGlyphs.Glyph.CONFIRM, "Buy"], [InputGlyphs.Glyph.BACK, "Close"]]
+	var hints := [[InputGlyphs.Glyph.CONFIRM, "Replace"], [InputGlyphs.Glyph.BACK, "Cancel"]] \
+		if is_replacing() else [[InputGlyphs.Glyph.CONFIRM, "Buy"], [InputGlyphs.Glyph.BACK, "Close"]]
 	var gap := 10.0
 	var total := -gap
 	for hint: Array in hints:

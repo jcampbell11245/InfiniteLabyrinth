@@ -17,8 +17,9 @@ signal item_used(slot: int, kind: Items.Kind) # The item in that box did its thi
 signal item_refused(slot: int) # Use pressed on an empty box, or on an item that would do nothing
 signal items_changed # What's in the item bar's boxes changed
 signal room_marked(room_id: int) # A metal detector showed this key room on the minimap
+signal choosing_item_changed(choosing: bool) # The shop is (or stopped) asking for a box to replace
 
-enum Purchase { BOUGHT, TOO_POOR, BAR_FULL } # What came of trying to buy an item
+enum Purchase { BOUGHT, TOO_POOR, BAR_FULL, SAME_ITEM } # What came of trying to buy an item
 
 var coins := 0 # Banked into SaveData when the floor ends
 var keys := 0 # Held now; Tuning.keys_to_finish open the end room
@@ -28,6 +29,7 @@ var carried_keys := 0
 var arrows := 0 # Left to shoot; refilled to Tuning.start_arrows each floor
 var item_slot := 0 # Highlighted box on the item bar, 0 to Tuning.item_slots - 1
 var items: Array[Items.Kind] = [] # What's in each box of the item bar
+var choosing_item := false # The shop wants the player to pick a box on the item bar
 # The items left when the floor just finished, handed to the next one like carried_keys:
 # a death or a new run starts with an empty bar.
 var carried_items: Array[Items.Kind] = []
@@ -122,6 +124,25 @@ func buy_item(kind: Items.Kind) -> Purchase:
 	add_coins(-cost)
 	items_changed.emit()
 	return Purchase.BOUGHT
+
+# Throws away what's in box `slot` and buys `kind` into it, if the player can pay. Swapping
+# an item for another of the same kind would only cost coins, so it's refused.
+func replace_item(slot: int, kind: Items.Kind) -> Purchase:
+	if item_in(slot) == kind:
+		return Purchase.SAME_ITEM
+	var cost := Items.price(kind)
+	if coins < cost:
+		return Purchase.TOO_POOR
+	if items.size() <= slot:
+		items.resize(slot + 1)
+	items[slot] = kind
+	add_coins(-cost)
+	items_changed.emit()
+	return Purchase.BOUGHT
+
+func set_choosing_item(choosing: bool) -> void:
+	choosing_item = choosing
+	choosing_item_changed.emit(choosing)
 
 # Uses the highlighted item. It's only used up if it did something (see Items.use).
 func use_item() -> void:

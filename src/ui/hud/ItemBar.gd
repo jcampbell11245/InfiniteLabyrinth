@@ -31,6 +31,8 @@ const SELECTED_EDGE := Color.WHITE
 const SELECTED_FILL := Color(1, 1, 1, 0.12) # A faint lift behind the white outline
 const FLASH_COLOR := Color(1, 1, 1, 0.8)
 const REFUSED_COLOR := Color(1, 0.25, 0.25)
+const CHOOSING_EDGE := Minimap.KEY_ROOM # The highlight while the shop asks which box to replace
+const CHOOSING_BLINK := 0.3 # Seconds the choosing highlight spends bright, then dim
 
 const POP := 1.2 # Scale the highlighted box jumps to when the highlight moves onto it
 const POP_TIME := 0.15
@@ -62,6 +64,9 @@ func _ready() -> void:
 	Game.item_used.connect(_on_item_used)
 	Game.item_refused.connect(_on_item_refused)
 	Game.items_changed.connect(queue_redraw)
+	Game.choosing_item_changed.connect(func(_choosing: bool) -> void: queue_redraw())
+	# The shop pauses the game while it asks for a box, and the highlight has to move then.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	Tuning.changed.connect(_on_tuning_changed)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_refused_sound = _add_sound(REFUSED_SOUND, REFUSED_VOLUME_DB)
@@ -157,6 +162,8 @@ func _draw() -> void:
 			box.position.x += _refused_offset()
 		draw_rect(box, SLOT_FILL)
 		var edge := SELECTED_EDGE if selected else Minimap.UNLIT
+		if selected && Game.choosing_item:
+			edge = CHOOSING_EDGE if _blink_on() else CHOOSING_EDGE.darkened(0.45)
 		if selected:
 			draw_rect(box.grow(-1), SELECTED_FILL)
 		if refused:
@@ -165,6 +172,13 @@ func _draw() -> void:
 		_draw_icon(Game.item_in(i), box)
 		if i == _flash_slot && _flash > 0.0:
 			draw_rect(box, FLASH_COLOR * Color(1, 1, 1, _flash))
+
+func _process(_delta: float) -> void:
+	if Game.choosing_item:
+		queue_redraw() # The blink
+
+func _blink_on() -> bool:
+	return int(Time.get_ticks_msec() / (CHOOSING_BLINK * 1000.0)) % 2 == 0
 
 # The item's icon centred in `box`, on whole units.
 func _draw_icon(kind: Items.Kind, box: Rect2) -> void:

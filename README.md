@@ -30,7 +30,8 @@ the **merchant** at the top of the start room: walk up to him and press Interact
 his shop. A **skeleton key** opens the locked doors of the room you're in; a **metal
 detector** shows one key room you haven't found on the minimap. Both cost 50 coins. An item
 that would do nothing (no locked door, every key room already showing) isn't used up.
-Items you haven't used come with you to the next floor, but are lost when you die.
+Items you haven't used come with you to the next floor, but are lost when you die. Buying
+with every box full lets you choose a box on the item bar to throw away for the new item.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
 volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.

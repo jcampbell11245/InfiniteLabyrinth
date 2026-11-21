@@ -113,6 +113,103 @@ func test_shop_guards_against_double_buys() -> void:
 	expect_equal(game.item_in(1), Items.Kind.SKELETON_KEY, "after the cooldown another press buys")
 	shop.close()
 
+func test_full_bar_offers_to_swap_a_box() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var shop := _shop()
+	if shop == null:
+		return
+	game.coins = 1000
+	for slot in 3:
+		game.buy_item(Items.Kind.SKELETON_KEY)
+	shop.open()
+	shop._move(1) # The metal detector
+	shop.buy_selected()
+	expect(shop.is_replacing() && game.choosing_item, "buying with a full bar asks for a box")
+	expect_equal(game.coins, 850, "nothing is paid until a box is chosen")
+	game.cycle_item(1)
+	shop.replace_selected_box()
+	expect(!shop.is_replacing() && !game.choosing_item, "choosing a box ends the question")
+	expect_equal(game.item_in(1), Items.Kind.METAL_DETECTOR, "the chosen box gets the new item")
+	expect_equal(game.item_in(0), Items.Kind.SKELETON_KEY, "the other boxes keep theirs")
+	expect_equal(game.coins, 800, "the new item is paid for")
+	shop.close()
+
+func test_a_box_with_the_same_item_cannot_be_swapped() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var shop := _shop()
+	if shop == null:
+		return
+	game.coins = 1000
+	game.buy_item(Items.Kind.METAL_DETECTOR)
+	game.buy_item(Items.Kind.SKELETON_KEY)
+	game.buy_item(Items.Kind.SKELETON_KEY)
+	game.item_slot = 0
+	shop.open()
+	shop.buy_selected() # A skeleton key
+	expect_equal(game.item_slot, 0, "the highlight starts on the box holding something else")
+	game.item_slot = 1
+	shop.replace_selected_box()
+	expect(shop.is_replacing(), "a box with the same item is refused and the shop keeps asking")
+	expect_equal(game.coins, 850, "nothing is paid for the refused swap")
+	game.item_slot = 0
+	shop.replace_selected_box()
+	expect_equal(game.item_in(0), Items.Kind.SKELETON_KEY, "a box with another item can be swapped")
+	shop.close()
+
+func test_no_swap_offered_when_every_box_holds_the_item() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var shop := _shop()
+	if shop == null:
+		return
+	game.coins = 1000
+	for slot in 3:
+		game.buy_item(Items.Kind.SKELETON_KEY)
+	shop.open()
+	shop.buy_selected() # Another skeleton key
+	expect(!shop.is_replacing(), "the shop doesn't ask for a box")
+	expect_equal(game.coins, 850, "nothing is paid")
+	shop.close()
+
+func test_highlight_moves_off_a_box_with_the_same_item() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var shop := _shop()
+	if shop == null:
+		return
+	game.coins = 1000
+	game.buy_item(Items.Kind.SKELETON_KEY)
+	game.buy_item(Items.Kind.SKELETON_KEY)
+	game.buy_item(Items.Kind.METAL_DETECTOR)
+	game.item_slot = 0
+	shop.open()
+	shop.buy_selected() # A skeleton key
+	expect_equal(game.item_slot, 2, "the highlight skips to the box with a different item")
+	shop.close()
+
+func test_cancelling_a_swap_changes_nothing() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var shop := _shop()
+	if shop == null:
+		return
+	game.coins = 1000
+	for slot in 3:
+		game.buy_item(Items.Kind.SKELETON_KEY)
+	shop.open()
+	shop.buy_selected()
+	shop.close() # Closing (like back) drops the question
+	expect(!game.choosing_item, "the item bar stops asking")
+	for slot in 3:
+		expect_equal(game.item_in(slot), Items.Kind.SKELETON_KEY, "box %d is unchanged" % slot)
+	expect_equal(game.coins, 850, "no coins are taken")
+
+func _shop() -> ShopMenu:
+	var merchant := _merchant()
+	return null if merchant == null else merchant.find_children("*", "ShopMenu", true, false)[0]
+
 func test_shop_shows_several_rows_before_scrolling() -> void:
 	expect(ShopMenu.VISIBLE_ROWS >= 5, "at least five items fit before the list scrolls")
 
