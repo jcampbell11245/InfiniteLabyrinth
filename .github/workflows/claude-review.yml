@@ -30,9 +30,16 @@ on:
     types: [opened, reopened, ready_for_review, synchronize]
   issue_comment:
     types: [created]
+  # Lets the owner start a review from the Actions tab or `gh workflow run` without
+  # commenting on someone's pull request.
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to review
+        required: true
 
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
   cancel-in-progress: true
 
 permissions:
@@ -52,6 +59,7 @@ jobs:
         && github.event.issue.pull_request
         && contains(github.event.comment.body, '@claude review')
         && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+      || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       pull-requests: write
@@ -59,7 +67,7 @@ jobs:
       statuses: write
       id-token: write
     env:
-      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
       GH_TOKEN: ${{ github.token }}
       STATUS_CONTEXT: Claude approval
     steps:
@@ -103,6 +111,8 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
+          # Otherwise the action hides everything Claude says, including why a run failed.
+          show_full_output: true
           claude_args: >-
             --model claude-opus-5-5
             --max-turns 120
@@ -119,18 +129,41 @@ jobs:
 
       # Reads the verdict Claude wrote: "approve" or "block" on the first line, a short
       # reason on the second. No file (the review crashed, timed out or ran out of turns)
-      # leaves the commit unapproved.
+      # leaves the commit unapproved, and a comment on the pull request says why, so the
+      # author isn't left with a failed check and nothing to go on.
       - name: Set the Claude approval status
         if: always() && env.HEAD_SHA != ''
         run: |
           VERDICT_FILE="$RUNNER_TEMP/claude-verdict.txt"
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           verdict=$(sed -n 1p "$VERDICT_FILE" 2>/dev/null | tr -d '[:space:]' || true)
           reason=$(sed -n 2p "$VERDICT_FILE" 2>/dev/null | cut -c1-140 || true)
+          target="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$PR_NUMBER"
           case "$verdict" in
             approve) state=success; reason=${reason:-No blocking findings} ;;
             block)   state=failure; reason=${reason:-Blocking or should-fix findings; see the review} ;;
-            *)       state=error;   reason="The review didn't finish; comment @claude review to retry" ;;
+            *)       state=error;   reason="The review didn't finish; see the run, then comment @claude review to retry"
+                     target="$RUN_URL" ;;
           esac
           gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" -f state="$state" \
-            -f context="$STATUS_CONTEXT" -f description="$reason" \
-            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$PR_NUMBER"
+            -f context="$STATUS_CONTEXT" -f description="$reason" -f target_url="$target"
+
+          if [ "$state" = error ]; then
+            # The last thing Claude Code reported (an API or sign-in error, usually).
+            detail=$(jq -r '[.[] | select(.type == "result")] | last | .result // empty' \
+              "$RUNNER_TEMP/claude-execution-output.json" 2>/dev/null | head -c 1500 || true)
+            {
+              echo "**Claude review didn't finish** for ${HEAD_SHA:0:7}, so Claude approval isn't given yet."
+              echo
+              if [ -n "$detail" ]; then
+                echo "Claude Code reported:"
+                echo '```'
+                echo "$detail"
+                echo '```'
+              fi
+              echo "Full log: $RUN_URL"
+              echo
+              echo "This is a problem with the review itself, not your code. Once it's fixed, comment \`@claude review\` to run it again."
+            } > "$RUNNER_TEMP/failure-comment.md"
+            gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/failure-comment.md"
+          fi
