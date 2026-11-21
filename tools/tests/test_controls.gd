@@ -121,6 +121,8 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	var reset := controls.get_node("Panel/Reset") as Control
 	var back := controls.get_node("Panel/Back") as Control
 	expect(rows.get_child_count() == autoload("Bindings").ACTIONS.size(), "one row per action")
+	expect(!status.visible && (status as Label).text.is_empty(),
+		"the standing 'press a key' caption is gone")
 	expect(rows.position.y + rows.size.y <= status.position.y + 0.01,
 		"the last bind row does not overlap the status caption")
 	expect(status.position.y + status.size.y <= reset.position.y + 0.01 \
@@ -132,8 +134,13 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	var key_header := controls.get_node("Panel/KeyHeader") as Control
 	var pad_header := controls.get_node("Panel/PadHeader") as Control
 	var first_row := rows.get_child(0) as Control
+	var second_row := rows.get_child(1) as Control
 	var key_column := first_row.get_node("Key") as Control
 	var pad_column := first_row.get_node("Pad") as Control
+	expect(second_row.position.y - (first_row.position.y + first_row.size.y) >= 4.0,
+		"the bind rows are spaced out")
+	expect(absf(rows.get_global_rect().get_center().y - dialog_rect.get_center().y) < 10.0,
+		"the bind list is centred vertically in the dialog")
 	expect(absf(key_header.get_global_rect().get_center().x
 		- key_column.get_global_rect().get_center().x) < 0.5,
 		"KEYBOARD is centred over the keyboard column")
@@ -295,6 +302,8 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 		for button_name: String in ["Key", "Pad"]:
 			labels.append((row.get_node(button_name) as Button).text)
 	controls.start_capture("roll", "key")
+	expect(controls.status_label.text.is_empty() && !controls.status_label.visible,
+		"starting a capture does not bring back the prompt caption")
 	labels.append((controls.get_node("Panel/Rows/Row_roll/Key") as Button).text)
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "button")

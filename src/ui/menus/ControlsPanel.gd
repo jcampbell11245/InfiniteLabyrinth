@@ -12,7 +12,6 @@ signal back_pressed
 const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DEVICE_KEY := "key"
 const DEVICE_BUTTON := "button"
-const CAPTION := "PRESS A KEY OR PAD BUTTON   ESC CANCELS"
 
 @onready var rows: VBoxContainer = $Panel/Rows
 @onready var status_label: Label = $Panel/Status
@@ -28,7 +27,7 @@ func _ready() -> void:
 	_build_rows()
 	back_button.pressed.connect(back_pressed.emit)
 	reset_button.pressed.connect(_on_reset_pressed)
-	status_label.text = CAPTION
+	_set_status("")
 
 func refresh() -> void:
 	for action: String in _key_buttons:
@@ -49,11 +48,11 @@ func start_capture(action: String, device: String) -> void:
 		return
 	_listening_action = action
 	_listening_device = device
+	_set_status("")
 	refresh()
 	var button := _button_for_device(action, device)
 	if button != null:
 		button.text = "PRESS KEY" if device == DEVICE_KEY else "PRESS PAD"
-	status_label.text = "%s  %s" % [Bindings.action_label(action), CAPTION]
 
 func _input(event: InputEvent) -> void:
 	if !is_listening():
@@ -68,7 +67,7 @@ func _input(event: InputEvent) -> void:
 		_consume()
 		if key_event.ctrl_pressed || key_event.meta_pressed || key_event.alt_pressed \
 				|| _is_modifier(key_event.keycode):
-			status_label.text = "MODIFIER KEYS CANNOT BE BOUND"
+			_set_status("MODIFIER KEYS CANNOT BE BOUND")
 			return
 		_finish_key(key_event.keycode)
 		return
@@ -128,7 +127,7 @@ func _on_pad_pressed(action: String) -> void:
 func _on_reset_pressed() -> void:
 	Bindings.reset_defaults()
 	refresh()
-	status_label.text = "DEFAULT BINDINGS RESTORED"
+	_set_status("DEFAULT BINDINGS RESTORED")
 
 func _finish_key(keycode: int) -> void:
 	if keycode == Bindings.key_for(_listening_action):
@@ -136,10 +135,10 @@ func _finish_key(keycode: int) -> void:
 		return
 	var owner := Bindings.key_owner(keycode, _listening_action)
 	if !owner.is_empty() && owner != _listening_action:
-		status_label.text = "%s IS ALREADY USED BY %s" % [Bindings.key_name(keycode), Bindings.action_label(owner)]
+		_set_status("%s IS ALREADY USED BY %s" % [Bindings.key_name(keycode), Bindings.action_label(owner)])
 		return
 	Bindings.set_key(_listening_action, keycode)
-	status_label.text = "%s KEY SET TO %s" % [Bindings.action_label(_listening_action), Bindings.key_name(keycode)]
+	_set_status("%s KEY SET TO %s" % [Bindings.action_label(_listening_action), Bindings.key_name(keycode)])
 	_stop_capture()
 
 func _finish_button(button_index: int) -> void:
@@ -148,16 +147,21 @@ func _finish_button(button_index: int) -> void:
 		return
 	var owner := Bindings.button_owner(button_index)
 	if !owner.is_empty() && owner != _listening_action:
-		status_label.text = "%s IS ALREADY USED BY %s" % [Bindings.button_name(button_index), Bindings.action_label(owner)]
+		_set_status("%s IS ALREADY USED BY %s" % [Bindings.button_name(button_index), Bindings.action_label(owner)])
 		return
 	Bindings.set_button(_listening_action, button_index)
-	status_label.text = "%s PAD SET TO %s" % [Bindings.action_label(_listening_action), Bindings.button_name(button_index)]
+	_set_status("%s PAD SET TO %s" % [Bindings.action_label(_listening_action), Bindings.button_name(button_index)])
 	_stop_capture()
 
 # Called by the hosts when Escape arrives while a capture is active.
 func cancel_capture() -> void:
-	status_label.text = "CAPTURE CANCELLED"
+	_set_status("CAPTURE CANCELLED")
 	_stop_capture()
+
+# Feedback is transient, so the label stays hidden until there is something to say.
+func _set_status(message: String) -> void:
+	status_label.text = message
+	status_label.visible = !message.is_empty()
 
 func _stop_capture() -> void:
 	_listening_action = ""
