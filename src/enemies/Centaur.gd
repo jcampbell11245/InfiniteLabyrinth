@@ -45,6 +45,12 @@ extends MeleeEnemy
 # Its hurtbox follows the drawn body frame by frame (sprite_bounds), so a hit lands wherever
 # the sprite is: the rider, a taurtaur's top horse, legs thrown out in a kick.
 #
+# A taurtaur (alternate_halves) never turns round in a kick combo. Its two halves face
+# opposite ways, so it kicks with whichever half's hind legs are on the side it's attacking:
+# its bottom half first (that half faces away from the player), and each time the player
+# hits its back the sides swap (_on_player_sword), the other half's hind legs taking the next
+# kick and the side they came from becoming its back. After the combo it faces as usual.
+#
 # Kicks and charges play "slash_kick" and "slash_charge" animations. Their names start with
 # "slash", so all the shared attack code (windups, parries, hitbox, turning) treats them as
 # the attack; _play picks which one the hit under way shows.
@@ -53,6 +59,7 @@ enum Hit { CLASH, KICK, CHARGE }
 enum Charge { NONE, CLASH, ROLL }
 
 const COMBO_FLASH := Color(0.6, 0.9, 1.0) # Shown as a cleared hit flows into the next
+const TOP_KICK_FRAME := Vector2i(64, 56) # Frame size in top_kick_sheet
 # A charge is followed by a clash: clearing the charge isn't enough to stun it, the swing
 # after has to be parried too.
 const CHARGE_COMBO := [Hit.CHARGE, Hit.CLASH]
@@ -66,6 +73,13 @@ const CHARGE_COMBO := [Hit.CHARGE, Hit.CLASH]
 # Each attack animation's drawn body, frame by frame (Rect2s in its own units, ground shadow
 # left out), measured from the sprite sheets: the hurtbox follows it (_fit_hurtbox).
 @export var sprite_bounds := {}
+# Taurtaur: its two halves face opposite ways, and it kicks with whichever half's hind legs
+# are on the side it's attacking, without turning round (see _kick_is_top).
+@export var alternate_halves := false
+@export var top_kick_tips := {} # Spark points for the top half's kick, by the bottom half's facing
+# Sheets for the top half's kick ("slash_kick_top"), a %s for the facing, added to its
+# animations as it loads.
+@export var top_kick_sheet := ""
 
 var _combo := PackedInt32Array() # The attack under way; empty when not attacking
 var _combo_index := 0 # Hit of _combo under way
@@ -79,9 +93,12 @@ var _next_attack := PackedInt32Array() # Set to make the next attack this, not a
 var _skip_charge := false # The next attack is a combo, not a charge
 var _hurt_rect: RectangleShape2D # Its own copy of the hurtbox shape, resized every frame
 var _fitted := "" # Animation and frame the hurtbox was last fitted to
+# Taurtaur, mid-combo: the way its bottom half faces, fixed for the combo; "" otherwise.
+var _body_facing := ""
 
 func _ready() -> void:
 	super()
+	_add_top_kick_animations()
 	_hurt_rect = (hurtbox.shape as RectangleShape2D).duplicate() as RectangleShape2D
 	hurtbox.shape = _hurt_rect
 	_fit_hurtbox()
@@ -91,6 +108,7 @@ func _process(delta: float) -> void:
 	if !_animation_is("slash"): # Finished, interrupted or parried
 		_dashing = false
 		_combo = PackedInt32Array()
+		_body_facing = "" # Back to facing the player as usual
 	else:
 		_show_combo_progress()
 	_fit_hurtbox()
@@ -127,6 +145,11 @@ func _start_swing(horizontal: bool) -> void:
 	_combo_index = 0
 	_cleared = 0
 	super(horizontal)
+	if alternate_halves:
+		# Its bottom half's hind legs open on the player, so its bottom half faces away.
+		_body_facing = _direction_of(-Direction.to_vector(direction))
+		_play("slash")
+		animator.frame = 0
 	_set_up_hit()
 
 func rush_strike() -> void:
@@ -264,6 +287,11 @@ func _on_player_sword(from_direction: String) -> void:
 		return
 	player.mark_swing_parried()
 	_cleared += 1
+	if _body_facing != "":
+		# The player is round the back now: that side becomes its front, and its other half's
+		# hind legs take the next kick there, the way it came from becoming the back.
+		direction = _direction_of(-Direction.to_vector(direction))
+		_point_pivots()
 	if _has_next_hit():
 		_parry_feedback()
 		_next_hit()
@@ -296,6 +324,9 @@ func _play(action: String, dir := direction) -> void:
 		match _hit():
 			Hit.KICK:
 				action = "slash_kick"
+				if _body_facing != "": # A taurtaur shows its fixed facing
+					action = "slash_kick_top" if _kick_is_top() else "slash_kick"
+					dir = _body_facing
 			Hit.CHARGE:
 				action = "slash_charge"
 	super(action, dir)
@@ -304,7 +335,11 @@ func _twinkle_position() -> Vector2:
 	if !_combo.is_empty():
 		match _hit():
 			Hit.KICK:
-				if kick_tips.has(direction):
+				if _body_facing != "":
+					var tips: Dictionary = top_kick_tips if _kick_is_top() else kick_tips
+					if tips.has(_body_facing):
+						return tips[_body_facing]
+				elif kick_tips.has(direction):
 					return kick_tips[direction]
 			Hit.CHARGE:
 				if charge_tips.has(direction):
@@ -315,11 +350,39 @@ func _on_staggered() -> void:
 	super()
 	_dashing = false
 	_combo = PackedInt32Array()
+	_body_facing = ""
 
 func _on_reset() -> void:
 	super()
 	_dashing = false
 	_combo = PackedInt32Array()
+	_body_facing = ""
+
+# --- Taurtaur halves ---
+
+# Kicking towards the side its bottom half faces, which only its top half's hind legs reach;
+# otherwise its bottom half's hind legs kick out the other way.
+func _kick_is_top() -> bool:
+	return direction == _body_facing
+
+# The top half's kick, from top_kick_sheet, added to its own copy of the animations.
+func _add_top_kick_animations() -> void:
+	if top_kick_sheet == "":
+		return
+	var frames := animator.sprite_frames.duplicate() as SpriteFrames
+	var size := Vector2(TOP_KICK_FRAME)
+	for dir: String in [Direction.RIGHT, Direction.LEFT, Direction.UP, Direction.DOWN]:
+		var sheet := load(top_kick_sheet % dir) as Texture2D
+		var anim := StringName("slash_kick_top_" + dir)
+		frames.add_animation(anim)
+		frames.set_animation_loop(anim, false)
+		frames.set_animation_speed(anim, frames.get_animation_speed(StringName("slash_kick_" + dir)))
+		for i in int(sheet.get_width() / size.x):
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			atlas.region = Rect2(Vector2(i * size.x, 0), size)
+			frames.add_frame(anim, atlas)
+	animator.sprite_frames = frames
 
 # --- Charges ---
 

@@ -407,3 +407,38 @@ func test_only_the_strike_frame_hurts() -> void:
 		await tree.physics_frame
 	expect(live_on, "the strike frame hurts")
 	expect(!live_after, "the follow-through doesn't")
+
+# A taurtaur keeps its facing through a kick combo: its bottom half's hind legs kick first,
+# and each hit on its back swaps the side, its top half's hind legs kicking there next.
+func test_taurtaur_kicks_alternate_halves_without_turning() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK, KICK, KICK])
+	centaur._start_swing(true)
+	var body := centaur._body_facing
+	expect_equal(body, Direction.RIGHT, "its bottom half faces away from the player (on its left)")
+	expect_equal(String(centaur.animator.animation), "slash_kick_right", "the bottom half kicks first")
+	await wait_for_spark(centaur)
+	expect_equal(centaur._twinkle_position(), centaur.kick_tips[body], "sparking at the bottom half's hind hooves")
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect_equal(centaur._body_facing, body, "it hasn't turned round")
+	expect_equal(centaur.direction, Direction.RIGHT, "its back swapped: it now attacks the other side")
+	expect_equal(String(centaur.animator.animation), "slash_kick_top_right", "with its top half")
+	expect_equal(centaur._twinkle_position(), centaur.top_kick_tips[body], "sparking at the top half's hind hooves")
+	await wait_for_spark(centaur)
+	swing_from_behind(centaur)
+	await tree.process_frame
+	expect_equal(centaur.direction, Direction.LEFT, "and swaps back again")
+	expect_equal(String(centaur.animator.animation), "slash_kick_right", "to its bottom half")
+
+func test_taurtaur_faces_as_usual_after_a_combo() -> void:
+	autoload("Tuning").centaur_charge_chance = 0.0
+	var centaur := await boot_centaur("taurtaur")
+	only_combo(centaur, [KICK])
+	centaur._start_swing(true)
+	await wait_for_spark(centaur)
+	swing_from_behind(centaur) # Clears it: stunned
+	await tree.process_frame
+	expect(centaur.is_stunned(), "stunned")
+	expect_equal(centaur._body_facing, "", "back to its usual facing")

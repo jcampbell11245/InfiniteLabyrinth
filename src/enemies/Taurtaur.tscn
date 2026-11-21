@@ -827,10 +827,14 @@ sprite_bounds = {
 "slash_charge_right": Array[Rect2]([Rect2(-24, -23, 40, 49), Rect2(-23, -22, 40, 47), Rect2(-23, -22, 40, 47), Rect2(-22, -22, 40, 47), Rect2(-23, -23, 40, 48), Rect2(-24, -23, 40, 49)]),
 "slash_charge_up": Array[Rect2]([Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
 "slash_down": Array[Rect2]([Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 47), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
-"slash_kick_down": Array[Rect2]([Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 50), Rect2(-9, -22, 18, 50), Rect2(-9, -22, 18, 49)]),
-"slash_kick_left": Array[Rect2]([Rect2(-23, -22, 40, 47), Rect2(-23, -23, 40, 49), Rect2(-23, -23, 40, 49), Rect2(-25, -22, 43, 47), Rect2(-23, -22, 40, 48), Rect2(-24, -22, 40, 48)]),
-"slash_kick_right": Array[Rect2]([Rect2(-17, -22, 40, 47), Rect2(-17, -23, 40, 49), Rect2(-17, -23, 40, 49), Rect2(-18, -22, 43, 47), Rect2(-17, -22, 40, 48), Rect2(-16, -22, 40, 48)]),
-"slash_kick_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"slash_kick_down": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
+"slash_kick_left": Array[Rect2]([Rect2(-17, -22, 40, 47), Rect2(-17, -23, 40, 49), Rect2(-17, -23, 40, 49), Rect2(-18, -22, 43, 47), Rect2(-17, -22, 40, 48), Rect2(-16, -22, 40, 48)]),
+"slash_kick_right": Array[Rect2]([Rect2(-23, -22, 40, 47), Rect2(-23, -23, 40, 49), Rect2(-23, -23, 40, 49), Rect2(-25, -22, 43, 47), Rect2(-23, -22, 40, 48), Rect2(-24, -22, 40, 48)]),
+"slash_kick_top_down": Array[Rect2]([Rect2(-9, -24, 18, 50), Rect2(-9, -25, 18, 51), Rect2(-9, -25, 18, 51), Rect2(-9, -15, 18, 41), Rect2(-9, -15, 18, 41), Rect2(-9, -21, 18, 47)]),
+"slash_kick_top_left": Array[Rect2]([Rect2(-16, -22, 40, 47), Rect2(-16, -22, 40, 47), Rect2(-16, -22, 40, 47), Rect2(-19, -23, 43, 49), Rect2(-16, -22, 40, 47), Rect2(-16, -22, 40, 47)]),
+"slash_kick_top_right": Array[Rect2]([Rect2(-24, -22, 40, 47), Rect2(-24, -22, 40, 47), Rect2(-24, -22, 40, 47), Rect2(-24, -23, 43, 49), Rect2(-24, -22, 40, 47), Rect2(-24, -22, 40, 47)]),
+"slash_kick_top_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -21, 18, 47), Rect2(-9, -21, 18, 47), Rect2(-9, -27, 18, 53), Rect2(-9, -26, 18, 52), Rect2(-9, -23, 18, 49)]),
+"slash_kick_up": Array[Rect2]([Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 46), Rect2(-9, -22, 18, 50), Rect2(-9, -22, 18, 50), Rect2(-9, -22, 18, 49)]),
 "slash_left": Array[Rect2]([Rect2(-16, -22, 40, 47), Rect2(-15, -23, 40, 49), Rect2(-15, -22, 40, 47), Rect2(-17, -23, 40, 49), Rect2(-17, -22, 40, 47), Rect2(-16, -22, 40, 47)]),
 "slash_right": Array[Rect2]([Rect2(-24, -22, 40, 47), Rect2(-25, -23, 40, 49), Rect2(-25, -22, 40, 47), Rect2(-23, -23, 40, 49), Rect2(-23, -22, 40, 47), Rect2(-24, -22, 40, 47)]),
 "slash_up": Array[Rect2]([Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48), Rect2(-9, -22, 18, 48)]),
@@ -841,11 +845,19 @@ sprite_bounds = {
 }
 charge = 2
 kick_tips = {
-"down": Vector2(5, 19),
-"left": Vector2(-3.5, 19),
-"right": Vector2(3.5, 19),
-"up": Vector2(6, 3)
+"down": Vector2(6, 3),
+"left": Vector2(3.5, 19),
+"right": Vector2(-3.5, 19),
+"up": Vector2(5, 19)
 }
+alternate_halves = true
+top_kick_tips = {
+"down": Vector2(3.4, -23),
+"left": Vector2(-2, -17),
+"right": Vector2(2, -17),
+"up": Vector2(3.4, -18.5)
+}
+top_kick_sheet = "res://assets/sprites/centaur/taurtaur_%s_slash_kick_top.png"
 charge_tips = {
 "down": Vector2(4, 24),
 "left": Vector2(-7, 23),
