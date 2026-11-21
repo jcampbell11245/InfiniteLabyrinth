@@ -106,8 +106,25 @@ static func _disc(canvas: CanvasItem, at: Vector2, color: Color, unit: float) ->
 # `text` centred in `rect` (art pixels).
 static func _text(canvas: CanvasItem, text: String, rect: Rect2, color: Color, unit: float) -> void:
 	var size := roundi(TEXT_SIZE * unit)
-	var text_size := FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size)
+	# Centre the letters' ink, not their advance box: the font's advances carry spacing on
+	# the right, and its ascent is taller than the capitals, which pushes text left and down.
+	var ink := _ink(text, size)
 	var box := Rect2(rect.position * unit, rect.size * unit)
-	var left := roundf(box.get_center().x - text_size.x / 2.0)
-	var baseline := roundf(box.get_center().y + (FONT.get_ascent(size) - FONT.get_descent(size)) / 2.0)
-	canvas.draw_string(FONT, Vector2(left, baseline), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	var origin := (box.get_center() - ink.get_center()).round()
+	canvas.draw_string(FONT, origin, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+
+# The box the glyphs of `text` actually cover, relative to the start of its baseline.
+static func _ink(text: String, size: int) -> Rect2:
+	var server := TextServerManager.get_primary_interface()
+	var rid: RID = FONT.get_rids()[0]
+	var size_key := Vector2i(size, 0)
+	var ink := Rect2()
+	var x := 0.0
+	for i in text.length():
+		var glyph := server.font_get_glyph_index(rid, size, text.unicode_at(i), 0)
+		server.font_render_glyph(rid, size_key, glyph) # Offsets and sizes exist once rendered
+		var glyph_rect := Rect2(server.font_get_glyph_offset(rid, size_key, glyph) + Vector2(x, 0),
+			server.font_get_glyph_size(rid, size_key, glyph))
+		ink = glyph_rect if i == 0 else ink.merge(glyph_rect)
+		x += server.font_get_glyph_advance(rid, size, glyph).x
+	return ink
