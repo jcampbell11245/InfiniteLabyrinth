@@ -26,10 +26,11 @@ staggered. A red glint can't be parried: roll through it and hit the enemy from 
 stun it the same way. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
-Hobgoblins run at you and blow up when they touch you. Parry one as it leaps and it's flung
-the way you swung, going off when it hits another enemy or a wall, and its blast then hurts
-only enemies. Goblin pilots ride orcs, dragons and centaurs: hits take the pilot down first,
-and while it rides it adds a slash after each of the mount's attacks.
+Hobgoblins sprint at you the moment they notice you, glint as they reach you and blow up.
+Parry the glint and one is flung the way you swung, going off when it hits another enemy or
+a wall, and its blast then hurts only enemies. Goblin pilots ride orcs, dragons and
+centaurs: hits take the pilot down first, and its slash is the last hit of each of the
+mount's combos, so only parrying that slash stuns a ridden mount.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
 volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.
@@ -213,9 +214,9 @@ roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
 
 **Pilot** puts a goblin pilot on the selected orc, dragon or centaur from the start; the editor
 draws it riding. Without it, each of them still has a small chance (the debug menu's Goblins
-tab) of getting one in the game, and a pilot placed on foot runs to the nearest free mount and
-climbs on. A pilot takes hits before its mount and adds one more slash after each of the
-mount's attacks. In room scenes this is the mount's `spawn_with_pilot`; pilots made this way
+tab) of getting one in the game, and a pilot placed on foot may run to the nearest free mount and
+climbs on (once it has noticed you, 40% of its decisions). A pilot takes hits before its
+mount, and its slash ends each of the mount's combos. In room scenes this is the mount's `spawn_with_pilot`; pilots made this way
 aren't in the room's `enemy_count` (the room counts them as they appear).
 
 **Tileset** switches the preview (and the play-test) between each floor's art, so a room can

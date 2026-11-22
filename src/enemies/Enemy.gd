@@ -513,7 +513,7 @@ func _on_player_sword(from_direction: String) -> void:
 			_parry_feedback()
 			if _parried_follow_up():
 				_parry_progress = 0.5 # Half way: the follow-up still has to be parried
-			else:
+			elif !_pilot_finishes_combo():
 				_parry_progress = 1.0
 				stagger(from_direction)
 		Parry.EARLY:
@@ -527,8 +527,9 @@ func _on_player_sword(from_direction: String) -> void:
 func _dazed_from_behind(from_direction: String) -> void:
 	player.mark_swing_parried()
 	_parry_feedback()
-	_parry_progress = 1.0
-	stagger(from_direction)
+	if !_pilot_finishes_combo():
+		_parry_progress = 1.0
+		stagger(from_direction)
 
 # The player calls this when this enemy's hit took health off them. With
 # Tuning.combos_end_on_hit (on by default; F2) the hit ends the enemy's combo: whatever it had
@@ -554,6 +555,35 @@ func _combo_finished() -> void:
 	_combo_landed = false
 	if is_instance_valid(rider) && !landed:
 		rider.follow_up_strike()
+
+# It cleared the whole combo (parried its last hit, or dazed from behind): with a pilot
+# riding it that can reach the player, that isn't the end. Instead of being stunned it
+# stops, and the pilot's slash comes as one more hit; only clearing that (parrying it) stuns
+# it (Pilot.meets_sword). True if the pilot took over; false to stun it as usual.
+func _pilot_finishes_combo() -> bool:
+	if !is_instance_valid(rider) || !rider.can_follow_up():
+		return false
+	var hits := _combo_hit_count()
+	_end_windup_hold()
+	_on_combo_left_to_pilot()
+	_play("idle")
+	_combo_landed = false
+	# The parry bar counts the pilot's hit as one more step still to clear.
+	_parry_progress = float(hits) / (hits + 1)
+	rider.follow_up_strike()
+	return true
+
+# Hits in the attack under way, for the parry bar (see _pilot_finishes_combo).
+func _combo_hit_count() -> int:
+	return 1
+
+# Ends the attack under way as its pilot takes over the combo (a dragon stops its charge).
+func _on_combo_left_to_pilot() -> void:
+	pass
+
+# Its pilot is about to slash, or slashing, as the last hit of its combo.
+func _pilot_following_up() -> bool:
+	return is_instance_valid(rider) && rider.follow_up_coming()
 
 # Call as a fresh attack (not the next hit of a combo) starts.
 func _combo_started() -> void:
@@ -701,7 +731,7 @@ func _show_dizzy(on: bool) -> void:
 # instead of eating into it.
 func _update_windup() -> void:
 	if !_animation_is(_attack_action()):
-		if !is_stunned():
+		if !is_stunned() && !_pilot_following_up():
 			_parry_progress = 0.0 # The attack ended without the parries to stagger it
 		_windup_held = false
 		_twinkled_at = -1
@@ -776,8 +806,18 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 		spin_hit()
 	elif area.get_name() == "ArrowHitbox":
 		var arrow: Projectile = area.get_parent()
-		take_damage(arrow.direction, arrow.damage)
+		if _first_hit_by(arrow):
+			take_damage(arrow.direction, arrow.damage)
 	elif area.get_name() == "ProjectileHitbox": # A shot the player deflected
 		var shot: Projectile = area.get_parent()
-		if !shot.hostile_to_player:
+		if !shot.hostile_to_player && _first_hit_by(shot):
 			take_damage(shot.direction, shot.damage)
+
+# A shot hurts each enemy once. A fireball lingers as it breaks, and would hit again as the flicker
+# after its hit ends (a pilot taking the first hit leaves its mount standing in it).
+func _first_hit_by(shot: Projectile) -> bool:
+	var key := StringName("hit_%d" % get_instance_id())
+	if shot.has_meta(key):
+		return false
+	shot.set_meta(key, true)
+	return true

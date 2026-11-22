@@ -935,6 +935,13 @@ func _end_combo_on_hit() -> void:
 	_swings_left = 0
 	_follow_up_ready = false
 
+# Its pilot takes the last hit of the combo (Enemy._pilot_finishes_combo): its turn is over
+# once that's done, and an end lag it was dazed out of from behind is over too.
+func _on_combo_left_to_pilot() -> void:
+	_swings_left = 0
+	_follow_up_ready = false
+	_end_lag.stop()
+
 # Parried: the turn is over once the stun wears off.
 func _on_staggered() -> void:
 	_swings_left = 0

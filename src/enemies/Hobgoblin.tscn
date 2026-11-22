@@ -7,7 +7,7 @@
 [node name="Hobgoblin" instance=ExtResource("1")]
 script = ExtResource("2")
 speed = 70.0
-health = 1.0
+health = 1.5
 coin_reward = 12
 double_attack = false
 voice_pitch = 0.85

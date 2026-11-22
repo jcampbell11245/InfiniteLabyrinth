@@ -2,17 +2,23 @@ class_name Pilot
 extends MeleeEnemy
 
 # A goblin that rides dragons, centaurs and orcs (any Enemy with `mountable`). On foot it
-# fights exactly as a goblin does (MeleeEnemy), except that while the player is in its room
-# and there's a mount nobody is riding, it runs to the nearest one (at
-# Tuning.pilot_seek_speed times its speed) and climbs on. A mount can also start the room
+# fights exactly as a goblin does (MeleeEnemy) until it notices the player. From then on, at
+# every decision (as it notices them, after each swing, and every Tuning.pilot_decide_time
+# while it waits its turn), it picks between fighting on and going for a mount:
+# Tuning.pilot_mount_chance of the time it runs to the nearest mount nobody is riding (at
+# Tuning.pilot_seek_speed times its speed) and climbs on; otherwise, or with no free mount, it
+# fights as a goblin until the next decision. A mount can also start the room
 # with a pilot already on it (Enemy.spawn_with_pilot, the room creator's Pilot switch, or
 # Tuning.pilot_spawn_chance), which counts towards clearing the room like any enemy.
 #
 # Riding, it sits on the mount's back (Enemy.pilot_seat) and does nothing of its own until
-# the mount's attack (a swing, a combo, a charge) has played out (Enemy._combo_finished).
-# Then, with the player within Tuning.pilot_strike_reach, it adds one more hit: a goblin
-# slash, windup held Tuning.pilot_strike_hold so its glint comes after the player's sword
-# cooldown. The mount waits for it before attacking again. As with every combo, a hit of
+# the mount's attack (a swing, a combo, a charge; a dragon's fireball only if the player
+# parried it) is over. Then, with the player within Tuning.pilot_strike_reach, it adds one more
+# hit, the last of the combo: a goblin slash, windup held Tuning.pilot_strike_hold so its glint
+# comes after the player's sword cooldown. The mount waits for it before attacking again. A
+# mount that had its whole combo cleared (its last hit parried, or dazed from behind) isn't
+# stunned for it any more: only parrying this slash stuns it (Enemy._pilot_finishes_combo),
+# and its parry bar counts the slash as a step still to clear. As with every combo, a hit of
 # the mount's that caught the player ends the combo, so no slash follows it.
 #
 # Its body and hurtbox are off while it rides: the player's sword (and arrows, spins and
@@ -30,6 +36,9 @@ var mount: Enemy = null
 var _strike_pending := false # The mount's attack is over; slash once the player's in reach
 var _saved_layer := 0
 var _saved_mask := 0
+var _wants_mount := false # Its last decision was to go for a mount (see the top of the file)
+var _decide_left := 0.0 # Seconds before it decides again while waiting its turn
+var _had_noticed := false # noticed, last physics frame
 
 func _physics_process(delta: float) -> void:
 	if mount != null:
@@ -39,6 +48,7 @@ func _physics_process(delta: float) -> void:
 		dismount()
 	if player.in_transition:
 		return
+	_update_decision(delta)
 	var target := _mount_to_seek()
 	if target != null && !_animation_is("slash") && !_is_reacting():
 		_seek_mount(target, delta)
@@ -48,10 +58,43 @@ func _physics_process(delta: float) -> void:
 
 # --- On foot ---
 
-# The nearest mount in its room nobody is riding, while the player is in the room; else null.
+# Decides again (see the top of the file): as it notices the player, and every
+# Tuning.pilot_decide_time after while it isn't swinging or running to a mount. Its swings
+# decide too (_on_swing_finished).
+func _update_decision(delta: float) -> void:
+	if !noticed:
+		_had_noticed = false
+		_wants_mount = false
+		return
+	if !_had_noticed:
+		_had_noticed = true
+		_decide()
+		return
+	if _animation_is("slash") || (_wants_mount && _free_mount() != null):
+		return # Swinging, or on its way to a mount (with none free it decides again)
+	_decide_left -= delta
+	if _decide_left <= 0:
+		_decide()
+
+func _decide() -> void:
+	_wants_mount = randf() < Tuning.pilot_mount_chance
+	_decide_left = Tuning.pilot_decide_time
+
+# A swing on foot is an action: it decides again after each one.
+func _on_swing_finished() -> void:
+	super()
+	if mount == null && noticed:
+		_decide()
+
+# The nearest mount in its room nobody is riding, if it has noticed the player and decided to
+# go for one; else null.
 func _mount_to_seek() -> Enemy:
-	if !room.player_active || !is_player_in_room():
+	if !_wants_mount || !noticed || !room.player_active || !is_player_in_room():
 		return null
+	return _free_mount()
+
+# The nearest mount in its room nobody is riding, or null.
+func _free_mount() -> Enemy:
 	var best: Enemy = null
 	var best_distance := INF
 	for node in room.get_children():
@@ -89,6 +132,7 @@ static func _body_radius(enemy: Enemy) -> float:
 func mount_on(target: Enemy) -> void:
 	mount = target
 	target.rider = self
+	_wants_mount = false
 	_saved_layer = collision_layer
 	_saved_mask = collision_mask
 	collision_layer = 0 # Not in the way of the player or the mount
@@ -150,6 +194,15 @@ func _start_strike() -> void:
 func follow_up_strike() -> void:
 	_strike_pending = true
 
+# Riding, free to add a slash now: not already about to or slashing, its mount on its feet
+# and the player in reach. A mount that cleared its combo asks (Enemy._pilot_finishes_combo).
+func can_follow_up() -> bool:
+	return mount != null && !_strike_pending && !is_striking() && _can_strike()
+
+# About to slash (the mount's attack just ended) or slashing.
+func follow_up_coming() -> bool:
+	return mount != null && (_strike_pending || is_striking())
+
 # Riding and partway through its follow-up slash.
 func is_striking() -> bool:
 	return mount != null && _animation_is("slash")
@@ -166,6 +219,7 @@ func meets_sword(from_direction: String) -> bool:
 			_parry_feedback()
 			_end_windup_hold()
 			_play("idle")
+			mount._parry_progress = 1.0 # The combo's last hit cleared
 			mount.stagger(from_direction)
 			return true
 		Parry.EARLY:
@@ -207,6 +261,8 @@ func die() -> void:
 func _on_reset() -> void:
 	super()
 	_strike_pending = false
+	_wants_mount = false
+	_had_noticed = false
 
 # The flicker after a hit taken on foot ends; riding, its hurtbox stays off.
 func _on_invincibility_cooldown_timeout() -> void:

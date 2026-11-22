@@ -83,11 +83,16 @@ func test_a_mount_that_dies_drops_its_pilot() -> void:
 
 func test_a_pilot_on_foot_climbs_onto_a_free_mount() -> void:
 	autoload("Tuning").pilot_spawn_chance = 0.0
+	autoload("Tuning").pilot_mount_chance = 1.0 # Always decides to go for a mount
 	var design := RoomDesign.new()
 	design.set_object(Vector2i(2, 2), "orc")
 	design.set_object(Vector2i(4, 2), "pilot")
 	var room: Room = await boot_design(design)
 	var pilot: Pilot = first(room, Pilot)
+	for i in 30:
+		await tree.physics_frame
+	expect(pilot.mount == null, "not before it has noticed the player")
+	pilot.noticed = true
 	for i in 180:
 		if pilot.mount != null:
 			break
@@ -129,8 +134,9 @@ func test_a_parried_hobgoblin_is_flung_the_way_the_sword_travels() -> void:
 	var room: Room = await boot_design(design)
 	var hobgoblin: Hobgoblin = first(room, Hobgoblin)
 	var player: Player = autoload("Game").player
-	hobgoblin._lunging = true
-	hobgoblin._lunge_started_at = player.swing_started_at # Swung on (not before) its leap
+	hobgoblin._light_fuse()
+	player.swing_started_at = Time.get_ticks_msec() # Swung on its glint
+	player.swing_started_frame = Engine.get_physics_frames() + 1
 	hobgoblin._on_player_sword(Direction.LEFT)
 	expect(hobgoblin._flung, "flung")
 	expect_equal(hobgoblin._fling_dir, Vector2.LEFT, "the way the sword travelled")
@@ -164,3 +170,72 @@ func test_every_mount_kind_can_carry_a_pilot() -> void:
 		var enemy: Enemy = (load(RoomDesign.OBJECT_SCENES[kind]) as PackedScene).instantiate()
 		expect(enemy.mountable, "%s is mountable" % kind)
 		enemy.free()
+
+func test_a_hobgoblin_that_reaches_the_player_goes_off_after_its_glint() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(6, 6), "hobgoblin")
+	var room: Room = await boot_design(design)
+	var hobgoblin: Hobgoblin = first(room, Hobgoblin)
+	var player: Player = autoload("Game").player
+	hobgoblin.global_position = player.global_position + Vector2(10, 0)
+	hobgoblin._light_fuse()
+	expect(hobgoblin.is_fusing(), "it glints at once")
+	await wait_real(autoload("Tuning").parry_window + 0.2)
+	expect(!is_instance_valid(hobgoblin) || hobgoblin.is_queued_for_deletion(), "then goes off")
+	expect(player.invincibility_cooldown.time_left > 0, "catching the player")
+
+func test_a_cleared_combo_leaves_the_stun_to_the_pilot() -> void:
+	var parts: Array = await ridden_orc()
+	var orc: MeleeEnemy = parts[1]
+	var pilot: Pilot = parts[2]
+	var player: Player = autoload("Game").player
+	orc.global_position = player.global_position + Vector2(20, 0)
+	pilot._ride()
+	expect(orc._pilot_finishes_combo(), "the pilot takes the combo's last hit")
+	expect(!orc.is_stunned(), "so the orc isn't stunned yet")
+	expect(pilot.follow_up_coming(), "the pilot is about to slash")
+	expect_near(orc._parry_progress, 0.5, 0.001, "the bar shows one hit of two cleared")
+
+func test_parrying_the_pilot_slash_stuns_its_mount() -> void:
+	var parts: Array = await ridden_orc()
+	var orc: MeleeEnemy = parts[1]
+	var pilot: Pilot = parts[2]
+	var player: Player = autoload("Game").player
+	orc.global_position = player.global_position + Vector2(20, 0)
+	pilot._ride()
+	pilot._start_strike()
+	pilot._twinkle() # Its glint, now
+	player.swing_started_at = Time.get_ticks_msec()
+	player.swing_started_frame = Engine.get_physics_frames() + 1
+	expect(pilot.meets_sword(Direction.RIGHT), "the sword meets the pilot's slash")
+	expect(orc.is_stunned(), "and the orc is stunned")
+
+func test_a_fireball_the_player_didnt_parry_gets_no_pilot_slash() -> void:
+	autoload("Tuning").pilot_spawn_chance = 0.0
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(6, 3), "wyrm")
+	design.set_pilot(Vector2i(6, 3), true)
+	var room: Room = await boot_design(design)
+	var wyrm: Wyrm = first(room, Wyrm)
+	var pilot: Pilot = wyrm.rider
+	wyrm._end_attack(0.0, false, false) # How a fireball that played out ends
+	expect(!pilot.follow_up_coming(), "no slash after an unparried fireball")
+	wyrm._end_attack(0.0) # How a charge ends
+	expect(pilot._strike_pending, "a charge gets one")
+
+func test_a_returned_fireball_only_hurts_the_pilot() -> void:
+	var parts: Array = await ridden_orc()
+	var room: Room = parts[0]
+	var orc: Enemy = parts[1]
+	var pilot: Pilot = parts[2]
+	var before := orc.health
+	var shot: Projectile = (load("res://src/projectiles/Fireball.tscn") as PackedScene).instantiate()
+	shot.damage = 1.0
+	room.add_child(shot)
+	shot.global_position = orc.global_position + Vector2(0, 60)
+	shot.direction = Direction.UP
+	shot.deflect(Direction.UP) # Sent back by the player: 1.5 damage, enough for the pilot
+	for i in 90:
+		await tree.physics_frame
+	expect(!is_instance_valid(pilot) || pilot.is_queued_for_deletion(), "the pilot is dead")
+	expect_equal(orc.health, before, "the orc isn't hurt by the same shot")

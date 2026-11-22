@@ -212,7 +212,8 @@ func _on_player_sword(from_direction: String) -> void:
 			_choke_breath()
 			_parry_feedback()
 			_explode_in_mouth()
-			stagger(from_direction)
+			if !_pilot_finishes_combo(): # A pilot riding it slashes first
+				stagger(from_direction)
 		else:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)
 	elif !(on_glint && _animation_is("shoot")): # Late: nothing
@@ -296,7 +297,7 @@ func _physics_process(delta: float) -> void:
 		if _breath_held():
 			_pulse_breath(delta)
 		elif _animation_done():
-			_end_attack(0.0)
+			_end_attack(0.0, false, false)
 	elif !_recover.is_stopped():
 		if !_recover_rooted: # Backs off after an ordinary charge; hangs open after a red one
 			_circle(delta)
@@ -438,8 +439,9 @@ func _roll_cooldown() -> void:
 		* Tuning.enemy_attack_cooldown_multiplier)
 
 # The attack is over. For `lag` seconds it doesn't attack: it backs off, or with `rooted`
-# hangs where it is, open to hits. Then it circles again.
-func _end_attack(lag: float, rooted := false) -> void:
+# hangs where it is, open to hits. Then it circles again. With `follow_up` a pilot riding it
+# adds its slash (Enemy._combo_finished); a fireball that wasn't parried gets none.
+func _end_attack(lag: float, rooted := false, follow_up := true) -> void:
 	_dashing = false
 	_dash_left = 0.0
 	_breath_timer.stop()
@@ -450,7 +452,8 @@ func _end_attack(lag: float, rooted := false) -> void:
 		_recover.start(lag)
 	_roll_cooldown()
 	_hold_off_other_dragons()
-	_combo_finished() # A pilot on it follows up, if the player is in its reach
+	if follow_up:
+		_combo_finished() # A pilot on it follows up, if the player is in its reach
 
 # The attack animation has played to its last frame.
 func _animation_done() -> bool:
@@ -685,3 +688,9 @@ func _on_animated_sprite_2d_frame_changed() -> void:
 		_hitbox.disabled = false
 	elif _animation_is("slash") && animator.frame > attack_frame:
 		_hitbox.disabled = true # Only the bite itself hurts, not flying on through after it
+
+# A parried charge or fireball, its pilot about to slash (Enemy._pilot_finishes_combo): the
+# attack stops and it hangs where it is, in reach, while the pilot swings.
+func _on_combo_left_to_pilot() -> void:
+	_choke_breath()
+	_end_attack(Tuning.wyrm_charge_recovery, true, false)
