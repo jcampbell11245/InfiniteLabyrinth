@@ -8,8 +8,9 @@ extends Control
 # left and right) change tab, confirm buys and back closes. With too few coins the row
 # shakes red and says so.
 #
-# The Upgrades tab (first) sells the lasting upgrades (Upgrades), each row also showing its
-# level as a row of pips, and "Max" for the price once it's full. The Items tab sells
+# The Upgrades tab (first) sells the lasting upgrades (Upgrades). A row names the level it
+# sells, "Time Lv. 2" and so on (just "Time" for the first), and its price says "Max" once
+# every level is bought. The Items tab sells
 # consumables, which go into the first empty box of the item bar (Game.buy_item).
 #
 # Buying with every box full offers a swap instead: the shop asks the player to choose a
@@ -57,8 +58,7 @@ const TABS: Array[Dictionary] = [
 ]
 const UPGRADES_TAB := 0
 const ITEMS_TAB := 1
-const PIP := 2 # Art pixels across one of an upgrade's level pips
-const OWNED_PIP := Color8(248, 184, 0) # The minimap's key-room yellow
+const MAX_COLOR := Color8(248, 184, 0) # "Max" on a full upgrade: the minimap's key-room yellow
 
 const FONT := preload("res://assets/fonts/8-BIT WONDER.TTF")
 const COIN := preload("res://assets/sprites/hud/coin.png")
@@ -379,7 +379,7 @@ func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	var icon_at := (slot.get_center() - icon.get_size() / 2.0).floor()
 	draw_texture_rect(icon, Rect2(icon_at * UNIT, icon.get_size() * UNIT), false)
 
-	var title: String = Upgrades.NAMES[entry] if upgrade else String(Items.INFO[entry].name)
+	var title: String = _upgrade_title(entry) if upgrade else String(Items.INFO[entry].name)
 	var description: String = Upgrades.description(entry) if upgrade else String(Items.INFO[entry].text)
 	var text_left := row.position.x + TEXT_LEFT
 	_text(title, Vector2(text_left, row.position.y + 3), NAME_SIZE, TEXT_COLOR)
@@ -389,25 +389,23 @@ func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	var price := Upgrades.price(entry) if upgrade else Items.price(entry)
 	if price < 0:
 		var width := _text_width("Max", NAME_SIZE)
-		_text("Max", Vector2(right - width, row.position.y + 3), NAME_SIZE, OWNED_PIP)
+		_text("Max", Vector2(right - width, row.position.y + 3), NAME_SIZE, MAX_COLOR)
 	else:
 		var price_text := str(price)
 		var width := _text_width(price_text, NAME_SIZE)
 		_text(price_text, Vector2(right - width, row.position.y + 3), NAME_SIZE,
 			TEXT_COLOR if Game.coins >= price else TOO_DEAR)
 		_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + 1))
-	if upgrade:
-		_draw_level(Upgrades.level(entry), Vector2(right, row.position.y + 10))
 
 	if selected && _flash > 0.0:
 		HudFrame.fill(self, row, Color(1, 1, 1, 0.6 * _flash), UNIT)
 
-# An upgrade's level as MAX_LEVEL pips ending at `top_right`, the levels owned lit.
-func _draw_level(level: int, top_right: Vector2) -> void:
-	var left := top_right.x - Upgrades.MAX_LEVEL * (PIP + 1) + 1
-	for i in Upgrades.MAX_LEVEL:
-		var pip := Rect2(left + i * (PIP + 1), top_right.y + 1, PIP, PIP)
-		HudFrame.fill(self, pip, OWNED_PIP if i < level else ItemBar.Minimap.UNLIT, UNIT)
+# The upgrade's name with the level the row sells: nothing for the first, then "Lv. 2" and
+# on. A full upgrade keeps its last level.
+func _upgrade_title(kind: Upgrades.Kind) -> String:
+	var level := mini(Upgrades.level(kind) + 1, Upgrades.MAX_LEVEL)
+	var title: String = Upgrades.NAMES[kind]
+	return title if level <= 1 else "%s Lv. %d" % [title, level]
 
 # Small arrows at the right of the list when rows are hidden above or below it.
 func _draw_scroll_arrows(o: Vector2, count: int) -> void:
