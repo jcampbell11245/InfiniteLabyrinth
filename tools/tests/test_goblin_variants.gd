@@ -281,8 +281,11 @@ func test_a_riding_pilot_doesnt_walk() -> void:
 	var parts: Array = await ridden_orc()
 	var pilot: Pilot = parts[2]
 	pilot._moving = true # As if it was walking when it climbed on
-	for i in 3: # A physics frame to sit it down, then a process frame to animate it
-		await tree.process_frame
+	# Both signals come before that frame's nodes run: wait out a whole physics frame (which
+	# sits it down), then a whole process frame (which animates it).
+	await tree.physics_frame
+	await tree.process_frame
+	await tree.process_frame
 	expect(!String(pilot.animator.animation).begins_with("walk"), "no walk cycle while riding")
 
 func test_a_dragon_holds_still_while_its_pilot_finishes_the_combo() -> void:
