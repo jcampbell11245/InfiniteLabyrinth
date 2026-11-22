@@ -56,7 +56,6 @@ const PANEL_FILL := Color(0.1, 0.1, 0.12) # Opaque, so the paused game doesn't s
 const TEXT_COLOR := Color(0.92, 0.9, 0.86)
 const DIM_TEXT := Color(0.62, 0.6, 0.66)
 const TOO_DEAR := Color(1, 0.4, 0.4) # A price the player can't pay
-const BOUGHT_COLOR := Color8(150, 240, 140) # A light green for "Bought" and "Swapped"
 
 const FLASH_TIME := 0.25
 const REFUSE_TIME := 0.3
@@ -176,7 +175,7 @@ func replace_selected_box() -> void:
 	match Game.replace_item(Game.item_slot, kind):
 		Game.Purchase.BOUGHT:
 			_stop_replacing()
-			_bought("Swapped")
+			_bought()
 		Game.Purchase.SAME_ITEM:
 			# Still choosing: another box may hold something else.
 			_refuse("That box already holds one. Choose another", false)
@@ -233,7 +232,7 @@ func buy_selected() -> void:
 	var kind: Items.Kind = stock()[_row]
 	match Game.buy_item(kind):
 		Game.Purchase.BOUGHT:
-			_bought("Bought")
+			_bought()
 		Game.Purchase.TOO_POOR:
 			_refuse("Not enough coins")
 		Game.Purchase.BAR_FULL:
@@ -248,10 +247,13 @@ func _every_box_holds(kind: Items.Kind) -> bool:
 			return false
 	return true
 
-func _bought(text: String) -> void:
+# A purchase went through: the row flashes and the coins clink, with no message (and any
+# left from choosing a box to swap is cleared).
+func _bought() -> void:
 	_confirm_released = false
 	_next_buy_at = Time.get_ticks_msec() + roundi(Tuning.shop_buy_cooldown * 1000.0)
-	_say(text, BOUGHT_COLOR)
+	_message = ""
+	queue_redraw()
 	Juice.coin_stolen_sound() # Coins leaving the purse
 	_flash_tween = _restart(_flash_tween, _set_flash, FLASH_TIME)
 
