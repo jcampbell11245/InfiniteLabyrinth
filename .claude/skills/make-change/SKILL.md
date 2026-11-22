@@ -7,8 +7,10 @@ description: Use whenever a developer wants to change anything in the Infinite L
 
 Every change except the project owner's goes through a feature branch and a GitHub issue
 assigned to the developer making it, so no two people do the same work. `master` is
-protected: a pull request merges only when **Smoke test**, **Tests** and **Linked issue**
-pass, the branch is up to date with `master`, and another developer has approved it. Follow these steps in order. Don't edit files before step 4.
+protected: a pull request merges only when **Smoke test**, **Tests**, **Linked issue** and
+**Claude approval** pass, the branch is up to date with `master`, and another developer has
+approved it. Claude reviews every push to an open pull request; its findings come back as
+review comments to fix on the branch. Follow these steps in order. Don't edit files before step 4.
 
 Repository: `jcampbell11245/InfiniteLabyrinth`. Owner: `jcampbell11245`.
 
