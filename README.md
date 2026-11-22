@@ -142,7 +142,7 @@ Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through th
 
 ## Checks
 
-Pull requests can only merge into `master` when three checks pass (see
+Pull requests can only merge into `master` when four checks pass (see
 `.github/workflows/`), the branch is up to date with `master`, and another developer has
 approved it. Run the first two checks yourself before pushing:
 
@@ -160,6 +160,13 @@ tools/check.sh
 
 Headless runs draw nothing, so check visual changes with `tools/screenshot.gd` (see
 [Tools](#tools)) and playtest.
+
+**Claude approval** is also required: when a pull request is opened, marked ready for
+review or pushed to, Claude Code reviews that commit with the review-pr skill, posts its
+findings as review comments, and passes the **Claude approval** status only when nothing it
+found is blocking or a bug to fix. Fix what it raised and push to get a new review; comment
+`@claude review` to re-run it without pushing (after a failed run, say). It doesn't replace
+the person's approval: a pull request needs both. Pull requests from forks aren't reviewed.
 
 ## Contributing
 
