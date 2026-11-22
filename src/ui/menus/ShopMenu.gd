@@ -39,7 +39,8 @@ const ROW_HEIGHT := 16.0
 const ROW_GAP := 2.0
 const SLOT := 14.0 # The icon's box: the 12-pixel icon and a one-pixel outline
 const TEXT_LEFT := 19.0 # From a row's left edge to its name and description
-const PRICE_TOP := 3.0 # From a row's top edge to the price's coin, clear of the outline
+const PRICE_TOP := 2.0 # From a row's top edge to the price's coin, a pixel clear of the outline
+const DESCRIPTION_TOP := 11.0 # Low enough to clear the coin where a long description runs under it
 const HINTS_TOP := SIZE.y - 15.0
 const MESSAGE_TOP := HINTS_TOP - 9.0
 const VISIBLE_ROWS := int((MESSAGE_TOP - 2.0 - LIST_TOP + ROW_GAP) / (ROW_HEIGHT + ROW_GAP))
@@ -384,7 +385,7 @@ func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	var description: String = Upgrades.description(entry) if upgrade else String(Items.INFO[entry].text)
 	var text_left := row.position.x + TEXT_LEFT
 	_text(title, Vector2(text_left, row.position.y + 3), NAME_SIZE, TEXT_COLOR)
-	_text(description, Vector2(text_left, row.position.y + 10), DESCRIPTION_SIZE, DIM_TEXT)
+	_text(description, Vector2(text_left, row.position.y + DESCRIPTION_TOP), DESCRIPTION_SIZE, DIM_TEXT)
 
 	var right := row.end.x - 3
 	var price := Upgrades.price(entry) if upgrade else Items.price(entry)
