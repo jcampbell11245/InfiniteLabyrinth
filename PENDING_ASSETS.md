@@ -25,6 +25,7 @@ line in `assets/sfx/SOURCE.txt`.
 
 | Name | Used for | Preview |
 | --- | --- | --- |
+| `assets/sprites/tiles/special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
 | `special_tiles.png` frame 13 (`PASTE`) | Thermal paste that holds whoever steps in | ![paste](docs/pending_assets/tile_paste.png) |
 | `assets/sprites/merchant/merchant.png` | The merchant in the start room ([Merchant.tscn](src/npcs/Merchant.tscn)): the reference image the developer supplied, used as it is and scaled down in the scene (0.095x, smoothed with mipmaps). Licence unknown, so it must be replaced with real pixel art (standing, maybe idle) | ![merchant](assets/sprites/merchant/merchant.png) |
 | `assets/sprites/hud/upgrade_time.png` | Time upgrade icon on the shop's Upgrades tab ([Upgrades.gd](src/items/Upgrades.gd)), drawn by script | ![time](docs/pending_assets/upgrade_time.png) |

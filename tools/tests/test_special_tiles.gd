@@ -95,16 +95,14 @@ func test_new_frames_animate() -> void:
 	await wait_real(tuning.crack_time * 0.75)
 	expect_equal(layer(room).get_cell_atlas_coords(0, cracked).x, SpecialTiles.Frame.CRACKING_2, "cracks deeper")
 
-# The hand-drawn loops on slick, slow and fast tiles change the drawn frame, not what the
-# tile is: it still slows, speeds up or slides whoever's on it.
+# The hand-drawn loops on slow and fast tiles change the drawn frame, not what the tile
+# is: it still slows or speeds up whoever's on it.
 func test_speed_tiles_animate_and_keep_their_kind() -> void:
 	var design := RoomDesign.new()
 	design.set_cell(Vector2i(3, 6), RoomDesign.Cell.SLOW)
 	design.set_cell(Vector2i(5, 6), RoomDesign.Cell.FAST)
-	design.set_cell(Vector2i(7, 6), RoomDesign.Cell.SLICK)
 	var room: Room = await boot_design(design)
-	var kinds := {Vector2i(3, 6): SpecialTiles.Frame.SLOW, Vector2i(5, 6): SpecialTiles.Frame.FAST,
-		Vector2i(7, 6): SpecialTiles.Frame.SLICK}
+	var kinds := {Vector2i(3, 6): SpecialTiles.Frame.SLOW, Vector2i(5, 6): SpecialTiles.Frame.FAST}
 	for index: Vector2i in kinds:
 		var cell := RoomDesign.tile_cell(index)
 		var seen := {}

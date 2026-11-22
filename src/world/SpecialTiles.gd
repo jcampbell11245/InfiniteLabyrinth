@@ -14,7 +14,7 @@ extends TileMap
 #
 #   Wires     cycle: resting, sparking (the warning), live (shocks whoever is on them).
 #             The sparking and live frames are animated (ANIMATIONS), as are a live
-#             plate and the slick, slow and fast tiles.
+#             plate and the slow and fast tiles.
 #   Plate     is stepped on, clicks down, then goes live like wires, then re-arms.
 #             Swinging the sword into live wires or a live plate breaks it for good. Both
 #             twinkle as they go live, as an enemy does when its parry window opens.
@@ -60,17 +60,15 @@ enum Frame {
 	CRACKING_2,
 	# The rest of the hand-drawn loops of the tiles above, each running on from its _2 frame
 	# (see ANIMATIONS); the numbers say where each run starts, so the runs can't shift.
-	SLICK_2 = 31, # To 32
-	PLATE_LIVE_2 = 33, # To 39
-	SLOW_2 = 40, # To 52
-	FAST_2 = 53, # To 63
+	PLATE_LIVE_2 = 31, # To 37
+	SLOW_2 = 38, # To 50
+	FAST_2 = 51, # To 61
 }
 # Frames that loop while shown, ANIMATION_FPS a second: the first frame -> the whole loop.
 static var ANIMATIONS := {
 	Frame.WIRES_SPARK: [Frame.WIRES_SPARK, Frame.WIRES_SPARK_2, Frame.WIRES_SPARK_3,
 		Frame.WIRES_SPARK_4, Frame.WIRES_SPARK_5, Frame.WIRES_SPARK_6],
 	Frame.WIRES_LIVE: [Frame.WIRES_LIVE, Frame.WIRES_LIVE_2, Frame.WIRES_LIVE_3],
-	Frame.SLICK: _loop(Frame.SLICK, Frame.SLICK_2, 3),
 	Frame.PLATE_LIVE: _loop(Frame.PLATE_LIVE, Frame.PLATE_LIVE_2, 8),
 	Frame.SLOW: _loop(Frame.SLOW, Frame.SLOW_2, 14),
 	Frame.FAST: _loop(Frame.FAST, Frame.FAST_2, 12),
@@ -447,7 +445,7 @@ func _update_tile(cell: Vector2i, delta: float) -> void:
 		Frame.CRACKED: _update_cracked(cell, tile, delta)
 		Frame.SPIKES: _update_spikes(cell, tile, delta)
 	# Their frames change with time (a plate's only while live: otherwise _show_plates).
-	if tile.frame in [Frame.WIRES, Frame.CRACKED, Frame.SPIKES, Frame.SLICK, Frame.SLOW, Frame.FAST] \
+	if tile.frame in [Frame.WIRES, Frame.CRACKED, Frame.SPIKES, Frame.SLOW, Frame.FAST] \
 			|| (tile.frame == Frame.PLATE && tile.phase == Phase.LIVE):
 		var frame := _frame_for(tile)
 		if get_cell_atlas_coords(0, cell).x != frame:
