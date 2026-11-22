@@ -2,7 +2,7 @@
 
 A top-down pixel-art dungeon crawler made with **Godot 4.7.2** (Compatibility renderer).
 Fight through a generated floor of rooms against the clock, collect three keys to open the
-end room, and spend your coins on upgrades between floors.
+end room, and spend your coins on upgrades and items at the merchant in the start room.
 
 - [Playing](#playing) · [Setup](#setup) · [Running](#running) · [Checks](#checks) ·
   [Contributing](#contributing) · [Tools](#tools) · [Exporting builds](#exporting-builds) ·
@@ -17,8 +17,9 @@ hold keys that open the end room; a boss waits behind a door in the start room.
 
 **There's no health: you have time.** Each floor starts with a time limit (longer with the
 Time upgrade). Getting hit takes time off it, more for harder hits, and the run ends when
-it reaches 0:00. The clock stands still in the start and end rooms. Between floors, and after a game over, coins buy upgrades: **Luck**
-(critical hits), **Time** and **Looting** (coins per kill).
+it reaches 0:00. The clock stands still in the start and end rooms. The merchant's
+**Upgrades** tab sells lasting upgrades, nine levels each: **Time** (more seconds on the
+clock) and **Looting** (more coins per kill).
 
 Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
 strike. Swing as it glints to **parry** and stun it; swing too early and you're the one
@@ -294,7 +295,7 @@ menu and art changes without playing:
 ```bash
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot            # /tmp/shot.png
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot hurt       # plus two frames after a hit
-"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot upgrades   # plus the upgrade menu
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot shop       # plus the merchant's shop
 ```
 
 ## Exporting builds
@@ -362,8 +363,8 @@ src/world/     floor layout (WorldGenerator), building it (Overworld), room scri
   tiles/       TileMap scenes used by rooms (SpecialTiles.tscn: traps and teleporters)
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
-src/ui/        HUD widgets (timer, counters, minimap) and menus (title, boot, pause,
-               upgrades, game over)
+src/ui/        HUD widgets (timer, counters, minimap, item bar) and menus (title, boot,
+               pause, shop, game over)
 src/audio/     enemy death sound players
 tools/         smoke test, test runner and tests, check script, screenshot tool
 .github/       pull request checks (workflows) and the Godot setup they share

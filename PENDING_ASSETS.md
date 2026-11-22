@@ -33,6 +33,8 @@ line in `assets/sfx/SOURCE.txt`.
 | `assets/sprites/hud/status_icons.png` cell 12 (`Icon.FAST`) | Status-bar icon over the player while on a speed tile ([StatusBars.gd](src/effects/StatusBars.gd)) | ![fast icon](docs/pending_assets/icon_fast.png) |
 | `status_icons.png` cell 13 (`Icon.PASTE`) | Status-bar icon over whoever paste is holding | ![paste icon](docs/pending_assets/icon_paste.png) |
 | `assets/sprites/merchant/merchant.png` | The merchant in the start room ([Merchant.tscn](src/npcs/Merchant.tscn)): the reference image the developer supplied, used as it is and scaled down in the scene (0.095x, smoothed with mipmaps). Licence unknown, so it must be replaced with real pixel art (standing, maybe idle) | ![merchant](assets/sprites/merchant/merchant.png) |
+| `assets/sprites/hud/upgrade_time.png` | Time upgrade icon on the shop's Upgrades tab ([Upgrades.gd](src/items/Upgrades.gd)), drawn by script | ![time](docs/pending_assets/upgrade_time.png) |
+| `assets/sprites/hud/upgrade_looting.png` | Looting upgrade icon on the shop's Upgrades tab, drawn by script | ![looting](docs/pending_assets/upgrade_looting.png) |
 | `assets/sprites/hud/item_skeleton_key.png` | Skeleton key icon in the item bar ([Items.gd](src/items/Items.gd)), drawn by script | ![skeleton key](docs/pending_assets/item_skeleton_key.png) |
 | `assets/sprites/hud/item_metal_detector.png` | Metal detector icon in the item bar ([Items.gd](src/items/Items.gd)), drawn by script | ![metal detector](docs/pending_assets/item_metal_detector.png) |
 | Troll (no art of its own) | [Troll.tscn](src/enemies/Troll.tscn) uses the goblin's sprites with a gold `self_modulate`. Needs its own sprite set (stand, walk, slash, all four facings) | ![troll](docs/pending_assets/enemy_troll.gif) |
@@ -82,4 +84,4 @@ replace the asset.
 
 | Name | Used for | Preview |
 | --- | --- | --- |
-| `assets/fonts/8-BIT WONDER.TTF` | Every menu and HUD label (Boot, PauseMenu, OptionsPanel, UpgradeMenu, GameCamera scenes) | [assets/fonts/8-BIT WONDER.TTF](<assets/fonts/8-BIT WONDER.TTF>) |
+| `assets/fonts/8-BIT WONDER.TTF` | Every menu and HUD label (Boot, PauseMenu, OptionsPanel and GameCamera scenes; ShopMenu and the button prompts draw with it too) | [assets/fonts/8-BIT WONDER.TTF](<assets/fonts/8-BIT WONDER.TTF>) |

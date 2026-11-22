@@ -19,7 +19,7 @@ signal items_changed # What's in the item bar's boxes changed
 signal room_marked(room_id: int) # A metal detector showed this key room on the minimap
 signal choosing_item_changed(choosing: bool) # The shop is (or stopped) asking for a box to replace
 
-enum Purchase { BOUGHT, TOO_POOR, BAR_FULL, SAME_ITEM } # What came of trying to buy an item
+enum Purchase { BOUGHT, TOO_POOR, BAR_FULL, SAME_ITEM, MAXED } # What came of trying to buy something
 
 var coins := 0 # Banked into SaveData when the floor ends
 var keys := 0 # Held now; Tuning.keys_to_finish open the end room
@@ -41,14 +41,12 @@ var overworld: Overworld
 var player: Player
 var camera_rig: CharacterBody2D
 var camera: ShakeCamera
-var upgrade_menu: UpgradeMenu
 
 func register(world: Overworld) -> void:
 	overworld = world
 	player = world.get_node("Player")
 	camera_rig = world.get_node("CameraRig")
 	camera = camera_rig.get_node("Camera2D")
-	upgrade_menu = camera.get_node("UpgradeMenu/Control")
 	coins = SaveData.coins
 	keys = Tuning.start_keys + carried_keys
 	carried_keys = 0
@@ -63,7 +61,6 @@ func unregister(world: Overworld) -> void:
 		player = null
 		camera_rig = null
 		camera = null
-		upgrade_menu = null
 
 func _ready() -> void:
 	player_died.connect(discard_items)

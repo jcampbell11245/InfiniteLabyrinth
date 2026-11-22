@@ -1,6 +1,6 @@
 extends "res://tools/tests/test_case.gd"
 
-# The merchant's shop (Merchant, ShopMenu, Game.buy_item). Items are bought for coins into
+# The merchant's shop (Merchant, ShopMenu, Game.buy_item, Upgrades). Items are bought for coins into
 # the first empty box of the item bar, kept from one floor to the next, and lost on death;
 # a run starts with an empty bar. The merchant stands in the start room and can only be
 # talked to from close by.
@@ -83,6 +83,7 @@ func test_shop_buys_the_selected_row_and_unpauses_on_close() -> void:
 	var shop: ShopMenu = merchant.find_children("*", "ShopMenu", true, false)[0]
 	game.coins = 50
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	expect(tree.paused && shop.visible, "opening the shop pauses the game")
 	shop.buy_selected()
 	expect_equal(game.item_in(0), shop.stock()[0], "the first row's item is bought")
@@ -99,6 +100,7 @@ func test_shop_guards_against_double_buys() -> void:
 	game.coins = 1000
 	Input.action_press("interact") # Still held from opening the shop
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	await _frames(3)
 	Input.action_release("interact")
 	await _frames(2)
@@ -123,6 +125,7 @@ func test_full_bar_offers_to_swap_a_box() -> void:
 	for slot in 3:
 		game.buy_item(Items.Kind.SKELETON_KEY)
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	shop._move(1) # The metal detector
 	shop.buy_selected()
 	expect(shop.is_replacing() && game.choosing_item, "buying with a full bar asks for a box")
@@ -147,6 +150,7 @@ func test_a_box_with_the_same_item_cannot_be_swapped() -> void:
 	game.buy_item(Items.Kind.SKELETON_KEY)
 	game.item_slot = 0
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	shop.buy_selected() # A skeleton key
 	expect_equal(game.item_slot, 0, "the highlight starts on the box holding something else")
 	game.item_slot = 1
@@ -168,6 +172,7 @@ func test_no_swap_offered_when_every_box_holds_the_item() -> void:
 	for slot in 3:
 		game.buy_item(Items.Kind.SKELETON_KEY)
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	shop.buy_selected() # Another skeleton key
 	expect(!shop.is_replacing(), "the shop doesn't ask for a box")
 	expect_equal(game.coins, 850, "nothing is paid")
@@ -185,6 +190,7 @@ func test_highlight_moves_off_a_box_with_the_same_item() -> void:
 	game.buy_item(Items.Kind.METAL_DETECTOR)
 	game.item_slot = 0
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	shop.buy_selected() # A skeleton key
 	expect_equal(game.item_slot, 2, "the highlight skips to the box with a different item")
 	shop.close()
@@ -199,6 +205,7 @@ func test_cancelling_a_swap_changes_nothing() -> void:
 	for slot in 3:
 		game.buy_item(Items.Kind.SKELETON_KEY)
 	shop.open()
+	shop.show_tab(ShopMenu.ITEMS_TAB)
 	shop.buy_selected()
 	shop.close() # Closing (like back) drops the question
 	expect(!game.choosing_item, "the item bar stops asking")
@@ -212,6 +219,44 @@ func _shop() -> ShopMenu:
 
 func test_shop_shows_several_rows_before_scrolling() -> void:
 	expect(ShopMenu.VISIBLE_ROWS >= 5, "at least five items fit before the list scrolls")
+
+func test_shop_opens_on_the_upgrades_tab() -> void:
+	await boot_floor()
+	var shop := _shop()
+	if shop == null:
+		return
+	shop.open()
+	expect_equal(shop.stock(), [Upgrades.Kind.TIME, Upgrades.Kind.LOOTING], "the first tab sells Time and Looting")
+	shop.close()
+
+func test_buying_an_upgrade_raises_its_level_and_banks_the_spend() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var save := autoload("SaveData")
+	save.time_level = 0
+	save.coins = 500
+	game.coins = 500
+	var clock: float = game.player.level_countdown.time_left
+	var cost := Upgrades.price(Upgrades.Kind.TIME)
+	expect_equal(Upgrades.buy(Upgrades.Kind.TIME), game.Purchase.BOUGHT, "Time is bought")
+	expect_equal(save.time_level, 1, "its level goes up")
+	expect_equal(game.coins, 500 - cost, "the coins are taken")
+	expect_equal(save.coins, 500 - cost, "and taken from the banked coins at once")
+	expect(game.player.level_countdown.time_left > clock + autoload("Tuning").time_per_level - 1.0,
+		"the extra time goes on this floor's clock too")
+
+func test_upgrades_refuse_when_poor_or_full() -> void:
+	await boot_floor()
+	var game := autoload("Game")
+	var save := autoload("SaveData")
+	save.looting_level = 0
+	game.coins = Upgrades.price(Upgrades.Kind.LOOTING) - 1
+	expect_equal(Upgrades.buy(Upgrades.Kind.LOOTING), game.Purchase.TOO_POOR, "too few coins buys nothing")
+	expect_equal(save.looting_level, 0, "the level stays")
+	save.looting_level = Upgrades.MAX_LEVEL
+	game.coins = 100000
+	expect_equal(Upgrades.price(Upgrades.Kind.LOOTING), -1, "a full upgrade has no price")
+	expect_equal(Upgrades.buy(Upgrades.Kind.LOOTING), game.Purchase.MAXED, "and can't be bought")
 
 func _frames(count: int) -> void:
 	for i in count:

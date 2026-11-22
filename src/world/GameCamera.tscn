@@ -7,7 +7,6 @@
 [ext_resource type="Script" uid="uid://ekl0jpe52y74" path="res://src/ui/hud/Keys.gd" id="6"]
 [ext_resource type="Script" path="res://src/ui/hud/Arrows.gd" id="arrows_script"]
 [ext_resource type="Texture2D" path="res://assets/sprites/hud/arrow_count.png" id="arrows_icon"]
-[ext_resource type="PackedScene" path="res://src/ui/menus/UpgradeMenu.tscn" id="7"]
 [ext_resource type="Texture2D" uid="uid://da7k6f763hgna" path="res://assets/sprites/hud/game_over.png" id="8"]
 [ext_resource type="Script" uid="uid://lby1gnmktu23" path="res://src/ui/menus/GameOver.gd" id="9"]
 [ext_resource type="Script" path="res://src/ui/hud/LevelTimer.gd" id="level_timer"]
@@ -342,8 +341,6 @@ script = ExtResource("item_bar_script")
 layout_mode = 3
 mouse_filter = 2
 script = ExtResource("minimap_script")
-
-[node name="UpgradeMenu" parent="." unique_id=1264262268 instance=ExtResource("7")]
 
 [node name="GameOver" type="AnimatedSprite2D" parent="." unique_id=261418753]
 autoplay = "default"

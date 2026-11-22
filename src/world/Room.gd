@@ -753,7 +753,8 @@ func raise_fallen(index: int) -> Enemy:
 func _on_next_floor_area_entered(_area: Area2D) -> void:
 	Game.finish_floor()
 	SaveData.floor_number = Game.overworld.floor_number + 1
-	Game.upgrade_menu.show_menu()
+	SaveData.save()
+	Game.overworld.reset_world()
 
 func _on_boss_door_animation_finished() -> void:
 	if $BossDoor.animation == "opening":

@@ -13,7 +13,6 @@
 [ext_resource type="Texture2D" uid="uid://7h0oombs4yx6" path="res://assets/sprites/goblin/goblin_left_walk.png" id="11"]
 [ext_resource type="Texture2D" uid="uid://bam7td67m5b0v" path="res://assets/sprites/goblin/goblin_left_slash.png" id="12"]
 [ext_resource type="Texture2D" uid="uid://cyhkt66iehmfb" path="res://assets/sprites/goblin/goblin_up_walk.png" id="13"]
-[ext_resource type="AudioStream" uid="uid://bm4jqi1pnydb4" path="res://assets/sfx/crit1.wav" id="14"]
 [ext_resource type="AudioStream" uid="uid://dn6qf0fmurp3q" path="res://assets/sfx/gobatk1.wav" id="15"]
 
 [sub_resource type="AtlasTexture" id="41"]
@@ -654,10 +653,6 @@ one_shot = true
 
 [node name="Attack" type="AudioStreamPlayer" parent="." unique_id=1406853551]
 stream = ExtResource("15")
-bus = &"SFX"
-
-[node name="Crit" type="AudioStreamPlayer" parent="." unique_id=2097012480]
-stream = ExtResource("14")
 bus = &"SFX"
 
 [node name="DetectionZonePivot" type="Marker2D" parent="." unique_id=1059724198]

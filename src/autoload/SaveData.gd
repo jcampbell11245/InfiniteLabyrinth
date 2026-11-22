@@ -10,7 +10,6 @@ const MIN_AUDIBLE_VOLUME := 0.001
 
 var floor_number := 1
 var coins := 0
-var damage_level := 0 # Critical hit chance
 var time_level := 0 # Extra seconds on the level timer
 var looting_level := 0 # Extra coins per kill
 var music_volume := 1.0 # Linear volume from 0 (muted) to 1 (full)
@@ -34,7 +33,6 @@ func load_from_disk() -> void:
 		return
 	floor_number = file.get_value("progress", "floor", floor_number)
 	coins = file.get_value("progress", "coins", coins)
-	damage_level = file.get_value("upgrades", "damage", damage_level)
 	time_level = file.get_value("upgrades", "time", time_level)
 	looting_level = file.get_value("upgrades", "looting", looting_level)
 	music_volume = clampf(float(file.get_value("audio", "music_volume", music_volume)), 0.0, 1.0)
@@ -70,7 +68,6 @@ func save() -> void:
 	var file := ConfigFile.new()
 	file.set_value("progress", "floor", floor_number)
 	file.set_value("progress", "coins", coins)
-	file.set_value("upgrades", "damage", damage_level)
 	file.set_value("upgrades", "time", time_level)
 	file.set_value("upgrades", "looting", looting_level)
 	file.set_value("audio", "music_volume", music_volume)
@@ -83,7 +80,6 @@ func save() -> void:
 func reset() -> void:
 	floor_number = 1
 	coins = 0
-	damage_level = 0
 	time_level = 0
 	looting_level = 0
 	save()

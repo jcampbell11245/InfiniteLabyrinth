@@ -3,11 +3,14 @@ extends Control
 
 # The merchant's shop (Merchant): a square panel in the HUD's frame style with a row of
 # tabs along the top and, under the selected tab, a list of things for sale. Each row shows
-# the item's icon, name, a one-line description and price in coins; the list scrolls when
-# there are more than VISIBLE_ROWS. Up and down pick a row, the previous / next item buttons
-# (or left and right) change tab, confirm buys and back closes. A bought item goes into the
-# first empty box of the item bar (Game.buy_item); with too few coins the row shakes red
-# and says so.
+# an icon, name, a one-line description and price in coins; the list scrolls when there
+# are more than VISIBLE_ROWS. Up and down pick a row, the previous / next item buttons (or
+# left and right) change tab, confirm buys and back closes. With too few coins the row
+# shakes red and says so.
+#
+# The Upgrades tab (first) sells the lasting upgrades (Upgrades), each row also showing its
+# level as a row of pips, and "Max" for the price once it's full. The Items tab sells
+# consumables, which go into the first empty box of the item bar (Game.buy_item).
 #
 # Buying with every box full offers a swap instead: the shop asks the player to choose a
 # box on the HUD's item bar (left and right, or the previous / next item buttons, move its
@@ -26,7 +29,9 @@ extends Control
 const UNIT := 5.0 # Screen pixels per art pixel, matching HudLayer's scale
 const SIZE := Vector2(180, 160) # The panel, in art pixels
 const MARGIN := 6.0
-const TAB_SIZE := Vector2(40, 11)
+const TAB_HEIGHT := 11.0
+const TAB_PADDING := 5.0 # Each side of a tab's title
+const TAB_GAP := 3.0
 const TAB_TOP := 6.0
 const LIST_TOP := 24.0
 const ROW_HEIGHT := 16.0
@@ -44,10 +49,16 @@ const NAME_SIZE := 4.0
 const DESCRIPTION_SIZE := 3.0
 const TEXT_SIZE := 4.0 # The message and button hints
 
-# Each tab: its title and the items for sale under it.
+# Each tab: its title, what it sells (Upgrades or Items) and the stock, in order.
+enum Sells { UPGRADES, ITEMS }
 const TABS: Array[Dictionary] = [
-	{title = "Items", stock = [Items.Kind.SKELETON_KEY, Items.Kind.METAL_DETECTOR]},
+	{title = "Upgrades", sells = Sells.UPGRADES, stock = [Upgrades.Kind.TIME, Upgrades.Kind.LOOTING]},
+	{title = "Items", sells = Sells.ITEMS, stock = [Items.Kind.SKELETON_KEY, Items.Kind.METAL_DETECTOR]},
 ]
+const UPGRADES_TAB := 0
+const ITEMS_TAB := 1
+const PIP := 2 # Art pixels across one of an upgrade's level pips
+const OWNED_PIP := Color8(248, 184, 0) # The minimap's key-room yellow
 
 const FONT := preload("res://assets/fonts/8-BIT WONDER.TTF")
 const COIN := preload("res://assets/sprites/hud/coin.png")
@@ -105,6 +116,7 @@ func open() -> void:
 	visible = true
 	get_tree().paused = true
 	_opened_frame = Engine.get_process_frames()
+	_tab = UPGRADES_TAB
 	_row = 0
 	_scroll = 0
 	_confirm_released = false
@@ -119,6 +131,13 @@ func close() -> void:
 
 func stock() -> Array:
 	return TABS[_tab].stock
+
+func _sells_upgrades() -> bool:
+	return TABS[_tab].sells == Sells.UPGRADES
+
+# Switches to tab `index` with its first row selected.
+func show_tab(index: int) -> void:
+	_change_tab(index - _tab)
 
 # True while the shop is waiting for the player to choose a box on the item bar to replace.
 func is_replacing() -> bool:
@@ -227,8 +246,17 @@ func _change_tab(step: int) -> void:
 	_scroll = 0
 	queue_redraw()
 
-# Buys the selected row's item, or says why it can't.
+# Buys the selected row's upgrade or item, or says why it can't.
 func buy_selected() -> void:
+	if _sells_upgrades():
+		match Upgrades.buy(stock()[_row]):
+			Game.Purchase.BOUGHT:
+				_bought()
+			Game.Purchase.TOO_POOR:
+				_refuse("Not enough coins")
+			Game.Purchase.MAXED:
+				_refuse("That upgrade is at its top level")
+		return
 	var kind: Items.Kind = stock()[_row]
 	match Game.buy_item(kind):
 		Game.Purchase.BOUGHT:
@@ -308,9 +336,13 @@ func _draw() -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, SIZE.x)
 	_draw_hints(o)
 
+# Tabs sized to their titles, left to right.
 func _draw_tabs(o: Vector2) -> void:
+	var x := o.x + MARGIN
 	for i in TABS.size():
-		var tab := Rect2(o + Vector2(MARGIN + i * (TAB_SIZE.x + 3), TAB_TOP), TAB_SIZE)
+		var width := _text_width(String(TABS[i].title), TITLE_SIZE) + TAB_PADDING * 2
+		var tab := Rect2(Vector2(x, o.y + TAB_TOP), Vector2(width, TAB_HEIGHT))
+		x += width + TAB_GAP
 		var selected := i == _tab
 		HudFrame.fill(self, tab, ItemBar.SELECTED_FILL if selected else ItemBar.SLOT_FILL, UNIT)
 		HudFrame.outline(self, tab, ItemBar.SELECTED_EDGE if selected else ItemBar.Minimap.UNLIT, UNIT)
@@ -326,7 +358,7 @@ func _draw_coins(o: Vector2) -> void:
 	_text(text, Vector2(right - width, top), NAME_SIZE, TEXT_COLOR)
 	_coin(Vector2(right - width - COIN_FRAME.size.x - 2, top - 1))
 
-func _draw_row(o: Vector2, index: int, kind: Items.Kind) -> void:
+func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	var row := Rect2(o + Vector2(MARGIN, LIST_TOP + (index - _scroll) * (ROW_HEIGHT + ROW_GAP)),
 		Vector2(SIZE.x - MARGIN * 2, ROW_HEIGHT))
 	var selected := index == _row
@@ -342,25 +374,40 @@ func _draw_row(o: Vector2, index: int, kind: Items.Kind) -> void:
 	var slot := Rect2(row.position + Vector2(2, (ROW_HEIGHT - SLOT) / 2.0).floor(), Vector2(SLOT, SLOT))
 	HudFrame.fill(self, slot, ItemBar.SLOT_FILL, UNIT)
 	HudFrame.outline(self, slot, ItemBar.Minimap.UNLIT, UNIT)
-	var icon: Texture2D = Items.ICONS[kind]
+	var upgrade := _sells_upgrades()
+	var icon: Texture2D = Upgrades.ICONS[entry] if upgrade else Items.ICONS[entry]
 	var icon_at := (slot.get_center() - icon.get_size() / 2.0).floor()
 	draw_texture_rect(icon, Rect2(icon_at * UNIT, icon.get_size() * UNIT), false)
 
-	var info: Dictionary = Items.INFO[kind]
+	var title: String = Upgrades.NAMES[entry] if upgrade else String(Items.INFO[entry].name)
+	var description: String = Upgrades.description(entry) if upgrade else String(Items.INFO[entry].text)
 	var text_left := row.position.x + TEXT_LEFT
-	_text(String(info.name), Vector2(text_left, row.position.y + 3), NAME_SIZE, TEXT_COLOR)
-	_text(String(info.text), Vector2(text_left, row.position.y + 10), DESCRIPTION_SIZE, DIM_TEXT)
+	_text(title, Vector2(text_left, row.position.y + 3), NAME_SIZE, TEXT_COLOR)
+	_text(description, Vector2(text_left, row.position.y + 10), DESCRIPTION_SIZE, DIM_TEXT)
 
-	var price := Items.price(kind)
-	var price_text := str(price)
-	var width := _text_width(price_text, NAME_SIZE)
 	var right := row.end.x - 3
-	_text(price_text, Vector2(right - width, row.position.y + 3), NAME_SIZE,
-		TEXT_COLOR if Game.coins >= price else TOO_DEAR)
-	_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + 1))
+	var price := Upgrades.price(entry) if upgrade else Items.price(entry)
+	if price < 0:
+		var width := _text_width("Max", NAME_SIZE)
+		_text("Max", Vector2(right - width, row.position.y + 3), NAME_SIZE, OWNED_PIP)
+	else:
+		var price_text := str(price)
+		var width := _text_width(price_text, NAME_SIZE)
+		_text(price_text, Vector2(right - width, row.position.y + 3), NAME_SIZE,
+			TEXT_COLOR if Game.coins >= price else TOO_DEAR)
+		_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + 1))
+	if upgrade:
+		_draw_level(Upgrades.level(entry), Vector2(right, row.position.y + 10))
 
 	if selected && _flash > 0.0:
 		HudFrame.fill(self, row, Color(1, 1, 1, 0.6 * _flash), UNIT)
+
+# An upgrade's level as MAX_LEVEL pips ending at `top_right`, the levels owned lit.
+func _draw_level(level: int, top_right: Vector2) -> void:
+	var left := top_right.x - Upgrades.MAX_LEVEL * (PIP + 1) + 1
+	for i in Upgrades.MAX_LEVEL:
+		var pip := Rect2(left + i * (PIP + 1), top_right.y + 1, PIP, PIP)
+		HudFrame.fill(self, pip, OWNED_PIP if i < level else ItemBar.Minimap.UNLIT, UNIT)
 
 # Small arrows at the right of the list when rows are hidden above or below it.
 func _draw_scroll_arrows(o: Vector2, count: int) -> void:
