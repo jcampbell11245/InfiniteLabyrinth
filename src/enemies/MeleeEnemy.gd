@@ -310,7 +310,7 @@ func _alert_pack() -> void:
 
 # Partway through a slash, up to the frame it strikes on.
 func is_swinging() -> bool:
-	return _animation_is("slash") && animator.frame <= attack_frame
+	return _animation_is("slash") && animator.frame <= attack_frame || rider_busy()
 
 func can_take_turn() -> bool:
 	return !is_stunned()
@@ -329,6 +329,7 @@ func _update_turn(coordinator: AttackCoordinator, attacker: bool) -> void:
 
 func _on_swing_finished() -> void:
 	_swings_left -= 1
+	_combo_finished() # A pilot on it follows up, if it has one
 
 # Walks to the attack spot beside the player, then swings once lined up.
 func _fight(coordinator: AttackCoordinator, delta: float) -> void:
@@ -492,6 +493,8 @@ func _windup_off_target() -> bool:
 	return offset.x > offset.y * AXIS_STICKINESS
 
 func _can_start_swing(coordinator: AttackCoordinator) -> bool:
+	if rider_busy(): # Its pilot is swinging; one windup at a time
+		return false
 	if attack_cooldown.time_left != 0 || coordinator.other_is_swinging(self):
 		return false
 	if coordinator.rush_active(): # Rushers swing on the coordinator's word; the rest hold off
@@ -515,6 +518,7 @@ func _start_swing(horizontal: bool) -> void:
 	_play("slash")
 	animator.frame = 0
 	attack()
+	_combo_started()
 	_unparryable = unparryable_attack && randf() < Tuning.unparryable_chance
 	_end_lagged = false
 	_follow_up_ready = !_unparryable && double_attack \
@@ -931,6 +935,13 @@ func _end_combo_on_hit() -> void:
 	_swings_left = 0
 	_follow_up_ready = false
 
+# Its pilot takes the last hit of the combo (Enemy._pilot_finishes_combo): its turn is over
+# once that's done, and an end lag it was dazed out of from behind is over too.
+func _on_combo_left_to_pilot() -> void:
+	_swings_left = 0
+	_follow_up_ready = false
+	_end_lag.stop()
+
 # Parried: the turn is over once the stun wears off.
 func _on_staggered() -> void:
 	_swings_left = 0
@@ -949,6 +960,8 @@ func _is_reacting() -> bool:
 	return false
 
 func _on_animated_sprite_2d_frame_changed() -> void:
+	if !is_node_ready(): # A family member swapping in its own sprite frames as it loads
+		return
 	if _turning:
 		return
 	if _animation_is("slash") && animator.frame == attack_frame:

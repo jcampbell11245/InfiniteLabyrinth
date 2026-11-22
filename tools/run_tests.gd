@@ -79,6 +79,7 @@ func _run() -> void:
 			var method_name: String = method.name
 			if !method_name.begins_with("test_"):
 				continue
+			_reset_tuning() # The first test starts from the same settings as the rest
 			var case: RefCounted = script.new()
 			case.tree = self
 			counter.take() # Errors from before this test aren't its own
@@ -107,9 +108,12 @@ func _run() -> void:
 		printerr("TESTS FAILED: %d of %d" % [failed.size(), failed.size() + passed])
 		quit(1)
 
-# Tuning (and its cheats) back to the shipped values, and normal speed.
+# Tuning (and its cheats) back to the shipped values, and normal speed. Random pilots stay
+# off (Tuning.pilot_spawn_chance), so a test with an orc, dragon or centaur in it isn't
+# sometimes fighting a pilot too; tests about pilots set it themselves.
 func _reset_tuning() -> void:
 	root.get_node("Tuning").reset_all()
+	root.get_node("Tuning").pilot_spawn_chance = 0.0
 	root.get_node("Juice").end_time_effects()
 	paused = false
 

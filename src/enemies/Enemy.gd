@@ -42,6 +42,17 @@ const CLOSE_RANGE := 25 # Pixels on either axis
 # everything standing next to them, so a sprite much wider than its feet would vanish into
 # them; this keeps it clear. 0 lets the feet touch the wall.
 @export var side_wall_margin := 0.0
+# Riding (see Pilot): a mountable enemy (dragons, centaurs, orcs) can carry a goblin pilot.
+@export var mountable := false
+# Where a pilot sits on it: the pilot's origin, in this enemy's own (unscaled) units, as it
+# sits facing right (negative x is behind). Mirrored facing left, and centred facing up or
+# down (see seat_position).
+@export var pilot_seat := Vector2(0, -16)
+# Starts the room with a pilot on it (the room creator's Pilot switch). Without it, it still
+# has Tuning.pilot_spawn_chance of one.
+@export var spawn_with_pilot := false
+
+const PILOT_SCENE := "res://src/enemies/Pilot.tscn"
 
 var direction := "" # Direction facing; "" until first set
 var knockback := Vector2.ZERO
@@ -66,6 +77,11 @@ var _parry_progress := 0.0
 # The scene's own values, before Tuning's enemy multipliers.
 var _base := {}
 var _health_multiplier := 1.0 # Tuning.enemy_health_multiplier last applied to health
+# The pilot riding it (a Pilot), or null. Hits take its health before this enemy's.
+var rider: Pilot = null
+# A hit of the combo under way caught the player, so the combo ends there and no pilot
+# follow-up comes (see landed_hit and _combo_finished).
+var _combo_landed := false
 # How strongly each server boost is on it, by ServerBuff.Kind: 0 none, 1 full, between for a
 # floor server's share (see ServerBuff). Kept up to date every frame by a ServerBuff.Watcher.
 var _buffs: Array[float] = [0.0, 0.0, 0.0]
@@ -107,6 +123,8 @@ func _ready() -> void:
 	_add_status_bars()
 	add_child(ServerBuff.Watcher.new())
 	_remember_spawn.call_deferred() # After subclasses' _ready have set their facing
+	if mountable && (spawn_with_pilot || randf() < Tuning.pilot_spawn_chance):
+		_spawn_pilot.call_deferred() # Once the room is ready to take another enemy
 
 func _add_status_bars() -> void:
 	var bars := StatusBars.new()
@@ -155,6 +173,7 @@ func reset_to_spawn() -> void:
 	_reset_parry_progress()
 	_set_vulnerable(false)
 	attack_cooldown.stop()
+	_combo_landed = false
 	_on_reset()
 	animator.play(_spawn_animation)
 
@@ -261,6 +280,8 @@ func take_damage(from_direction: String, amount: float) -> void:
 func _chip(hit_dir: Vector2) -> void:
 	if Tuning.chip_damage <= 0 || health <= 0:
 		return
+	if _rider_absorbs(Tuning.chip_damage):
+		return
 	health -= Tuning.chip_damage
 	if health <= 0.0001: # Repeated small chips leave float error behind
 		health = 0
@@ -279,6 +300,8 @@ func _hit_feedback(hit_dir: Vector2, killed: bool) -> void:
 		Juice.shake(Juice.SHAKE_LIGHT)
 
 func die() -> void:
+	if is_instance_valid(rider): # Fell, say, with its pilot still on: the pilot jumps off
+		rider.dismount()
 	Juice.burst(room, global_position, blood_color, 18, 100.0, Vector2.ZERO, 3.0, 0.5)
 	Juice.splat(room, global_position + FEET_OFFSET, blood_color.darkened(0.1))
 	Juice.drop_coins(room, global_position, roundi(coin_reward * _coin_multiplier()))
@@ -377,6 +400,8 @@ func hurt_by_floor(amount: float) -> void:
 		return
 	invincibility_cooldown.start(invincibility_time)
 	animator.modulate.a = 0.5
+	if _rider_absorbs(amount):
+		return
 	health -= amount
 	Juice.flash(animator)
 	Juice.burst(room, global_position, blood_color, 6, 60.0, Vector2.ZERO)
@@ -412,6 +437,8 @@ func _blocks_hit() -> bool:
 	return false
 
 func _lose_health(amount: float) -> void:
+	if _rider_absorbs(amount):
+		return
 	if Tuning.one_hit_kills:
 		health = 0
 	else:
@@ -518,7 +545,7 @@ func _on_player_sword(from_direction: String) -> void:
 			_parry_feedback()
 			if _parried_follow_up():
 				_parry_progress = 0.5 # Half way: the follow-up still has to be parried
-			else:
+			elif !_pilot_finishes_combo():
 				_parry_progress = 1.0
 				stagger(from_direction)
 		Parry.EARLY:
@@ -532,8 +559,9 @@ func _on_player_sword(from_direction: String) -> void:
 func _dazed_from_behind(from_direction: String) -> void:
 	player.mark_swing_parried()
 	_parry_feedback()
-	_parry_progress = 1.0
-	stagger(from_direction)
+	if !_pilot_finishes_combo():
+		_parry_progress = 1.0
+		stagger(from_direction)
 
 # The player calls this when this enemy's hit took health off them. With
 # Tuning.combos_end_on_hit (on by default; F2) the hit ends the enemy's combo: whatever it had
@@ -541,11 +569,104 @@ func _dazed_from_behind(from_direction: String) -> void:
 # string of more hits.
 func landed_hit() -> void:
 	if Tuning.combos_end_on_hit:
+		_combo_landed = true # No pilot follow-up either
 		_end_combo_on_hit()
 
 # What a landed hit cuts short. Nothing by default: most attacks are single hits.
 func _end_combo_on_hit() -> void:
 	pass
+
+# --- Riding (see Pilot) ---
+
+# Its attack (a swing, a whole combo, a charge) has played out. A pilot riding it adds one
+# more hit, its own slash, unless one of the attack's hits caught the player: that ends the
+# combo (landed_hit), the pilot's hit with it. Subclasses call this as an attack ends,
+# whether or not they have a pilot.
+func _combo_finished() -> void:
+	var landed := _combo_landed
+	_combo_landed = false
+	if is_instance_valid(rider) && !landed:
+		rider.follow_up_strike()
+
+# It cleared the whole combo (parried its last hit, or dazed from behind): with a pilot
+# riding it that can reach the player, that isn't the end. Instead of being stunned it
+# stops, and the pilot's slash comes as one more hit; only clearing that (parrying it) stuns
+# it (Pilot.meets_sword). True if the pilot took over; false to stun it as usual.
+func _pilot_finishes_combo() -> bool:
+	if !is_instance_valid(rider) || !rider.can_follow_up():
+		return false
+	var hits := _combo_hit_count()
+	_end_windup_hold()
+	_on_combo_left_to_pilot()
+	_play("idle")
+	_combo_landed = false
+	# The parry bar counts the pilot's hit as one more step still to clear.
+	_parry_progress = float(hits) / (hits + 1)
+	# Its slash starts now, while the player is known to be in reach: checked again a frame
+	# later, a centaur turning round (its seat flips to its other side) could carry the pilot
+	# out of reach, and the combo would end with no slash and no stun.
+	rider.finish_combo()
+	return true
+
+# Hits in the attack under way, for the parry bar (see _pilot_finishes_combo).
+func _combo_hit_count() -> int:
+	return 1
+
+# Ends the attack under way as its pilot takes over the combo (a dragon stops its charge).
+func _on_combo_left_to_pilot() -> void:
+	pass
+
+# Its pilot is about to slash, or slashing, as the last hit of its combo.
+func _pilot_following_up() -> bool:
+	return is_instance_valid(rider) && rider.follow_up_coming()
+
+# Call as a fresh attack (not the next hit of a combo) starts.
+func _combo_started() -> void:
+	_combo_landed = false
+
+# Where its pilot sits, in global space, for the way it faces now.
+func seat_position() -> Vector2:
+	var seat := pilot_seat
+	if direction == Direction.LEFT:
+		seat.x = -seat.x
+	elif direction == Direction.UP || direction == Direction.DOWN:
+		seat.x = 0.0
+	return to_global(seat)
+
+# Its pilot is winding up or swinging its follow-up: it holds off starting another attack.
+func rider_busy() -> bool:
+	return is_instance_valid(rider) && rider.is_striking()
+
+# Takes a hit of `amount` off its pilot instead, if it has one; true if
+# the pilot took it. The pilot falls off dead once its health is gone; the hit never carries
+# on into this enemy.
+func _rider_absorbs(amount: float) -> bool:
+	if !is_instance_valid(rider) || rider.is_queued_for_deletion():
+		return false
+	rider.absorb_hit(amount)
+	return true
+
+# A goblin pilot to ride it, made beside it and climbed straight on. It counts towards
+# clearing the room like any enemy.
+func _spawn_pilot() -> void:
+	if !is_inside_tree() || is_queued_for_deletion() || is_instance_valid(rider):
+		return
+	var pilot: Pilot = (load(PILOT_SCENE) as PackedScene).instantiate()
+	pilot.position = position
+	room.add_enemy(pilot)
+	pilot.mount_on(self)
+
+# Caught in a blast (a hobgoblin going off): no blocking or crit, knocked away from it.
+# It can kill. A pilot takes it first, as it takes every hit.
+func hurt_by_blast(from: Vector2, amount: float) -> void:
+	if health <= 0 || is_queued_for_deletion():
+		return
+	if "noticed" in self && is_player_in_room():
+		set("noticed", true)
+	var away := (global_position - from).normalized()
+	knockback = away * knockback_speed * Tuning.parried_knockback
+	invincibility_cooldown.stop() # A blast isn't stopped by the flicker after a sword hit
+	hurt_by_floor(amount)
 
 # A red (roll-only) charge of its is coming at the player: winding up or under way, not yet
 # struck. A roll begun meanwhile lasts longer (Player, Tuning.roll_charge_bonus), since a
@@ -618,6 +739,7 @@ func is_vulnerable() -> bool:
 # Tuning.stagger_vulnerable_time) is multiplied.
 func stagger(from_direction: String, stun_time := -1.0) -> void:
 	_end_windup_hold()
+	_combo_landed = false
 	knockback = Direction.to_vector(from_direction) * knockback_speed * Tuning.parried_knockback
 	_stun_timer.start(stun_time if stun_time > 0 else Tuning.parried_stun_time)
 	_set_vulnerable(true)
@@ -644,7 +766,7 @@ func _show_dizzy(on: bool) -> void:
 # instead of eating into it.
 func _update_windup() -> void:
 	if !_animation_is(_attack_action()):
-		if !is_stunned():
+		if !is_stunned() && !_pilot_following_up():
 			_parry_progress = 0.0 # The attack ended without the parries to stagger it
 		_windup_held = false
 		_twinkled_at = -1
@@ -710,13 +832,27 @@ func _on_invincibility_cooldown_timeout() -> void:
 
 func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: int, _self_shape: int) -> void:
 	if area.get_name() == "Hitbox":
-		_on_player_sword(area.get_parent().get_parent().direction)
+		var from_direction: String = area.get_parent().get_parent().direction
+		# Its pilot's follow-up slash is met by the sword first (parried, or blocked early).
+		if is_instance_valid(rider) && rider.meets_sword(from_direction):
+			return
+		_on_player_sword(from_direction)
 	elif area.get_name() == "SpinHitbox":
 		spin_hit()
 	elif area.get_name() == "ArrowHitbox":
 		var arrow: Projectile = area.get_parent()
-		take_damage(arrow.direction, arrow.damage)
+		if _first_hit_by(arrow):
+			take_damage(arrow.direction, arrow.damage)
 	elif area.get_name() == "ProjectileHitbox": # A shot the player deflected
 		var shot: Projectile = area.get_parent()
-		if !shot.hostile_to_player:
+		if !shot.hostile_to_player && _first_hit_by(shot):
 			take_damage(shot.direction, shot.damage)
+
+# A shot hurts each enemy once. A fireball lingers as it breaks, and would hit again as the flicker
+# after its hit ends (a pilot taking the first hit leaves its mount standing in it).
+func _first_hit_by(shot: Projectile) -> bool:
+	var key := StringName("hit_%d" % get_instance_id())
+	if shot.has_meta(key):
+		return false
+	shot.set_meta(key, true)
+	return true

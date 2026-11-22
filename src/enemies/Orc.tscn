@@ -3,6 +3,8 @@
 [ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="1"]
 
 [node name="Orc" instance=ExtResource("1")]
+mountable = true
+pilot_seat = Vector2(0, -14)
 scale = Vector2(1.5, 1.5)
 speed = 30.0
 knockback_speed = 75.0
