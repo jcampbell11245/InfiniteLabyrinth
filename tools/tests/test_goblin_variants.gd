@@ -276,3 +276,11 @@ func test_a_hobgoblin_stops_dead_as_it_reaches_the_player() -> void:
 	await tree.physics_frame
 	await tree.physics_frame
 	expect(hobgoblin.global_position.distance_to(at) < 0.5, "and stays put while it glints")
+
+func test_a_riding_pilot_doesnt_walk() -> void:
+	var parts: Array = await ridden_orc()
+	var pilot: Pilot = parts[2]
+	pilot._moving = true # As if it was walking when it climbed on
+	for i in 3: # A physics frame to sit it down, then a process frame to animate it
+		await tree.process_frame
+	expect(!String(pilot.animator.animation).begins_with("walk"), "no walk cycle while riding")

@@ -170,6 +170,7 @@ func dismount() -> void:
 
 func _ride() -> void:
 	global_position = mount.seat_position()
+	_moving = false # It sits; the mount does the walking (no walk cycle on its back)
 	velocity = Vector2.ZERO
 	knockback = Vector2.ZERO
 	z_index = mount.z_index + 1 # Sits on top
