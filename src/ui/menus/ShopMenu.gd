@@ -37,7 +37,7 @@ const TAB_TOP := 6.0
 const LIST_TOP := 24.0
 const ROW_HEIGHT := 16.0
 const ROW_GAP := 2.0
-const SLOT := 14.0 # The icon's box: the 12-pixel icon and a one-pixel outline
+const ICON_AREA := 14.0 # The square at a row's left the 12-pixel icon is centred in
 const TEXT_LEFT := 19.0 # From a row's left edge to its name and description
 const PRICE_TOP := 2.0 # From a row's top edge to the price's coin, a pixel clear of the outline
 const DESCRIPTION_TOP := 11.0 # Low enough to clear the coin where a long description runs under it
@@ -373,12 +373,11 @@ func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	HudFrame.fill(self, row, ItemBar.SELECTED_FILL if selected else ItemBar.SLOT_FILL, UNIT)
 	HudFrame.outline(self, row, edge, UNIT)
 
-	var slot := Rect2(row.position + Vector2(2, (ROW_HEIGHT - SLOT) / 2.0).floor(), Vector2(SLOT, SLOT))
-	HudFrame.fill(self, slot, ItemBar.SLOT_FILL, UNIT)
-	HudFrame.outline(self, slot, ItemBar.Minimap.UNLIT, UNIT)
+	var icon_area := Rect2(row.position + Vector2(2, (ROW_HEIGHT - ICON_AREA) / 2.0).floor(),
+		Vector2(ICON_AREA, ICON_AREA))
 	var upgrade := _sells_upgrades()
 	var icon: Texture2D = Upgrades.ICONS[entry] if upgrade else Items.ICONS[entry]
-	var icon_at := (slot.get_center() - icon.get_size() / 2.0).floor()
+	var icon_at := (icon_area.get_center() - icon.get_size() / 2.0).floor()
 	draw_texture_rect(icon, Rect2(icon_at * UNIT, icon.get_size() * UNIT), false)
 
 	var title: String = _upgrade_title(entry) if upgrade else String(Items.INFO[entry].name)
