@@ -22,14 +22,14 @@ func test_changing_binding_updates_input_map_and_save_data() -> void:
 	var save_data := autoload("SaveData")
 	var snapshot := _snapshot()
 	bindings.reset_defaults()
-	bindings.set_key("roll", KEY_R)
+	bindings.set_key("roll", KEY_T)
 	bindings.set_button("roll", JOY_BUTTON_B)
-	expect(bindings.key_for("roll") == KEY_R, "the new key is remembered")
-	expect(_has_key("roll", KEY_R), "InputMap accepts the new key")
+	expect(bindings.key_for("roll") == KEY_T, "the new key is remembered")
+	expect(_has_key("roll", KEY_T), "InputMap accepts the new key")
 	expect(!_has_key("roll", KEY_SPACE), "the old key is removed")
 	expect(_has_button("roll", JOY_BUTTON_B), "InputMap accepts the new pad button")
 	var saved: Dictionary = save_data.bindings["roll"]
-	expect(int(saved["key"]) == KEY_R, "the key is written to the save data")
+	expect(int(saved["key"]) == KEY_T, "the key is written to the save data")
 	expect(int(saved["button"]) == JOY_BUTTON_B, "the pad button is written to the save data")
 	_restore(snapshot)
 
@@ -59,13 +59,13 @@ func test_saved_bindings_load_with_defaults_for_missing_or_bad_values() -> void:
 	var bindings := autoload("Bindings")
 	var save_data := autoload("SaveData")
 	var snapshot := _snapshot()
-	save_data.bindings = {"roll": {"key": KEY_R, "button": JOY_BUTTON_A},
+	save_data.bindings = {"roll": {"key": KEY_T, "button": JOY_BUTTON_RIGHT_STICK},
 		"melee_attack": {"key": 0, "button": 99},
 		"pause": {"key": KEY_F2, "button": JOY_BUTTON_START}}
 	bindings.load_from_save()
 	bindings.apply()
-	expect(bindings.key_for("roll") == KEY_R, "a saved key is loaded")
-	expect(bindings.button_for("roll") == JOY_BUTTON_A, "a saved pad button is loaded")
+	expect(bindings.key_for("roll") == KEY_T, "a saved key is loaded")
+	expect(bindings.button_for("roll") == JOY_BUTTON_RIGHT_STICK, "a saved pad button is loaded")
 	expect(bindings.key_for("left") == KEY_A, "an action missing from an old save keeps its default")
 	expect(bindings.key_for("melee_attack") == KEY_J, "an invalid saved key is ignored")
 	expect(bindings.button_for("melee_attack") == JOY_BUTTON_X, "an invalid saved button is ignored")
@@ -78,9 +78,9 @@ func test_reset_keeps_bindings_as_a_preference() -> void:
 	var old_write: bool = save_data.write_to_disk
 	var snapshot := _snapshot()
 	save_data.write_to_disk = false
-	bindings.set_key("roll", KEY_R)
+	bindings.set_key("roll", KEY_T)
 	save_data.reset()
-	expect(bindings.key_for("roll") == KEY_R, "resetting progress keeps the control bindings")
+	expect(bindings.key_for("roll") == KEY_T, "resetting progress keeps the control bindings")
 	save_data.write_to_disk = old_write
 	_restore(snapshot)
 
@@ -93,7 +93,7 @@ func test_options_panel_has_a_controls_page() -> void:
 	panel.controls_button.pressed.emit()
 	expect(panel.controls_panel.visible, "Controls opens the controls page")
 	expect(!panel.get_node("Panel").visible, "the audio page is hidden behind it")
-	expect(panel.controls_panel.get_node("Panel/Rows").get_child_count() == autoload("Bindings").ACTIONS.size(),
+	expect(panel.controls_panel.get_node("Panel/Scroll/Rows").get_child_count() == autoload("Bindings").ACTIONS.size(),
 		"every bindable action has a row")
 	panel.controls_panel.back_pressed.emit()
 	expect(!panel.controls_panel.visible, "Back closes the controls page")
@@ -150,7 +150,7 @@ func test_a_capture_only_accepts_its_own_device() -> void:
 
 	controls.start_capture("left", "key")
 	var pad := InputEventJoypadButton.new()
-	pad.button_index = JOY_BUTTON_LEFT_SHOULDER
+	pad.button_index = JOY_BUTTON_LEFT_STICK
 	pad.pressed = true
 	controls._input(pad)
 	expect(bindings.button_for("left") == old_button,
@@ -165,14 +165,14 @@ func test_a_capture_only_accepts_its_own_device() -> void:
 	controls.start_capture("roll", "button")
 	var old_key: int = bindings.key_for("roll")
 	var other_key := InputEventKey.new()
-	other_key.keycode = KEY_R
+	other_key.keycode = KEY_T
 	other_key.pressed = true
 	controls._input(other_key)
 	expect(bindings.key_for("roll") == old_key,
 		"a key press during a pad capture does not change the key binding")
 	expect(controls.is_listening(), "the pad capture keeps listening")
 	controls._input(pad)
-	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_SHOULDER,
+	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_STICK,
 		"the selected pad button still binds")
 	panel.hide()
 	save_data.write_to_disk = old_write
@@ -196,7 +196,8 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 	expect(dialog_rect.has_point(host_rect.position + host_rect.size / 2.0),
 		"the controls dialog is centred in the options panel")
 	var dialog := controls.get_node("Panel") as Control
-	var rows: VBoxContainer = controls.get_node("Panel/Rows")
+	var rows: VBoxContainer = controls.get_node("Panel/Scroll/Rows")
+	var scroll := controls.get_node("Panel/Scroll") as Control
 	var status := controls.get_node("Panel/Status") as Control
 	var reset := controls.get_node("Panel/Reset") as Control
 	var back := controls.get_node("Panel/Back") as Control
@@ -205,7 +206,7 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 		"the standing 'press a key' caption is gone")
 	expect((status as Label).horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER,
 		"the blurb is centred above the footer buttons")
-	expect(rows.position.y + rows.size.y <= status.position.y + 0.01,
+	expect(scroll.position.y + scroll.size.y <= status.position.y + 0.01,
 		"the last bind row does not overlap the status caption")
 	expect(status.position.y + status.size.y <= reset.position.y + 0.01 \
 		&& status.position.y + status.size.y <= back.position.y + 0.01,
@@ -223,7 +224,7 @@ func test_controls_page_rows_and_labels_fit_the_panel() -> void:
 		"the bind rows are spaced out")
 	expect(pad_column.position.x - (key_column.position.x + key_column.size.x) >= 8.0,
 		"the keyboard and controller buttons have a horizontal gap")
-	expect(absf(rows.get_global_rect().get_center().y - dialog_rect.get_center().y) < 10.0,
+	expect(absf(scroll.get_global_rect().get_center().y - dialog_rect.get_center().y) < 10.0,
 		"the bind list is centred vertically in the dialog")
 	expect(absf(key_header.get_global_rect().get_center().x
 		- key_column.get_global_rect().get_center().x) < 0.5,
@@ -265,20 +266,20 @@ func test_capturing_a_key_and_a_pad_button_changes_the_binding() -> void:
 		&& panel.controls_panel.status_label.visible,
 		"starting a capture shows the Esc and hold-B hint")
 	var key_event := InputEventKey.new()
-	key_event.keycode = KEY_R
+	key_event.keycode = KEY_T
 	key_event.pressed = true
 	panel.controls_panel._input(key_event)
-	expect(bindings.key_for("roll") == KEY_R, "capturing a key rebinds the action")
+	expect(bindings.key_for("roll") == KEY_T, "capturing a key rebinds the action")
 	expect(!panel.controls_panel.is_listening(), "the capture ends after one press")
 	expect(panel.controls_panel.status_label.text.find("KEY SET TO") >= 0 \
 		&& panel.controls_panel.status_label.visible,
 		"capturing a key shows the confirmation blurb")
 	panel.controls_panel.start_capture("roll", "button")
 	var pad_event := InputEventJoypadButton.new()
-	pad_event.button_index = JOY_BUTTON_LEFT_SHOULDER
+	pad_event.button_index = JOY_BUTTON_LEFT_STICK
 	pad_event.pressed = true
 	panel.controls_panel._input(pad_event)
-	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_SHOULDER,
+	expect(bindings.button_for("roll") == JOY_BUTTON_LEFT_STICK,
 		"capturing a pad button rebinds the action")
 	expect(panel.controls_panel.status_label.text.find("PAD SET TO") >= 0 \
 		&& panel.controls_panel.status_label.visible,
@@ -322,7 +323,7 @@ func test_tapping_b_binds_it_but_holding_b_cancels() -> void:
 	controls.start_capture("roll", "button")
 	controls._input(b_event)
 	var other_pad := InputEventJoypadButton.new()
-	other_pad.button_index = JOY_BUTTON_LEFT_SHOULDER
+	other_pad.button_index = JOY_BUTTON_LEFT_STICK
 	other_pad.pressed = true
 	controls._input(other_pad)
 	expect(bindings.button_for("roll") == JOY_BUTTON_B,
@@ -380,7 +381,7 @@ func test_escape_can_be_rebound_to_pause_but_a_hold_cancels() -> void:
 	controls._input(other_key)
 	expect(bindings.key_for("pause") == KEY_P, "a key press while Escape is held is ignored")
 	var other_pad := InputEventJoypadButton.new()
-	other_pad.button_index = JOY_BUTTON_LEFT_SHOULDER
+	other_pad.button_index = JOY_BUTTON_LEFT_STICK
 	other_pad.pressed = true
 	controls._input(other_pad)
 	expect(bindings.button_for("pause") == JOY_BUTTON_START,
@@ -442,10 +443,10 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	var panel := _add_options_panel()
 	panel.show()
 	panel.controls_button.pressed.emit()
-	bindings.set_key("roll", KEY_R)
+	bindings.set_key("roll", KEY_T)
 	panel.controls_panel.start_capture("left", "key")
 	var key_event := InputEventKey.new()
-	key_event.keycode = KEY_R
+	key_event.keycode = KEY_T
 	key_event.pressed = true
 	panel.controls_panel._input(key_event)
 	expect(bindings.key_for("left") == KEY_A, "a key used by another action is rejected")
@@ -465,6 +466,79 @@ func test_conflicting_key_is_rejected_and_escape_cancels_capture() -> void:
 	save_data.write_to_disk = old_write
 	panel.free()
 	_restore(snapshot)
+
+func test_item_and_interact_inputs_are_bound_and_guarded() -> void:
+	var bindings := autoload("Bindings")
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	var snapshot := _snapshot()
+	save_data.write_to_disk = false
+	bindings.reset_defaults()
+	expect(bindings.button_for("roll") == bindings.UNBOUND,
+		"Roll leaves R1 to Item Right and keeps the right trigger")
+	expect(bindings.button_owner(JOY_BUTTON_RIGHT_SHOULDER) == "item_next", "R1 changes item")
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var controls := panel.controls_panel
+	controls.start_capture("melee_attack", "key")
+	_send_key(panel, KEY_E)
+	expect(bindings.key_for("melee_attack") == KEY_J, "Item Right's key cannot also be Sword's")
+	expect(controls.status_label.text.find("USED BY ITEM RIGHT") >= 0,
+		"the refusal names the item input")
+	controls.cancel_capture()
+	bindings.set_button("interact", JOY_BUTTON_LEFT_STICK)
+	controls.start_capture("interact", "button")
+	var pad := InputEventJoypadButton.new()
+	pad.button_index = JOY_BUTTON_A
+	pad.pressed = true
+	controls._input(pad)
+	expect(bindings.button_for("interact") == JOY_BUTTON_A,
+		"Interact can go back to A, which Select shares by design")
+	controls.start_capture("item_previous", "button")
+	controls._input(pad)
+	expect(bindings.button_for("item_previous") == JOY_BUTTON_LEFT_SHOULDER,
+		"no other action may take A")
+	controls.cancel_capture()
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+	_restore(snapshot)
+
+func test_saved_choices_that_clash_with_new_inputs_fall_back() -> void:
+	var bindings := autoload("Bindings")
+	var snapshot := _snapshot()
+	autoload("SaveData").bindings = {"roll": {"key": KEY_R, "button": JOY_BUTTON_RIGHT_SHOULDER}}
+	bindings.load_from_save()
+	bindings.apply()
+	expect(bindings.button_for("roll") == bindings.UNBOUND,
+		"an old save's R1 Roll gives way to Item Right")
+	expect(bindings.key_for("roll") == KEY_SPACE, "an old save's R Roll gives way to Interact")
+	expect(!_has_button("roll", JOY_BUTTON_RIGHT_SHOULDER), "R1 no longer rolls")
+	expect(_has_button("item_next", JOY_BUTTON_RIGHT_SHOULDER), "R1 still changes item")
+	_restore(snapshot)
+
+func test_bind_list_scrolls_to_the_focused_row() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	var scroll := panel.controls_panel.get_node("Panel/Scroll") as ScrollContainer
+	var rows := scroll.get_node("Rows") as Control
+	await tree.process_frame
+	expect(rows.size.y > scroll.size.y, "the bind rows are taller than the visible list")
+	var last_row := rows.get_child(rows.get_child_count() - 1) as Control
+	(last_row.get_node("Key") as Button).grab_focus()
+	await tree.process_frame
+	await tree.process_frame
+	var visible_rect := scroll.get_global_rect().grow(0.5)
+	expect(visible_rect.encloses(last_row.get_global_rect()),
+		"focusing the last row scrolls it into view")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
 
 func test_fixed_alternate_keys_are_reserved() -> void:
 	var bindings := autoload("Bindings")
@@ -521,11 +595,11 @@ func test_f1_and_f2_cannot_be_bound() -> void:
 	expect(bindings.key_for("roll") == old_key, "F2 cannot be bound")
 	expect(controls.status_label.text == ControlsPanel.RESERVED_KEY_STATUS,
 		"F2 shows the reserved-key message")
-	_send_key(panel, KEY_R)
-	expect(bindings.key_for("roll") == KEY_R, "a normal key still binds afterwards")
+	_send_key(panel, KEY_T)
+	expect(bindings.key_for("roll") == KEY_T, "a normal key still binds afterwards")
 
 	bindings.set_key("roll", KEY_F1)
-	expect(bindings.key_for("roll") == KEY_R, "the save layer also refuses F1")
+	expect(bindings.key_for("roll") == KEY_T, "the save layer also refuses F1")
 	expect(!_has_key("roll", KEY_F1), "F1 never reaches InputMap")
 	panel.hide()
 	save_data.write_to_disk = old_write
@@ -549,8 +623,8 @@ func test_shared_j_is_only_free_for_sword_and_select() -> void:
 		"a visible binding says USED BY even when another action has J as an alternate")
 	panel.controls_panel.cancel_capture()
 	panel.controls_panel.start_capture("melee_attack", "key")
-	_send_key(panel, KEY_L)
-	expect(bindings.key_for("melee_attack") == KEY_L, "Sword moves off J")
+	_send_key(panel, KEY_G)
+	expect(bindings.key_for("melee_attack") == KEY_G, "Sword moves off J")
 	expect(bindings.key_owner(KEY_J, "ranged_attack") == "select",
 		"J still belongs to Select when Sword moves away")
 	bindings.set_key("ranged_attack", KEY_J)
@@ -587,17 +661,17 @@ func test_controls_labels_use_supported_font_glyphs() -> void:
 		(controls.get_node("Panel/Reset") as Button).text,
 		(controls.get_node("Panel/Back") as Button).text,
 	]
-	for child: Node in controls.get_node("Panel/Rows").get_children():
+	for child: Node in controls.get_node("Panel/Scroll/Rows").get_children():
 		var row := child as Control
 		for button_name: String in ["Key", "Pad"]:
 			labels.append((row.get_node(button_name) as Button).text)
 	controls.start_capture("roll", "key")
 	expect(controls.status_label.text == ControlsPanel.CANCEL_HINT && controls.status_label.visible,
 		"starting a capture shows the cancel hint")
-	labels.append((controls.get_node("Panel/Rows/Row_roll/Key") as Button).text)
+	labels.append((controls.get_node("Panel/Scroll/Rows/Row_roll/Key") as Button).text)
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "button")
-	labels.append((controls.get_node("Panel/Rows/Row_roll/Pad") as Button).text)
+	labels.append((controls.get_node("Panel/Scroll/Rows/Row_roll/Pad") as Button).text)
 	labels.append(controls.status_label.text)
 	controls.start_capture("roll", "key")
 	_send_key(panel, KEY_F1)
@@ -704,7 +778,7 @@ func test_controller_b_cancels_capture_then_controls_then_options() -> void:
 	controls._input(b_event)
 	var old_key: int = bindings.key_for("roll")
 	var other_key := InputEventKey.new()
-	other_key.keycode = KEY_R
+	other_key.keycode = KEY_T
 	other_key.pressed = true
 	controls._input(other_key)
 	expect(bindings.key_for("roll") == old_key, "a key press while B is held is ignored")

@@ -9,6 +9,7 @@ const BOOT_SCENE := "res://src/ui/menus/Boot.tscn"
 const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected option's
 
+@onready var canvas: Control = $Canvas
 @onready var start_button: TextureButton = $Canvas/Start
 @onready var options_button: TextureButton = $Canvas/Options
 @onready var quit_button: TextureButton = $Canvas/Quit
@@ -18,6 +19,8 @@ const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected opt
 func _ready() -> void:
 	# A leftover play-test design must never make Start build someone's test room.
 	Overworld.test_design = null
+	get_viewport().size_changed.connect(_fit_canvas)
+	_fit_canvas()
 	for button: BaseButton in [start_button, options_button, quit_button]:
 		button.focus_entered.connect(_move_cursor_to.bind(button))
 		# Hovering selects, so the mouse and the controller share one highlight.
@@ -29,6 +32,16 @@ func _ready() -> void:
 	start_button.grab_focus()
 	Music.play_title()
 	WorldGenerator.preload_rooms() # In the background, so Start doesn't wait on them
+
+# Scales the art to cover the whole screen and centres it. On 16:9 it fills the screen
+# exactly; on taller screens (stretch aspect "expand") a little is cut off each side
+# rather than leaving a black strip along the bottom.
+func _fit_canvas() -> void:
+	var screen := get_viewport().get_visible_rect().size
+	var art := canvas.size
+	var fit := maxf(screen.x / art.x, screen.y / art.y)
+	canvas.scale = Vector2.ONE * fit
+	canvas.position = ((screen - art * fit) / 2.0).round()
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Escape cancels a capture except while rebinding Pause, where it binds unless held.

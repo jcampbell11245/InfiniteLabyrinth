@@ -4,6 +4,10 @@
 
 ## Fixed
 
+- Rooms with more than one wizard log "The object does not have any 'meta' values with the
+  key 'last_wizard_caster'" until one of them casts. The turn-taking check read the room's
+  last caster with `get_meta(key, null)`, and Godot treats a null default as no default. It
+  now checks `has_meta` first.
 - Pressing F1 after dying in a room creator play-test logs "Invalid access to property or key
   'process_frame' on a base object of type 'null instance'". The level timer's fatal
   countdown waited a frame at a time with `get_tree()`, and leaving the game took the timer

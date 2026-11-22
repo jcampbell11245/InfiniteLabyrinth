@@ -16,7 +16,7 @@ extends SceneTree
 
 const TESTS_DIR := "res://tools/tests/"
 # The SaveData fields a test may change, put back after each one (_restore_save).
-const SAVE_FIELDS: Array[StringName] = [&"floor_number", &"coins", &"damage_level",
+const SAVE_FIELDS: Array[StringName] = [&"floor_number", &"coins",
 	&"time_level", &"looting_level", &"music_volume", &"sfx_volume", &"debug_time_limit",
 	&"bindings"]
 

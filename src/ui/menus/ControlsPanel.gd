@@ -20,8 +20,12 @@ const PAUSE_KEY_HINT := "ESC BINDS PAUSE   HOLD ESC OR B CANCELS"
 const RESERVED_KEY_STATUS := "F1 AND F2 ARE RESERVED"
 const CANCEL_HOLD_SECONDS := 0.6
 const STATUS_SECONDS := 3.0
+# A focused button's outline is drawn this far outside it; the list scrolls far enough to show
+# it. Matches the Scroll node's top and bottom content margins.
+const FOCUS_OUTLINE_ROOM := 3.0
 
-@onready var rows: VBoxContainer = $Panel/Rows
+@onready var scroll: ScrollContainer = $Panel/Scroll
+@onready var rows: VBoxContainer = $Panel/Scroll/Rows
 @onready var status_label: Label = $Panel/Status
 @onready var back_button: Button = $Panel/Back
 @onready var reset_button: Button = $Panel/Reset
@@ -38,6 +42,7 @@ func _ready() -> void:
 	_build_rows()
 	back_button.pressed.connect(back_pressed.emit)
 	reset_button.pressed.connect(_on_reset_pressed)
+	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
 	_set_status("")
 
 func _notification(what: int) -> void:
@@ -48,7 +53,7 @@ func _notification(what: int) -> void:
 func refresh() -> void:
 	for action: String in _key_buttons:
 		(_key_buttons[action] as Button).text = Bindings.key_name(Bindings.key_for(action))
-		(_pad_buttons[action] as Button).text = Bindings.button_name(Bindings.button_for(action))
+		(_pad_buttons[action] as Button).text = Bindings.pad_label(action)
 
 func focus_first() -> void:
 	var first: Button = _key_buttons.get(String(Bindings.ACTIONS[0]["action"])) as Button
@@ -225,6 +230,26 @@ func _build_rows() -> void:
 		rows.add_child(row)
 	refresh()
 
+# The bind list is taller than the panel. ScrollContainer's own follow_focus stops once the
+# button is inside, which clips its outline, so the list scrolls here instead. Deferred so
+# the rows have their final positions.
+func _on_gui_focus_changed(control: Control) -> void:
+	if control != null && rows.is_ancestor_of(control):
+		_scroll_to_show.call_deferred(control)
+
+func _scroll_to_show(control: Control) -> void:
+	if !is_instance_valid(control):
+		return
+	var row := control.get_parent() as Control
+	var top := row.position.y + control.position.y - FOCUS_OUTLINE_ROOM
+	var bottom := row.position.y + control.position.y + control.size.y + FOCUS_OUTLINE_ROOM
+	# Rows sit FOCUS_OUTLINE_ROOM below the scroll area's top edge (its content margin).
+	var view_top := scroll.scroll_vertical - FOCUS_OUTLINE_ROOM
+	if top < view_top:
+		scroll.scroll_vertical = int(floorf(top + FOCUS_OUTLINE_ROOM))
+	elif bottom > view_top + scroll.size.y:
+		scroll.scroll_vertical = int(ceilf(bottom + FOCUS_OUTLINE_ROOM - scroll.size.y))
+
 func _style_control(control: Control) -> void:
 	control.add_theme_font_override(&"font", FONT)
 	control.add_theme_font_size_override(&"font_size", 12)
@@ -268,7 +293,7 @@ func _finish_button(button_index: int) -> void:
 	if button_index == Bindings.button_for(_listening_action):
 		_stop_capture()
 		return
-	var owner := Bindings.button_owner(button_index)
+	var owner := Bindings.button_owner(button_index, _listening_action)
 	if !owner.is_empty() && owner != _listening_action:
 		_set_status("%s IS ALREADY USED BY %s" % [Bindings.button_name(button_index), Bindings.action_label(owner)])
 		return

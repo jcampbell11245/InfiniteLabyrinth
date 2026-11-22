@@ -55,7 +55,7 @@ skipped headless because the dummy renderer isn't thread-safe). So:
 
 - **Visual changes** (HUD, menus, art, effects): take screenshots in a real window and
   look at them before calling the change done:
-  `"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot [hurt|upgrades] [frames]`.
+  `"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot [hurt|shop] [frames]`.
   Write screenshots outside the repo.
 - **Threading or loading changes**: also run the smoke test without `--headless` once.
 - **Sounds and game feel** can't be checked by an agent. Say so plainly when you report

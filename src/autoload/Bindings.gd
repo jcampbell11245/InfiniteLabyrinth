@@ -6,12 +6,16 @@ extends Node
 # fixed alternates - arrow keys, left-stick axes and the extra attack keys - that stay
 # available so rebinding never removes a way to play. F1 and F2 stay reserved for the room
 # creator and debug menu. Joypad events use device -1 so any controller works, including one
-# that gets a new id after reconnecting. SaveData owns the persistent copy.
+# that gets a new id after reconnecting. SaveData owns the persistent copy. Roll and Use Item
+# keep their triggers as fixed axes and start with no pad button of their own.
 
 const UNBOUND := -1
 # J is Sword's replaceable key and Select's fixed alternate by design. Only those two actions
 # may bind it: any other action taking J would fire Select as well.
 const SHARED_FIXED_KEYS := {KEY_J: ["melee_attack", "select"]}
+# Select (menus) and Interact (the merchant) share A by design: the shop confirms with either,
+# and neither is read where the other would fire by accident.
+const SHARED_BUTTON_ACTIONS := ["select", "interact"]
 # These keys are read directly by the room creator and debug menu, outside InputMap.
 const RESERVED_KEYS := [KEY_F1, KEY_F2]
 const BUTTON_NAMES := {
@@ -32,6 +36,8 @@ const BUTTON_NAMES := {
 	JOY_BUTTON_DPAD_RIGHT: "RIGHT",
 }
 
+const TRIGGER_NAMES := {JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT"}
+
 # "keys" and "axes" survive rebinding; "key" and "button" are the parts players change.
 const ACTIONS := [
 	{"action": "left", "label": "MOVE LEFT", "key": KEY_A, "button": JOY_BUTTON_DPAD_LEFT,
@@ -46,8 +52,16 @@ const ACTIONS := [
 		"keys": [KEY_Z], "axes": []},
 	{"action": "ranged_attack", "label": "BOW", "key": KEY_K, "button": JOY_BUTTON_Y,
 		"keys": [KEY_X], "axes": []},
-	{"action": "roll", "label": "ROLL", "key": KEY_SPACE, "button": JOY_BUTTON_RIGHT_SHOULDER,
-		"keys": [], "axes": [[5, 1.0]]},
+	{"action": "roll", "label": "ROLL", "key": KEY_SPACE, "button": UNBOUND,
+		"keys": [], "axes": [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]},
+	{"action": "item_previous", "label": "ITEM LEFT", "key": KEY_Q,
+		"button": JOY_BUTTON_LEFT_SHOULDER, "keys": [], "axes": []},
+	{"action": "item_next", "label": "ITEM RIGHT", "key": KEY_E,
+		"button": JOY_BUTTON_RIGHT_SHOULDER, "keys": [], "axes": []},
+	{"action": "use_item", "label": "USE ITEM", "key": KEY_L, "button": UNBOUND,
+		"keys": [], "axes": [[JOY_AXIS_TRIGGER_LEFT, 1.0]]},
+	{"action": "interact", "label": "INTERACT", "key": KEY_R, "button": JOY_BUTTON_A,
+		"keys": [], "axes": []},
 	{"action": "pause", "label": "PAUSE", "key": KEY_ESCAPE, "button": JOY_BUTTON_START,
 		"keys": [], "axes": []},
 	{"action": "select", "label": "SELECT", "key": KEY_ENTER, "button": JOY_BUTTON_A,
@@ -76,7 +90,22 @@ func load_from_save() -> void:
 		if !_valid_button(button):
 			button = int(entry["button"])
 		bindings[action] = {"key": key, "button": button}
+	_drop_clashing_choices()
 	_write_to_save()
+
+# A saved choice can clash with an input added since it was saved (Roll once defaulted to R1,
+# now Item Right's). The changed binding gives way and falls back to its default, so one press
+# never fires two actions.
+func _drop_clashing_choices() -> void:
+	for entry: Dictionary in ACTIONS:
+		var action := String(entry["action"])
+		var pair: Dictionary = bindings[action]
+		var key := int(pair["key"])
+		if key != int(entry["key"]) && !key_owner(key, action).is_empty():
+			pair["key"] = int(entry["key"])
+		var button := int(pair["button"])
+		if button != int(entry["button"]) && button != UNBOUND 				&& !button_owner(button, action).is_empty():
+			pair["button"] = int(entry["button"])
 
 func apply() -> void:
 	for entry: Dictionary in ACTIONS:
@@ -171,23 +200,43 @@ func is_fixed_alternate(keycode: int, owner: String) -> bool:
 func is_reserved_key(keycode: int) -> bool:
 	return RESERVED_KEYS.has(keycode)
 
-func button_owner(button_index: int) -> String:
-	for action: String in bindings:
-		if button_for(action) == button_index:
-			return action
+# Returns the action that already uses this pad button, or an empty string when it is free
+# for `action`. Select and Interact may share one (SHARED_BUTTON_ACTIONS).
+func button_owner(button_index: int, action := "") -> String:
+	for candidate: String in bindings:
+		if candidate == action || button_for(candidate) != button_index:
+			continue
+		if SHARED_BUTTON_ACTIONS.has(candidate) && SHARED_BUTTON_ACTIONS.has(action):
+			continue
+		return candidate
 	return ""
 
+# The Controls font has no punctuation, so an empty binding reads NONE rather than a dash.
 func key_name(keycode: int) -> String:
 	if keycode == UNBOUND:
-		return "--"
+		return "NONE"
 	return OS.get_keycode_string(keycode)
 
 func button_name(button_index: int) -> String:
 	if button_index == UNBOUND:
-		return "--"
+		return "NONE"
 	if BUTTON_NAMES.has(button_index):
 		return String(BUTTON_NAMES[button_index])
 	return "BTN %d" % button_index
+
+# What the Controls page shows in an action's pad column. Roll and Use Item start with no
+# button but still answer to their trigger, so that is shown instead of NONE.
+func pad_label(action: String) -> String:
+	var button := button_for(action)
+	if button != UNBOUND:
+		return button_name(button)
+	for entry: Dictionary in ACTIONS:
+		if entry["action"] != action:
+			continue
+		for axis_data: Array in entry.get("axes", []):
+			if TRIGGER_NAMES.has(int(axis_data[0])):
+				return String(TRIGGER_NAMES[int(axis_data[0])])
+	return button_name(button)
 
 func _valid_key(keycode: int) -> bool:
 	return keycode > 0 && !is_reserved_key(keycode) && keycode != KEY_CTRL \

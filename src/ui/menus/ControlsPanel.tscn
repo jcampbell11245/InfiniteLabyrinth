@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://b6cqk3x8vn4ma"]
+[gd_scene load_steps=4 format=3 uid="uid://b6cqk3x8vn4ma"]
 
 [ext_resource type="Script" uid="uid://bsrefuocuyxg2" path="res://src/ui/menus/ControlsPanel.gd" id="1"]
 [ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="2"]
@@ -10,6 +10,10 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.75, 0.65, 0.35, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_scroll"]
+content_margin_top = 3.0
+content_margin_bottom = 3.0
 
 [node name="ControlsPanel" type="Control" unique_id=1726394501]
 visible = false
@@ -72,12 +76,17 @@ theme_override_font_sizes/font_size = 12
 text = "CONTROLLER"
 horizontal_alignment = 1
 
-[node name="Rows" type="VBoxContainer" parent="Panel" unique_id=1726394507]
+[node name="Scroll" type="ScrollContainer" parent="Panel" unique_id=1726394511]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 52.0
-offset_right = 536.0
-offset_bottom = 288.0
+offset_top = 49.0
+offset_right = 550.0
+offset_bottom = 289.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_scroll")
+horizontal_scroll_mode = 0
+
+[node name="Rows" type="VBoxContainer" parent="Panel/Scroll" unique_id=1726394507]
+layout_mode = 2
 theme_override_constants/separation = 7
 
 [node name="Status" type="Label" parent="Panel" unique_id=1726394508]
