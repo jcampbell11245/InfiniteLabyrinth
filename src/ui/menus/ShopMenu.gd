@@ -56,7 +56,7 @@ const PANEL_FILL := Color(0.1, 0.1, 0.12) # Opaque, so the paused game doesn't s
 const TEXT_COLOR := Color(0.92, 0.9, 0.86)
 const DIM_TEXT := Color(0.62, 0.6, 0.66)
 const TOO_DEAR := Color(1, 0.4, 0.4) # A price the player can't pay
-const BOUGHT_COLOR := Color8(88, 216, 84) # The minimap's green
+const BOUGHT_COLOR := Color8(150, 240, 140) # A light green for "Bought" and "Swapped"
 
 const FLASH_TIME := 0.25
 const REFUSE_TIME := 0.3
