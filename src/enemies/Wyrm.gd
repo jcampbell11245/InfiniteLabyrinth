@@ -36,10 +36,10 @@ extends Enemy
 # stagger).
 #
 # Charge (the "slash" animation, so the shared windup and parry code in Enemy times it): it
-# coils (frame 0), then hangs still in its lunge pose (frame 1) for about a second
-# (Tuning.wyrm_charge_hold_min/max). Then it glints, aims at the player and dashes straight
-# at them at Tuning.wyrm_charge_speed without stopping, biting (frame 2, its Hitbox live for
-# that frame only) the moment it gets within Tuning.wyrm_clash_reach of them, and carries on
+# rears up (the frames before attack_frame - 1), then hangs still in its poised pose
+# (attack_frame - 1) for about a second (Tuning.wyrm_charge_hold_min/max). Then it glints,
+# aims at the player and dashes straight at them at Tuning.wyrm_charge_speed without
+# stopping, biting (attack_frame, its Hitbox live for that frame only) the moment it gets within Tuning.wyrm_clash_reach of them, and carries on
 # through, harmless, for Tuning.wyrm_charge_overshoot. A swing begun after the glint that
 # meets it up to the bite parries it: knocked back and stunned like any parried enemy. One
 # that meets it before the glint is blocked and staggers the player. A wyvern's charges
@@ -72,8 +72,8 @@ const BREATH_FRAME := 1 # "shoot" frame it draws breath on
 # fireball can't skip past the point it's batted in one frame.
 const RETURN_REACH := 36.0
 const RETURN_WIDTH := 16.0
-# Where fireballs leave its mouth, in its own (unscaled) units: this far out the way it
-# faces, and MOUTH_HEIGHT above its origin.
+# Where fireballs leave its mouth, in its own (unscaled) units, when the scene gives no
+# mouth_offsets: this far out the way it faces, and MOUTH_HEIGHT above its origin.
 const MOUTH_REACH := 16.0
 const MOUTH_HEIGHT := -8.0
 # Slamming into a wall mid-charge.
@@ -95,6 +95,10 @@ const MOUTH_BLAST_PITCH := 0.55
 @export var homing_fireball := false # Wyverns: the fireball homes on the player
 @export var has_heavy_charge := false # Wyverns: some charges glint red and can't be parried
 @export var voice_pitch := 1.0 # Pitch of its sounds (wyverns deeper)
+# Its mouth in each facing (a Direction to a Vector2), in its own (unscaled) units, where
+# fireballs leave and the breath glints. Set per dragon to match its art; a facing left out
+# falls back to MOUTH_REACH and MOUTH_HEIGHT.
+@export var mouth_offsets := {}
 # Pixels: notices a player this close anywhere but behind it. Set per dragon in each room;
 # the room creator draws it as a circle you can drag, as for goblins and knights.
 @export_range(0, 400, 1) var detection_radius := MeleeEnemy.DEFAULT_DETECTION_RADIUS
@@ -505,6 +509,8 @@ func _release_breath() -> void:
 
 # From its origin to its mouth, where fireballs come out, scaled.
 func _mouth_offset() -> Vector2:
+	if mouth_offsets.has(direction):
+		return (mouth_offsets[direction] as Vector2) * scale
 	return (Direction.to_vector(direction) * MOUTH_REACH + Vector2(0, MOUTH_HEIGHT)) * scale
 
 func breathe_fire() -> void:
