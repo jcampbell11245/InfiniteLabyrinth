@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://copiiftk2y8fu"]
+[gd_scene load_steps=8 format=3 uid="uid://copiiftk2y8fu"]
 
 [ext_resource type="Script" path="res://src/ui/menus/OptionsPanel.gd" id="1"]
 [ext_resource type="FontFile" uid="uid://bt6kvlmxa8x41" path="res://assets/fonts/8-BIT WONDER.TTF" id="2"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/options_grabber.png" id="3"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/options_grabber_highlight.png" id="4"]
+[ext_resource type="PackedScene" uid="uid://b6cqk3x8vn4ma" path="res://src/ui/menus/ControlsPanel.tscn" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.035, 0.035, 0.055, 1)
@@ -110,8 +111,8 @@ offset_top = 110.0
 offset_right = 344.0
 offset_bottom = 130.0
 focus_neighbor_top = NodePath("../MusicSlider")
-focus_neighbor_bottom = NodePath("../Back")
-focus_next = NodePath("../Back")
+focus_neighbor_bottom = NodePath("../Controls")
+focus_next = NodePath("../Controls")
 focus_previous = NodePath("../MusicSlider")
 max_value = 100.0
 step = 5.0
@@ -121,18 +122,37 @@ theme_override_styles/background = SubResource("StyleBoxFlat_track")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_fill")
 theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_fill")
 
-[node name="Back" type="Button" parent="Panel" unique_id=631907284]
+[node name="Controls" type="Button" parent="Panel" unique_id=631907285]
 layout_mode = 0
 offset_left = 112.0
-offset_top = 168.0
+offset_top = 138.0
 offset_right = 252.0
-offset_bottom = 200.0
+offset_bottom = 164.0
 focus_neighbor_top = NodePath("../SfxSlider")
-focus_neighbor_bottom = NodePath("../MusicSlider")
-focus_next = NodePath("../MusicSlider")
+focus_neighbor_bottom = NodePath("../Back")
+focus_next = NodePath("../Back")
 focus_previous = NodePath("../SfxSlider")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
 theme_override_fonts/font = ExtResource("2")
 theme_override_font_sizes/font_size = 16
+text = "CONTROLS"
+
+[node name="Back" type="Button" parent="Panel" unique_id=631907284]
+layout_mode = 0
+offset_left = 112.0
+offset_top = 172.0
+offset_right = 252.0
+offset_bottom = 204.0
+focus_neighbor_top = NodePath("../Controls")
+focus_neighbor_bottom = NodePath("../MusicSlider")
+focus_next = NodePath("../MusicSlider")
+focus_previous = NodePath("../Controls")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 0.65, 1)
+theme_override_fonts/font = ExtResource("2")
+theme_override_font_sizes/font_size = 16
 text = "BACK"
+
+[node name="ControlsPanel" parent="." instance=ExtResource("5")]
+layout_mode = 0

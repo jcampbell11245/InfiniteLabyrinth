@@ -1,0 +1,368 @@
+extends Control
+class_name ControlsPanel
+
+# Controls sub-panel of the shared options screen. Each row has one keyboard key and one
+# controller button to capture; clicking either starts listening for a press. Bindings are
+# changed through the Bindings autoload, which updates InputMap and the save data at once.
+# The host saves to disk when it closes the options screen. Escape normally cancels a capture,
+# but a Pause key capture treats it like B: a quick tap binds it so Pause can be restored
+# without Reset, while holding it cancels. F1 and F2 are refused because the room creator and
+# debug menu read them directly.
+
+signal back_pressed
+
+const FONT: FontFile = preload("res://assets/fonts/8-BIT WONDER.TTF")
+const DEVICE_KEY := "key"
+const DEVICE_BUTTON := "button"
+const PAUSE_ACTION := "pause"
+const CANCEL_HINT := "ESC TO CANCEL   HOLD B TO CANCEL"
+const PAUSE_KEY_HINT := "ESC BINDS PAUSE   HOLD ESC OR B CANCELS"
+const RESERVED_KEY_STATUS := "F1 AND F2 ARE RESERVED"
+const CANCEL_HOLD_SECONDS := 0.6
+const STATUS_SECONDS := 3.0
+# A focused button's outline is drawn this far outside it; the list scrolls far enough to show
+# it. Matches the Scroll node's top and bottom content margins.
+const FOCUS_OUTLINE_ROOM := 3.0
+
+@onready var scroll: ScrollContainer = $Panel/Scroll
+@onready var rows: VBoxContainer = $Panel/Scroll/Rows
+@onready var status_label: Label = $Panel/Status
+@onready var back_button: Button = $Panel/Back
+@onready var reset_button: Button = $Panel/Reset
+
+var _key_buttons := {}
+var _pad_buttons := {}
+var _listening_action := ""
+var _listening_device := ""
+var _pad_cancel_started_msec := -1 # -1 while B is not held; real time so slow motion can't stretch it.
+var _escape_cancel_started_msec := -1 # Escape is held during a Pause key capture.
+var _status_generation := 0 # Stale timers from earlier messages must not clear a newer blurb.
+
+func _ready() -> void:
+	_build_rows()
+	back_button.pressed.connect(back_pressed.emit)
+	reset_button.pressed.connect(_on_reset_pressed)
+	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
+	_set_status("")
+
+func _notification(what: int) -> void:
+	# Mouse clicks, Android go-back and a hidden parent all bypass Back's signal.
+	if what == NOTIFICATION_VISIBILITY_CHANGED && !is_visible_in_tree():
+		_stop_capture()
+
+func refresh() -> void:
+	for action: String in _key_buttons:
+		(_key_buttons[action] as Button).text = Bindings.key_name(Bindings.key_for(action))
+		(_pad_buttons[action] as Button).text = Bindings.pad_label(action)
+
+func focus_first() -> void:
+	var first: Button = _key_buttons.get(String(Bindings.ACTIONS[0]["action"])) as Button
+	if first != null:
+		first.grab_focus()
+
+func is_listening() -> bool:
+	return !_listening_action.is_empty()
+
+# Public so the host can abandon a capture when it leaves the controls page.
+func stop_capture() -> void:
+	_stop_capture()
+
+# Public so the buttons and tests can start a capture the same way.
+func start_capture(action: String, device: String) -> void:
+	if !Bindings.bindings.has(action):
+		return
+	_listening_action = action
+	_listening_device = device
+	_pad_cancel_started_msec = -1
+	_escape_cancel_started_msec = -1
+	# The hint stays up for as long as the panel waits for input.
+	_set_status(_capture_hint(), true)
+	refresh()
+	var button := _button_for_device(action, device)
+	if button != null:
+		button.text = "PRESS KEY" if device == DEVICE_KEY else "PRESS PAD"
+
+# Escape belongs to the host's cancel path unless this capture can bind it to Pause.
+func should_cancel_with_escape(event: InputEvent) -> bool:
+	if !is_listening() || !(event is InputEventKey):
+		return false
+	var key_event := event as InputEventKey
+	return key_event.pressed && !key_event.echo \
+		&& key_event.keycode == KEY_ESCAPE && !_binds_escape()
+
+func _capture_hint() -> String:
+	if _binds_escape():
+		return PAUSE_KEY_HINT
+	return CANCEL_HINT
+
+func _binds_escape() -> bool:
+	return _listening_action == PAUSE_ACTION && _listening_device == DEVICE_KEY
+
+func _input(event: InputEvent) -> void:
+	if !is_listening():
+		return
+	if event is InputEventJoypadButton:
+		_handle_pad_input(event as InputEventJoypadButton)
+	elif event is InputEventKey:
+		_handle_key_input(event as InputEventKey)
+
+func _handle_pad_input(pad_event: InputEventJoypadButton) -> void:
+	# A held Escape owns the Pause key capture, so pad input must not change it.
+	if _escape_cancel_started_msec >= 0:
+		_consume()
+		return
+	if pad_event.button_index == JOY_BUTTON_B:
+		_handle_pad_cancel(pad_event)
+		return
+	if _pad_cancel_started_msec >= 0 || _listening_device != DEVICE_BUTTON:
+		_consume()
+		return
+	if !pad_event.pressed:
+		return
+	_consume()
+	_finish_button(pad_event.button_index)
+
+func _handle_pad_cancel(pad_event: InputEventJoypadButton) -> void:
+	_consume()
+	if pad_event.pressed:
+		# Ignore auto-repeat: the hold starts on the first press and ends on release.
+		if _pad_cancel_started_msec < 0:
+			_pad_cancel_started_msec = Time.get_ticks_msec()
+		return
+	var was_holding := _pad_cancel_started_msec >= 0
+	_pad_cancel_started_msec = -1
+	# A short press is a normal button choice; only a held B cancels.
+	if was_holding && is_listening() && _listening_device == DEVICE_BUTTON:
+		_finish_button(JOY_BUTTON_B)
+
+func _handle_key_input(key_event: InputEventKey) -> void:
+	# A held B owns the capture, so no key can change it until B is released.
+	if _pad_cancel_started_msec >= 0:
+		_consume()
+		return
+	if key_event.echo:
+		return
+	if key_event.keycode == KEY_ESCAPE && _binds_escape():
+		_handle_escape_key(key_event)
+		return
+	# A held Escape owns the capture, so no other key can change it before the cancel fires.
+	if _escape_cancel_started_msec >= 0:
+		_consume()
+		return
+	# Escape is reserved for the host to cancel every other capture.
+	if !key_event.pressed || key_event.keycode == KEY_ESCAPE:
+		return
+	if _listening_device != DEVICE_KEY:
+		_consume()
+		return
+	_consume()
+	if _has_modifier(key_event) || _is_modifier(key_event.keycode):
+		_set_status("MODIFIER KEYS CANNOT BE BOUND")
+		return
+	_finish_key(key_event.keycode)
+
+func _handle_escape_key(key_event: InputEventKey) -> void:
+	_consume()
+	if key_event.pressed:
+		if _has_modifier(key_event):
+			_set_status("MODIFIER KEYS CANNOT BE BOUND")
+			return
+		if _escape_cancel_started_msec < 0:
+			_escape_cancel_started_msec = Time.get_ticks_msec()
+		return
+	var was_holding := _escape_cancel_started_msec >= 0
+	_escape_cancel_started_msec = -1
+	# The hold timer may already have cancelled, so check before binding.
+	if was_holding && is_listening():
+		_finish_key(KEY_ESCAPE)
+
+func _has_modifier(key_event: InputEventKey) -> bool:
+	return key_event.ctrl_pressed || key_event.meta_pressed || key_event.alt_pressed
+
+func _process(_delta: float) -> void:
+	if !is_listening():
+		return
+	if _hold_expired(_pad_cancel_started_msec):
+		_pad_cancel_started_msec = -1
+		cancel_capture()
+		return
+	if _hold_expired(_escape_cancel_started_msec):
+		_escape_cancel_started_msec = -1
+		cancel_capture()
+
+# Real time matters here: hit-stop and slow motion must not stretch the hold.
+func _hold_expired(started_msec: int) -> bool:
+	return started_msec >= 0 \
+		&& Time.get_ticks_msec() - started_msec >= int(CANCEL_HOLD_SECONDS * 1000.0)
+
+func _build_rows() -> void:
+	for entry: Dictionary in Bindings.ACTIONS:
+		var action := String(entry["action"])
+		var row := HBoxContainer.new()
+		row.name = "Row_%s" % action
+		row.custom_minimum_size.y = 20.0
+		# The spacer supplies the column gap; a container gap would also indent the labels.
+		row.add_theme_constant_override(&"separation", 0)
+		var label := Label.new()
+		label.text = Bindings.action_label(action)
+		label.custom_minimum_size.x = 180.0
+		_style_control(label)
+		row.add_child(label)
+		var key_button := Button.new()
+		key_button.name = "Key"
+		key_button.custom_minimum_size.x = 160.0
+		key_button.pressed.connect(_on_key_pressed.bind(action))
+		_style_control(key_button)
+		row.add_child(key_button)
+		_key_buttons[action] = key_button
+		# A spacer keeps the two columns apart without also indenting the action labels.
+		var gap := Control.new()
+		gap.name = "Gap"
+		gap.custom_minimum_size.x = 16.0
+		row.add_child(gap)
+		var pad_button := Button.new()
+		pad_button.name = "Pad"
+		pad_button.custom_minimum_size.x = 160.0
+		pad_button.pressed.connect(_on_pad_pressed.bind(action))
+		_style_control(pad_button)
+		row.add_child(pad_button)
+		_pad_buttons[action] = pad_button
+		rows.add_child(row)
+	_link_row_focus()
+	refresh()
+
+# Godot's automatic focus search skips rows scrolled out of view, so D-pad down would jump
+# from the last visible row to Reset. Linking each column explicitly walks through every row
+# (and _on_gui_focus_changed scrolls to it); the last row leads to the footer buttons.
+func _link_row_focus() -> void:
+	var actions: Array[String] = []
+	for entry: Dictionary in Bindings.ACTIONS:
+		actions.append(String(entry["action"]))
+	for column: Dictionary in [_key_buttons, _pad_buttons]:
+		for i in actions.size():
+			var button := column[actions[i]] as Button
+			if i > 0:
+				button.focus_neighbor_top = button.get_path_to(column[actions[i - 1]] as Button)
+			if i < actions.size() - 1:
+				button.focus_neighbor_bottom = button.get_path_to(column[actions[i + 1]] as Button)
+	var last_key := _key_buttons[actions.back()] as Button
+	var last_pad := _pad_buttons[actions.back()] as Button
+	last_key.focus_neighbor_bottom = last_key.get_path_to(reset_button)
+	last_pad.focus_neighbor_bottom = last_pad.get_path_to(back_button)
+	reset_button.focus_neighbor_top = reset_button.get_path_to(last_key)
+	back_button.focus_neighbor_top = back_button.get_path_to(last_pad)
+
+# The bind list is taller than the panel. ScrollContainer's own follow_focus stops once the
+# button is inside, which clips its outline, so the list scrolls here instead. Deferred so
+# the rows have their final positions.
+func _on_gui_focus_changed(control: Control) -> void:
+	if control != null && rows.is_ancestor_of(control):
+		_scroll_to_show.call_deferred(control)
+
+func _scroll_to_show(control: Control) -> void:
+	if !is_instance_valid(control):
+		return
+	var row := control.get_parent() as Control
+	var top := row.position.y + control.position.y - FOCUS_OUTLINE_ROOM
+	var bottom := row.position.y + control.position.y + control.size.y + FOCUS_OUTLINE_ROOM
+	# Rows sit FOCUS_OUTLINE_ROOM below the scroll area's top edge (its content margin).
+	var view_top := scroll.scroll_vertical - FOCUS_OUTLINE_ROOM
+	if top < view_top:
+		scroll.scroll_vertical = int(floorf(top + FOCUS_OUTLINE_ROOM))
+	elif bottom > view_top + scroll.size.y:
+		scroll.scroll_vertical = int(ceilf(bottom + FOCUS_OUTLINE_ROOM - scroll.size.y))
+
+func _style_control(control: Control) -> void:
+	control.add_theme_font_override(&"font", FONT)
+	control.add_theme_font_size_override(&"font_size", 12)
+	control.add_theme_color_override(&"font_color", Color(1, 1, 1, 1))
+	if control is Button:
+		control.add_theme_color_override(&"font_focus_color", Color(1, 1, 0.65, 1))
+
+func _on_key_pressed(action: String) -> void:
+	start_capture(action, DEVICE_KEY)
+
+func _on_pad_pressed(action: String) -> void:
+	start_capture(action, DEVICE_BUTTON)
+
+func _on_reset_pressed() -> void:
+	stop_capture()
+	Bindings.reset_defaults()
+	refresh()
+	_set_status("DEFAULT BINDINGS RESTORED")
+
+func _finish_key(keycode: int) -> void:
+	if keycode == Bindings.key_for(_listening_action):
+		_stop_capture()
+		return
+	if Bindings.is_reserved_key(keycode):
+		_set_status(RESERVED_KEY_STATUS)
+		return
+	var owner := Bindings.key_owner(keycode, _listening_action)
+	if !owner.is_empty() && owner != _listening_action:
+		# Only say reserved when the owner's row hides the key; a visible binding is "used by".
+		var relation := "USED BY"
+		if Bindings.is_fixed_alternate(keycode, owner):
+			relation = "RESERVED FOR"
+		_set_status("%s IS ALREADY %s %s" % [Bindings.key_name(keycode), relation,
+				Bindings.action_label(owner)])
+		return
+	Bindings.set_key(_listening_action, keycode)
+	_set_status("%s KEY SET TO %s" % [Bindings.action_label(_listening_action), Bindings.key_name(keycode)])
+	_stop_capture()
+
+func _finish_button(button_index: int) -> void:
+	if button_index == Bindings.button_for(_listening_action):
+		_stop_capture()
+		return
+	var owner := Bindings.button_owner(button_index, _listening_action)
+	if !owner.is_empty() && owner != _listening_action:
+		_set_status("%s IS ALREADY USED BY %s" % [Bindings.button_name(button_index), Bindings.action_label(owner)])
+		return
+	Bindings.set_button(_listening_action, button_index)
+	_set_status("%s PAD SET TO %s" % [Bindings.action_label(_listening_action), Bindings.button_name(button_index)])
+	_stop_capture()
+
+# Called by the host for Escape and by the hold timer for B.
+func cancel_capture() -> void:
+	_set_status("CAPTURE CANCELLED")
+	_stop_capture()
+
+# Feedback is transient: it clears after a short real-time delay, even while paused or slowed.
+# The capture hint is persistent so players always know how to cancel while choosing an input.
+func _set_status(message: String, persistent := false) -> void:
+	status_label.text = message
+	status_label.visible = !message.is_empty()
+	_status_generation += 1
+	if message.is_empty() || persistent:
+		return
+	var generation := _status_generation
+	var timer := get_tree().create_timer(STATUS_SECONDS, true, false, true)
+	timer.timeout.connect(_on_status_timeout.bind(generation))
+
+func _on_status_timeout(generation: int) -> void:
+	if generation != _status_generation:
+		return
+	# A conflict message can replace the hint during a capture; bring it back afterwards.
+	if is_listening():
+		_set_status(_capture_hint(), true)
+	else:
+		_set_status("")
+
+func _stop_capture() -> void:
+	_listening_action = ""
+	_listening_device = ""
+	_pad_cancel_started_msec = -1
+	_escape_cancel_started_msec = -1
+	refresh()
+
+func _button_for_device(action: String, device: String) -> Button:
+	if device == DEVICE_KEY:
+		return _key_buttons.get(action) as Button
+	return _pad_buttons.get(action) as Button
+
+func _is_modifier(keycode: int) -> bool:
+	return keycode == KEY_CTRL || keycode == KEY_SHIFT || keycode == KEY_ALT || keycode == KEY_META
+
+func _consume() -> void:
+	get_viewport().set_input_as_handled()

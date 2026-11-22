@@ -71,14 +71,15 @@ func test_pause_key_closes_options_before_resuming() -> void:
 	menu.pause()
 	expect(tree.paused, "pausing opens the menu")
 	menu.show_options()
-	var escape := InputEventKey.new()
-	escape.keycode = KEY_ESCAPE
-	escape.pressed = true
-	menu._input(escape)
+	var bindings := autoload("Bindings")
+	var pause := InputEventKey.new()
+	pause.keycode = int(bindings.key_for("pause"))
+	pause.pressed = true
+	menu._input(pause)
 	expect(!menu.options_panel.visible, "pause closes the options panel first")
 	expect(tree.paused, "closing the options panel leaves the game paused")
 	expect(menu.visible, "the pause menu is still open")
-	menu._input(escape)
+	menu._input(pause)
 	expect(!tree.paused, "a second pause press resumes the game")
 	expect(!menu.visible, "the pause menu hides on resume")
 	save_data.write_to_disk = old_write
