@@ -228,7 +228,29 @@ func _build_rows() -> void:
 		row.add_child(pad_button)
 		_pad_buttons[action] = pad_button
 		rows.add_child(row)
+	_link_row_focus()
 	refresh()
+
+# Godot's automatic focus search skips rows scrolled out of view, so D-pad down would jump
+# from the last visible row to Reset. Linking each column explicitly walks through every row
+# (and _on_gui_focus_changed scrolls to it); the last row leads to the footer buttons.
+func _link_row_focus() -> void:
+	var actions: Array[String] = []
+	for entry: Dictionary in Bindings.ACTIONS:
+		actions.append(String(entry["action"]))
+	for column: Dictionary in [_key_buttons, _pad_buttons]:
+		for i in actions.size():
+			var button := column[actions[i]] as Button
+			if i > 0:
+				button.focus_neighbor_top = button.get_path_to(column[actions[i - 1]] as Button)
+			if i < actions.size() - 1:
+				button.focus_neighbor_bottom = button.get_path_to(column[actions[i + 1]] as Button)
+	var last_key := _key_buttons[actions.back()] as Button
+	var last_pad := _pad_buttons[actions.back()] as Button
+	last_key.focus_neighbor_bottom = last_key.get_path_to(reset_button)
+	last_pad.focus_neighbor_bottom = last_pad.get_path_to(back_button)
+	reset_button.focus_neighbor_top = reset_button.get_path_to(last_key)
+	back_button.focus_neighbor_top = back_button.get_path_to(last_pad)
 
 # The bind list is taller than the panel. ScrollContainer's own follow_focus stops once the
 # button is inside, which clips its outline, so the list scrolls here instead. Deferred so

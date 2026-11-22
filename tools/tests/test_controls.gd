@@ -540,6 +540,32 @@ func test_bind_list_scrolls_to_the_focused_row() -> void:
 	save_data.write_to_disk = old_write
 	panel.free()
 
+func test_d_pad_walks_every_row_including_ones_scrolled_out_of_view() -> void:
+	var save_data := autoload("SaveData")
+	var old_write: bool = save_data.write_to_disk
+	save_data.write_to_disk = false
+	var panel := _add_options_panel()
+	panel.show()
+	panel.controls_button.pressed.emit()
+	await tree.process_frame
+	var controls := panel.controls_panel
+	var rows := controls.get_node("Panel/Scroll/Rows")
+	for column: String in ["Key", "Pad"]:
+		for i in rows.get_child_count():
+			var button := rows.get_child(i).get_node(column) as Control
+			if i < rows.get_child_count() - 1:
+				var below := rows.get_child(i + 1).get_node(column) as Control
+				expect(button.find_valid_focus_neighbor(SIDE_BOTTOM) == below,
+					"down from %s %s reaches the next row" % [rows.get_child(i).name, column])
+				expect(below.find_valid_focus_neighbor(SIDE_TOP) == button,
+					"up from the next row comes back to %s %s" % [rows.get_child(i).name, column])
+	var last := rows.get_child(rows.get_child_count() - 1)
+	expect((last.get_node("Key") as Control).find_valid_focus_neighbor(SIDE_BOTTOM) 		== controls.reset_button, "down from the last keyboard button reaches Reset")
+	expect((last.get_node("Pad") as Control).find_valid_focus_neighbor(SIDE_BOTTOM) 		== controls.back_button, "down from the last controller button reaches Back")
+	panel.hide()
+	save_data.write_to_disk = old_write
+	panel.free()
+
 func test_fixed_alternate_keys_are_reserved() -> void:
 	var bindings := autoload("Bindings")
 	var save_data := autoload("SaveData")
