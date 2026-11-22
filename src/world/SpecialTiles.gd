@@ -13,7 +13,8 @@ extends TileMap
 # which cell:
 #
 #   Wires     cycle: resting, sparking (the warning), live (shocks whoever is on them).
-#             The sparking and live frames are animated (ANIMATIONS).
+#             The sparking and live frames are animated (ANIMATIONS), as are a live
+#             plate and the slick, slow and fast tiles.
 #   Plate     is stepped on, clicks down, then goes live like wires, then re-arms.
 #             Swinging the sword into live wires or a live plate breaks it for good. Both
 #             twinkle as they go live, as an enemy does when its parry window opens.
@@ -57,14 +58,30 @@ enum Frame {
 	WIRES_LIVE_2, WIRES_LIVE_3,
 	SPIKES_TIPS, SPIKES_STAB, SPIKES_UP,
 	CRACKING_2,
+	# The rest of the hand-drawn loops of the tiles above, each running on from its _2 frame
+	# (see ANIMATIONS); the numbers say where each run starts, so the runs can't shift.
+	SLICK_2 = 31, # To 32
+	PLATE_LIVE_2 = 33, # To 39
+	SLOW_2 = 40, # To 52
+	FAST_2 = 53, # To 63
 }
 # Frames that loop while shown, ANIMATION_FPS a second: the first frame -> the whole loop.
-const ANIMATIONS := {
+static var ANIMATIONS := {
 	Frame.WIRES_SPARK: [Frame.WIRES_SPARK, Frame.WIRES_SPARK_2, Frame.WIRES_SPARK_3,
 		Frame.WIRES_SPARK_4, Frame.WIRES_SPARK_5, Frame.WIRES_SPARK_6],
 	Frame.WIRES_LIVE: [Frame.WIRES_LIVE, Frame.WIRES_LIVE_2, Frame.WIRES_LIVE_3],
+	Frame.SLICK: _loop(Frame.SLICK, Frame.SLICK_2, 3),
+	Frame.PLATE_LIVE: _loop(Frame.PLATE_LIVE, Frame.PLATE_LIVE_2, 8),
+	Frame.SLOW: _loop(Frame.SLOW, Frame.SLOW_2, 14),
+	Frame.FAST: _loop(Frame.FAST, Frame.FAST_2, 12),
 }
 const ANIMATION_FPS := 10.0
+# The pressure plate is drawn bigger than its cell (its rim and sparks spill onto the cells
+# round it), so in a room a sprite over the cell shows it from this strip: raised, pressed,
+# the eight live frames, broken. The cell itself keeps the middle 24x24 of each frame, which
+# is what the room creator shows.
+const PLATE_ART := preload("res://assets/sprites/tiles/pressure_plate.png")
+const PLATE_ART_SIZE := 30
 const SPIKE_STAB_TIME := 0.1 # Seconds the spikes show their stab frame on coming up
 const TEXTURE := preload("res://assets/sprites/tiles/special_tiles.png")
 const NODE_NAME := "SpecialTiles"
@@ -138,6 +155,14 @@ var _occupied := {} # Cells someone's feet are on this frame
 var _held := {} # Paste cells holding someone this frame
 var _squishes := {} # Teleporter cell -> the Sprite2D springing back on it (_squish)
 var _fx: SpecialTilesFx # Draws the tiles' little animations over them
+var _plates := {} # Plate cell -> the Sprite2D drawing it full size (PLATE_ART)
+
+# `first`, then the `count` - 1 frames from `rest_from` on: a loop for ANIMATIONS.
+static func _loop(first: int, rest_from: int, count: int) -> Array:
+	var loop := [first]
+	for k in count - 1:
+		loop.append(rest_from + k)
+	return loop
 
 # --- Looking things up (any body, room or not) ---
 
@@ -308,6 +333,8 @@ func _ready() -> void:
 		_tiles[cell] = tile
 		if frame == Frame.CRACKED:
 			_add_hole_body(cell)
+		elif frame == Frame.PLATE:
+			_add_plate_sprite(cell)
 	_sounds = {
 		"shock": _add_sound(SHOCK_SOUND, SHOCK_DB),
 		"crumble": _add_sound(CRUMBLE_SOUND, CRUMBLE_DB),
@@ -419,7 +446,9 @@ func _update_tile(cell: Vector2i, delta: float) -> void:
 		Frame.PLATE: _update_plate(cell, tile, delta)
 		Frame.CRACKED: _update_cracked(cell, tile, delta)
 		Frame.SPIKES: _update_spikes(cell, tile, delta)
-	if tile.frame in [Frame.WIRES, Frame.CRACKED, Frame.SPIKES]: # Their frames change with time
+	# Their frames change with time (a plate's only while live: otherwise _show_plates).
+	if tile.frame in [Frame.WIRES, Frame.CRACKED, Frame.SPIKES, Frame.SLICK, Frame.SLOW, Frame.FAST] \
+			|| (tile.frame == Frame.PLATE && tile.phase == Phase.LIVE):
 		var frame := _frame_for(tile)
 		if get_cell_atlas_coords(0, cell).x != frame:
 			_show_frame(cell, frame)
@@ -561,6 +590,27 @@ func _show_frame(cell: Vector2i, frame: int) -> void:
 		erase_cell(0, cell)
 	else:
 		set_cell(0, cell, 0, Vector2i(frame, 0))
+	if _plates.has(cell):
+		var sprite: Sprite2D = _plates[cell]
+		sprite.region_rect = Rect2(_plate_art_index(frame) * PLATE_ART_SIZE, 0, PLATE_ART_SIZE, PLATE_ART_SIZE)
+
+func _add_plate_sprite(cell: Vector2i) -> void:
+	var sprite := Sprite2D.new()
+	sprite.texture = PLATE_ART
+	sprite.region_enabled = true
+	sprite.position = map_to_local(cell)
+	add_child(sprite) # Drawn after the layer's own cells, so over its neighbours' edges
+	_plates[cell] = sprite
+	_show_frame(cell, Frame.PLATE)
+
+# Where a plate's `frame` is in PLATE_ART.
+static func _plate_art_index(frame: int) -> int:
+	match frame:
+		Frame.PLATE: return 0
+		Frame.PLATE_DOWN: return 1
+		Frame.PLATE_LIVE: return 2
+		Frame.PLATE_BROKEN: return 10
+	return 3 + frame - Frame.PLATE_LIVE_2 # The rest of the live loop
 
 # --- What happens to whoever stands on them ---
 

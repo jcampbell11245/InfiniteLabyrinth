@@ -25,13 +25,7 @@ line in `assets/sfx/SOURCE.txt`.
 
 | Name | Used for | Preview |
 | --- | --- | --- |
-| `assets/sprites/tiles/special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
-| `special_tiles.png` frames 9-12 (`PLATE`, `PLATE_DOWN`, `PLATE_LIVE`, `PLATE_BROKEN`) | Pressure plate: armed, pressed, live, broken | ![plate](docs/pending_assets/tile_plate.png) ![plate cycle](docs/pending_assets/tile_plate_cycle.gif) |
 | `special_tiles.png` frame 13 (`PASTE`) | Thermal paste that holds whoever steps in | ![paste](docs/pending_assets/tile_paste.png) |
-| `special_tiles.png` frames 14-15 (`SLOW`, `FAST`) | Slow and speed tiles | ![slow and fast](docs/pending_assets/tile_slow_fast.png) |
-| `special_tiles.png` frames 16-19 (`TELEPORT_1`-`TELEPORT_4`) | The four teleporter pairs | ![teleporters](docs/pending_assets/tile_teleporters.png) |
-| `assets/sprites/hud/status_icons.png` cell 12 (`Icon.FAST`) | Status-bar icon over the player while on a speed tile ([StatusBars.gd](src/effects/StatusBars.gd)) | ![fast icon](docs/pending_assets/icon_fast.png) |
-| `status_icons.png` cell 13 (`Icon.PASTE`) | Status-bar icon over whoever paste is holding | ![paste icon](docs/pending_assets/icon_paste.png) |
 | `assets/sprites/merchant/merchant.png` | The merchant in the start room ([Merchant.tscn](src/npcs/Merchant.tscn)): the reference image the developer supplied, used as it is and scaled down in the scene (0.095x, smoothed with mipmaps). Licence unknown, so it must be replaced with real pixel art (standing, maybe idle) | ![merchant](assets/sprites/merchant/merchant.png) |
 | `assets/sprites/hud/upgrade_time.png` | Time upgrade icon on the shop's Upgrades tab ([Upgrades.gd](src/items/Upgrades.gd)), drawn by script | ![time](docs/pending_assets/upgrade_time.png) |
 | `assets/sprites/hud/upgrade_looting.png` | Looting upgrade icon on the shop's Upgrades tab, drawn by script | ![looting](docs/pending_assets/upgrade_looting.png) |

@@ -1,18 +1,17 @@
 class_name SpecialTilesFx
 extends Node2D
 
-# The little animations over a room's special tiles: sparks running round teleporters, a
-# light sweep over speed tiles, sand trickling on slow tiles, glints over ice, current
-# flickering over a live plate, and paste bubbling (faster while it holds someone); plus
-# dust falling into cracked floor. Wires, spikes and cracked floor have hand-drawn
-# animation frames instead (SpecialTiles.ANIMATIONS and _frame_for). Drawn in code, on whole pixels, each tile's timing offset by its
-# own seed so a room of them doesn't move in step.
+# The little animations over a room's special tiles: sparks running round teleporters and
+# paste bubbling (faster while it holds someone); plus dust falling into cracked floor.
+# Wires, spikes, cracked floor, a live plate and the slick, slow and fast tiles have
+# hand-drawn animation frames instead (SpecialTiles.ANIMATIONS and _frame_for). Drawn in
+# code, on whole pixels, each tile's timing offset by its own seed so a room of them
+# doesn't move in step.
 #
 # SpecialTiles makes one as its child while its rules run (in a room, with the player in it)
 # and calls step() every physics frame. It only reads the layer's tile states.
 
 const AMBIENT_DUST_CHANCE := 3.0 # Per second, per hole or cracking floor: dust falling in
-const SAND := Color("e6d38a")
 const BUBBLE := Color("f7b866")
 
 var layer: SpecialTiles
@@ -36,10 +35,6 @@ func _draw() -> void:
 			SpecialTiles.Frame.TELEPORT_1, SpecialTiles.Frame.TELEPORT_2, \
 					SpecialTiles.Frame.TELEPORT_3, SpecialTiles.Frame.TELEPORT_4:
 				_teleport(origin, seed, SpecialTiles.teleport_colour(tile.frame))
-			SpecialTiles.Frame.FAST: _sweep(origin, seed, 34.0, Color(1, 0.95, 0.7, 0.35))
-			SpecialTiles.Frame.SLOW: _slow(origin, seed)
-			SpecialTiles.Frame.SLICK: _glint(origin, seed)
-			SpecialTiles.Frame.PLATE: _current(origin, seed, tile)
 			SpecialTiles.Frame.PASTE: _bubbles(origin, seed, cell)
 
 func _pixel(at: Vector2, colour: Color) -> void:
@@ -52,39 +47,6 @@ func _teleport(origin: Vector2, seed: float, colour: Color) -> void:
 	for k in 3:
 		var angle := _time * 2.5 + k * TAU / 3.0 + seed * TAU
 		_pixel(centre + Vector2.from_angle(angle) * 9.5, colour.lightened(0.6))
-
-# A band of light sliding across the tile, left to right.
-func _sweep(origin: Vector2, seed: float, speed: float, colour: Color) -> void:
-	var x := fmod(_time * speed + seed * 24.0, 30.0) - 3.0
-	var left := clampf(x, 3.0, 21.0)
-	var right := clampf(x + 3.0, 3.0, 21.0)
-	if right > left:
-		draw_rect(Rect2(origin + Vector2(left, 3), Vector2(right - left, 18)), colour)
-
-# Sand trickling through the hourglass, and the tile slowly breathing.
-func _slow(origin: Vector2, seed: float) -> void:
-	draw_rect(Rect2(origin + Vector2(3, 3), Vector2(18, 18)),
-		Color(0.6, 0.55, 1.0, 0.06 + 0.06 * sin(_time * 1.5 + seed * TAU)))
-	var fall := fmod(_time * 0.9 + seed, 1.0)
-	_pixel(origin + Vector2(11, 12 + fall * 4.0), SAND)
-
-# Every few seconds a glint runs diagonally over the ice.
-func _glint(origin: Vector2, seed: float) -> void:
-	var period := 2.6
-	var t := fmod(_time + seed * period, period) / 0.45
-	if t >= 1.0:
-		return
-	var along := -4.0 + t * 30.0
-	for i in 5:
-		var at := Vector2(along + i, 20 - i * 1.2 - t * 14.0)
-		if at.x >= 1 && at.x < 23 && at.y >= 1 && at.y < 23:
-			_pixel(origin + at, Color(1, 1, 1, 0.8))
-
-# A live plate flickers with current.
-func _current(origin: Vector2, seed: float, tile: Dictionary) -> void:
-	if tile.phase == SpecialTiles.Phase.LIVE:
-		draw_rect(Rect2(origin, Vector2.ONE * Room.CELL_SIZE),
-			Color(SpecialTiles.SHOCK_COLOR, 0.12 + 0.18 * absf(sin(_time * 37.0 + seed * 9.0))))
 
 # Two bubbles slowly swelling and popping, faster while it holds someone.
 func _bubbles(origin: Vector2, seed: float, cell: Vector2i) -> void:
