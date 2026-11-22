@@ -722,9 +722,6 @@ one_shot = true
 stream = ExtResource("18_a4inj")
 bus = &"SFX"
 
-[node name="Crit" type="AudioStreamPlayer" parent="." unique_id=1204896715]
-bus = &"SFX"
-
 [connection signal="frame_changed" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_frame_changed"]
 [connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_hurtbox_area_shape_entered"]
 [connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_invincibility_cooldown_timeout"]

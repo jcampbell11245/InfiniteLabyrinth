@@ -89,9 +89,9 @@ func die() -> void:
 	$Won.visible = true
 	get_tree().paused = true
 
-# A critical hit does double damage instead of killing outright.
-func _lose_health(amount: float, critical: bool) -> void:
-	health -= amount * 2 if critical else amount
+# The debug menu's one-hit kills don't reach the boss: its death ends the run.
+func _lose_health(amount: float) -> void:
+	health -= amount
 
 func _after_hit() -> void:
 	var rng := RandomNumberGenerator.new()

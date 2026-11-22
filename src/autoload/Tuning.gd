@@ -36,7 +36,6 @@ var parried_knockback := 0.5 # Times the enemy's knockback_speed for being parri
 var hit_knockback := 0.0 # Times the enemy's knockback_speed for an ordinary hit; 0 so a rush can't stunlock
 var stagger_damage_multiplier := 2.0 # Next hit taken while vulnerable
 var stagger_vulnerable_time := 3.0 # Seconds the vulnerability lasts
-var crit_roll_max := 30 # A hit crits when randi_range(0, crit_roll_max) < damage upgrade level
 var deflect_damage_multiplier := 1.5
 var deflect_speed_multiplier := 1.15
 var deflect_max_speed := 450.0 # Pixels/sec
@@ -236,6 +235,13 @@ var slow_tile_multiplier := 0.6 # Walk, roll and attack speed on a slow tile
 var fast_tile_multiplier := 1.4 # Walk, roll and attack speed on a speed tile
 var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its destination lights up
 
+# --- Items ---
+var item_slots := 3 # Boxes on the item bar in the bottom-left corner of the screen
+var skeleton_key_price := 50 # Coins the merchant asks for a skeleton key
+var metal_detector_price := 50 # Coins the merchant asks for a metal detector
+var shop_buy_cooldown := 0.5 # Seconds after a purchase before the shop takes another, against double buys
+var merchant_reach := 30.0 # Pixels from the merchant's feet to the player's within which they can talk
+
 # --- Lighting (CaveLighting) ---
 var lighting_enabled := true # Off shows the cave at full brightness, as before lighting
 var cave_brightness := 0.85 # 0..1: how much of its colour the unlit cave keeps
@@ -289,7 +295,6 @@ const FIELDS := [
 	["Combat", "hit_knockback", "Hit knockback multiplier", 0, 5, 0.05, "Enemy.take_damage (was 1x knockback_speed)"],
 	["Combat", "stagger_damage_multiplier", "Stagger damage multiplier", 1, 10, 0.1, "Constants.gd STAGGER_DAMAGE_MULTIPLIER"],
 	["Combat", "stagger_vulnerable_time", "Stagger vulnerable time (s)", 0, 10, 0.1, "Constants.gd STAGGER_VULNERABLE_TIME"],
-	["Combat", "crit_roll_max", "Crit roll max (lower = more crits)", 0, 100, 1, "Enemy.gd CRIT_ROLL_MAX"],
 	["Combat", "deflect_damage_multiplier", "Deflect damage multiplier", 0, 5, 0.05, "Constants.gd DEFLECT_DAMAGE_MULTIPLIER"],
 	["Combat", "deflect_speed_multiplier", "Deflect speed multiplier", 0, 3, 0.05, "Constants.gd DEFLECT_SPEED_MULTIPLIER"],
 	["Combat", "deflect_max_speed", "Deflect max speed", 50, 1000, 10, "Constants.gd DEFLECT_MAX_SPEED"],
@@ -422,7 +427,7 @@ const FIELDS := [
 	["Loot", "arrow_drop_chance", "Arrow drop chance", 0, 1, 0.05, "Constants.gd ARROW_DROP_CHANCE"],
 	["Loot", "arrow_drop_max", "Arrow drop max", 1, 10, 1, "Constants.gd ARROW_DROP_MAX"],
 	["Loot", "coin_multiplier", "Coin multiplier", 0, 20, 0.1, "new (Enemy._coin_multiplier)"],
-	["Loot", "upgrade_cost_multiplier", "Upgrade cost multiplier", 0, 5, 0.05, "new (UpgradeMenu.gd COSTS)"],
+	["Loot", "upgrade_cost_multiplier", "Upgrade cost multiplier", 0, 5, 0.05, "new (Upgrades.COSTS)"],
 	["Loot", "pickup_collect_distance", "Pickup collect distance", 1, 400, 1, "Pickup.gd COLLECT_DISTANCE"],
 	["Loot", "pickup_home_accel", "Pickup homing accel", 50, 5000, 50, "Pickup.gd HOME_ACCEL"],
 
@@ -466,6 +471,12 @@ const FIELDS := [
 	["Goblins", "pilot_mount_reach", "Pilot climb-on distance (px)", 0, 60, 1, "new (Pilot._seek_mount)"],
 	["Goblins", "pilot_strike_reach", "Pilot follow-up reach (px)", 0, 120, 1, "new (Pilot._ride)"],
 	["Goblins", "pilot_strike_hold", "Pilot follow-up windup hold (s)", 0, 2, 0.05, "new (Pilot.follow_up_strike)"],
+
+	["Items", "item_slots", "Item bar boxes", 1, 9, 1, "new (ItemBar)"],
+	["Items", "skeleton_key_price", "Skeleton key price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "metal_detector_price", "Metal detector price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "shop_buy_cooldown", "Shop purchase cooldown (s)", 0, 3, 0.05, "new (ShopMenu)"],
+	["Items", "merchant_reach", "Merchant reach (px)", 5, 100, 1, "new (Merchant.in_reach)"],
 
 	["Lighting", "lighting_enabled", "Lighting on", 0, 0, 0, "new (CaveLighting)"],
 	["Lighting", "cave_brightness", "Cave brightness", 0, 1, 0.05, "new (CaveLighting.ambient_color)"],

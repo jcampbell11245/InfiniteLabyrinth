@@ -51,14 +51,14 @@ func test_the_pilot_takes_hits_before_its_mount() -> void:
 	var pilot: Pilot = parts[2]
 	var orc_health := orc.health
 	var pilot_health := pilot.health
-	orc._lose_health(1.0, false)
+	orc._lose_health(1.0)
 	expect_equal(orc.health, orc_health, "the orc is untouched")
 	expect_near(pilot.health, pilot_health - 1.0, 0.001, "the pilot took the hit")
-	orc._lose_health(5.0, false) # Kills the pilot; the rest doesn't carry on
+	orc._lose_health(5.0) # Kills the pilot; the rest doesn't carry on
 	expect(pilot.is_queued_for_deletion(), "the pilot is dead")
 	expect(orc.rider == null, "and off the orc")
 	expect_equal(orc.health, orc_health, "the orc still untouched")
-	orc._lose_health(1.0, false)
+	orc._lose_health(1.0)
 	expect_near(orc.health, orc_health - 1.0, 0.001, "now the orc takes hits")
 
 func test_a_finished_combo_gets_a_pilot_follow_up_unless_a_hit_landed() -> void:

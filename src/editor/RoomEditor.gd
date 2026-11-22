@@ -807,10 +807,12 @@ func _build_ui() -> void:
 	var theme := Theme.new()
 	theme.default_font_size = FONT_SIZE
 
+	# The screen is taller than 1080 on screens narrower than 16:9 (stretch aspect "expand").
+	var screen := get_viewport().get_visible_rect().size
 	var panel := PanelContainer.new()
 	panel.theme = theme
 	panel.position = Vector2.ZERO
-	panel.custom_minimum_size = Vector2(PANEL_WIDTH, 1080)
+	panel.custom_minimum_size = Vector2(PANEL_WIDTH, screen.y)
 	layer.add_child(panel)
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
@@ -887,9 +889,9 @@ func _build_ui() -> void:
 	layer.add_child(help)
 	_status = Label.new()
 	_status.theme = theme
-	_status.position = Vector2(PANEL_WIDTH + 32, 1080 - 64)
+	_status.position = Vector2(PANEL_WIDTH + 32, screen.y - 64)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_status.size = Vector2(1920 - PANEL_WIDTH - 64, 48)
+	_status.size = Vector2(screen.x - PANEL_WIDTH - 64, 48)
 	layer.add_child(_status)
 
 # The tools: Eraser and Select in a row on top, then a tab each for tiles and enemies (see

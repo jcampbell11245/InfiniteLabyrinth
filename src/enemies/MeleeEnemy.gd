@@ -959,11 +959,6 @@ func _is_reacting() -> bool:
 		return invincibility_cooldown.time_left != 0
 	return false
 
-func _lose_health(amount: float, critical: bool) -> void:
-	if critical:
-		Juice.play($Crit, 0.05)
-	super(amount, critical)
-
 func _on_animated_sprite_2d_frame_changed() -> void:
 	if !is_node_ready(): # A family member swapping in its own sprite frames as it loads
 		return

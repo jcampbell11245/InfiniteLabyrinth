@@ -56,7 +56,6 @@ const PILOT_SCENE := "res://src/enemies/Pilot.tscn"
 
 var direction := "" # Direction facing; "" until first set
 var knockback := Vector2.ZERO
-var critical_chance := 0
 var _windup_held := false # The current attack has reached its windup hold
 var _next_hold := -1.0 # Seconds of windup hold for the next attack instead of a random roll; -1 rolls
 # The attack under way can't be parried (see _on_player_sword): set by a subclass as it
@@ -91,12 +90,11 @@ var _combo_landed := false
 @onready var hurtbox: CollisionShape2D = $Hurtbox/CollisionShape2D
 @onready var invincibility_cooldown: Timer = $InvincibilityCooldown
 
-# Hit feedback, scaled up for kills and crits. Seconds of hit-stop.
+# Hit feedback, scaled up for kills. Seconds of hit-stop.
 const HITSTOP_HIT := 0.05
 const HITSTOP_KILL := 0.09
-const HITSTOP_CRIT := 0.12
 const HITSTOP_BLOCK := 0.03
-# The parry window, parried stun and knockback, sword damage and crit roll are in Tuning.
+# The parry window, parried stun and knockback and sword damage are in Tuning.
 const PARRY_SPARK := Color(1, 0.95, 0.7)
 const UNPARRYABLE_TWINKLE_COLOR := Color(0.9, 0.05, 0.05) # Solid red: warns that the attack can't be parried
 const PARRY_HITSTOP := 0.1
@@ -108,7 +106,6 @@ const PARRY_BAR := Color(1, 0.85, 0.2)
 const STUN_BAR := Color(0.75, 0.5, 1)
 
 func _ready() -> void:
-	critical_chance = SaveData.damage_level
 	add_to_group("enemies")
 	for key: String in ["speed", "damage", "knockback_speed", "attack_cooldown_length", "windup_hold_min", "windup_hold_max"]:
 		_base[key] = get(key)
@@ -204,7 +201,7 @@ func _add_timer(on_timeout := Callable()) -> Timer:
 	add_child(timer)
 	return timer
 
-# amount is the health a normal hit takes; a critical hit decides its own.
+# amount is the health the hit takes.
 func take_damage(from_direction: String, amount: float) -> void:
 	if invincibility_cooldown.time_left != 0:
 		return
@@ -230,36 +227,31 @@ func take_damage(from_direction: String, amount: float) -> void:
 	if is_vulnerable():
 		amount *= Tuning.stagger_damage_multiplier
 		_set_vulnerable(false)
-	var critical := _roll_critical()
-	_lose_health(amount, critical)
-	_hit_feedback(hit_dir, critical, health <= 0)
+	_lose_health(amount)
+	_hit_feedback(hit_dir, health <= 0)
 	if health <= 0:
 		die()
 	_after_hit()
 
 # A blocked hit still wears the blocker down: Tuning.chip_damage off its health, with no
-# invincibility, crit or stagger bonus. It can finish an enemy off. Call after the block's
+# invincibility or stagger bonus. It can finish an enemy off. Call after the block's
 # own feedback.
 func _chip(hit_dir: Vector2) -> void:
 	if Tuning.chip_damage <= 0 || health <= 0:
 		return
-	if _rider_absorbs(Tuning.chip_damage, false):
+	if _rider_absorbs(Tuning.chip_damage):
 		return
 	health -= Tuning.chip_damage
 	if health <= 0.0001: # Repeated small chips leave float error behind
 		health = 0
-		_hit_feedback(hit_dir, false, true)
+		_hit_feedback(hit_dir, true)
 		die()
 
-# Flash, spray, freeze and shake, harder for kills and crits.
-func _hit_feedback(hit_dir: Vector2, critical: bool, killed: bool) -> void:
+# Flash, spray, freeze and shake, harder for kills.
+func _hit_feedback(hit_dir: Vector2, killed: bool) -> void:
 	Juice.flash(animator)
 	Juice.burst(room, global_position, blood_color, 8, 80.0, hit_dir)
-	if critical:
-		Juice.burst(room, global_position, Color.WHITE, 10, 110.0, Vector2.ZERO, 2.0, 0.3)
-		Juice.hitstop(HITSTOP_CRIT)
-		Juice.shake(Juice.SHAKE_HEAVY)
-	elif killed:
+	if killed:
 		Juice.hitstop(HITSTOP_KILL)
 		Juice.shake(Juice.SHAKE_MEDIUM)
 	else:
@@ -363,14 +355,14 @@ func hurt_by_floor(amount: float) -> void:
 		return
 	invincibility_cooldown.start(invincibility_time)
 	animator.modulate.a = 0.5
-	if _rider_absorbs(amount, false):
+	if _rider_absorbs(amount):
 		return
 	health -= amount
 	Juice.flash(animator)
 	Juice.burst(room, global_position, blood_color, 6, 60.0, Vector2.ZERO)
 	if health <= 0.0001:
 		health = 0
-		_hit_feedback(Vector2.ZERO, false, true)
+		_hit_feedback(Vector2.ZERO, true)
 		die()
 
 # The floor gave way under it.
@@ -399,15 +391,10 @@ func flies() -> bool:
 func _blocks_hit() -> bool:
 	return false
 
-func _roll_critical() -> bool:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	return rng.randi_range(0, Tuning.crit_roll_max) < critical_chance
-
-func _lose_health(amount: float, critical: bool) -> void:
-	if _rider_absorbs(amount, critical):
+func _lose_health(amount: float) -> void:
+	if _rider_absorbs(amount):
 		return
-	if critical || Tuning.one_hit_kills:
+	if Tuning.one_hit_kills:
 		health = 0
 	else:
 		health -= amount
@@ -602,13 +589,13 @@ func seat_position() -> Vector2:
 func rider_busy() -> bool:
 	return is_instance_valid(rider) && rider.is_striking()
 
-# Takes a hit of `amount` (or a critical one) off its pilot instead, if it has one; true if
+# Takes a hit of `amount` off its pilot instead, if it has one; true if
 # the pilot took it. The pilot falls off dead once its health is gone; the hit never carries
 # on into this enemy.
-func _rider_absorbs(amount: float, critical: bool) -> bool:
+func _rider_absorbs(amount: float) -> bool:
 	if !is_instance_valid(rider) || rider.is_queued_for_deletion():
 		return false
-	rider.absorb_hit(amount, critical)
+	rider.absorb_hit(amount)
 	return true
 
 # A goblin pilot to ride it, made beside it and climbed straight on. It counts towards

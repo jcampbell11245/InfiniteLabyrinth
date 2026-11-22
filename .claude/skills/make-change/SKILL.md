@@ -127,7 +127,7 @@ All of it must pass: it's what the pull request's **Smoke test** and **Tests** c
 For visual changes, take screenshots in a real window and look at them:
 
 ```bash
-"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/<name> [hurt|upgrades]
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/<name> [hurt|shop]
 ```
 
 You can't hear sounds or feel timing: list those for the developer to playtest.

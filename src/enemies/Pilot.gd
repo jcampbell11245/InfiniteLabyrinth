@@ -235,10 +235,10 @@ func meets_sword(from_direction: String) -> bool:
 	return false
 
 # A hit on its mount, taken by it instead (Enemy._rider_absorbs).
-func absorb_hit(amount: float, critical: bool) -> void:
+func absorb_hit(amount: float) -> void:
 	if health <= 0:
 		return
-	if critical || Tuning.one_hit_kills:
+	if Tuning.one_hit_kills:
 		health = 0
 	else:
 		health -= amount
