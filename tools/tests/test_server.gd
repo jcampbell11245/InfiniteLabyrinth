@@ -65,6 +65,22 @@ func test_breaks_in_three_sword_hits_and_doesnt_count_towards_clearing() -> void
 	expect(server.health <= 0 && server.is_queued_for_deletion(), "the third hit breaks it")
 	expect_equal(room.enemy_count, 2, "breaking it clears nothing")
 
+func test_one_swing_hits_it_once() -> void:
+	var room := await boot_server("attack")
+	var server := find_server(room)
+	var player: Player = autoload("Game").player
+	server.critical_chance = 0
+	player.swing_started_frame = 1000
+	server._on_player_sword(Direction.RIGHT)
+	var after_one := server.health
+	server.invincibility_cooldown.stop() # As if the sword were still out when it wore off
+	server._on_player_sword(Direction.RIGHT)
+	expect_equal(server.health, after_one, "the same swing doesn't hit it again")
+	player.swing_started_frame = 1030
+	server.invincibility_cooldown.stop()
+	server._on_player_sword(Direction.RIGHT)
+	expect(server.health < after_one, "the next swing does")
+
 func test_crit_breaks_it_at_once() -> void:
 	var room := await boot_server("attack")
 	var server := find_server(room)
@@ -147,6 +163,23 @@ func test_floor_server_chance_climbs_to_its_cap() -> void:
 	expect_near(ServerBuff.floor_server_chance(2), 0.10, 0.0001, "10% on floor 2")
 	expect_near(ServerBuff.floor_server_chance(8), 0.40, 0.0001, "40% on floor 8")
 	expect_near(ServerBuff.floor_server_chance(20), 0.40, 0.0001, "capped at 40%")
+
+# The floor chance is rolled for each server on its own, not once for the whole floor.
+func test_each_server_rolls_its_own_floor_chance() -> void:
+	var design := RoomDesign.new()
+	for x in 8:
+		design.set_object(Vector2i(x + 2, 2), "server")
+	var room := await boot_design(design)
+	var tuning := autoload("Tuning")
+	tuning.floor_server_chance_first = 0.5
+	tuning.floor_server_chance_max = 0.5
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var gold := ServerBuff.roll_floor_servers(room.get_tree(), 1, rng)
+	expect(gold.size() > 0 && gold.size() < 8,
+		"some of the eight servers turn gold and some don't (%d did)" % gold.size())
+	for server in gold:
+		expect(server.floor_server, "each one rolled gold is a floor server")
 
 func test_random_picks_from_its_pool_and_swap_keeps_switching() -> void:
 	var design := RoomDesign.new()

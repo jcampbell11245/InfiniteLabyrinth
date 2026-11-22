@@ -1,22 +1,25 @@
 class_name FloorBanner
 extends CanvasLayer
 
-# A message across the top of the screen as a floor starts, telling the player that gold
-# floor servers (see Server.make_floor_server) are boosting every enemy on it, and what they
-# boost. It fades in, stays SHOW_TIME seconds and fades out, in real time so hit-stop
-# doesn't stretch it. Overworld shows it once the floor is built.
+# A message across the top of the screen as a floor starts, telling the player that premium
+# servers (gold floor servers, see Server.make_floor_server) are boosting every enemy on it,
+# and what they boost, in the pixel font of the title screen and menus. It fades in, stays
+# SHOW_TIME seconds and fades out, in real time so hit-stop doesn't stretch it. Overworld
+# shows it once the floor is built.
 
 const AlertSound := preload("res://assets/sfx/server_alert.wav")
+const PIXEL_FONT := preload("res://assets/fonts/8-BIT WONDER.TTF")
 const DELAY := 0.6 # Seconds after the floor starts, once the first room has faded in
 const FADE_IN := 0.35
 const SHOW_TIME := 3.0
 const FADE_OUT := 0.6
 const TOP := 130.0 # Screen pixels from the top, clear of the level timer
-const TITLE_SIZE := 40
-const TEXT_SIZE := 28
+const TITLE_SIZE := 32 # The pixel font is wide: whole multiples of 8 keep it crisp
+const TEXT_SIZE := 24
 const GOLD := Color(1.0, 0.84, 0.3)
 const BACKING := Color(0, 0, 0, 0.6)
 const PADDING := Vector2(36, 18)
+const LINE_GAP := 10 # Between the title and the message
 const ALERT_VOLUME_DB := -6.0
 
 # Shows the banner over `parent` for the floor servers `gold`.
@@ -38,10 +41,10 @@ static func describe(gold: Array[Server]) -> String:
 		if !boosts.has(name):
 			boosts.append(name)
 	if swapping:
-		boosts.append("ever-changing")
+		boosts.append("ever changing")
 	var what := " and ".join(boosts) if boosts.size() <= 2 \
 		else ", ".join(boosts.slice(0, boosts.size() - 1)) + " and " + boosts[boosts.size() - 1]
-	var count := "A gold server is" if gold.size() == 1 else "%d gold servers are" % gold.size()
+	var count := "A premium server is" if gold.size() == 1 else "%d premium servers are" % gold.size()
 	return "%s boosting enemy %s across this floor.\nDestroy %s to end it." \
 		% [count, what, "it" if gold.size() == 1 else "them"]
 
@@ -60,8 +63,9 @@ func _ready() -> void:
 	style.content_margin_bottom = PADDING.y
 	panel.add_theme_stylebox_override("panel", style)
 	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", LINE_GAP)
 	panel.add_child(column)
-	var title := _label("FLOOR SERVERS ONLINE", TITLE_SIZE, GOLD)
+	var title := _label("PREMIUM SERVERS ONLINE", TITLE_SIZE, GOLD)
 	column.add_child(title)
 	column.add_child(_label(text, TEXT_SIZE, Color.WHITE))
 	# Centred across the top of the screen, below the level timer.
@@ -85,6 +89,7 @@ func _label(words: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = words
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_override("font", PIXEL_FONT)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)

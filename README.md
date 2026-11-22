@@ -224,12 +224,12 @@ switching between the Pool's boosts). **Pool** ticks which boosts Random and Swa
 from. **Area** is a **Circle** round it (default 120 px; drag its edge to resize it) or the
 **Whole room**. Its area is tinted with the boost's colour in the editor and the game, edged
 with a ring of chunky pixels for a circle; a Swap server's is always pink, so the tint never
-flashes between colours. As each floor is built, every server has a chance (5% on floor 1,
-5% more each floor, up to 40%) of turning gold: a gold floor server also gives half its
-boost to every enemy anywhere on the floor until it breaks, its room shows pale gold on the
-minimap from the start, and a banner announces it as the floor begins. In room scenes these
-are each server's `buff`, `buff_pool`, `whole_room` and `radius`; the strengths, swap time and
-gold chances are in the debug menu's Servers tab.
+flashes between colours. As each floor is built, each server rolls its own chance (5% on
+floor 1, 5% more each floor, up to 40%) of turning gold, into a premium server: it also
+gives half its boost to every enemy anywhere on the floor until it breaks, its room shows
+pale gold on the minimap from the start, and a "Premium servers online" banner announces it
+as the floor begins. In room scenes these are each server's `buff`, `buff_pool`, `whole_room`
+and `radius`; the strengths, swap time and gold chances are in the debug menu's Servers tab.
 
 **Tileset** switches the preview (and the play-test) between each floor's art, so a room can
 be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10 that the room

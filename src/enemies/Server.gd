@@ -43,6 +43,7 @@ var _swap_timer: Timer
 var _blink := 0.0
 var _beacon: Node2D # Drawn over the sprite (a parent's own drawing goes under its children)
 var _full_health := 0.0 # Health when undamaged, from the tuning
+var _swing_landed := -2 # Player.swing_started_frame of the last swing that hit it
 
 @onready var hit_sound: AudioStreamPlayer = $Hit
 
@@ -138,6 +139,17 @@ func _swap() -> void:
 		kind = others[randi() % others.size()]
 
 # --- Being hit ---
+
+# One sword swing takes one hit. Its invincibility after a hit is shorter than a swing, so
+# the sword, still out, would hit it again as it wore off; this remembers which swing (by
+# the physics frame it started on) last landed and ignores it after.
+func _on_player_sword(from_direction: String) -> void:
+	if player.swing_started_frame == _swing_landed:
+		return
+	var before := health
+	take_damage(from_direction, player.sword_damage())
+	if health < before:
+		_swing_landed = player.swing_started_frame
 
 # It stands its ground: no knockback, and a spin or parry never stuns it.
 func stagger(_from_direction: String, _stun_time := -1.0) -> void:
