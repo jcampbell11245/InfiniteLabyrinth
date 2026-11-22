@@ -134,7 +134,7 @@ var centaur_charge_range := 160.0 # Pixels: a player out of reach but this close
 var centaur_hurtbox_margin := 4.0 # Pixels the hurtbox reaches past the drawn body all round, so near misses count
 var boss_laser_cooldown := 1.0
 # Hobgoblins (Hobgoblin.gd): sprint at the player, glint for the parry window and blow up.
-var hobgoblin_contact_reach := 16.0 # Pixels from the player at which it stops, glints and (after the parry window) goes off
+var hobgoblin_contact_reach := 4.0 # Pixels between its body (hurtbox) and the player's at which it stops dead, glints and (after the parry window) goes off
 var hobgoblin_blast_radius := 40.0 # Pixels: everything this close to the blast is caught in it
 var hobgoblin_blast_damage := 2.0 # Damage to the player of a hobgoblin going off on them
 var hobgoblin_blast_enemy_damage := 3.0 # Damage to each enemy caught in a blast
@@ -453,7 +453,7 @@ const FIELDS := [
 	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "teleport_glow_range", "Teleporter destination glow range (px)", 0, 200, 4, "new (SpecialTiles._update_glow)"],
 
-	["Goblins", "hobgoblin_contact_reach", "Hobgoblin glint distance (px)", 0, 60, 1, "new (Hobgoblin._run_in)"],
+	["Goblins", "hobgoblin_contact_reach", "Hobgoblin glint gap to the player (px)", 0, 60, 1, "new (Hobgoblin._run_in)"],
 	["Goblins", "hobgoblin_blast_radius", "Hobgoblin blast radius (px)", 0, 150, 1, "new (Hobgoblin.explode)"],
 	["Goblins", "hobgoblin_blast_damage", "Hobgoblin blast damage to the player", 0, 10, 0.25, "new (Hobgoblin.explode)"],
 	["Goblins", "hobgoblin_blast_enemy_damage", "Hobgoblin blast damage to enemies", 0, 20, 0.25, "new (Hobgoblin.explode)"],

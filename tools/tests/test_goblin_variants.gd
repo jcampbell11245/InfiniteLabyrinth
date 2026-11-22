@@ -239,3 +239,40 @@ func test_a_returned_fireball_only_hurts_the_pilot() -> void:
 		await tree.physics_frame
 	expect(!is_instance_valid(pilot) || pilot.is_queued_for_deletion(), "the pilot is dead")
 	expect_equal(orc.health, before, "the orc isn't hurt by the same shot")
+
+func test_a_pilot_that_saw_the_player_makes_its_mount_notice_them() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(10, 10), "orc")
+	design.set_radius(Vector2i(10, 10), 0)
+	design.set_object(Vector2i(10, 8), "pilot")
+	var room: Room = await boot_design(design)
+	var pilot: Pilot = first(room, Pilot)
+	var orc: MeleeEnemy = null
+	for child in room.get_children():
+		if child is MeleeEnemy && child.mountable:
+			orc = child
+	orc.noticed = false
+	pilot.noticed = true
+	pilot.mount_on(orc)
+	expect(orc.noticed, "the orc notices the player")
+
+func test_a_hobgoblin_stops_dead_as_it_reaches_the_player() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(6, 6), "hobgoblin")
+	var room: Room = await boot_design(design)
+	var hobgoblin: Hobgoblin = first(room, Hobgoblin)
+	var player: Player = autoload("Game").player
+	hobgoblin.noticed = true
+	hobgoblin.global_position = player.global_position + Vector2(60, 0)
+	for i in 120:
+		if hobgoblin.is_fusing():
+			break
+		await tree.physics_frame
+	expect(hobgoblin.is_fusing(), "it reached the player and glinted")
+	var gap := hobgoblin._gap_to_player()
+	expect(gap > -2.0 && gap <= autoload("Tuning").hobgoblin_contact_reach + 2.0,
+		"it stopped at its body's edge, not inside the player (gap %.1f)" % gap)
+	var at := hobgoblin.global_position
+	await tree.physics_frame
+	await tree.physics_frame
+	expect(hobgoblin.global_position.distance_to(at) < 0.5, "and stays put while it glints")

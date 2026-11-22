@@ -29,6 +29,8 @@ extends MeleeEnemy
 # parry, which cancels the slash and stuns the mount; early, it's blocked and staggers the
 # player, as for any attack.
 #
+# A pilot that climbs on after noticing the player makes its mount notice them too.
+#
 # If the mount dies with the pilot still on it (falling down a pit, say) the pilot jumps off
 # and fights on foot.
 
@@ -133,6 +135,10 @@ func mount_on(target: Enemy) -> void:
 	mount = target
 	target.rider = self
 	_wants_mount = false
+	# A pilot that has seen the player rides its mount straight at them: the mount notices
+	# them too (and alerts the room, as noticing always does).
+	if noticed && is_player_in_room() && "noticed" in target:
+		target.set("noticed", true)
 	_saved_layer = collision_layer
 	_saved_mask = collision_mask
 	collision_layer = 0 # Not in the way of the player or the mount

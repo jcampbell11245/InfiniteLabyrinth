@@ -3,8 +3,9 @@ extends MeleeEnemy
 
 # A goblin that blows itself up on the player. It notices the player, alerts the room and
 # roams as a goblin does (MeleeEnemy), but the moment it has noticed them it sprints straight
-# at them: no turn to wait for, no circling, no pause. Within Tuning.hobgoblin_contact_reach
-# it stops and glints (white, at once, with no random windup hold), and when the glint's
+# at them: no turn to wait for, no circling, no pause. Once its body is within
+# Tuning.hobgoblin_contact_reach of the player's (the gap between their hurtboxes) it stops dead
+# and glints (white, at once, with no random windup hold), and when the glint's
 # Tuning.parry_window runs out it goes off: a blast of Tuning.hobgoblin_blast_radius that
 # hurts the player (rolling doesn't save them; only getting out of the blast does) and every
 # enemy caught in it.
@@ -30,6 +31,7 @@ const BLAST_STAIN := 14.0 # Radius of the scorch it leaves
 const BLAST_PITCH := 0.55 # Its attack sound, pitched right down, is the bang
 const FLING_FLASH := Color(1, 0.4, 0.1) # Glows while flung, lit
 const FLING_SPIN := 18.0 # Radians/sec it tumbles while flung
+const FLING_HIT_REACH := 14.0 # Pixels between centres at which a flung one sets off on another enemy
 
 var _fuse: Timer # Running from the glint to the blast
 var _flung := false
@@ -71,7 +73,7 @@ func _physics_process(delta: float) -> void:
 
 # Sprints at the player and lights up the moment it reaches them.
 func _run_in(delta: float) -> void:
-	if _to_player().length() <= Tuning.hobgoblin_contact_reach:
+	if _gap_to_player() <= Tuning.hobgoblin_contact_reach:
 		_light_fuse()
 		return
 	_walk_to(_player_position(), speed, delta, 0.0)
@@ -79,6 +81,9 @@ func _run_in(delta: float) -> void:
 # Stops, faces the player and glints straight away; the blast comes when the parry window
 # closes (_on_fuse_out).
 func _light_fuse() -> void:
+	knockback = Vector2.ZERO # Stops dead where it is
+	slide = Vector2.ZERO
+	velocity = Vector2.ZERO
 	if _is_player_mostly_horizontal():
 		_face_player_horizontally()
 	else:
@@ -93,6 +98,16 @@ func _light_fuse() -> void:
 	_twinkle()
 	_fuse.start(Tuning.parry_window)
 	Juice.play($Attack, 0.08, voice_pitch)
+
+# Pixels between its hurtbox and the player's, along whichever axis they're further apart
+# on; 0 or less once they touch. Measured between bodies rather than centres, so it stops as
+# it reaches the player instead of running on into them.
+func _gap_to_player() -> float:
+	var offset := (player.global_position + _shape_centre(player.hurtbox, player)) \
+		- (global_position + _shape_centre(hurtbox, self))
+	var gap_x := absf(offset.x) - _half_extent(player.hurtbox, player, true) - _half_extent(hurtbox, self, true)
+	var gap_y := absf(offset.y) - _half_extent(player.hurtbox, player, false) - _half_extent(hurtbox, self, false)
+	return maxf(gap_x, gap_y)
 
 func is_fusing() -> bool:
 	return !_fuse.is_stopped()
@@ -155,7 +170,7 @@ func _enemy_in_reach() -> bool:
 	for node in room.get_children():
 		var other := node as Enemy
 		if other != null && other != self && !other.is_queued_for_deletion() \
-				&& other.global_position.distance_to(global_position) <= Tuning.hobgoblin_contact_reach:
+				&& other.global_position.distance_to(global_position) <= FLING_HIT_REACH:
 			return true
 	return false
 
