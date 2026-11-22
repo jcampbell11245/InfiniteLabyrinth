@@ -34,10 +34,11 @@ func _ready() -> void:
 		_build_test(test_design)
 	else:
 		_build(WorldGenerator.generate(rng, floor_number))
-	# Some servers turn gold, boosting the whole floor (a play-test rolls too, for trying them).
-	var gold := ServerBuff.roll_floor_servers(get_tree(), floor_number, rng)
-	if !gold.is_empty():
-		FloorBanner.show_for(self, gold)
+	# Some servers turn silver, into premium servers boosting the whole floor (a play-test rolls
+	# too, for trying them).
+	var premium := ServerBuff.roll_floor_servers(get_tree(), floor_number, rng)
+	if !premium.is_empty():
+		FloorBanner.show_for(self, premium)
 	Game.room_entered.emit(Game.player.current_room) # Fades the start room in
 	
 	Music.start_floor()

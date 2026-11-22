@@ -11,7 +11,7 @@ const FAR := Vector2i(12, 0) # Out of the default 5-cell circle
 
 func boot_design(design: RoomDesign) -> Room:
 	autoload("Tuning").freeze_enemies = true
-	autoload("Tuning").floor_server_chance_max = 0.0 # No server turns gold unless a test says so
+	autoload("Tuning").floor_server_chance_max = 0.0 # No server turns silver unless a test says so
 	Overworld.test_design = design
 	await boot_floor()
 	Overworld.test_design = null # So later tests get real floors
@@ -188,11 +188,11 @@ func test_each_server_rolls_its_own_floor_chance() -> void:
 	tuning.floor_server_chance_max = 0.5
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	var gold := ServerBuff.roll_floor_servers(room.get_tree(), 1, rng)
-	expect(gold.size() > 0 && gold.size() < 8,
-		"some of the eight servers turn gold and some don't (%d did)" % gold.size())
-	for server in gold:
-		expect(server.floor_server, "each one rolled gold is a floor server")
+	var premium := ServerBuff.roll_floor_servers(room.get_tree(), 1, rng)
+	expect(premium.size() > 0 && premium.size() < 8,
+		"some of the eight servers turn silver and some don't (%d did)" % premium.size())
+	for server in premium:
+		expect(server.floor_server, "each one rolled silver is a premium server")
 
 # The banner names each boost once, and wraps rather than running off the screen.
 func test_banner_names_the_boosts_and_wraps() -> void:
@@ -202,16 +202,16 @@ func test_banner_names_the_boosts_and_wraps() -> void:
 		design.set_object(Vector2i(x * 3 + 1, 2), "server")
 		design.set_server_buff(Vector2i(x * 3 + 1, 2), buffs[x])
 	var room := await boot_design(design)
-	var gold: Array[Server] = []
+	var premium: Array[Server] = []
 	for child in room.get_children():
 		if child is Server:
-			gold.append(child)
-	expect_equal(FloorBanner.describe(gold),
+			premium.append(child)
+	expect_equal(FloorBanner.describe(premium),
 		"4 premium servers are boosting enemy attack and defense across this floor. "
 		+ "Some keep changing their boosts. Destroy them to end it.", "each boost named once")
-	expect_equal(FloorBanner.describe(gold.slice(0, 1)),
+	expect_equal(FloorBanner.describe(premium.slice(0, 1)),
 		"A premium server is boosting enemy attack across this floor. Destroy it to end it.", "one server")
-	var banner := FloorBanner.show_for(room, gold)
+	var banner := FloorBanner.show_for(room, premium)
 	for i in 2:
 		await room.get_tree().process_frame
 	var panel := banner.get_child(0).get_child(0) as Control

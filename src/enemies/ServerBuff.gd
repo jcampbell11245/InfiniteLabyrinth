@@ -7,7 +7,7 @@ extends RefCounted
 # breaks or the enemy walks out.
 #
 # A strength is 0 (no boost), 1 (the full boost, inside a server's area) or
-# Tuning.floor_server_strength (a gold floor server's share, anywhere else on the floor).
+# Tuning.floor_server_strength (a premium server's share, anywhere else on the floor).
 # Boosts of the same kind don't stack: the strongest wins. Different kinds combine.
 
 enum Kind { ATTACK, DEFENSE, SPEED }
@@ -69,22 +69,22 @@ static func strengths_on(enemy: Enemy) -> Array[float]:
 				best[kind] = maxf(best[kind], server.strength_on(enemy, kind))
 	return best
 
-# Chance each server on floor `floor_number` has of being a gold floor server.
+# Chance each server on floor `floor_number` has of being a premium (silver) server.
 static func floor_server_chance(floor_number: int) -> float:
 	var chance := Tuning.floor_server_chance_first + Tuning.floor_server_chance_step * (floor_number - 1)
 	return clampf(chance, 0.0, Tuning.floor_server_chance_max)
 
-# Rolls every server on the floor for turning gold (see Server.make_floor_server). Returns the
+# Rolls every server on the floor for turning silver (see Server.make_floor_server). Returns the
 # ones that did.
 static func roll_floor_servers(tree: SceneTree, floor_number: int, rng: RandomNumberGenerator) -> Array[Server]:
-	var gold: Array[Server] = []
+	var premium: Array[Server] = []
 	var chance := floor_server_chance(floor_number)
 	for node in tree.get_nodes_in_group(Server.GROUP):
 		var server := node as Server
 		if server != null && rng.randf() < chance:
 			server.make_floor_server()
-			gold.append(server)
-	return gold
+			premium.append(server)
+	return premium
 
 # A child of every enemy that keeps its boosts up to date each frame (Enemy.refresh_buffs).
 # It costs nothing on a floor with no servers once the enemy's boosts are back to 0.

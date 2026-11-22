@@ -227,10 +227,10 @@ var server_attack_multiplier := 1.5 # Damage dealt by an enemy under a server's 
 var server_defense_multiplier := 0.5 # Damage taken by an enemy under a server's defense boost, times normal
 var server_speed_multiplier := 1.4 # Walk and attack speed of an enemy under a server's speed boost, times normal
 var server_swap_time := 5.0 # Seconds a "random swap" server keeps one buff before switching to another
-# A gold floor server also gives this share of its boost (0 none, 1 all of it) to every enemy
+# A premium (silver) server also gives this share of its boost (0 none, 1 all of it) to every enemy
 # on the floor outside its own area, until it's destroyed.
 var floor_server_strength := 0.5
-# Chance each server on a floor has of being a gold floor server: floor_server_chance_first on
+# Chance each server on a floor has of being a premium (silver) server: floor_server_chance_first on
 # floor 1, floor_server_chance_step more on each floor after, up to floor_server_chance_max.
 var floor_server_chance_first := 0.05
 var floor_server_chance_step := 0.05

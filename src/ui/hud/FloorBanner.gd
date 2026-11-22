@@ -2,7 +2,7 @@ class_name FloorBanner
 extends CanvasLayer
 
 # A message across the top of the screen as a floor starts, telling the player that premium
-# servers (gold floor servers, see Server.make_floor_server) are boosting every enemy on it,
+# servers (silver floor servers, see Server.make_floor_server) are boosting every enemy on it,
 # and what they boost, in the pixel font of the title screen and menus. It fades in, stays
 # SHOW_TIME seconds and fades out, in real time so hit-stop doesn't stretch it. Overworld
 # shows it once the floor is built.
@@ -16,7 +16,7 @@ const FADE_OUT := 0.6
 const TOP := 130.0 # Screen pixels from the top, clear of the level timer
 const TITLE_SIZE := 32 # The pixel font is wide: whole multiples of 8 keep it crisp
 const TEXT_SIZE := 24
-const GOLD := Color(1.0, 0.84, 0.3)
+const SILVER := Color(0.86, 0.9, 0.97) # The premium servers' own colour
 const BACKING := Color(0, 0, 0, 0.6)
 const PADDING := Vector2(36, 18)
 const LINE_GAP := 10 # Between the title and the message
@@ -24,26 +24,26 @@ const MESSAGE_WIDTH := 1300.0 # Screen pixels the message wraps at, well inside 
 const MESSAGE_LINE_SPACING := 8 # Extra pixels between wrapped lines, so their outlines don't touch
 const ALERT_VOLUME_DB := -6.0
 
-# Shows the banner over `parent` for the floor servers `gold`.
-static func show_for(parent: Node, gold: Array[Server]) -> FloorBanner:
+# Shows the banner over `parent` for the premium servers `premium`.
+static func show_for(parent: Node, premium: Array[Server]) -> FloorBanner:
 	var banner := FloorBanner.new()
-	banner.text = describe(gold)
+	banner.text = describe(premium)
 	parent.add_child(banner)
 	return banner
 
-# What the banner says about `gold`: which boosts they spread, in words.
-static func describe(gold: Array[Server]) -> String:
+# What the banner says about `premium`: which boosts they spread, in words.
+static func describe(premium: Array[Server]) -> String:
 	var boosts: PackedStringArray = []
 	var swapping := false
-	for server in gold:
+	for server in premium:
 		if server.buff == ServerBuff.RANDOM_SWAP:
 			swapping = true
 			continue
 		var name: String = ServerBuff.NAMES[server.kind]
 		if !boosts.has(name):
 			boosts.append(name)
-	var one := gold.size() == 1
-	var count := "A premium server is" if one else "%d premium servers are" % gold.size()
+	var one := premium.size() == 1
+	var count := "A premium server is" if one else "%d premium servers are" % premium.size()
 	var what := "enemy " + _listed(boosts) if !boosts.is_empty() else "enemies"
 	var lines: PackedStringArray = ["%s boosting %s across this floor." % [count, what]]
 	# Swap servers' boosts keep changing, so they get a sentence of their own, not a kind.
@@ -68,7 +68,7 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	var style := StyleBoxFlat.new()
 	style.bg_color = BACKING
-	style.border_color = GOLD
+	style.border_color = SILVER
 	style.set_border_width_all(3)
 	style.content_margin_left = PADDING.x
 	style.content_margin_right = PADDING.x
@@ -78,7 +78,7 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", LINE_GAP)
 	panel.add_child(column)
-	var title := _label("PREMIUM SERVERS ONLINE", TITLE_SIZE, GOLD)
+	var title := _label("PREMIUM SERVERS ONLINE", TITLE_SIZE, SILVER)
 	column.add_child(title)
 	# The message wraps at MESSAGE_WIDTH: the pixel font is wide, and a floor whose premium
 	# servers give several boosts makes a long line.

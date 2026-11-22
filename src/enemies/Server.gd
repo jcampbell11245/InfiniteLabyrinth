@@ -12,17 +12,18 @@ extends Enemy
 # `buff_pool`, picked as the room is built) or "random_swap" (switching between the kinds
 # in `buff_pool` every Tuning.server_swap_time, under a fixed pink tint).
 #
-# As each floor is built some servers turn gold (ServerBuff.roll_floor_servers): a floor
-# server also gives Tuning.floor_server_strength of its boost to every enemy anywhere on the
-# floor while it stands, and its room shows gold on the minimap from the start.
+# As each floor is built some servers turn silver, into premium servers
+# (ServerBuff.roll_floor_servers): a premium server also gives Tuning.floor_server_strength of
+# its boost to every enemy anywhere on the floor while it stands, and its room shows silver on
+# the minimap from the start.
 
 const GROUP := "servers"
 const FLOOR_GROUP := "floor_servers"
-const GOLD_FRAMES := preload("res://src/enemies/ServerGoldFrames.tres")
+const SILVER_FRAMES := preload("res://src/enemies/ServerSilverFrames.tres")
 const BreakSound := preload("res://assets/sfx/server_break.wav")
 const BREAK_VOLUME_DB := -4.0
 const SPARK := Color(0.55, 0.9, 1.0) # Electric sparks off a hit
-const GOLD_SPARK := Color(1.0, 0.85, 0.35)
+const SILVER_SPARK := Color(0.92, 0.95, 1.0)
 const BEACON := Vector2(0, -24) # The light in the socket on its cap, which shows the boost's colour
 const BEACON_SIZE := 2.0
 const BEACON_BLINK := 0.6 # Seconds per blink
@@ -36,7 +37,7 @@ const BEACON_BLINK := 0.6 # Seconds per blink
 ## Pixels from its origin that it covers, when not whole_room.
 @export var radius := 120.0
 
-var floor_server := false # Turned gold as the floor was built (make_floor_server)
+var floor_server := false # Turned silver (a premium server) as the floor was built (make_floor_server)
 var kind: ServerBuff.Kind = ServerBuff.Kind.ATTACK # The boost it gives now
 var _area: ServerArea
 var _swap_timer: Timer
@@ -107,11 +108,11 @@ func covers(point: Vector2) -> bool:
 func area_color() -> Color:
 	return ServerBuff.SWAP_COLOR if buff == ServerBuff.RANDOM_SWAP else ServerBuff.COLORS[kind]
 
-# Turns it gold: its boost reaches the whole floor (see strength_on).
+# Turns it silver, a premium server: its boost reaches the whole floor (see strength_on).
 func make_floor_server() -> void:
 	floor_server = true
 	add_to_group(FLOOR_GROUP)
-	animator.sprite_frames = GOLD_FRAMES
+	animator.sprite_frames = SILVER_FRAMES
 	_play("idle", Direction.DOWN)
 
 func _pick_kind() -> ServerBuff.Kind:
@@ -165,14 +166,14 @@ func stagger(_from_direction: String, _stun_time := -1.0) -> void:
 
 func _after_hit() -> void:
 	knockback = Vector2.ZERO
-	Juice.burst(room, global_position + Vector2(0, -8), GOLD_SPARK if floor_server else SPARK,
+	Juice.burst(room, global_position + Vector2(0, -8), SILVER_SPARK if floor_server else SPARK,
 		8, 90.0, Vector2.ZERO, 1.5, 0.25)
 	Juice.play(hit_sound, 0.1)
 
 func die() -> void:
 	if health > 0:
 		health = 0
-	Juice.burst(room, global_position + Vector2(0, -8), GOLD_SPARK if floor_server else SPARK,
+	Juice.burst(room, global_position + Vector2(0, -8), SILVER_SPARK if floor_server else SPARK,
 		22, 120.0, Vector2.ZERO, 2.5, 0.5)
 	_play_break_sound()
 	super.die()
