@@ -24,8 +24,8 @@ const ICONS := {
 # The shop's line for `kind`. The HUD font has capitals only and no apostrophes.
 static func description(kind: Kind) -> String:
 	match kind:
-		Kind.TIME: return "%d more seconds on the clock every floor" % roundi(Tuning.time_per_level)
-		Kind.LOOTING: return "More coins from every enemy you kill"
+		Kind.TIME: return "Increases max time"
+		Kind.LOOTING: return "Increases coin multiplier"
 	return ""
 
 static func level(kind: Kind) -> int:

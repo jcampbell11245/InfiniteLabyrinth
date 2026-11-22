@@ -13,8 +13,8 @@ enum Kind { NONE, SKELETON_KEY, METAL_DETECTOR }
 
 # What the shop shows for each item. The HUD font has capitals only and no apostrophes.
 const INFO := {
-	Kind.SKELETON_KEY: {name = "Skeleton key", text = "Opens the locked doors of the room you are in."},
-	Kind.METAL_DETECTOR: {name = "Metal detector", text = "Shows a key room you have not found on the minimap."},
+	Kind.SKELETON_KEY: {name = "Skeleton key", text = "Opens the locked doors of the room you are in"},
+	Kind.METAL_DETECTOR: {name = "Metal detector", text = "Reveals a key room you have not found on the minimap"},
 }
 
 # Placeholders, listed in PENDING_ASSETS.md.
