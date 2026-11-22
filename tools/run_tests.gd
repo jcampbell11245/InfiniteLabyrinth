@@ -17,7 +17,8 @@ extends SceneTree
 const TESTS_DIR := "res://tools/tests/"
 # The SaveData fields a test may change, put back after each one (_restore_save).
 const SAVE_FIELDS: Array[StringName] = [&"floor_number", &"coins",
-	&"time_level", &"looting_level", &"music_volume", &"sfx_volume", &"debug_time_limit"]
+	&"time_level", &"looting_level", &"music_volume", &"sfx_volume", &"debug_time_limit",
+	&"bindings"]
 
 class ErrorCounter extends Logger:
 	var errors: Array[String] = []
@@ -124,6 +125,10 @@ func _restore_save() -> void:
 		save_data.set(field, _loaded_save[field])
 	save_data.apply_audio_settings()
 	save_data.write_to_disk = false
+	# Bindings keeps its own InputMap copy, so restore that too after every test.
+	var bindings := root.get_node("Bindings")
+	bindings.call("load_from_save")
+	bindings.call("apply")
 
 func _leave_game() -> void:
 	if current_scene != null:

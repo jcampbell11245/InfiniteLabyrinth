@@ -17,6 +17,49 @@
   anything, and a later test that saves (a game over) wrote the cleared progress and full
   volumes to `user://save.cfg`. The test runner now never writes the save file and puts
   SaveData back to what it loaded after every test, and the test restores what it changes.
+  It also reloads `Bindings` and reapplies the InputMap, so a test that fails before its own
+  cleanup cannot leak bindings into later tests.
+- Leaving the Controls page with the mouse or Android go-back, or pressing Reset during a
+  capture, left the capture running: the next keypress rebound the action with no visible
+  feedback, and the menus ignored keys until then. Captures now stop whenever the page hides,
+  on Reset and through the host's Back path.
+- A Controls capture accepted input from the other column: a pad press during a key capture
+  rebound the pad button, and a key press during a pad capture rebound the key. Each capture
+  now ignores the other device, apart from the shared Escape and B cancels.
+- A conflict with a fixed alternate said the key was `USED BY` an action whose row does not
+  show that key, which made the message confusing. Fixed alternates are now described as
+  `RESERVED FOR` the action holding them. The check follows the action that actually owns the
+  key, so J says `USED BY SWORD` while Sword's row shows J, and `RESERVED FOR SELECT` once
+  Sword moves away.
+- F1 and F2 could be bound to a game action even though the room creator and debug menu read
+  them directly, so rolling could also open the debug menu in a debug build. The Controls page
+  now refuses them with a reserved-key message, and saved values using them fall back to the
+  default key.
+- Rebuilding the InputMap kept an unused `used_buttons` map whose duplicate guard never ran.
+  Actions have no fixed pad buttons, so the dead guard is gone.
+- A controller-only player could get stuck capturing a bind: B was treated as a new button
+  press instead of cancel. Escape and B now cancel a capture in both the title and pause
+  menus without closing the options screen.
+- Once Pause was moved off Escape, Escape always cancelled a capture, so it could only be
+  restored through RESET TO DEFAULTS. A Pause key capture now treats a quick tap of Escape as
+  the binding, with a hold cancelling like B; other captures still cancel on Escape at once.
+- Rebinding rebuilt joypad events with device 0, so gameplay ignored a second controller or
+  one that reconnected with a new id. Rebuilt button and axis events now use device -1, like
+  the defaults in project.godot.
+- A new key could collide with another action's fixed alternate - for example, binding Sword
+  to X would also fire Bow - because duplicate checks only looked at replaceable keys. Fixed
+  alternates are now reserved. J stays shared, but only by Sword and Select, which already
+  use it together; after Sword moved away it was wrongly free for every action.
+- The Controls page's key and pad labels used a colon, and its caption used a hyphen. Neither
+  glyph is in 8-BIT WONDER, so Godot drew them - and everything after them - with a fallback
+  font at half-pixel offsets, leaving grey antialiased edges. The prefixes and hyphen are
+  gone, so the labels stay pixel-perfect.
+- The Controls page's status caption overlapped the last bind row. The row container grew
+  past its authored height to fit the buttons, so the caption is now lower in a taller
+  dialog with clear gaps above and below it.
+- The Controls page opened off-screen in the bottom-right corner. Its instanced root was
+  anchored to the options panel's bottom-right while keeping its own 704x396 size, so the
+  dialog started outside the window. It now fills the options panel from its top-left.
 - The boss can move through walls and clip out of bounds. The boss only collided with
   physics layer 1, but the wall tiles on the Top and TopWalls layers are on layer 9; it now
   collides with walls and pits like the other enemies.

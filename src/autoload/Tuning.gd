@@ -243,6 +243,21 @@ var metal_detector_price := 50 # Coins the merchant asks for a metal detector
 var shop_buy_cooldown := 0.5 # Seconds after a purchase before the shop takes another, against double buys
 var merchant_reach := 30.0 # Pixels from the merchant's feet to the player's within which they can talk
 
+# --- Servers (see Server, ServerBuff) ---
+var server_hits := 3.0 # Health of a server, in sword hits at the default damage
+var server_attack_multiplier := 1.5 # Damage dealt by an enemy under a server's attack boost, times normal
+var server_defense_multiplier := 0.5 # Damage taken by an enemy under a server's defense boost, times normal
+var server_speed_multiplier := 1.4 # Walk and attack speed of an enemy under a server's speed boost, times normal
+var server_swap_time := 5.0 # Seconds a "random swap" server keeps one buff before switching to another
+# A premium (silver) server also gives this share of its boost (0 none, 1 all of it) to every enemy
+# on the floor outside its own area, until it's destroyed.
+var floor_server_strength := 0.5
+# Chance each server on a floor has of being a premium (silver) server: floor_server_chance_first on
+# floor 1, floor_server_chance_step more on each floor after, up to floor_server_chance_max.
+var floor_server_chance_first := 0.05
+var floor_server_chance_step := 0.05
+var floor_server_chance_max := 0.4
+
 # --- Lighting (CaveLighting) ---
 var lighting_enabled := true # Off shows the cave at full brightness, as before lighting
 var cave_brightness := 0.85 # 0..1: how much of its colour the unlit cave keeps
@@ -479,6 +494,16 @@ const FIELDS := [
 	["Items", "metal_detector_price", "Metal detector price", 0, 1000, 5, "new (Items.price)"],
 	["Items", "shop_buy_cooldown", "Shop purchase cooldown (s)", 0, 3, 0.05, "new (ShopMenu)"],
 	["Items", "merchant_reach", "Merchant reach (px)", 5, 100, 1, "new (Merchant.in_reach)"],
+
+	["Servers", "server_hits", "Server health (sword hits)", 1, 20, 0.5, "new (Server.apply_tuning)"],
+	["Servers", "server_attack_multiplier", "Attack boost: damage dealt x", 1, 5, 0.05, "new (ServerBuff.multiplier)"],
+	["Servers", "server_defense_multiplier", "Defense boost: damage taken x", 0, 1, 0.05, "new (ServerBuff.multiplier)"],
+	["Servers", "server_speed_multiplier", "Speed boost: walk and attack speed x", 1, 3, 0.05, "new (ServerBuff.multiplier)"],
+	["Servers", "server_swap_time", "Random swap time (s)", 0.5, 30, 0.5, "new (Server._swap)"],
+	["Servers", "floor_server_strength", "Floor server boost share elsewhere", 0, 1, 0.05, "new (Server.strength_on)"],
+	["Servers", "floor_server_chance_first", "Floor server chance on floor 1", 0, 1, 0.01, "new (ServerBuff.floor_server_chance)"],
+	["Servers", "floor_server_chance_step", "Floor server chance added per floor", 0, 1, 0.01, "new (ServerBuff.floor_server_chance)"],
+	["Servers", "floor_server_chance_max", "Floor server chance max", 0, 1, 0.01, "new (ServerBuff.floor_server_chance)"],
 
 	["Lighting", "lighting_enabled", "Lighting on", 0, 0, 0, "new (CaveLighting)"],
 	["Lighting", "cave_brightness", "Cave brightness", 0, 1, 0.05, "new (CaveLighting.ambient_color)"],

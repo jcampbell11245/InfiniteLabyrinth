@@ -55,6 +55,7 @@ const OBJECT_SCENES := {
 	"centaur": "res://src/enemies/Centaur.tscn",
 	"bucentaur": "res://src/enemies/Bucentaur.tscn",
 	"taurtaur": "res://src/enemies/Taurtaur.tscn",
+	"server": "res://src/enemies/Server.tscn",
 	"switch": "res://src/objects/Switch.tscn",
 }
 const ENEMY_FEET := Vector2(0, 8) # Enemies stand this far below their origin (Enemy.FEET_OFFSET)
@@ -67,7 +68,7 @@ const CELL_CHARS := {
 	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
 }
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V", "centaur": "C", "bucentaur": "B", "taurtaur": "U", "hobgoblin": "H", "pilot": "I"}
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V", "centaur": "C", "bucentaur": "B", "taurtaur": "U", "server": "Z", "hobgoblin": "H", "pilot": "I"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius, Wyrm.detection_radius), which
 # also set which way they face at the start. Wizards engage anywhere in the room, so they
 # have none.
@@ -87,6 +88,9 @@ const AREA_DEFAULT_REACH := 2 # Cells either side of the enemy a new roaming are
 # turn to the player as they come into the room. Right, the scenes' own, isn't stored.
 const FACINGS: Array[String] = [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT, MeleeEnemy.AUTO_FACING]
 const DEFAULT_FACING := Direction.RIGHT
+# Servers (see Server): the circle a new one covers, in pixels (5 cells), and what it boosts.
+const SERVER_DEFAULT_RADIUS := 120.0
+const SERVER_DEFAULTS := {"buff": ServerBuff.RANDOM, "pool": ["attack", "defense", "speed"], "whole_room": false}
 
 const NEIGHBOURS: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 
@@ -111,6 +115,10 @@ var facings := {}
 # (Enemy.spawn_with_pilot). Pilots made this way are extra enemies, counted by the room as
 # they appear rather than in enemy_count.
 var pilots := {}
+# Vector2i floor index -> what the server there does: {"buff": one of ServerBuff.SETTINGS,
+# "pool": the kinds "random" and "random_swap" pick from, "whole_room": bool}. Its circle's
+# radius is in `radii`, like a detection radius.
+var servers := {}
 var clear_by := "none" # What opens the room's doors: "none" (never locked), "enemies" or "switches"
 var floors := Room.ALL_FLOORS # Room.floors: bit n - 1 set if it can appear on floor n
 var brightness := 1.0 # Room.brightness: times the cave's brightness while in the room
@@ -169,6 +177,9 @@ func set_object(index: Vector2i, kind: String) -> void:
 		roams.erase(index)
 		facings.erase(index)
 		pilots.erase(index)
+		servers.erase(index)
+		if kind == "server":
+			servers[index] = SERVER_DEFAULTS.duplicate(true)
 	objects[index] = kind
 
 # Removes the object on `index` and everything set for it.
@@ -178,18 +189,29 @@ func _forget(index: Vector2i) -> void:
 	roams.erase(index)
 	facings.erase(index)
 	pilots.erase(index)
+	servers.erase(index)
 
+# Has a detection radius (goblins, knights, dragons, centaurs).
 static func has_radius(kind: String) -> bool:
 	return kind in DETECTING_KINDS
 
-# Detection radius of the goblin or knight on `index`.
+# Has a circle drawn round it in the room creator that can be dragged: a detection radius,
+# or the area a server covers.
+static func has_circle(kind: String) -> bool:
+	return has_radius(kind) || kind == "server"
+
+# The radius of an object of `kind` that hasn't been given one.
+static func default_radius(kind: String) -> float:
+	return SERVER_DEFAULT_RADIUS if kind == "server" else float(MeleeEnemy.DEFAULT_DETECTION_RADIUS)
+
+# Detection radius of the goblin or knight on `index`, or the circle the server there covers.
 func radius_at(index: Vector2i) -> float:
-	return radii.get(index, MeleeEnemy.DEFAULT_DETECTION_RADIUS)
+	return radii.get(index, default_radius(objects.get(index, "")))
 
 # Whole pixels; the default isn't stored, so it doesn't show up in the export.
 func set_radius(index: Vector2i, radius: float) -> void:
 	radius = clampf(roundf(radius), RADIUS_MIN, RADIUS_MAX)
-	if radius == MeleeEnemy.DEFAULT_DETECTION_RADIUS:
+	if radius == default_radius(objects.get(index, "")):
 		radii.erase(index)
 	else:
 		radii[index] = radius
@@ -208,8 +230,9 @@ func clear() -> void:
 	roams.clear()
 	facings.clear()
 	pilots.clear()
+	servers.clear()
 
-# Removes every goblin, knight and wizard; switches stay.
+# Removes every enemy and server; switches stay.
 func clear_enemies() -> void:
 	for index: Vector2i in objects.keys():
 		if objects[index] != "switch":
@@ -250,6 +273,35 @@ func set_pilot(index: Vector2i, on: bool) -> void:
 		pilots.erase(index)
 	elif objects.has(index) && can_carry_pilot(objects[index]):
 		pilots[index] = true
+# --- Servers ---
+
+# What the server on `index` does (see `servers`), or {} if there's no server there.
+func server_at(index: Vector2i) -> Dictionary:
+	return servers.get(index, {})
+
+# Sets what the server on `index` boosts: one of ServerBuff.SETTINGS.
+func set_server_buff(index: Vector2i, buff: String) -> void:
+	if servers.has(index) && buff in ServerBuff.SETTINGS:
+		servers[index].buff = buff
+
+# Puts kind `name` ("attack", "defense" or "speed") in or out of the pool the server on
+# `index` picks from when random. The last one can't be taken out.
+func set_server_pool(index: Vector2i, name: String, on: bool) -> void:
+	if !servers.has(index) || ServerBuff.kind_named(name) < 0:
+		return
+	var pool: Array = servers[index].pool
+	if on && !pool.has(name):
+		pool.append(name)
+		# Kept in the usual order, so the export doesn't depend on the order of clicks.
+		pool.sort_custom(func(a: String, b: String) -> bool:
+			return ServerBuff.kind_named(a) < ServerBuff.kind_named(b))
+	elif !on && pool.has(name) && pool.size() > 1:
+		pool.erase(name)
+
+# Makes the server on `index` cover its whole room, or just its circle.
+func set_server_whole_room(index: Vector2i, whole_room: bool) -> void:
+	if servers.has(index):
+		servers[index].whole_room = whole_room
 
 # --- Roaming ---
 
@@ -358,8 +410,8 @@ var _redo_steps: Array[Dictionary] = []
 
 func snapshot() -> Dictionary:
 	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "radii": radii.duplicate(),
-		"roams": roams.duplicate(true), "facings": facings.duplicate(), "pilots": pilots.duplicate(), "clear_by": clear_by,
-		"floors": floors, "brightness": brightness}
+		"roams": roams.duplicate(true), "facings": facings.duplicate(), "pilots": pilots.duplicate(),
+		"servers": servers.duplicate(true), "clear_by": clear_by, "floors": floors, "brightness": brightness}
 
 func restore(state: Dictionary) -> void:
 	cells = (state.cells as PackedByteArray).duplicate()
@@ -368,6 +420,7 @@ func restore(state: Dictionary) -> void:
 	roams = (state.roams as Dictionary).duplicate(true)
 	facings = (state.get("facings", {}) as Dictionary).duplicate()
 	pilots = (state.get("pilots", {}) as Dictionary).duplicate()
+	servers = (state.get("servers", {}) as Dictionary).duplicate(true)
 	floors = state.floors
 	brightness = state.get("brightness", 1.0)
 	clear_by = state.clear_by
@@ -401,8 +454,9 @@ func redo() -> void:
 func count(kind: String) -> int:
 	return objects.values().count(kind)
 
+# Enemies that have to be beaten to clear the room: not switches, nor servers (see Server).
 func enemy_count() -> int:
-	return objects.size() - count("switch")
+	return objects.size() - count("switch") - count("server")
 
 # What opens the room, as Room.completion_criteria: beating its enemies, hitting its
 # switches, or nothing ("none": the doors never lock).
@@ -567,6 +621,12 @@ func build_room() -> Room:
 			"area":
 				node.set("roam_mode", MeleeEnemy.Roam.AREA)
 				node.set("roam_area", area_pixels(area_rect(index)))
+		if kind == "server":
+			var server := server_at(index)
+			node.set("buff", server.buff)
+			node.set("buff_pool", PackedStringArray(server.pool))
+			node.set("whole_room", server.whole_room)
+			node.set("radius", radius_at(index))
 		if kind == "switch":
 			switches.add_child(node, true)
 		else:
@@ -601,6 +661,7 @@ func to_text() -> String:
 		"#   Y  wyrm       V  wyvern       (dragons: Wyrm.tscn, Wyvern.tscn)",
 		"#   C  centaur    B  bucentaur  U  taurtaur  (centaurs: Centaur.tscn, Bucentaur.tscn, Taurtaur.tscn)",
 		"#   H  hobgoblin  I  pilot     (goblin family: Hobgoblin.tscn, Pilot.tscn)",
+		"#   Z  server (Server.tscn; boosts the enemies round it, see servers: below)",
 		"# Special tiles, on a SpecialTiles layer (src/world/tiles/SpecialTiles.tscn) over plain",
 		"# floor, each the SpecialTiles.Frame of the same name as its atlas column:",
 		"#   E  exposed wires   ^  spikes        %  cracked floor   =  slick",
@@ -621,7 +682,8 @@ func to_text() -> String:
 		% MeleeEnemy.DEFAULT_DETECTION_RADIUS)
 	lines.append("detection_radius:")
 	for index: Vector2i in _sorted(radii.keys()):
-		lines.append("%d,%d %d" % [index.x, index.y, radii[index]])
+		if has_radius(objects.get(index, "")):
+			lines.append("%d,%d %d" % [index.x, index.y, radii[index]])
 	lines.append("# How each goblin and knight that roams does so (MeleeEnemy.roam_mode), by floor cell as")
 	lines.append("# column,row. Any not listed stand still until they notice the player.")
 	lines.append("#   path: walks from its own cell through each listed cell in turn, then back again.")
@@ -650,6 +712,18 @@ func to_text() -> String:
 			var rect := area_rect(index)
 			words.append("%d,%d" % [rect.position.x, rect.position.y])
 			words.append("%d,%d" % [rect.end.x - 1, rect.end.y - 1])
+		lines.append(" ".join(words))
+	lines.append("# What each server boosts, by floor cell as column,row (Server.buff, buff_pool, whole_room,")
+	lines.append("# radius): attack, defense, speed, random (one kind from its pool, picked as the room is")
+	lines.append("# built) or random_swap (switches between its pool's kinds); then \"room\" if it covers the")
+	lines.append("# whole room, or its circle's radius in pixels; then its pool, for random and random_swap.")
+	lines.append("servers:")
+	for index: Vector2i in _sorted(servers.keys()):
+		var server := server_at(index)
+		var words: PackedStringArray = ["%d,%d" % [index.x, index.y], server.buff,
+			"room" if server.whole_room else "%d" % radius_at(index)]
+		if server.buff in [ServerBuff.RANDOM, ServerBuff.RANDOM_SWAP]:
+			words.append(",".join(PackedStringArray(server.pool)))
 		lines.append(" ".join(words))
 	return "\n".join(lines) + "\n"
 

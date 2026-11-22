@@ -43,11 +43,21 @@ Items you haven't used come with you to the next floor, but are lost when you di
 with every box full lets you choose a box on the item bar to throw away for the new item.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
-volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.
+volume separately, or open **Controls** to change keys and controller buttons. In Controls,
+select a KEY or PAD button and press the new input; Escape cancels. A quick tap of B binds it
+like any other pad button, while holding B briefly still cancels the capture. Status messages
+clear after three seconds, except the capture hint, which stays until the rebind finishes. A key
+or button can only belong to one action (Select and Interact share A on purpose), and **RESET TO
+DEFAULTS** restores the starting layout. The list scrolls to show the item and Interact rows. Roll
+and Use Item have no controller button of their own by default: they use RT and LT, which stay
+active if you give them one.
+Bindings are saved with the volumes and survive a run reset. The arrow keys, left stick and the
+extra attack keys stay active alongside your chosen inputs. In the pause menu, the pause key or
+**Back** returns to the previous page, then to the pause buttons.
 
 | Action | Keyboard | Controller |
 |---|---|---|
-| Move | WASD or arrow keys | D-pad |
+| Move | WASD or arrow keys | D-pad or left stick |
 | Sword (hold to charge a spin) | J or Z | X / Square |
 | Bow (hold to charge) | K or X | Y / Triangle |
 | Roll | Space | RT / R2 |
@@ -57,6 +67,10 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
+
+Every action in the table except F1 and F2 can be rebound in Options → Controls. Escape can be
+rebound off Pause and bound back: while capturing Pause's key, a tap of Escape restores it and
+holding Escape (or B) cancels instead.
 
 The pause menu's **Return to Title** button returns to the title screen, so a run can be
 left without closing the game. **Quit to Desktop** closes the game, as does the title
@@ -203,7 +217,7 @@ Pick a tool from the panel on the left (Eraser and Select on top, then the **Til
 **Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
 pitfalls, inner walls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
 hobgoblins, pilots, knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns, centaurs, bucentaurs,
-taurtaurs) and switches;
+taurtaurs, servers) and switches;
 right-click erases.
 Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight, dragon or centaur you place, or click with the **Select** tool, shows its detection
 radius as a circle (default 64 px); drag the circle's edge to resize it. The shaded half is
@@ -238,6 +252,24 @@ tab) of getting one in the game, and a pilot placed on foot may run to the neare
 climbs on (once it has noticed you, 40% of its decisions). A pilot takes hits before its
 mount, and its slash ends each of the mount's combos. In room scenes this is the mount's `spawn_with_pilot`; pilots made this way
 aren't in the room's `enemy_count` (the room counts them as they appear).
+
+**Servers** are standing towers that boost the other enemies round them. They don't move or
+attack, break after three sword hits (sooner to charged arrows) and don't count towards
+clearing the room. An enemy under a boost shows its status bar, which
+stays full until the server breaks; then the boost goes at once. Selecting a server swaps
+Facing and Roaming for its own rows. **Boost** is what it gives: **Attack** (enemies hit
+harder), **Defense** (they take less damage), **Speed** (they walk and attack faster),
+**Random** (one boost from the Pool, picked when the room is built) or **Swap** (keeps
+switching between the Pool's boosts). **Pool** ticks which boosts Random and Swap pick
+from. **Area** is a **Circle** round it (default 120 px; drag its edge to resize it) or the
+**Whole room**. Its area is tinted with the boost's colour in the editor and the game, edged
+with a ring of chunky pixels for a circle; a Swap server's is always pink, so the tint never
+flashes between colours. As each floor is built, each server rolls its own chance (5% on
+floor 1, 5% more each floor, up to 40%) of turning silver, into a premium server: it also
+gives half its boost to every enemy anywhere on the floor until it breaks, its room shows
+silver on the minimap from the start, and a "Premium servers online" banner announces it
+as the floor begins. In room scenes these are each server's `buff`, `buff_pool`, `whole_room`
+and `radius`; the strengths, swap time and premium chances are in the debug menu's Servers tab.
 
 **Tileset** switches the preview (and the play-test) between each floor's art, so a room can
 be checked on floor 2's tiles. **Floors** is a dropdown checklist of floors 1-10 that the room
@@ -361,16 +393,18 @@ See [BUGS.md](BUGS.md) and the open issues.
 assets/        sprites, sfx (sources in assets/sfx/SOURCE.txt), music, fonts; placeholders
                are listed in PENDING_ASSETS.md, with previews in docs/pending_assets/
 src/autoload/  Tuning (every gameplay number, edited live by the debug menu), SaveData (save
-               file), Game (coins, keys, game-wide signals and references to the player,
-               camera and rooms), Music, Juice (hit-stop, slow motion, screen shake, sound
-               pitch variation, flashes and particle bursts), DebugMenu
+               file), Bindings (keyboard/controller bindings applied to InputMap), Game (coins,
+               keys, game-wide signals and references to the player, camera and rooms), Music,
+               Juice (hit-stop, slow motion, screen shake, sound pitch variation, flashes and
+               particle bursts), DebugMenu
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script, the level timer, curses
 src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families; Centaur,
                the centaur family, Hobgoblin and Pilot build on it), RangedEnemy
                (wizard), Caster (warlock, necromancer), Wyrm (wyrm and wyvern, flying
                dragons) and Boss; AttackCoordinator takes turns and group rushes
-               between a room's enemies; FireballReturner bats fireballs back
+               between a room's enemies; FireballReturner bats fireballs back;
+               Server (standing towers) boosts enemies through ServerBuff
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
 src/items/     the consumable items and what using each one does
@@ -385,7 +419,7 @@ src/world/     floor layout (WorldGenerator), building it (Overworld), room scri
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
 src/ui/        HUD widgets (timer, counters, minimap, item bar) and menus (title, boot,
-               pause, shop, game over)
+               pause, shop, game over); OptionsPanel holds the audio and controls pages
 src/audio/     enemy death sound players
 tools/         smoke test, test runner and tests, check script, screenshot tool
 .github/       pull request checks (workflows) and the Godot setup they share

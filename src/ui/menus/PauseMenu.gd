@@ -1,8 +1,8 @@
 extends Control
 class_name PauseMenu
 
-# Pause toggles on the pause key or the Resume button. Options opens the shared audio
-# settings panel; while it is open, pause, ui_cancel or Back returns to the buttons
+# Pause toggles on the pause key or the Resume button. Options opens the shared audio and
+# controls settings panel; while it is open, pause, ui_cancel or Back returns to the buttons
 # instead of ending the pause. Return to Title leaves the run for the title screen (or the
 # room creator during a play-test); Quit to Desktop closes the game. There's deliberately
 # no quit key: one stray press shouldn't end a run.
@@ -27,10 +27,19 @@ func _ready() -> void:
 	options_panel.back_pressed.connect(hide_options)
 
 func _input(event: InputEvent) -> void:
+	# Escape cancels a capture except while rebinding Pause, where it binds unless held.
+	# B is held by the controls panel. Neither closes the menus yet.
+	if options_panel.visible && options_panel.cancel_capture_if_listening(event):
+		get_viewport().set_input_as_handled()
+		return
+	# While a control is being captured, the key press belongs to the rebinding UI.
+	if options_panel.visible && options_panel.is_listening():
+		return
 	# Escape is both pause and ui_cancel, so one branch handles both without a double toggle.
 	if event.is_action_pressed("pause") || event.is_action_pressed("ui_cancel"):
 		if options_panel.visible:
-			hide_options()
+			if !options_panel.handle_cancel():
+				hide_options()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("pause"):
 			pause()
@@ -63,7 +72,8 @@ func quit_to_desktop() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		if options_panel.visible:
-			hide_options()
+			if !options_panel.handle_cancel():
+				hide_options()
 		else:
 			pause()
 

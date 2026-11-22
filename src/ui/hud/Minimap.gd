@@ -5,7 +5,8 @@ extends Control
 # either side of the grid. Unvisited rooms' dots are dim; the start and end rooms' are
 # always lit green, so the player knows where they're heading; every other room's dot lights
 # up once the player has been in it, yellow for a key room and blue for the rest. A key
-# room found by a metal detector (Items) lights yellow before the player gets there. A red
+# room found by a metal detector (Items) lights yellow before the player gets there. A room
+# with a premium (silver) server standing in it is silver from the start, whatever it is. A red
 # outline round the current room's dot flashes. The boss room isn't shown.
 #
 # It's painted pixel by pixel into a small image and drawn PIXEL times bigger with no
@@ -31,6 +32,9 @@ const UNLIT := Color8(64, 64, 72)
 const LANDMARK := Color8(88, 216, 84) # Start and end rooms
 const VISITED := Color8(60, 188, 252)
 const KEY_ROOM := Color8(248, 184, 0) # Visited key rooms
+# Rooms with a premium (silver) server standing (see Server), lit from the start of the floor so
+# the player can hunt them down. Silver, a colour no other room uses, so it stands out.
+const FLOOR_SERVER := Color8(222, 230, 242)
 const CURRENT_OUTLINE := Color8(248, 56, 0)
 const SHINE := 0.45 # How far towards white a lit dot's top-left pixel is
 
@@ -134,8 +138,9 @@ func _repaint() -> void:
 	if _frame == null:
 		return
 	var image := _frame.duplicate() as Image
+	var premium := _floor_server_rooms()
 	for id: int in _cells:
-		var color := _room_color(id)
+		var color := FLOOR_SERVER if premium.has(id) else _room_color(id)
 		var corner := _dot_corner(id)
 		image.fill_rect(Rect2i(corner, Vector2i.ONE * DOT), color)
 		if color != UNLIT:
@@ -165,6 +170,17 @@ func _room_color(id: int) -> Color:
 	if !_visited.has(id):
 		return UNLIT
 	return KEY_ROOM if _key_rooms.has(id) else VISITED
+
+# Ids of the rooms with a premium server still standing. Read at every repaint (the
+# outline's flashing repaints often), so a room goes back to normal soon after its last
+# one breaks.
+func _floor_server_rooms() -> Dictionary:
+	var ids := {}
+	for node in get_tree().get_nodes_in_group(Server.FLOOR_GROUP):
+		var server := node as Server
+		if server != null && !server.is_queued_for_deletion() && server.room != null:
+			ids[server.room.room_id] = true
+	return ids
 
 # Top-left art pixel of a room's dot.
 func _dot_corner(id: int) -> Vector2i:
