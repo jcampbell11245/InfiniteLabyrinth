@@ -39,6 +39,7 @@ const ROW_HEIGHT := 16.0
 const ROW_GAP := 2.0
 const SLOT := 14.0 # The icon's box: the 12-pixel icon and a one-pixel outline
 const TEXT_LEFT := 19.0 # From a row's left edge to its name and description
+const PRICE_TOP := 3.0 # From a row's top edge to the price's coin, clear of the outline
 const HINTS_TOP := SIZE.y - 15.0
 const MESSAGE_TOP := HINTS_TOP - 9.0
 const VISIBLE_ROWS := int((MESSAGE_TOP - 2.0 - LIST_TOP + ROW_GAP) / (ROW_HEIGHT + ROW_GAP))
@@ -389,13 +390,13 @@ func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	var price := Upgrades.price(entry) if upgrade else Items.price(entry)
 	if price < 0:
 		var width := _text_width("Max", NAME_SIZE)
-		_text("Max", Vector2(right - width, row.position.y + 3), NAME_SIZE, MAX_COLOR)
+		_text("Max", Vector2(right - width, row.position.y + PRICE_TOP + 2), NAME_SIZE, MAX_COLOR)
 	else:
 		var price_text := str(price)
 		var width := _text_width(price_text, NAME_SIZE)
-		_text(price_text, Vector2(right - width, row.position.y + 3), NAME_SIZE,
+		_text(price_text, Vector2(right - width, row.position.y + PRICE_TOP + 2), NAME_SIZE,
 			TEXT_COLOR if Game.coins >= price else TOO_DEAR)
-		_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + 1))
+		_coin(Vector2(right - width - COIN_FRAME.size.x - 1, row.position.y + PRICE_TOP))
 
 	if selected && _flash > 0.0:
 		HudFrame.fill(self, row, Color(1, 1, 1, 0.6 * _flash), UNIT)
