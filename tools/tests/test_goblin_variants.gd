@@ -355,3 +355,39 @@ func test_parrying_a_slash_after_an_uncleared_combo_doesnt_stun_the_mount() -> v
 	expect(pilot.meets_sword(Direction.RIGHT), "the parry turns the slash aside")
 	expect(!pilot.is_striking(), "the slash is off")
 	expect(!orc.is_stunned(), "but the orc isn't stunned: no second chance")
+
+func test_a_hobgoblin_blast_scales_with_enemy_damage_and_attack_boosts() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(6, 6), "hobgoblin")
+	var room: Room = await boot_design(design)
+	var hobgoblin: Hobgoblin = first(room, Hobgoblin)
+	var tuning := autoload("Tuning")
+	var plain := hobgoblin.blast_damage()
+	expect_near(plain, tuning.hobgoblin_blast_damage, 0.001, "no boost: the tuned damage")
+	tuning.enemy_damage_multiplier = 2.0
+	expect_near(hobgoblin.blast_damage(), plain * 2.0, 0.001, "the F2 damage multiplier applies")
+	tuning.enemy_damage_multiplier = 1.0
+	hobgoblin._buffs[ServerBuff.Kind.ATTACK] = 1.0 # Inside an attack server's circle
+	expect(hobgoblin.blast_damage() > plain, "an attack boost makes it hit harder")
+
+# The Pilot switch shares the Roaming row rather than adding one: the side panel is already
+# as tall as the screen allows. (Headless layout can't measure the real panel's height.)
+func test_the_pilot_switch_adds_no_row_to_the_room_creator() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(4, 4), "centaur")
+	design.set_roam_mode(Vector2i(4, 4), "path")
+	RoomDesign.current = design
+	tree.change_scene_to_file("res://src/editor/RoomEditor.tscn")
+	for i in 5:
+		await tree.process_frame
+	var editor: Node = tree.current_scene
+	editor.set("_selected", Vector2i(4, 4))
+	editor.call("_refresh_info")
+	for i in 3:
+		await tree.process_frame
+	var pilot_button: Button = editor.get("_pilot_button")
+	expect(pilot_button.is_visible_in_tree(), "the Pilot switch shows for a mount")
+	var roam_none: Button = (editor.get("_roam_buttons") as Dictionary)["none"]
+	expect(pilot_button.get_parent() == roam_none.get_parent(), "it sits on the Roaming row")
+	expect_equal((editor.get("_enemy_rows") as Array).size(), 2, "Facing and Roaming are still the only enemy rows")
+	RoomDesign.current = null

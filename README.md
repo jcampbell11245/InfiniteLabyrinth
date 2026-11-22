@@ -246,7 +246,8 @@ player anywhere in the room, and nor can dragons, which hover where they start. 
 scenes these are each enemy's `roam_mode`, `roam_path` and `roam_area`;
 roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
 
-**Pilot** puts a goblin pilot on the selected orc, dragon or centaur from the start; the editor
+**Pilot**, at the end of the Roaming row while an orc, dragon or centaur is selected, puts a
+goblin pilot on it from the start; the editor
 draws it riding. Without it, each of them still has a small chance (the debug menu's Goblins
 tab) of getting one in the game, and a pilot placed on foot may run to the nearest free mount and
 climbs on (once it has noticed you, 40% of its decisions). A pilot takes hits before its

@@ -202,9 +202,15 @@ func explode(hurts_player: bool) -> void:
 			other.hurt_by_blast(at, Tuning.hobgoblin_blast_enemy_damage)
 	var to_player := player.global_position - at
 	if hurts_player && to_player.length() <= Tuning.hobgoblin_blast_radius:
-		player.take_damage(Tuning.hobgoblin_blast_damage, _nearest_direction(to_player), false)
+		player.take_damage(blast_damage(), _nearest_direction(to_player), false)
 	health = 0
 	die()
+
+# Damage its blast does to the player. It doesn't go through `damage` (it has no slash), so it
+# applies the F2 enemy damage multiplier and a server's attack boost itself, as `damage` would.
+func blast_damage() -> float:
+	return Tuning.hobgoblin_blast_damage * Tuning.enemy_damage_multiplier \
+		* buff_multiplier(ServerBuff.Kind.ATTACK)
 
 # Another blast reached it: it goes off too, next frame, so a chain ripples outward.
 func caught_in_blast(hurts_player: bool) -> void:

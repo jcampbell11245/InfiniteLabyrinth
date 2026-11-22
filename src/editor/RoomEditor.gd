@@ -23,9 +23,11 @@ extends Node2D
 # starts: Up, Down, Left, Right, or Auto, which turns it to face the player as they come
 # into the room. Its sprite shows the facing; an Auto one is marked "auto".
 #
-# The Pilot switch puts a goblin pilot on the selected orc, dragon or centaur from the start
-# (Enemy.spawn_with_pilot); the pilot is drawn riding it. Without it, any of them may still
-# get one at random in the game (Tuning.pilot_spawn_chance).
+# The Pilot switch, at the end of the Roaming row while an orc, dragon or centaur is
+# selected, puts a goblin pilot on it from the start (Enemy.spawn_with_pilot); the pilot is
+# drawn riding it. Without it, any of them may still get one at random in the game
+# (Tuning.pilot_spawn_chance).
+#
 # Selecting a server swaps those rows for its own: Boost (Attack, Defense, Speed, Random, or
 # Swap for one that keeps switching), Pool (which boosts Random and Swap pick from) and
 # Area (a circle, whose edge drags like a detection radius, or the whole room). Every
@@ -178,8 +180,9 @@ var _area_hot := 0 # EDGE_ bits of the selected roaming area under the mouse (or
 var _roam_buttons := {} # "none"/"path"/"area" -> its Button
 var _facing_buttons := {} # One of RoomDesign.FACINGS -> its Button
 var _pilot_button: Button # The Pilot switch
+var _pilot_separator: VSeparator # Before the Pilot switch on the Roaming row, shown with it
 var _seat_cache := {} # Mount kind -> where its pilot sits facing right, in room pixels
-var _enemy_rows: Array[Control] = [] # Facing, Roaming and Pilot, shown unless a server is selected
+var _enemy_rows: Array[Control] = [] # Facing and Roaming (with Pilot), shown unless a server is selected
 var _server_rows: Array[Control] = [] # Boost, pool and area, shown while a server is selected
 var _server_buff_buttons := {} # One of ServerBuff.SETTINGS -> its Button
 var _server_pool_buttons := {} # "attack"/"defense"/"speed" -> its toggle Button
@@ -879,7 +882,8 @@ func _refresh_info() -> void:
 		button.set_pressed_no_signal(can_face && facing == design.facing_at(_selected))
 	var can_carry := design.objects.has(_selected) && RoomDesign.can_carry_pilot(design.objects[_selected])
 	if _pilot_button != null:
-		_pilot_button.disabled = !can_carry
+		_pilot_button.visible = can_carry
+		_pilot_separator.visible = can_carry
 		_pilot_button.set_pressed_no_signal(can_carry && design.has_pilot(_selected))
 	var can_roam := design.objects.has(_selected) && RoomDesign.can_roam(design.objects[_selected])
 	for mode: String in _roam_buttons:
@@ -958,7 +962,7 @@ func _build_ui() -> void:
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
-	_enemy_rows = [_facing_row(), _roam_row(), _pilot_row()]
+	_enemy_rows = [_facing_row(), _roam_row()]
 	_server_rows = [_server_buff_row(), _server_pool_row(), _server_area_row()]
 	for row in _enemy_rows + _server_rows:
 		column.add_child(row)
@@ -1203,6 +1207,7 @@ func _roam_row() -> HBoxContainer:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.tooltip_text = tips[mode] + " (select a goblin or knight first)"
 		_roam_buttons[mode] = button
+	_add_pilot_toggle(row) # On this row so the panel still fits the screen
 	return row
 
 # A row of toggle buttons after a label, for the selected server. `buttons` gets each
@@ -1361,20 +1366,19 @@ func _set_pilot(on: bool) -> void:
 	_refresh_info()
 	_refresh_history()
 
-# "Pilot" switch, for the selected orc, dragon or centaur (disabled otherwise).
-func _pilot_row() -> HBoxContainer:
-	var row := HBoxContainer.new()
-	var label := Label.new()
-	label.text = "Pilot"
-	row.add_child(label)
-	# Lit like the selected Facing or Roaming button while on.
-	_pilot_button = _add_button(row, "Starts with a pilot",
+# The Pilot switch, at the end of the Roaming row, shown only while an orc, dragon or centaur
+# is selected. Lit like the selected Facing or Roaming button while on.
+func _add_pilot_toggle(row: HBoxContainer) -> void:
+	_pilot_separator = VSeparator.new()
+	_pilot_separator.visible = false
+	row.add_child(_pilot_separator)
+	_pilot_button = _add_button(row, "Pilot",
 		func() -> void: _set_pilot(_pilot_button.button_pressed))
 	_pilot_button.toggle_mode = true
 	_pilot_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pilot_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_pilot_button.tooltip_text = "A goblin pilot rides it from the start (select an orc, dragon or centaur first)"
-	return row
+	_pilot_button.tooltip_text = "A goblin pilot rides it from the start"
+	_pilot_button.visible = false
 
 # The pilot's sprite, sitting where it rides a `kind` mount shown playing `mount_animation`
 # (mirrored facing left and centred facing up or down, as Enemy.seat_position does).
