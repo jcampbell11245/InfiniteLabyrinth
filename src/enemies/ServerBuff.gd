@@ -55,18 +55,18 @@ static func multiplier(kind: Kind, strength: float) -> float:
 		Kind.SPEED: full = Tuning.server_speed_multiplier
 	return lerpf(1.0, full, clampf(strength, 0.0, 1.0))
 
-# How strongly `kind` boosts `enemy` right now, from every server standing. Servers don't
-# boost each other.
-static func strength_on(enemy: Enemy, kind: Kind) -> float:
+# How strongly each kind boosts `enemy` right now, by Kind, from every server standing (the
+# servers are looked up once for all three, since every enemy asks every frame). Servers
+# don't boost each other.
+static func strengths_on(enemy: Enemy) -> Array[float]:
+	var best: Array[float] = [0.0, 0.0, 0.0]
 	if enemy is Server:
-		return 0.0
-	var best := 0.0
+		return best
 	for node in enemy.get_tree().get_nodes_in_group(Server.GROUP):
 		var server := node as Server
 		if server != null && !server.is_queued_for_deletion():
-			best = maxf(best, server.strength_on(enemy, kind))
-			if best >= 1.0:
-				break
+			for kind: Kind in KINDS:
+				best[kind] = maxf(best[kind], server.strength_on(enemy, kind))
 	return best
 
 # Chance each server on floor `floor_number` has of being a gold floor server.

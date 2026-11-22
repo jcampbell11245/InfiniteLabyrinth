@@ -194,6 +194,30 @@ func test_each_server_rolls_its_own_floor_chance() -> void:
 	for server in gold:
 		expect(server.floor_server, "each one rolled gold is a floor server")
 
+# The banner names each boost once, and wraps rather than running off the screen.
+func test_banner_names_the_boosts_and_wraps() -> void:
+	var design := RoomDesign.new()
+	var buffs := ["attack", "defense", "attack", "random_swap"]
+	for x in buffs.size():
+		design.set_object(Vector2i(x * 3 + 1, 2), "server")
+		design.set_server_buff(Vector2i(x * 3 + 1, 2), buffs[x])
+	var room := await boot_design(design)
+	var gold: Array[Server] = []
+	for child in room.get_children():
+		if child is Server:
+			gold.append(child)
+	expect_equal(FloorBanner.describe(gold),
+		"4 premium servers are boosting enemy attack and defense across this floor. "
+		+ "Some keep changing their boosts. Destroy them to end it.", "each boost named once")
+	expect_equal(FloorBanner.describe(gold.slice(0, 1)),
+		"A premium server is boosting enemy attack across this floor. Destroy it to end it.", "one server")
+	var banner := FloorBanner.show_for(room, gold)
+	for i in 2:
+		await room.get_tree().process_frame
+	var panel := banner.get_child(0).get_child(0) as Control
+	expect(panel.size.x < 1920, "the banner fits across the screen (%d px)" % panel.size.x)
+	banner.queue_free()
+
 func test_random_picks_from_its_pool_and_swap_keeps_switching() -> void:
 	var design := RoomDesign.new()
 	design.set_object(SERVER_AT, "server")

@@ -20,6 +20,8 @@ const GOLD := Color(1.0, 0.84, 0.3)
 const BACKING := Color(0, 0, 0, 0.6)
 const PADDING := Vector2(36, 18)
 const LINE_GAP := 10 # Between the title and the message
+const MESSAGE_WIDTH := 1300.0 # Screen pixels the message wraps at, well inside the 1920 screen
+const MESSAGE_LINE_SPACING := 8 # Extra pixels between wrapped lines, so their outlines don't touch
 const ALERT_VOLUME_DB := -6.0
 
 # Shows the banner over `parent` for the floor servers `gold`.
@@ -40,13 +42,24 @@ static func describe(gold: Array[Server]) -> String:
 		var name: String = ServerBuff.NAMES[server.kind]
 		if !boosts.has(name):
 			boosts.append(name)
+	var one := gold.size() == 1
+	var count := "A premium server is" if one else "%d premium servers are" % gold.size()
+	var what := "enemy " + _listed(boosts) if !boosts.is_empty() else "enemies"
+	var lines: PackedStringArray = ["%s boosting %s across this floor." % [count, what]]
+	# Swap servers' boosts keep changing, so they get a sentence of their own, not a kind.
 	if swapping:
-		boosts.append("ever changing")
-	var what := " and ".join(boosts) if boosts.size() <= 2 \
-		else ", ".join(boosts.slice(0, boosts.size() - 1)) + " and " + boosts[boosts.size() - 1]
-	var count := "A premium server is" if gold.size() == 1 else "%d premium servers are" % gold.size()
-	return "%s boosting enemy %s across this floor.\nDestroy %s to end it." \
-		% [count, what, "it" if gold.size() == 1 else "them"]
+		if !boosts.is_empty():
+			lines.append("Some keep changing their boosts.")
+		else:
+			lines.append("Its boost keeps changing." if one else "Their boosts keep changing.")
+	lines.append("Destroy %s to end it." % ("it" if one else "them"))
+	return " ".join(lines)
+
+# "a", "a and b" or "a, b and c".
+static func _listed(words: PackedStringArray) -> String:
+	if words.size() <= 2:
+		return " and ".join(words)
+	return ", ".join(words.slice(0, words.size() - 1)) + " and " + words[words.size() - 1]
 
 var text := ""
 
@@ -67,7 +80,13 @@ func _ready() -> void:
 	panel.add_child(column)
 	var title := _label("PREMIUM SERVERS ONLINE", TITLE_SIZE, GOLD)
 	column.add_child(title)
-	column.add_child(_label(text, TEXT_SIZE, Color.WHITE))
+	# The message wraps at MESSAGE_WIDTH: the pixel font is wide, and a floor whose premium
+	# servers give several boosts makes a long line.
+	var message := _label(text, TEXT_SIZE, Color.WHITE)
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.custom_minimum_size.x = MESSAGE_WIDTH
+	message.add_theme_constant_override("line_spacing", MESSAGE_LINE_SPACING)
+	column.add_child(message)
 	# Centred across the top of the screen, below the level timer.
 	var holder := CenterContainer.new()
 	holder.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)

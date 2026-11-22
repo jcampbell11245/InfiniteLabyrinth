@@ -206,13 +206,9 @@ func has_buffs() -> bool:
 # Rereads its boosts from the servers standing, and its stats if they changed. Called every
 # frame by its ServerBuff.Watcher.
 func refresh_buffs() -> void:
-	var changed := false
-	for kind: ServerBuff.Kind in ServerBuff.KINDS:
-		var strength := ServerBuff.strength_on(self, kind)
-		if strength != _buffs[kind]:
-			_buffs[kind] = strength
-			changed = true
-	if changed:
+	var strengths := ServerBuff.strengths_on(self)
+	if strengths != _buffs:
+		_buffs = strengths
 		_apply_buffed_stats()
 		animator.speed_scale = ground_factor()
 

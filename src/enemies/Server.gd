@@ -89,7 +89,7 @@ func _on_tuning_changed(key: String) -> void:
 func counts_towards_clearing() -> bool:
 	return false
 
-# Strength of boost `of_kind` on `enemy` from this server (see ServerBuff.strength_on).
+# Strength of boost `of_kind` on `enemy` from this server (see ServerBuff.strengths_on).
 func strength_on(enemy: Enemy, of_kind: ServerBuff.Kind) -> float:
 	if of_kind != kind || health <= 0:
 		return 0.0
