@@ -206,6 +206,12 @@ func follow_up_strike() -> void:
 func can_follow_up() -> bool:
 	return mount != null && !_strike_pending && !is_striking() && _can_strike()
 
+# Its mount cleared its whole combo and left the last hit to it (Enemy._pilot_finishes_combo):
+# it slashes at once, the reach already checked (can_follow_up).
+func finish_combo() -> void:
+	_strike_pending = false
+	_start_strike()
+
 # About to slash (the mount's attack just ended) or slashing.
 func follow_up_coming() -> bool:
 	return mount != null && (_strike_pending || is_striking())

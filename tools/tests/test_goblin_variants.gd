@@ -324,3 +324,19 @@ func test_a_blast_hits_a_riding_pilot_once_and_its_bang_outlives_the_hobgoblin()
 	await tree.process_frame
 	expect(!is_instance_valid(hobgoblin), "the hobgoblin is gone")
 	expect(autoload("Juice").get_child_count() > voices, "its bang is still playing on Juice")
+
+func test_a_cleared_combo_slash_starts_even_if_the_pilot_swings_out_of_reach() -> void:
+	var parts: Array = await ridden_orc()
+	var orc: MeleeEnemy = parts[1]
+	var pilot: Pilot = parts[2]
+	var player: Player = autoload("Game").player
+	orc.global_position = player.global_position + Vector2(20, 0)
+	pilot._ride()
+	expect(orc._pilot_finishes_combo(), "the pilot takes the combo's last hit")
+	expect(pilot.is_striking(), "its slash starts at once")
+	# The mount turns round (a centaur after a back hit), carrying its pilot off: the slash
+	# still comes, so parrying it can still stun the mount.
+	orc.global_position = player.global_position + Vector2(90, 0)
+	await tree.physics_frame
+	await tree.physics_frame
+	expect(pilot.is_striking(), "the slash carries on out of reach")

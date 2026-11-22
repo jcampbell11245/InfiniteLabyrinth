@@ -602,7 +602,10 @@ func _pilot_finishes_combo() -> bool:
 	_combo_landed = false
 	# The parry bar counts the pilot's hit as one more step still to clear.
 	_parry_progress = float(hits) / (hits + 1)
-	rider.follow_up_strike()
+	# Its slash starts now, while the player is known to be in reach: checked again a frame
+	# later, a centaur turning round (its seat flips to its other side) could carry the pilot
+	# out of reach, and the combo would end with no slash and no stun.
+	rider.finish_combo()
 	return true
 
 # Hits in the attack under way, for the parry bar (see _pilot_finishes_combo).
