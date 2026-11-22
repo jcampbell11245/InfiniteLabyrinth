@@ -10,6 +10,7 @@ signal keys_changed(keys: int)
 signal arrows_changed(arrows: int)
 signal arrows_empty # Tried to shoot with no arrows left
 signal time_lost(seconds: float, fatal: bool) # Taken off the level timer by damage
+signal time_gained(seconds: float) # Added to the level timer, e.g. by collecting a chest key
 signal fatal_countdown_finished # The timer has shown a killing hit draining it to 0:00
 signal player_died
 signal item_selected(slot: int) # The highlighted box on the item bar moved

@@ -13,7 +13,8 @@ end room, and spend your coins on upgrades and items at the merchant in the star
 ## Playing
 
 Each floor is a 5×6 grid of rooms between a start room and an end room. Three key rooms
-hold keys that open the end room; a boss waits behind a door in the start room.
+hold keys that open the end room, and a chest also releases an hourglass that adds 30
+seconds to the level timer; a boss waits behind a door in the start room.
 
 **There's no health: you have time.** Each floor starts with a time limit (longer with the
 Time upgrade). Getting hit takes time off it, more for harder hits, and the run ends when
