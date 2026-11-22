@@ -81,6 +81,19 @@ func test_one_swing_hits_it_once() -> void:
 	server._on_player_sword(Direction.RIGHT)
 	expect(server.health < after_one, "the next swing does")
 
+func test_one_spin_hits_it_once() -> void:
+	var room := await boot_server("attack")
+	var server := find_server(room)
+	var player: Player = autoload("Game").player
+	server.critical_chance = 0
+	player.spin_started_frame = 1000
+	server.spin_hit()
+	var after_one := server.health
+	server.invincibility_cooldown.stop() # The spin outlasts its invincibility
+	server.spin_hit()
+	expect_equal(server.health, after_one, "the same spin doesn't hit it again")
+	expect(after_one > 0, "and it's still standing after one spin")
+
 func test_crit_breaks_it_at_once() -> void:
 	var room := await boot_server("attack")
 	var server := find_server(room)

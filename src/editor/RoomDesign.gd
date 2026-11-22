@@ -221,7 +221,7 @@ func clear() -> void:
 	facings.clear()
 	servers.clear()
 
-# Removes every goblin, knight and wizard; switches stay.
+# Removes every enemy and server; switches stay.
 func clear_enemies() -> void:
 	for index: Vector2i in objects.keys():
 		if objects[index] != "switch":

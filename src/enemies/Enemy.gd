@@ -306,12 +306,7 @@ func die() -> void:
 # usual. If it lands and doesn't kill, it stuns like a parry (Tuning.spin_staggers), so a
 # crowd that rushed in can't all swing back.
 func spin_hit() -> void:
-	var away := global_position - player.global_position
-	var from_direction: String
-	if absf(away.x) >= absf(away.y):
-		from_direction = Direction.RIGHT if away.x >= 0 else Direction.LEFT
-	else:
-		from_direction = Direction.DOWN if away.y > 0 else Direction.UP
+	var from_direction := _away_from_player()
 	if _guards_spin(from_direction):
 		return
 	var stun := _spin_stun_time() # Asked first: the hit can end its part in a group rush
@@ -319,6 +314,14 @@ func spin_hit() -> void:
 	take_damage(from_direction, player.spin_damage())
 	if Tuning.spin_staggers && health < before && health > 0:
 		stagger(from_direction, stun)
+
+# The direction from the player to it, to the nearest of the four: the way a spin's blade
+# travels when it reaches it.
+func _away_from_player() -> String:
+	var away := global_position - player.global_position
+	if absf(away.x) >= absf(away.y):
+		return Direction.RIGHT if away.x >= 0 else Direction.LEFT
+	return Direction.DOWN if away.y > 0 else Direction.UP
 
 # Blocks a spin coming from `from_direction` (the way the blade travels), if it can; true
 # if it did. Only enemies that guard do (see MeleeEnemy).

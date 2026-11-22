@@ -143,6 +143,7 @@ var _charged := false # Drawn for at least Tuning.arrow_charge_time
 # Parrying
 var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
 var swing_started_frame := -1 # Physics frame the current or last swing began
+var spin_started_frame := -1 # Physics frame the current or last spin attack began
 var _parried_swing := -2 # swing_started_frame of the last swing that parried an enemy
 var _daze_timer: Timer # Running while dazed from a blocked swing
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
@@ -849,6 +850,7 @@ func _spin_charge_shown() -> float:
 
 # Round once with the sword out: a temporary look, the slash's extended frame spun whole.
 func _start_spin() -> void:
+	spin_started_frame = Engine.get_physics_frames()
 	spin_rush_size = _group_rush_size()
 	_spin_timer.start(Tuning.spin_duration)
 	hitbox.set_deferred("disabled", true)

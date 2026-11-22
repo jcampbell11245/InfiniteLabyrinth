@@ -44,6 +44,7 @@ var _blink := 0.0
 var _beacon: Node2D # Drawn over the sprite (a parent's own drawing goes under its children)
 var _full_health := 0.0 # Health when undamaged, from the tuning
 var _swing_landed := -2 # Player.swing_started_frame of the last swing that hit it
+var _spin_landed := -2 # Player.spin_started_frame of the last spin that hit it
 
 @onready var hit_sound: AudioStreamPlayer = $Hit
 
@@ -140,16 +141,23 @@ func _swap() -> void:
 
 # --- Being hit ---
 
-# One sword swing takes one hit. Its invincibility after a hit is shorter than a swing, so
-# the sword, still out, would hit it again as it wore off; this remembers which swing (by
-# the physics frame it started on) last landed and ignores it after.
+# One sword swing, or one spin, takes one hit. Its invincibility after a hit is shorter than
+# either, so the blade, still out, would hit it again as it wore off; this remembers which
+# swing and spin (by the physics frame each started on) last landed and ignores them after.
+# A server never attacks, so there's no parry or guard to work out: every swing just lands.
 func _on_player_sword(from_direction: String) -> void:
-	if player.swing_started_frame == _swing_landed:
-		return
-	var before := health
-	take_damage(from_direction, player.sword_damage())
-	if health < before:
+	if player.swing_started_frame != _swing_landed && _hit_once(from_direction, player.sword_damage()):
 		_swing_landed = player.swing_started_frame
+
+func spin_hit() -> void:
+	if player.spin_started_frame != _spin_landed && _hit_once(_away_from_player(), player.spin_damage()):
+		_spin_landed = player.spin_started_frame
+
+# Takes a hit of `amount`; true if it landed (it wasn't still invincible from the last one).
+func _hit_once(from_direction: String, amount: float) -> bool:
+	var before := health
+	take_damage(from_direction, amount)
+	return health < before
 
 # It stands its ground: no knockback, and a spin or parry never stuns it.
 func stagger(_from_direction: String, _stun_time := -1.0) -> void:
