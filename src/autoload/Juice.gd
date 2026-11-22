@@ -143,6 +143,19 @@ func arrow_sound() -> void:
 func clank(bad := false) -> void:
 	play(_bad_clank_player if bad else _clank_player, 0.06)
 
+# Plays `stream` on a player of its own that lives here, so the sound carries on after
+# whatever made it is freed (a hobgoblin dying in its own blast). Several can overlap; each
+# frees itself when it finishes.
+func one_shot(stream: AudioStream, spread := 0.08, base := 1.0) -> void:
+	if stream == null:
+		return
+	var voice := AudioStreamPlayer.new()
+	voice.bus = &"SFX"
+	voice.stream = stream
+	add_child(voice)
+	voice.finished.connect(voice.queue_free)
+	play(voice, spread, base)
+
 # A fireball batted back, by the player's sword or a wizard.
 func deflect_sound() -> void:
 	play(_deflect_player, 0.06)

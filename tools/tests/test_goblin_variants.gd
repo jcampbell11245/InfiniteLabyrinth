@@ -303,3 +303,24 @@ func test_a_dragon_holds_still_while_its_pilot_finishes_the_combo() -> void:
 	await tree.physics_frame
 	await tree.physics_frame
 	expect(wyrm.global_position.distance_to(at) < 0.5, "the dragon stays put meanwhile")
+
+func test_a_blast_hits_a_riding_pilot_once_and_its_bang_outlives_the_hobgoblin() -> void:
+	autoload("Tuning").hobgoblin_blast_enemy_damage = 0.5
+	autoload("Tuning").pilot_spawn_chance = 0.0
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(6, 6), "orc")
+	design.set_pilot(Vector2i(6, 6), true)
+	design.set_object(Vector2i(7, 6), "hobgoblin")
+	var room: Room = await boot_design(design)
+	var hobgoblin: Hobgoblin = first(room, Hobgoblin)
+	var pilot: Pilot = first(room, Pilot)
+	var orc: Enemy = pilot.mount
+	hobgoblin.global_position = orc.global_position + Vector2(12, 0)
+	var before := pilot.health
+	var voices := autoload("Juice").get_child_count()
+	hobgoblin.explode(false)
+	expect_near(pilot.health, before - 0.5, 0.001, "the pilot takes the blast once, through its mount")
+	await tree.process_frame
+	await tree.process_frame
+	expect(!is_instance_valid(hobgoblin), "the hobgoblin is gone")
+	expect(autoload("Juice").get_child_count() > voices, "its bang is still playing on Juice")

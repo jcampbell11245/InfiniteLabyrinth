@@ -185,7 +185,8 @@ func explode(hurts_player: bool) -> void:
 	Juice.burst(room, at, BLAST_FIRE, BLAST_SPARKS, BLAST_SPEED, Vector2.ZERO, 2.5, 0.45)
 	Juice.burst(room, at, BLAST_SMOKE, BLAST_PUFFS, BLAST_SPEED / 2, Vector2.UP, 3.0, 0.7)
 	Juice.splat(room, at + FEET_OFFSET, BLAST_SMOKE.darkened(0.3), BLAST_STAIN)
-	Juice.play($Attack, 0.05, BLAST_PITCH * voice_pitch)
+	# On Juice, not its own player: it dies this frame, and its player with it.
+	Juice.one_shot(($Attack as AudioStreamPlayer).stream, 0.05, BLAST_PITCH * voice_pitch)
 	Juice.shake(Juice.SHAKE_HEAVY)
 	Juice.hitstop(HITSTOP_KILL)
 	for node in room.get_children():
@@ -193,6 +194,8 @@ func explode(hurts_player: bool) -> void:
 		if other == null || other == self || other.is_queued_for_deletion() \
 				|| other.global_position.distance_to(at) > Tuning.hobgoblin_blast_radius:
 			continue
+		if other is Pilot && (other as Pilot).mount != null:
+			continue # Riding: the blast reaches it through its mount (Enemy._rider_absorbs)
 		if other is Hobgoblin:
 			(other as Hobgoblin).caught_in_blast(hurts_player)
 		else:
