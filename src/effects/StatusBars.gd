@@ -9,7 +9,10 @@ extends Node2D
 
 # INVERTED to JAM are the player's curses from a warlock (see Curses). SLOW is also a slow
 # tile's; FAST (a speed tile) and PASTE (caught in thermal paste) are special tiles'.
-enum Icon { SWORD, ROLL, ARROW, DAZE, PARRY, INVERTED, DEFENSE_DOWN, ATTACK_DOWN, SLOW, JAM, SPIN, FAST, PASTE }
+# ATTACK_UP and DEFENSE_UP are a server's boosts on an enemy (see ServerBuff); its speed
+# boost shows FAST.
+enum Icon { SWORD, ROLL, ARROW, DAZE, PARRY, INVERTED, DEFENSE_DOWN, ATTACK_DOWN, SLOW, JAM, SPIN, FAST, PASTE,
+	ATTACK_UP, DEFENSE_UP }
 
 # status_icons.png: a row of 18x18 icons. Which cell each Icon is, left to right from 0.
 # Cell 1 is the enemy's strike twinkle (see Twinkle), not a bar icon.
@@ -18,7 +21,7 @@ const ICON_CELL := 18
 const SHEET_CELLS := {
 	Icon.SPIN: 0, Icon.SWORD: 2, Icon.ARROW: 3, Icon.DAZE: 4, Icon.ROLL: 5,
 	Icon.INVERTED: 6, Icon.PARRY: 7, Icon.DEFENSE_DOWN: 8, Icon.ATTACK_DOWN: 9,
-	Icon.SLOW: 10, Icon.JAM: 11, Icon.FAST: 12, Icon.PASTE: 13,
+	Icon.SLOW: 10, Icon.JAM: 11, Icon.FAST: 12, Icon.PASTE: 13, Icon.ATTACK_UP: 14, Icon.DEFENSE_UP: 15,
 }
 # World pixels per icon pixel. Rooms are seen at 2.5x zoom, so 0.4 puts one icon pixel on
 # one screen pixel at 1080p and keeps them crisp.

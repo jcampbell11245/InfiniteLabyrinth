@@ -675,6 +675,8 @@ func _on_keys_changed(_keys: int) -> void:
 # enemy's scene file name; wizards have none. Each kill within Tuning.kill_combo_window of
 # the last pitches the sound up, like a combo; a slower kill starts again at normal pitch.
 func _on_enemy_died(enemy: Enemy) -> void:
+	if !enemy.counts_towards_clearing(): # A server: its own sound, no kill combo
+		return
 	enemy_count -= 1
 	_remember_fallen(enemy)
 	var now := Time.get_ticks_msec() # Real time, so hit-stop doesn't stretch the window

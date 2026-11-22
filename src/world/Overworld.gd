@@ -28,12 +28,16 @@ func _ready() -> void:
 	floor_number = SaveData.floor_number
 	add_child(CaveLighting.new())
 
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
 	if is_test():
 		_build_test(test_design)
 	else:
-		var rng := RandomNumberGenerator.new()
-		rng.randomize()
 		_build(WorldGenerator.generate(rng, floor_number))
+	# Some servers turn gold, boosting the whole floor (a play-test rolls too, for trying them).
+	var gold := ServerBuff.roll_floor_servers(get_tree(), floor_number, rng)
+	if !gold.is_empty():
+		FloorBanner.show_for(self, gold)
 	Game.room_entered.emit(Game.player.current_room) # Fades the start room in
 	
 	Music.start_floor()

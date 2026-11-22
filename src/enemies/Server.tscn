@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/enemies/Server.gd" id="1"]
+[ext_resource type="SpriteFrames" path="res://src/enemies/ServerFrames.tres" id="2"]
+[ext_resource type="AudioStream" path="res://assets/sfx/server_hit.wav" id="3"]
+
+[sub_resource type="RectangleShape2D" id="body"]
+size = Vector2(18, 8)
+
+[sub_resource type="RectangleShape2D" id="hurt"]
+size = Vector2(20, 34)
+
+[node name="Server" type="CharacterBody2D" unique_id=1938402211]
+collision_layer = 2
+collision_mask = 0
+motion_mode = 1
+script = ExtResource("1")
+speed = 0.0
+knockback_speed = 0.0
+damage = 0.0
+health = 3.0
+attack_cooldown_length = 1.0
+dizzy_offset = Vector2(0, -30)
+invincibility_time = 0.2
+coin_reward = 5
+blood_color = Color(0.32, 0.34, 0.4, 1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=771204935]
+position = Vector2(0, -8)
+sprite_frames = ExtResource("2")
+animation = &"idle_down"
+autoplay = "idle_down"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1203948577]
+position = Vector2(0, 6)
+shape = SubResource("body")
+
+[node name="AttackCooldown" type="Timer" parent="." unique_id=402938841]
+one_shot = true
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1592048376]
+collision_layer = 2
+collision_mask = 13
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=880293745]
+position = Vector2(0, -8)
+shape = SubResource("hurt")
+
+[node name="InvincibilityCooldown" type="Timer" parent="." unique_id=1309485112]
+one_shot = true
+
+[node name="Hit" type="AudioStreamPlayer" parent="." unique_id=219384756]
+stream = ExtResource("3")
+bus = &"SFX"
+
+[connection signal="area_shape_entered" from="Hurtbox" to="." method="_on_hurtbox_area_shape_entered"]
+[connection signal="timeout" from="InvincibilityCooldown" to="." method="_on_invincibility_cooldown_timeout"]

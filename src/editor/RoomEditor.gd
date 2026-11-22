@@ -22,6 +22,11 @@ extends Node2D
 # The Facing buttons set which way the selected goblin or knight faces when the room
 # starts: Up, Down, Left, Right, or Auto, which turns it to face the player as they come
 # into the room. Its sprite shows the facing; an Auto one is marked "auto".
+#
+# Selecting a server swaps those rows for its own: Boost (Attack, Defense, Speed, Random, or
+# Swap for one that keeps switching), Pool (which boosts Random and Swap pick from) and
+# Area (a circle, whose edge drags like a detection radius, or the whole room). Every
+# server's area shows tinted as in the game; the selected one's brighter.
 
 const TITLE_SCENE := "res://src/ui/menus/TitleScreen.tscn"
 const PLAY_SCENE := "res://src/world/Overworld.tscn"
@@ -135,7 +140,22 @@ const TOOLS := [
 	["Centaur", "object", "centaur"],
 	["Bucentaur", "object", "bucentaur"],
 	["Taurtaur", "object", "taurtaur"],
+	["Server", "object", "server"],
 ]
+# The server rows' buttons: what it boosts (ServerBuff.SETTINGS), and their tooltips.
+const SERVER_BUFF_LABELS := {
+	"attack": "Attack", "defense": "Defense", "speed": "Speed",
+	ServerBuff.RANDOM: "Random", ServerBuff.RANDOM_SWAP: "Swap",
+}
+const SERVER_BUFF_TIPS := {
+	"attack": "Attack boost: enemies in its area hit harder",
+	"defense": "Defense boost: enemies in its area take less damage",
+	"speed": "Speed boost: enemies in its area walk and attack faster",
+	ServerBuff.RANDOM: "Random: one boost from the ticked ones below, picked when the room is built",
+	ServerBuff.RANDOM_SWAP: "Random swap: keeps switching between the ticked boosts below (its area is tinted pink)",
+}
+const SERVER_AREA_UNSELECTED := 0.4 # Alpha multiplier for the areas of servers not selected
+const SERVER_BUFF_FONT_SIZE := 18 # Five buttons share the Boost row
 
 var design: RoomDesign
 var tool := 3 # Index into TOOLS; starts on Pitfall
@@ -152,6 +172,11 @@ var _area_drag := 0 # EDGE_ bits of the selected roaming area being dragged, or 
 var _area_hot := 0 # EDGE_ bits of the selected roaming area under the mouse (or being dragged)
 var _roam_buttons := {} # "none"/"path"/"area" -> its Button
 var _facing_buttons := {} # One of RoomDesign.FACINGS -> its Button
+var _enemy_rows: Array[Control] = [] # Facing and Roaming, shown unless a server is selected
+var _server_rows: Array[Control] = [] # Boost, pool and area, shown while a server is selected
+var _server_buff_buttons := {} # One of ServerBuff.SETTINGS -> its Button
+var _server_pool_buttons := {} # "attack"/"defense"/"speed" -> its toggle Button
+var _server_area_buttons := {} # "radius"/"room" -> its Button
 var _undo_button: Button
 var _redo_button: Button
 var _sprite_cache := {} # Object kind -> AnimatedSprite2D to copy
@@ -317,11 +342,16 @@ func _select(index: Vector2i) -> void:
 	_overlay.queue_redraw()
 	_refresh_info()
 
-# The selected object's cell, if it's a goblin or knight (which have a radius), else NO_CELL.
+# The selected object's cell, if it has a circle to drag (a detection radius, or a server's
+# area that isn't the whole room), else NO_CELL.
 func _radius_owner() -> Vector2i:
-	if design.objects.has(_selected) && RoomDesign.has_radius(design.objects[_selected]):
+	if design.objects.has(_selected) && RoomDesign.has_circle(design.objects[_selected]) \
+			&& !design.server_at(_selected).get("whole_room", false):
 		return _selected
 	return NO_CELL
+
+func _selected_server() -> Vector2i:
+	return _selected if design.servers.has(_selected) else NO_CELL
 
 # Room-local centre of the circle: the enemy's origin, which is what it measures from.
 func _radius_centre(index: Vector2i) -> Vector2:
@@ -396,6 +426,64 @@ func _set_facing(facing: String) -> void:
 	_refresh_objects()
 	_refresh_info()
 	_refresh_history()
+
+# --- Servers ---
+
+# Runs `change` on the selected server's settings as one undo step, then says `message`.
+func _change_server(change: Callable, message: String) -> void:
+	var server := _selected_server()
+	if server == NO_CELL:
+		_refresh_info()
+		return
+	var before := design.snapshot()
+	change.call(server)
+	design.record(before)
+	_status.text = message
+	_overlay.queue_redraw()
+	_update_edge_hot()
+	_refresh_info()
+	_refresh_history()
+
+func _set_server_buff(buff: String) -> void:
+	_change_server(func(at: Vector2i) -> void: design.set_server_buff(at, buff), SERVER_BUFF_TIPS[buff])
+
+func _toggle_server_pool(kind_name: String) -> void:
+	var on: bool = !(design.server_at(_selected_server()).get("pool", []) as Array).has(kind_name)
+	var message := "Random picks from the ticked boosts (at least one stays ticked)"
+	_change_server(func(at: Vector2i) -> void: design.set_server_pool(at, kind_name, on), message)
+
+func _set_server_area(whole_room: bool) -> void:
+	var message := "It boosts every enemy in the room" if whole_room \
+		else "It boosts the enemies inside its circle (drag the edge to resize it)"
+	_change_server(func(at: Vector2i) -> void: design.set_server_whole_room(at, whole_room), message)
+
+# The colour a server's area is tinted in the game: its boost's, pink for a random swap, and
+# white for a random one, whose boost isn't known until the room is built.
+static func _server_color(server: Dictionary) -> Color:
+	match server.get("buff", ""):
+		ServerBuff.RANDOM_SWAP:
+			return ServerBuff.SWAP_COLOR
+		ServerBuff.RANDOM:
+			return Color.WHITE
+	return ServerBuff.COLORS.get(ServerBuff.kind_named(server.get("buff", "")), Color.WHITE)
+
+# Every server's area, as the game draws it; the selected one's brighter.
+func _draw_server_areas() -> void:
+	var floor_rect := Rect2(Vector2.ONE * Room.FLOOR_FIRST * Room.CELL_SIZE, Vector2.ONE * RoomDesign.SIZE * Room.CELL_SIZE)
+	for index: Vector2i in design.servers:
+		var server := design.server_at(index)
+		var color := _server_color(server)
+		var alpha := 1.0 if index == _selected else SERVER_AREA_UNSELECTED
+		var fill := Color(color, ServerArea.FILL_ALPHA * 1.5 * alpha)
+		if server.whole_room:
+			_overlay.draw_rect(floor_rect, fill)
+			continue
+		var ring := Color(color, ServerArea.RING_ALPHA * alpha)
+		var centre := RoomDesign.object_origin("server", index)
+		for piece: Array in ServerArea.disc_rows(centre, design.radius_at(index)):
+			var rect := (piece[0] as Rect2).intersection(floor_rect)
+			if rect.has_area():
+				_overlay.draw_rect(rect, ring if piece[1] else fill)
 
 # The EDGE_ bits of the selected area the mouse is over (within RADIUS_GRAB), or 0. If it's
 # over both sides of a thin area, the nearer one.
@@ -549,14 +637,18 @@ func _draw_radius() -> void:
 		_overlay.draw_circle(centre, 1.5, RADIUS_LINE_HOT)
 		return
 	# The half it watches, facing the way it starts out. An Auto one's depends on the door
-	# the player comes in by, so none is shaded.
+	# the player comes in by, so none is shaded. A server's area is drawn by
+	# _draw_server_areas; this only adds the edge to grab.
 	var facing := design.facing_at(enemy_cell)
-	if facing != MeleeEnemy.AUTO_FACING:
+	if facing != MeleeEnemy.AUTO_FACING && RoomDesign.has_radius(design.objects[enemy_cell]):
 		var ahead := Direction.to_vector(facing).angle()
 		var points := PackedVector2Array([centre])
 		for i in range(33):
 			points.append(centre + Vector2.from_angle(ahead - PI / 2 + PI * i / 32.0) * radius)
 		_overlay.draw_colored_polygon(points, RADIUS_FILL)
+	# A server's pixel ring is its edge; the smooth one only shows while it's grabbed.
+	if !RoomDesign.has_radius(design.objects[enemy_cell]) && !_edge_hot:
+		return
 	var line := RADIUS_LINE_HOT if _edge_hot else RADIUS_LINE
 	_overlay.draw_arc(centre, radius, 0, TAU, 96, line, 1.5 if _edge_hot else 1.0)
 
@@ -691,6 +783,7 @@ func _draw_overlay() -> void:
 		var rect := Rect2(Vector2(RoomDesign.tile_cell(_hover)) * size, Vector2.ONE * size)
 		_overlay.draw_rect(rect, colour, false, 1.0)
 	_draw_roams()
+	_draw_server_areas()
 	_draw_radius()
 	_draw_auto_marks()
 
@@ -749,9 +842,17 @@ func _sprite_for(kind: String) -> AnimatedSprite2D:
 
 func _refresh_info() -> void:
 	_info.text = "Enemies: %d\nSwitches: %d" % [design.enemy_count(), design.count("switch")]
+	if design.count("server") > 0:
+		_info.text += "    Servers: %d" % design.count("server")
 	if design.objects.has(_selected):
 		var kind: String = design.objects[_selected]
-		if RoomDesign.has_radius(kind):
+		if kind == "server":
+			var server := design.server_at(_selected)
+			# One line, since it has a row more than a goblin's Facing and Roaming.
+			var area := "whole room" if server.whole_room else "%d px circle" % design.radius_at(_selected)
+			_info.text += "\nSelected server: %s, %s" \
+				% [(SERVER_BUFF_LABELS[server.buff] as String).to_lower(), area]
+		elif RoomDesign.has_radius(kind):
 			_info.text += "\nSelected %s: detection %d px\n(drag the circle's edge)" \
 				% [kind, design.radius_at(_selected)]
 		elif kind in ["wizard", "warlock", "necromancer"]:
@@ -772,6 +873,7 @@ func _refresh_info() -> void:
 		var button: Button = _roam_buttons[mode]
 		button.disabled = !can_roam
 		button.set_pressed_no_signal(can_roam && mode == design.roam_mode(_selected))
+	_refresh_server_rows()
 	for condition: String in _clear_buttons:
 		_clear_buttons[condition].button_pressed = condition == design.clear_by
 	for i in range(_tileset_buttons.size()):
@@ -784,6 +886,27 @@ func _refresh_info() -> void:
 		popup.set_item_checked(popup.get_item_index(n), Room.allowed_on(n, design.floors))
 	_warning.text = design.clear_problem()
 	_warning.visible = _warning.text != ""
+
+# Shows the server rows in place of Facing and Roaming while a server is selected, set to
+# what it does.
+func _refresh_server_rows() -> void:
+	var at := _selected_server()
+	for row in _enemy_rows:
+		row.visible = at == NO_CELL
+	for row in _server_rows:
+		row.visible = at != NO_CELL
+	if at == NO_CELL:
+		return
+	var server := design.server_at(at)
+	for buff: String in _server_buff_buttons:
+		(_server_buff_buttons[buff] as Button).set_pressed_no_signal(buff == server.buff)
+	var random: bool = server.buff in [ServerBuff.RANDOM, ServerBuff.RANDOM_SWAP]
+	for kind_name: String in _server_pool_buttons:
+		var button: Button = _server_pool_buttons[kind_name]
+		button.disabled = !random
+		button.set_pressed_no_signal(random && (server.pool as Array).has(kind_name))
+	_server_area_buttons.radius.set_pressed_no_signal(!server.whole_room)
+	_server_area_buttons.room.set_pressed_no_signal(server.whole_room)
 
 # --- UI ---
 
@@ -820,8 +943,10 @@ func _build_ui() -> void:
 	column.add_child(HSeparator.new())
 	_info = Label.new()
 	column.add_child(_info)
-	column.add_child(_facing_row())
-	column.add_child(_roam_row())
+	_enemy_rows = [_facing_row(), _roam_row()]
+	_server_rows = [_server_buff_row(), _server_pool_row(), _server_area_row()]
+	for row in _enemy_rows + _server_rows:
+		column.add_child(row)
 	var clear_label := Label.new()
 	clear_label.text = "Room clears by:"
 	column.add_child(clear_label)
@@ -1064,6 +1189,48 @@ func _roam_row() -> HBoxContainer:
 		button.tooltip_text = tips[mode] + " (select a goblin or knight first)"
 		_roam_buttons[mode] = button
 	return row
+
+# A row of toggle buttons after a label, for the selected server. `buttons` gets each
+# button under its key from `labels`; `action` is called with the key.
+func _server_row(title: String, labels: Dictionary, tips: Dictionary, action: Callable,
+		buttons: Dictionary, grouped := true, font_size := FACING_FONT_SIZE) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var label := Label.new()
+	label.text = title
+	row.add_child(label)
+	var group := ButtonGroup.new() if grouped else null
+	for key: String in labels:
+		var button := _add_button(row, labels[key], action.bind(key))
+		button.toggle_mode = true
+		button.button_group = group
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", font_size)
+		button.tooltip_text = tips[key]
+		buttons[key] = button
+	return row
+
+# "Boost": what the selected server gives the enemies in its area. Five long names share
+# the row, so they're smaller.
+func _server_buff_row() -> HBoxContainer:
+	return _server_row("Boost", SERVER_BUFF_LABELS, SERVER_BUFF_TIPS, _set_server_buff, _server_buff_buttons,
+		true, SERVER_BUFF_FONT_SIZE)
+
+# "Pool": which boosts Random and Swap pick from (ticked ones are in).
+func _server_pool_row() -> HBoxContainer:
+	var labels := {"attack": "Attack", "defense": "Defense", "speed": "Speed"}
+	var tips := {}
+	for key: String in labels:
+		tips[key] = "Random and Swap can pick the %s boost when ticked" % key
+	return _server_row("Pool", labels, tips, _toggle_server_pool, _server_pool_buttons, false)
+
+# "Area": a circle round the server (drag its edge), or the whole room.
+func _server_area_row() -> HBoxContainer:
+	var labels := {"radius": "Circle", "room": "Whole room"}
+	var tips := {"radius": "Boosts the enemies inside a circle round it; drag the circle's edge to resize it",
+		"room": "Boosts every enemy in its room"}
+	return _server_row("Area", labels, tips,
+		func(key: String) -> void: _set_server_area(key == "room"), _server_area_buttons)
 
 # "Floors [Every floor ▾]": a dropdown of checkboxes, one per floor, for the floors the room
 # can appear on. It stays open while ticking, so several can be changed in one go.

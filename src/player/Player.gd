@@ -708,6 +708,10 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 		var attacker: Node = area.get_parent().get_parent()
 		# A wizard's staff hits for its own melee damage; `damage` is its fireballs'.
 		var amount: float = attacker.melee_damage() if attacker.has_method("melee_damage") else attacker.damage
+		# `damage` carries a server's attack boost already (Enemy._apply_buffed_stats); a
+		# melee_damage of its own doesn't.
+		if attacker is Enemy && attacker.has_method("melee_damage"):
+			amount *= (attacker as Enemy).buff_multiplier(ServerBuff.Kind.ATTACK)
 		if take_damage(amount, attacker.direction, false) && attacker is Enemy:
 			# Ends its combo (Tuning.combos_end_on_hit); a troll's also steals coins.
 			(attacker as Enemy).landed_hit()

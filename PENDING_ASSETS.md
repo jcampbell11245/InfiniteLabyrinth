@@ -46,6 +46,9 @@ line in `assets/sfx/SOURCE.txt`.
 | `assets/sprites/wizard/wizard_*.png` (stand, walk, shoot) | Every wizard sprite ([Wizard.tscn](src/enemies/Wizard.tscn); Warlock and Necromancer borrow them too). Need redoing | ![wizard](docs/pending_assets/enemy_wizard.gif) |
 | `assets/sprites/skelly/skeleton_knight_*.png` (idle, walking, shooting, slashing) | Every boss sprite ([Boss.tscn](src/enemies/Boss.tscn)). Need redoing | ![boss](docs/pending_assets/enemy_boss.gif) |
 | `assets/sprites/hud/arrow_count.png` | Icon next to the arrow count on the HUD ([GameCamera.tscn](src/world/GameCamera.tscn) `Hud/Arrows/Icon`) | ![arrow count](docs/pending_assets/hud_arrow_count.png) |
+| `assets/sprites/server/server.png` and `server_gold.png` | Server ([Server.tscn](src/enemies/Server.tscn)): a server tower with blinking drive lights, drawn by script as a placeholder (four idle frames). The gold sheet is a gold floor server (top row normal, bottom row gold). The light on its cap is drawn in code in the boost's colour | ![server](docs/pending_assets/enemy_server.png) |
+| `status_icons.png` cell 14 (`Icon.ATTACK_UP`) | Status-bar icon over an enemy under a server's attack boost: the attack-down sword with a green up arrow, edited by script | ![attack up icon](docs/pending_assets/icon_attack_up.png) |
+| `status_icons.png` cell 15 (`Icon.DEFENSE_UP`) | Status-bar icon over an enemy under a server's defense boost: the defense-down shield with its arrows flipped up and turned green, edited by script | ![defense up icon](docs/pending_assets/icon_defense_up.png) |
 
 ## Sound effects
 
@@ -60,6 +63,9 @@ from a library.
 | `paste_stick.wav` | Thermal paste first catching someone ([SpecialTiles.gd](src/world/SpecialTiles.gd)) | [assets/sfx/paste_stick.wav](assets/sfx/paste_stick.wav) |
 | `paste_stretch.wav` | Someone pulling against paste | [assets/sfx/paste_stretch.wav](assets/sfx/paste_stretch.wav) |
 | `paste_snap.wav` | Paste snapping someone back | [assets/sfx/paste_snap.wav](assets/sfx/paste_snap.wav) |
+| `server_hit.wav` | A server being hit ([Server.gd](src/enemies/Server.gd)) | [assets/sfx/server_hit.wav](assets/sfx/server_hit.wav) |
+| `server_break.wav` | A server breaking | [assets/sfx/server_break.wav](assets/sfx/server_break.wav) |
+| `server_alert.wav` | The floor server banner as a floor starts ([FloorBanner.gd](src/ui/hud/FloorBanner.gd)) | [assets/sfx/server_alert.wav](assets/sfx/server_alert.wav) |
 
 ## Music
 

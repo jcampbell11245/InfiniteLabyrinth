@@ -67,6 +67,9 @@ var _parry_progress := 0.0
 # The scene's own values, before Tuning's enemy multipliers.
 var _base := {}
 var _health_multiplier := 1.0 # Tuning.enemy_health_multiplier last applied to health
+# How strongly each server boost is on it, by ServerBuff.Kind: 0 none, 1 full, between for a
+# floor server's share (see ServerBuff). Kept up to date every frame by a ServerBuff.Watcher.
+var _buffs: Array[float] = [0.0, 0.0, 0.0]
 
 @onready var player: Player = Game.player
 @onready var room: Room = get_parent()
@@ -105,6 +108,7 @@ func _ready() -> void:
 	_stun_timer.timeout.connect(_reset_parry_progress)
 	_vulnerable_timer = _add_timer(_set_vulnerable.bind(false))
 	_add_status_bars()
+	add_child(ServerBuff.Watcher.new())
 	_remember_spawn.call_deferred() # After subclasses' _ready have set their facing
 
 func _add_status_bars() -> void:
@@ -115,6 +119,10 @@ func _add_status_bars() -> void:
 	# Caught in thermal paste, which holds an enemy for good (see SpecialTiles).
 	bars.add_bar(StatusBars.Icon.PASTE, Player.PASTE_BAR,
 		func() -> float: return SpecialTiles.paste_left_in(room, self))
+	# A server's boosts: full while it lasts, half full for a floor server's share. They
+	# don't run down; they go the moment the server breaks.
+	for kind: ServerBuff.Kind in ServerBuff.KINDS:
+		bars.add_bar(ServerBuff.ICONS[kind], ServerBuff.COLORS[kind], buff_strength.bind(kind))
 	add_child(bars)
 
 func _reset_parry_progress() -> void:
@@ -158,14 +166,14 @@ func _on_reset() -> void:
 	pass
 
 func _on_tuning_changed(key: String) -> void:
-	if key.begins_with("enemy_") || key == "freeze_enemies":
+	if key.begins_with("enemy_") || key.begins_with("server_") || key == "freeze_enemies":
 		apply_tuning()
+		animator.speed_scale = ground_factor() # A new speed boost strength
 
 # Applies Tuning's enemy multipliers to the scene's values. Health keeps its share of the
 # maximum: a half-dead enemy stays half dead when the multiplier changes.
 func apply_tuning() -> void:
-	speed = _base.speed * Tuning.enemy_speed_multiplier
-	damage = _base.damage * Tuning.enemy_damage_multiplier
+	_apply_buffed_stats()
 	knockback_speed = _base.knockback_speed * Tuning.enemy_knockback_multiplier
 	attack_cooldown_length = _base.attack_cooldown_length * Tuning.enemy_attack_cooldown_multiplier
 	windup_hold_min = _base.windup_hold_min * Tuning.enemy_windup_multiplier
@@ -175,6 +183,42 @@ func apply_tuning() -> void:
 	health *= Tuning.enemy_health_multiplier / _health_multiplier
 	_health_multiplier = Tuning.enemy_health_multiplier
 	process_mode = Node.PROCESS_MODE_DISABLED if Tuning.freeze_enemies else Node.PROCESS_MODE_INHERIT
+
+# Walk speed and damage from the scene, Tuning's enemy multipliers and any server boosts.
+# Attack speed comes from ground_factor, and damage taken from take_damage.
+func _apply_buffed_stats() -> void:
+	speed = _base.speed * Tuning.enemy_speed_multiplier * buff_multiplier(ServerBuff.Kind.SPEED)
+	damage = _base.damage * Tuning.enemy_damage_multiplier * buff_multiplier(ServerBuff.Kind.ATTACK)
+
+# --- Server boosts (see ServerBuff) ---
+
+# How strongly server boost `kind` is on it: 0 none, 1 full.
+func buff_strength(kind: ServerBuff.Kind) -> float:
+	return _buffs[kind]
+
+# The stat multiplier boost `kind` gives it now (1 without the boost).
+func buff_multiplier(kind: ServerBuff.Kind) -> float:
+	return ServerBuff.multiplier(kind, _buffs[kind])
+
+func has_buffs() -> bool:
+	return _buffs.any(func(strength: float) -> bool: return strength > 0)
+
+# Rereads its boosts from the servers standing, and its stats if they changed. Called every
+# frame by its ServerBuff.Watcher.
+func refresh_buffs() -> void:
+	var changed := false
+	for kind: ServerBuff.Kind in ServerBuff.KINDS:
+		var strength := ServerBuff.strength_on(self, kind)
+		if strength != _buffs[kind]:
+			_buffs[kind] = strength
+			changed = true
+	if changed:
+		_apply_buffed_stats()
+		animator.speed_scale = ground_factor()
+
+# Counts towards clearing its room (Room.enemy_count). Servers don't.
+func counts_towards_clearing() -> bool:
+	return true
 
 # A one-shot timer child, made in code so the scenes don't need one.
 func _add_timer(on_timeout := Callable()) -> Timer:
@@ -211,6 +255,7 @@ func take_damage(from_direction: String, amount: float) -> void:
 	if is_vulnerable():
 		amount *= Tuning.stagger_damage_multiplier
 		_set_vulnerable(false)
+	amount *= buff_multiplier(ServerBuff.Kind.DEFENSE)
 	var critical := _roll_critical()
 	_lose_health(amount, critical)
 	_hit_feedback(hit_dir, critical, health <= 0)
@@ -303,9 +348,10 @@ func feet_position() -> Vector2:
 func ground() -> int:
 	return SpecialTiles.frame_at(room, feet_position())
 
-# Walk, roll and attack speed from the tile underfoot, as a multiple of normal.
+# Attack speed (and how fast its animations play) from the tile underfoot and any server
+# speed boost, as a multiple of normal. A speed boost's walking is in `speed` already.
 func ground_factor() -> float:
-	return SpecialTiles.speed_factor(ground())
+	return SpecialTiles.speed_factor(ground()) * buff_multiplier(ServerBuff.Kind.SPEED)
 
 # A walk of `motion` this frame, as the floor turns it: faster or slower on speed and slow
 # tiles, and on slick floor easing towards it from the slide it already had.
