@@ -79,6 +79,10 @@ See README → Layout for the folder map. The parts you'll touch most:
 - **Enemies**: `Enemy` is the base; `MeleeEnemy` (goblin, knight families), `RangedEnemy`
   (wizard), `Caster` (warlock, necromancer), `Wyrm` (wyrm, wyvern; they fly), `Boss`;
   `Centaur` (centaur, bucentaur, taurtaur) extends `MeleeEnemy` with combos.
+  `Server` (a standing tower) extends `Enemy` but never moves or attacks: it boosts the
+  enemies round it through `ServerBuff`, which every enemy rereads each frame (attack in
+  `damage`, speed in `speed` and `ground_factor()`, defense in `take_damage`). A new enemy
+  that reads its damage or speed some other way applies `buff_multiplier` itself.
   Melee turns and group rushes are shared through `AttackCoordinator`, one per room;
   wizards and dragons bat fireballs back through `FireballReturner`.
 - **Two combat rules every enemy follows** (keep them in mind when changing or adding one):

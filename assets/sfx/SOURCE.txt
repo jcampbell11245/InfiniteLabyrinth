@@ -26,3 +26,9 @@ paste_stretch.wav: synthesized for this project (rising sawtooth with vibrato an
 noise): a rubbery creak as someone caught in paste pulls against it.
 paste_snap.wav: synthesized for this project (fast falling sine sweep with a click): the
 elastic snap as paste pulls someone back.
+server_hit.wav: synthesized for this project (square wave sweeping down from 1800 to 500 Hz
+under gated noise, 6-bit crush): an electric zap when a server is hit.
+server_break.wav: synthesized for this project (square wave powering down from 900 to 60 Hz
+under crackling noise, 6-bit crush): a server breaking.
+server_alert.wav: synthesized for this project (8-bit pulse-wave two-tone alarm, 988/740 Hz,
+three times): the floor server banner as a floor starts.

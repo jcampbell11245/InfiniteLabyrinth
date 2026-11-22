@@ -145,6 +145,7 @@ var _charged := false # Drawn for at least Tuning.arrow_charge_time
 # Parrying
 var swing_started_at := 0 # Ticks (ms) when the current or last sword swing began
 var swing_started_frame := -1 # Physics frame the current or last swing began
+var spin_started_frame := -1 # Physics frame the current or last spin attack began
 var _parried_swing := -2 # swing_started_frame of the last swing that parried an enemy
 var _daze_timer: Timer # Running while dazed from a blocked swing
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
@@ -718,6 +719,10 @@ func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: in
 		var attacker: Node = area.get_parent().get_parent()
 		# A wizard's staff hits for its own melee damage; `damage` is its fireballs'.
 		var amount: float = attacker.melee_damage() if attacker.has_method("melee_damage") else attacker.damage
+		# `damage` carries a server's attack boost already (Enemy._apply_buffed_stats); a
+		# melee_damage of its own doesn't.
+		if attacker is Enemy && attacker.has_method("melee_damage"):
+			amount *= (attacker as Enemy).buff_multiplier(ServerBuff.Kind.ATTACK)
 		if take_damage(amount, attacker.direction, false) && attacker is Enemy:
 			# Ends its combo (Tuning.combos_end_on_hit); a troll's also steals coins.
 			(attacker as Enemy).landed_hit()
@@ -855,6 +860,7 @@ func _spin_charge_shown() -> float:
 
 # Round once with the sword out: a temporary look, the slash's extended frame spun whole.
 func _start_spin() -> void:
+	spin_started_frame = Engine.get_physics_frames()
 	spin_rush_size = _group_rush_size()
 	_spin_timer.start(Tuning.spin_duration)
 	hitbox.set_deferred("disabled", true)

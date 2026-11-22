@@ -643,7 +643,7 @@ func _affect(body: CharacterBody2D, feet: Vector2, delta: float) -> void:
 	var player := body as Player
 	var rolling := player != null && player.rolling.time_left > 0
 	if body is Enemy:
-		(body as Enemy).animator.speed_scale = speed_factor(frame_at(_room, feet))
+		(body as Enemy).animator.speed_scale = (body as Enemy).ground_factor() # With any server speed boost
 		_drift_on_ice(body as Enemy, feet, delta)
 
 	if _tiles.has(cell):
