@@ -4,7 +4,8 @@ extends Control
 # on a translucent dark backing that hugs the rooms, so the start and end rooms stick out
 # either side of the grid. Unvisited rooms' dots are dim; the start and end rooms' are
 # always lit green, so the player knows where they're heading; every other room's dot lights
-# up once the player has been in it, yellow for a key room and blue for the rest. A room
+# up once the player has been in it, yellow for a key room and blue for the rest. A key
+# room found by a metal detector (Items) lights yellow before the player gets there. A room
 # with a premium (silver) server standing in it is silver from the start, whatever it is. A red
 # outline round the current room's dot flashes. The boss room isn't shown.
 #
@@ -40,6 +41,7 @@ const SHINE := 0.45 # How far towards white a lit dot's top-left pixel is
 var _visited := {} # Room id -> true
 var _cells := {} # Room id -> Vector2i grid cell, from the room's world position
 var _key_rooms := {} # Room id -> true, for rooms built from a key room scene
+var _marked := {} # Room id -> true, for key rooms a metal detector has shown (Items)
 var _origin_cell := Vector2i.ZERO # Top-left cell of the box round every room
 var _frame: Image # The backing and border, painted once the floor is laid out
 var _texture := ImageTexture.new()
@@ -51,6 +53,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	Game.room_entered.connect(_on_room_entered)
+	Game.room_marked.connect(_on_room_marked)
 
 func _process(delta: float) -> void:
 	_flash_left -= delta
@@ -68,6 +71,10 @@ func _on_room_entered(id: int) -> void:
 	_flash_left = FLASH_TIME
 	_repaint()
 
+func _on_room_marked(id: int) -> void:
+	_marked[id] = true
+	_repaint()
+
 # Works out each room's cell from its position, sizes the minimap to fit them all and
 # paints the backing. Done on the first room entered, once the Overworld has built the floor.
 func _lay_out() -> void:
@@ -81,7 +88,7 @@ func _lay_out() -> void:
 		var room: Room = Game.overworld.rooms_by_id[id]
 		var cell := Vector2i(((room.position - Overworld.GRID_ORIGIN) / Constants.ROOM_SIZE).round())
 		_cells[id] = cell
-		if room.scene_file_path.begins_with(WorldGenerator.KEYROOMS_DIR):
+		if room.is_key_room():
 			_key_rooms[id] = true
 		low = low.min(cell)
 		high = high.max(cell)
@@ -154,10 +161,12 @@ func _draw() -> void:
 		draw_texture_rect(_texture, Rect2(Vector2.ZERO, size), false)
 
 # Green for the start and end rooms; once visited, yellow for key rooms and blue for the
-# rest; dim otherwise.
+# rest; dim otherwise. A key room a metal detector found is yellow before it's visited.
 func _room_color(id: int) -> Color:
 	if id == Constants.START_ROOM || id == Constants.END_ROOM:
 		return LANDMARK
+	if _marked.has(id):
+		return KEY_ROOM
 	if !_visited.has(id):
 		return UNLIT
 	return KEY_ROOM if _key_rooms.has(id) else VISITED

@@ -250,21 +250,16 @@ func _build_progress() -> void:
 			Game.overworld.floor_number = maxi(value, 1)
 			SaveData.floor_number = maxi(value, 1)
 			SaveData.save())
-	for upgrade: Array in [["damage_level", "Damage (crit) upgrade"],
-			["time_level", "Time upgrade (next floor)"], ["looting_level", "Looting upgrade"]]:
+	for upgrade: Array in [["time_level", "Time upgrade (next floor)"], ["looting_level", "Looting upgrade"]]:
 		var field: String = upgrade[0]
-		_progress_row(upgrade[1], TYPE_INT, UpgradeMenu.MAX_LEVEL, 1, false,
+		_progress_row(upgrade[1], TYPE_INT, Upgrades.MAX_LEVEL, 1, false,
 			func() -> int: return SaveData.get(field),
 			func(value: int) -> void: _set_upgrade(field, value))
 	_refresh_progress()
 
 func _set_upgrade(field: String, value: int) -> void:
-	SaveData.set(field, clampi(value, 0, UpgradeMenu.MAX_LEVEL))
+	SaveData.set(field, clampi(value, 0, Upgrades.MAX_LEVEL))
 	SaveData.save()
-	match field:
-		"damage_level":
-			for enemy: Enemy in get_tree().get_nodes_in_group("enemies"):
-				enemy.critical_chance = SaveData.damage_level
 
 # Back to the full time limit, the debug stand-in for a full heal.
 func _refill_time() -> void:
@@ -284,12 +279,13 @@ func _kill_room_enemies() -> void:
 	_refresh_progress()
 	_status.text = "Killed %d enem%s" % [killed, "y" if killed == 1 else "ies"]
 
-# Ends the floor as the end room does: on to the upgrade menu, then the next floor.
+# Ends the floor as the end room does: straight on to the next floor.
 func _next_floor() -> void:
 	close()
 	Game.finish_floor()
 	SaveData.floor_number = Game.overworld.floor_number + 1
-	Game.upgrade_menu.show_menu()
+	SaveData.save()
+	Game.overworld.reset_world()
 
 func _refresh_progress() -> void:
 	for row in _progress_rows:

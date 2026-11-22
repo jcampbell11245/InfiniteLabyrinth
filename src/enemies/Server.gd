@@ -3,8 +3,8 @@ extends Enemy
 
 # A standing server tower that boosts the other enemies round it (see ServerBuff): attack,
 # defense or speed. It never moves or attacks and isn't knocked back; it breaks after
-# Tuning.server_hits sword hits (sooner to charged arrows, at once to a crit). It doesn't
-# count towards clearing its room, so it can be left standing, or broken after the fight.
+# Tuning.server_hits sword hits (sooner to charged arrows). It doesn't count towards
+# clearing its room, so it can be left standing, or broken after the fight.
 #
 # It covers either a circle `radius` pixels round it, drawn as a pixelated ring, or its
 # whole room (`whole_room`), with a faint tint of its boost's colour over that area (see

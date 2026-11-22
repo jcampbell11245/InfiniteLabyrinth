@@ -1,7 +1,7 @@
 extends AnimatedSprite2D
 
-# Shown when the player dies: plays the jingle, resets the floor count, then opens the
-# upgrade menu. Runs while the tree is paused.
+# Shown when the player dies: plays the jingle, resets the floor count, then starts a new
+# run on a fresh floor. Runs while the tree is paused.
 
 const SHOW_TIME := 6.5
 # Shown on its own screen layer so walls and neighbouring rooms' covers can't draw over
@@ -32,7 +32,7 @@ func _on_player_died() -> void:
 		Game.overworld.leave_test()
 		return
 	get_tree().paused = false
-	Game.upgrade_menu.show_menu()
+	Game.overworld.reset_world()
 
 # Reparents onto a CanvasLayer centred on the screen, the first time it's shown.
 func _move_to_screen_layer() -> void:

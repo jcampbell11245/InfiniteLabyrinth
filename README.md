@@ -2,7 +2,7 @@
 
 A top-down pixel-art dungeon crawler made with **Godot 4.7.2** (Compatibility renderer).
 Fight through a generated floor of rooms against the clock, collect three keys to open the
-end room, and spend your coins on upgrades between floors.
+end room, and spend your coins on upgrades and items at the merchant in the start room.
 
 - [Playing](#playing) · [Setup](#setup) · [Running](#running) · [Checks](#checks) ·
   [Contributing](#contributing) · [Tools](#tools) · [Exporting builds](#exporting-builds) ·
@@ -13,18 +13,28 @@ end room, and spend your coins on upgrades between floors.
 ## Playing
 
 Each floor is a 5×6 grid of rooms between a start room and an end room. Three key rooms
-hold keys that open the end room; a boss waits behind a door in the start room.
+hold keys that open the end room, and a chest also releases an hourglass that adds 30
+seconds to the level timer; a boss waits behind a door in the start room.
 
 **There's no health: you have time.** Each floor starts with a time limit (longer with the
 Time upgrade). Getting hit takes time off it, more for harder hits, and the run ends when
-it reaches 0:00. Between floors, and after a game over, coins buy upgrades: **Luck**
-(critical hits), **Time** and **Looting** (coins per kill).
+it reaches 0:00. The clock stands still in the start and end rooms. The merchant's
+**Upgrades** tab sells lasting upgrades, nine levels each: **Time** (more seconds on the
+clock) and **Looting** (more coins per kill).
 
 Combat is built on reading enemy attacks: a glint on an enemy's weapon means it's about to
 strike. Swing as it glints to **parry** and stun it; swing too early and you're the one
 staggered. A red glint can't be parried: roll through it and hit the enemy from behind to
 stun it the same way. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
+
+**Items** sit in the bar in the bottom-left corner: choose one and use it. Buy them from
+the **merchant** at the top of the start room: walk up to him and press Interact to open
+his shop. A **skeleton key** opens the locked doors of the room you're in; a **metal
+detector** shows one key room you haven't found on the minimap. Both cost 50 coins. An item
+that would do nothing (no locked door, every key room already showing) isn't used up.
+Items you haven't used come with you to the next floor, but are lost when you die. Buying
+with every box full lets you choose a box on the item bar to throw away for the new item.
 
 Choose **Options** on the title screen or in the pause menu to set persistent Music and SFX
 volume separately. In the pause menu, the pause key or **Back** returns to the pause buttons.
@@ -34,7 +44,10 @@ volume separately. In the pause menu, the pause key or **Back** returns to the p
 | Move | WASD or arrow keys | D-pad |
 | Sword (hold to charge a spin) | J or Z | X / Square |
 | Bow (hold to charge) | K or X | Y / Triangle |
-| Roll | Space | RB / R1 |
+| Roll | Space | RT / R2 |
+| Choose item (bar, bottom left) | Q / E | LB / RB (L1 / R1) |
+| Use item | L | LT / L2 |
+| Interact (talk to the merchant) | R | A / Cross |
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
@@ -214,8 +227,8 @@ scenes these are each enemy's `roam_mode`, `roam_path` and `roam_area`;
 roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
 
 **Servers** are standing towers that boost the other enemies round them. They don't move or
-attack, break after three sword hits (sooner to charged arrows, at once to a crit) and
-don't count towards clearing the room. An enemy under a boost shows its status bar, which
+attack, break after three sword hits (sooner to charged arrows) and don't count towards
+clearing the room. An enemy under a boost shows its status bar, which
 stays full until the server breaks; then the boost goes at once. Selecting a server swaps
 Facing and Roaming for its own rows. **Boost** is what it gives: **Attack** (enemies hit
 harder), **Defense** (they take less damage), **Speed** (they walk and attack faster),
@@ -308,7 +321,7 @@ menu and art changes without playing:
 ```bash
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot            # /tmp/shot.png
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot hurt       # plus two frames after a hit
-"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot upgrades   # plus the upgrade menu
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot shop       # plus the merchant's shop
 ```
 
 ## Exporting builds
@@ -366,6 +379,8 @@ src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families; Cen
                Server (standing towers) boosts enemies through ServerBuff
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
+src/items/     the consumable items and what using each one does
+src/npcs/      the merchant in the start room, who opens the shop (src/ui/menus/ShopMenu)
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
 src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room),
                special tiles (SpecialTiles), camera and HUD (GameCamera)
@@ -375,8 +390,8 @@ src/world/     floor layout (WorldGenerator), building it (Overworld), room scri
   tiles/       TileMap scenes used by rooms (SpecialTiles.tscn: traps and teleporters)
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on
-src/ui/        HUD widgets (timer, counters, minimap) and menus (title, boot, pause,
-               upgrades, game over)
+src/ui/        HUD widgets (timer, counters, minimap, item bar) and menus (title, boot,
+               pause, shop, game over)
 src/audio/     enemy death sound players
 tools/         smoke test, test runner and tests, check script, screenshot tool
 .github/       pull request checks (workflows) and the Godot setup they share

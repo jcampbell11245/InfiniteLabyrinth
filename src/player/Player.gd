@@ -114,6 +114,8 @@ class FrameInput:
 	var melee_held := false # Sword button down: charging a spin (see _update_spin_charge)
 	var ranged := false # Shoot pressed this frame: starts drawing the bow
 	var ranged_held := false # Letting go while able to act looses a drawn arrow
+	var item_step := 0 # -1 or 1 when the item bar's highlight should move this frame
+	var use_item := false
 	var acting := false # Read from the controls; false while the player can't act
 	var fired := false # Set by _handle_input when an arrow went out this frame
 
@@ -247,12 +249,7 @@ func _add_status_bars() -> void:
 
 func _physics_process(delta: float) -> void:
 	if !auto_walking:
-		# Dazed, down a pitfall, or while the screen is still moving to a new room (the
-		# room isn't fully in view yet, so they could walk into a pit they can't see), the
-		# player can't move, roll or attack.
-		var can_act := _daze_timer.is_stopped() && respawn_cooldown.is_stopped() && !in_transition \
-			&& !_dying
-		var input := _read_input() if can_act else FrameInput.new()
+		var input := _read_input() if can_act() else FrameInput.new()
 		_handle_input(input)
 		_update_animation(input)
 		_update_hitboxes()
@@ -326,12 +323,25 @@ func _read_input() -> FrameInput:
 	input.melee_held = Input.is_action_pressed("melee_attack")
 	input.ranged = Input.is_action_just_pressed("ranged_attack")
 	input.ranged_held = Input.is_action_pressed("ranged_attack")
+	input.item_step = int(Input.is_action_just_pressed("item_next")) 		- int(Input.is_action_just_pressed("item_previous"))
+	input.use_item = Input.is_action_just_pressed("use_item")
 	input.acting = true
 	return input
+
+# False while dazed, down a pitfall, dying, walking through a door, or while the screen is
+# still moving to a new room (the room isn't fully in view yet, so they could walk into a
+# pit they can't see): the player can't move, roll, attack or talk to anyone.
+func can_act() -> bool:
+	return !auto_walking && _daze_timer.is_stopped() && respawn_cooldown.is_stopped() \
+		&& !in_transition && !_dying
 
 # Movement, rolling, attacks and arrows. Runs before _update_animation, so the checks
 # here see the animation from the previous frame.
 func _handle_input(input: FrameInput) -> void:
+	if input.item_step != 0:
+		Game.cycle_item(input.item_step)
+	if input.use_item:
+		Game.use_item()
 	# A jammed bow won't draw; it clicks instead, and no arrow is spent.
 	if input.ranged && curses.has(Curses.Effect.JAM):
 		input.ranged = false

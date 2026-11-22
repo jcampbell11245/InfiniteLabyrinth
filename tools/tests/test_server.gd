@@ -47,9 +47,8 @@ func refresh(room: Room) -> void:
 		if child is Enemy:
 			(child as Enemy).refresh_buffs()
 
-# Hits `enemy` with the sword `times` times, never a crit, clearing its invincibility between.
+# Hits `enemy` with the sword `times` times, clearing its invincibility between.
 func sword_hits(enemy: Enemy, times: int) -> void:
-	enemy.critical_chance = 0
 	for i in times:
 		enemy.invincibility_cooldown.stop()
 		enemy.take_damage(Direction.RIGHT, autoload("Game").player.sword_damage())
@@ -69,7 +68,6 @@ func test_one_swing_hits_it_once() -> void:
 	var room := await boot_server("attack")
 	var server := find_server(room)
 	var player: Player = autoload("Game").player
-	server.critical_chance = 0
 	player.swing_started_frame = 1000
 	server._on_player_sword(Direction.RIGHT)
 	var after_one := server.health
@@ -85,7 +83,6 @@ func test_one_spin_hits_it_once() -> void:
 	var room := await boot_server("attack")
 	var server := find_server(room)
 	var player: Player = autoload("Game").player
-	server.critical_chance = 0
 	player.spin_started_frame = 1000
 	server.spin_hit()
 	var after_one := server.health
@@ -93,13 +90,6 @@ func test_one_spin_hits_it_once() -> void:
 	server.spin_hit()
 	expect_equal(server.health, after_one, "the same spin doesn't hit it again")
 	expect(after_one > 0, "and it's still standing after one spin")
-
-func test_crit_breaks_it_at_once() -> void:
-	var room := await boot_server("attack")
-	var server := find_server(room)
-	server.critical_chance = autoload("Tuning").crit_roll_max + 1 # Always crits
-	server.take_damage(Direction.RIGHT, 1.0)
-	expect(server.is_queued_for_deletion(), "a crit breaks it in one hit")
 
 func test_attack_boost_inside_its_circle_only() -> void:
 	var room := await boot_server("attack")

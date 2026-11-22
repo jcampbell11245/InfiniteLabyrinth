@@ -61,7 +61,7 @@ func test_reset_keeps_audio_preferences() -> void:
 	# reset() clears progress in memory, which a later save would write out, so everything
 	# it touches is put back afterwards (tools/run_tests.gd also restores SaveData).
 	var old := {}
-	for field: String in ["floor_number", "coins", "damage_level", "time_level", "looting_level",
+	for field: String in ["floor_number", "coins", "time_level", "looting_level",
 			"music_volume", "sfx_volume"]:
 		old[field] = save_data.get(field)
 	save_data.write_to_disk = false

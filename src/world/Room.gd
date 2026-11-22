@@ -126,6 +126,9 @@ var player_active := true # False while the player is down a pitfall; enemies wa
 var locked := false # Lock tiles have been drawn (first time the player enters)
 var faded_out := true
 var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
+var visited := false # The player has been in this room
+var marked := false # A metal detector has shown it on the minimap (Items)
+var _forced_open := false # A skeleton key opened its locked doors (Items)
 var _detectors: TileMap # Transition detector tiles, one per open doorway
 var _key_gate: StaticBody2D # End room only: blocks the top door until the player has Tuning.keys_to_finish keys
 var _was_cleared := false # Doors were already unlocked last time they were drawn
@@ -225,10 +228,27 @@ func _special_tiles() -> SpecialTiles:
 	return get_node_or_null(SpecialTiles.NODE_NAME) as SpecialTiles
 
 func is_cleared() -> bool:
+	if _forced_open:
+		return true
 	match completion_criteria:
 		"switches": return $Switches.unlocked()
 		"enemies": return enemy_count == 0
 	return false
+
+# True for a room built from a key room scene, which holds one of the floor's keys.
+func is_key_room() -> bool:
+	return scene_file_path.begins_with(WorldGenerator.KEYROOMS_DIR)
+
+# True while the room's open doorways are locked until it's cleared. Doors shut at the
+# dungeon's edge don't count, and neither does the end room's key gate.
+func has_locked_doors() -> bool:
+	return locked && completion_criteria != "none" && !is_cleared() && doors.has(true)
+
+# Opens the locked doors as if the room had been cleared (a skeleton key), with the same
+# sound and dust. Its enemies stay, and its switches still work, but change nothing.
+func force_unlock() -> void:
+	_forced_open = true
+	_refresh_doors()
 
 # --- Geometry ---
 
@@ -650,6 +670,7 @@ func _on_room_entered(id: int) -> void:
 		faded_out = false
 	if id == room_id:
 		_kill_streak = 0
+		visited = true
 
 	# Lock the doors the first time the player comes in.
 	if id == room_id && !locked && get_node_or_null("Locks") != null:
@@ -734,7 +755,8 @@ func raise_fallen(index: int) -> Enemy:
 func _on_next_floor_area_entered(_area: Area2D) -> void:
 	Game.finish_floor()
 	SaveData.floor_number = Game.overworld.floor_number + 1
-	Game.upgrade_menu.show_menu()
+	SaveData.save()
+	Game.overworld.reset_world()
 
 func _on_boss_door_animation_finished() -> void:
 	if $BossDoor.animation == "opening":
