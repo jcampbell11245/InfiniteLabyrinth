@@ -23,6 +23,8 @@ extends Control
 # go after opening the shop and after each purchase, and a purchase can't follow another
 # within Tuning.shop_buy_cooldown seconds.
 #
+# Opening, the panel rises a little into place from below and fades in (OPEN_RISE).
+#
 # The game is paused while it's open, so it runs with PROCESS_MODE_ALWAYS and real-time
 # tweens. It's drawn in code on an unscaled layer, in art pixels UNIT screen pixels across,
 # so the frame matches the 5x HUD while the text is rendered at full resolution.
@@ -71,6 +73,9 @@ const DIM_TEXT := Color(0.62, 0.6, 0.66)
 const TOO_DEAR := Color(1, 0.4, 0.4) # A price the player can't pay
 
 const FLASH_TIME := 0.25
+const OPEN_RISE := 12.0 # Art pixels below its place the panel starts as it opens
+const OPEN_TIME := 0.22 # Seconds to rise into place
+const OPEN_FADE_TIME := 0.12 # Seconds to fade in, quicker than the rise
 const REFUSE_TIME := 0.3
 const SHAKE_DISTANCE := 2.0 # Art pixels the refused row swings at first
 const SHAKE_SWINGS := 2
@@ -98,6 +103,8 @@ var _message := ""
 var _message_color := TEXT_COLOR
 var _message_left := 0.0 # Real seconds the message has left
 var _flash_tween: Tween
+var _rise := 0.0 # Art pixels the panel is still below its place while opening
+var _open_tween: Tween
 var _refused_tween: Tween
 var _refused_sound: AudioStreamPlayer
 
@@ -123,6 +130,22 @@ func open() -> void:
 	_scroll = 0
 	_confirm_released = false
 	_message = ""
+	_animate_open()
+	queue_redraw()
+
+# Rises into place with a small overshoot and fades in, in real time.
+func _animate_open() -> void:
+	if _open_tween:
+		_open_tween.kill()
+	_rise = OPEN_RISE
+	modulate.a = 0.0
+	_open_tween = create_tween().set_ignore_time_scale().set_parallel()
+	var rise := _open_tween.tween_method(_set_rise, OPEN_RISE, 0.0, OPEN_TIME)
+	rise.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_open_tween.tween_property(self, "modulate:a", 1.0, OPEN_FADE_TIME)
+
+func _set_rise(value: float) -> void:
+	_rise = value
 	queue_redraw()
 
 func close() -> void:
@@ -319,8 +342,10 @@ func _set_refused(value: float) -> void:
 
 # --- Drawing (all in art pixels from the panel's top-left, scaled by UNIT) ---
 
+# The panel's top-left, centred on the screen; while opening, lower by _rise (on whole art
+# pixels, so the frame stays crisp).
 func _origin() -> Vector2:
-	return ((get_viewport_rect().size / UNIT - SIZE) / 2.0).floor()
+	return ((get_viewport_rect().size / UNIT - SIZE) / 2.0).floor() + Vector2(0, roundf(_rise))
 
 func _draw() -> void:
 	var o := _origin()
