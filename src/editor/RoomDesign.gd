@@ -44,6 +44,8 @@ const OBJECT_SCENES := {
 	"knight": "res://src/enemies/Knight.tscn",
 	"troll": "res://src/enemies/Troll.tscn",
 	"orc": "res://src/enemies/Orc.tscn",
+	"hobgoblin": "res://src/enemies/Hobgoblin.tscn",
+	"pilot": "res://src/enemies/Pilot.tscn",
 	"dual_knight": "res://src/enemies/DualKnight.tscn",
 	"warlock": "res://src/enemies/Warlock.tscn",
 	"necromancer": "res://src/enemies/Necromancer.tscn",
@@ -66,15 +68,17 @@ const CELL_CHARS := {
 	Cell.PASTE: "&", Cell.SLOW: "-", Cell.FAST: "+",
 	Cell.TELEPORT_1: "1", Cell.TELEPORT_2: "2", Cell.TELEPORT_3: "3", Cell.TELEPORT_4: "4",
 }
-const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V", "centaur": "C", "bucentaur": "B", "taurtaur": "U", "server": "Z"}
+const OBJECT_CHARS := {"goblin": "G", "knight": "K", "wizard": "W", "switch": "O", "troll": "T", "orc": "R", "dual_knight": "D", "warlock": "L", "necromancer": "N", "wyrm": "Y", "wyvern": "V", "centaur": "C", "bucentaur": "B", "taurtaur": "U", "server": "Z", "hobgoblin": "H", "pilot": "I"}
 # Enemies with a detection radius (MeleeEnemy.detection_radius, Wyrm.detection_radius), which
 # also set which way they face at the start. Wizards engage anywhere in the room, so they
 # have none.
-const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "wyrm", "wyvern",
+const DETECTING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "hobgoblin", "pilot", "dual_knight", "wyrm", "wyvern",
 	"centaur", "bucentaur", "taurtaur"]
 # Of those, the ones that can roam (MeleeEnemy.roam_mode): not the dragons, which hover.
-const ROAMING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "dual_knight", "centaur",
+const ROAMING_KINDS: Array[String] = ["goblin", "knight", "troll", "orc", "hobgoblin", "pilot", "dual_knight", "centaur",
 	"bucentaur", "taurtaur"]
+# Enemies a goblin pilot can ride (Enemy.mountable), which get the Pilot switch.
+const MOUNT_KINDS: Array[String] = ["orc", "wyrm", "wyvern", "centaur", "bucentaur", "taurtaur"]
 const RADIUS_MIN := 0.0
 const RADIUS_MAX := 400.0
 # Roaming (MeleeEnemy.roam_mode), for ROAMING_KINDS: "none", "path" or "area".
@@ -107,6 +111,10 @@ var roams := {}
 # Vector2i floor index -> spawn facing (one of FACINGS) of goblins and knights not facing
 # DEFAULT_FACING.
 var facings := {}
+# Vector2i floor index -> true, for each mount that starts the room with a pilot on it
+# (Enemy.spawn_with_pilot). Pilots made this way are extra enemies, counted by the room as
+# they appear rather than in enemy_count.
+var pilots := {}
 # Vector2i floor index -> what the server there does: {"buff": one of ServerBuff.SETTINGS,
 # "pool": the kinds "random" and "random_swap" pick from, "whole_room": bool}. Its circle's
 # radius is in `radii`, like a detection radius.
@@ -168,6 +176,7 @@ func set_object(index: Vector2i, kind: String) -> void:
 		radii.erase(index)
 		roams.erase(index)
 		facings.erase(index)
+		pilots.erase(index)
 		servers.erase(index)
 		if kind == "server":
 			servers[index] = SERVER_DEFAULTS.duplicate(true)
@@ -179,6 +188,7 @@ func _forget(index: Vector2i) -> void:
 	radii.erase(index)
 	roams.erase(index)
 	facings.erase(index)
+	pilots.erase(index)
 	servers.erase(index)
 
 # Has a detection radius (goblins, knights, dragons, centaurs).
@@ -219,6 +229,7 @@ func clear() -> void:
 	radii.clear()
 	roams.clear()
 	facings.clear()
+	pilots.clear()
 	servers.clear()
 
 # Removes every enemy and server; switches stay.
@@ -248,6 +259,20 @@ func set_facing(index: Vector2i, facing: String) -> void:
 	else:
 		facings[index] = facing
 
+# --- Pilots ---
+
+static func can_carry_pilot(kind: String) -> bool:
+	return kind in MOUNT_KINDS
+
+func has_pilot(index: Vector2i) -> bool:
+	return pilots.has(index)
+
+# Puts a pilot on (or takes it off) the mount on `index`, if there is one.
+func set_pilot(index: Vector2i, on: bool) -> void:
+	if !on:
+		pilots.erase(index)
+	elif objects.has(index) && can_carry_pilot(objects[index]):
+		pilots[index] = true
 # --- Servers ---
 
 # What the server on `index` does (see `servers`), or {} if there's no server there.
@@ -385,8 +410,8 @@ var _redo_steps: Array[Dictionary] = []
 
 func snapshot() -> Dictionary:
 	return {"cells": cells.duplicate(), "objects": objects.duplicate(), "radii": radii.duplicate(),
-		"roams": roams.duplicate(true), "facings": facings.duplicate(), "servers": servers.duplicate(true),
-		"clear_by": clear_by, "floors": floors, "brightness": brightness}
+		"roams": roams.duplicate(true), "facings": facings.duplicate(), "pilots": pilots.duplicate(),
+		"servers": servers.duplicate(true), "clear_by": clear_by, "floors": floors, "brightness": brightness}
 
 func restore(state: Dictionary) -> void:
 	cells = (state.cells as PackedByteArray).duplicate()
@@ -394,6 +419,7 @@ func restore(state: Dictionary) -> void:
 	radii = (state.radii as Dictionary).duplicate()
 	roams = (state.roams as Dictionary).duplicate(true)
 	facings = (state.get("facings", {}) as Dictionary).duplicate()
+	pilots = (state.get("pilots", {}) as Dictionary).duplicate()
 	servers = (state.get("servers", {}) as Dictionary).duplicate(true)
 	floors = state.floors
 	brightness = state.get("brightness", 1.0)
@@ -583,6 +609,8 @@ func build_room() -> Room:
 			node.set("detection_radius", radius_at(index))
 		if can_face(kind):
 			node.set("starting_direction", facing_at(index))
+		if has_pilot(index):
+			node.set("spawn_with_pilot", true)
 		match roam_mode(index):
 			"path":
 				var path := PackedVector2Array()
@@ -632,6 +660,7 @@ func to_text() -> String:
 		"#   L  warlock    N  necromancer  (wizard family: Warlock.tscn, Necromancer.tscn)",
 		"#   Y  wyrm       V  wyvern       (dragons: Wyrm.tscn, Wyvern.tscn)",
 		"#   C  centaur    B  bucentaur  U  taurtaur  (centaurs: Centaur.tscn, Bucentaur.tscn, Taurtaur.tscn)",
+		"#   H  hobgoblin  I  pilot     (goblin family: Hobgoblin.tscn, Pilot.tscn)",
 		"#   Z  server (Server.tscn; boosts the enemies round it, see servers: below)",
 		"# Special tiles, on a SpecialTiles layer (src/world/tiles/SpecialTiles.tscn) over plain",
 		"# floor, each the SpecialTiles.Frame of the same name as its atlas column:",
@@ -667,6 +696,12 @@ func to_text() -> String:
 	lines.append("facing:")
 	for index: Vector2i in _sorted(facings.keys()):
 		lines.append("%d,%d %s" % [index.x, index.y, facings[index]])
+	lines.append("# Mounts (orcs, dragons, centaurs) that start the room with a goblin pilot riding them")
+	lines.append("# (Enemy.spawn_with_pilot = true), by floor cell as column,row. Their pilots aren't in enemy_count:")
+	lines.append("# the room counts them as they appear.")
+	lines.append("pilot:")
+	for index: Vector2i in _sorted(pilots.keys()):
+		lines.append("%d,%d" % [index.x, index.y])
 	lines.append("roaming:")
 	for index: Vector2i in _sorted(roams.keys()):
 		var words: PackedStringArray = ["%d,%d" % [index.x, index.y], roam_mode(index)]

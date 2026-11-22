@@ -300,6 +300,7 @@ func _all_cleared() -> bool:
 func _end_combo() -> void:
 	_combo = PackedInt32Array()
 	_swings_left -= 1
+	_combo_finished()
 	_end_windup_hold()
 	_play("idle")
 	# Deferred: a parry sets its own bar value (Enemy._on_player_sword) after this returns.
@@ -327,7 +328,8 @@ func _break_off() -> void:
 # parried, knocked back away from the player.
 func _combo_cleared() -> void:
 	_parry_feedback()
-	stagger(_direction_of(-_to_player()))
+	if !_pilot_finishes_combo(): # A pilot riding it adds its slash as the last hit first
+		stagger(_direction_of(-_to_player()))
 
 # The sword from behind (travelling the way it faces: the player rolled through a kick or a
 # charge). Mid-combo it doesn't hurt: it clanks, like a parry, and clears the hit it's on, so
@@ -555,3 +557,12 @@ func _on_animated_sprite_2d_frame_changed() -> void:
 	super()
 	if _animation_is("slash") && animator.frame > attack_frame:
 		hitbox.disabled = true
+
+# The parry bar's steps: one per hit of the combo (see Enemy._pilot_finishes_combo).
+func _combo_hit_count() -> int:
+	return maxi(_combo.size(), 1)
+
+func _on_combo_left_to_pilot() -> void:
+	super()
+	_combo = PackedInt32Array()
+	_dashing = false

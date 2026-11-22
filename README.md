@@ -28,6 +28,12 @@ staggered. A red glint can't be parried: roll through it and hit the enemy from 
 stun it the same way. Hold the sword button to charge
 a **spin attack**, which also breaks up group rushes.
 
+Hobgoblins sprint at you the moment they notice you, glint as they reach you and blow up.
+Parry the glint and one is flung the way you swung, going off when it hits another enemy or
+a wall, and its blast then hurts only enemies. Goblin pilots ride orcs, dragons and
+centaurs: hits take the pilot down first, and its slash is the last hit of each of the
+mount's combos, so only parrying that slash stuns a ridden mount.
+
 **Items** sit in the bar in the bottom-left corner: choose one and use it. Buy them from
 the **merchant** at the top of the start room: walk up to him and press Interact to open
 his shop. A **skeleton key** opens the locked doors of the room you're in; a **metal
@@ -210,7 +216,7 @@ Press **F1** on the title screen to open the room creator. It starts with a blan
 Pick a tool from the panel on the left (Eraser and Select on top, then the **Tiles**,
 **Traps** and **Enemies** tabs of icons), then left-click or drag on the floor to paint
 pitfalls, inner walls, stalagmites and special tiles, or click to place enemies (goblins, trolls, orcs,
-knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns, centaurs, bucentaurs,
+hobgoblins, pilots, knights, dual knights, wizards, warlocks, necromancers, wyrms, wyverns, centaurs, bucentaurs,
 taurtaurs, servers) and switches;
 right-click erases.
 Hover a tile's button to see what it does (see [Special tiles](#special-tiles)). A goblin, knight, dragon or centaur you place, or click with the **Select** tool, shows its detection
@@ -239,6 +245,14 @@ enemy ends roaming and it fights as usual. Wizards can't roam, since they react 
 player anywhere in the room, and nor can dragons, which hover where they start. In room
 scenes these are each enemy's `roam_mode`, `roam_path` and `roam_area`;
 roaming speed and pauses are in `Tuning.gd` (the debug menu's AI tab).
+
+**Pilot**, at the end of the Roaming row while an orc, dragon or centaur is selected, puts a
+goblin pilot on it from the start; the editor
+draws it riding. Without it, each of them still has a small chance (the debug menu's Goblins
+tab) of getting one in the game, and a pilot placed on foot may run to the nearest free mount and
+climbs on (once it has noticed you, 40% of its decisions). A pilot takes hits before its
+mount, and its slash ends each of the mount's combos. In room scenes this is the mount's `spawn_with_pilot`; pilots made this way
+aren't in the room's `enemy_count` (the room counts them as they appear).
 
 **Servers** are standing towers that boost the other enemies round them. They don't move or
 attack, break after three sword hits (sooner to charged arrows) and don't count towards
@@ -387,7 +401,7 @@ src/autoload/  Tuning (every gameplay number, edited live by the debug menu), Sa
 src/core/      Constants (room ids, grid size, physics layers) and Direction helpers
 src/player/    player scene and script, the level timer, curses
 src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families; Centaur,
-               the centaur family, builds on it), RangedEnemy
+               the centaur family, Hobgoblin and Pilot build on it), RangedEnemy
                (wizard), Caster (warlock, necromancer), Wyrm (wyrm and wyvern, flying
                dragons) and Boss; AttackCoordinator takes turns and group rushes
                between a room's enemies; FireballReturner bats fireballs back;

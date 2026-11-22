@@ -708,7 +708,7 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	_kill_streak += 1
 	match enemy.scene_file_path.get_file().get_basename():
 		# The rest of the goblin family share its death sound, at their own voice_pitch.
-		"Goblin", "Troll", "Orc": Juice.play(goblin_death, 0.04, pitch * enemy.voice_pitch)
+		"Goblin", "Troll", "Orc", "Hobgoblin", "Pilot": Juice.play(goblin_death, 0.04, pitch * enemy.voice_pitch)
 		"Knight", "DualKnight": Juice.play(knight_death, 0.04, pitch)
 	_refresh_doors()
 
@@ -744,9 +744,7 @@ func raise_fallen(index: int) -> Enemy:
 		return null
 	fallen.remove_at(index)
 	enemy.position = (spot as Vector2) - feet
-	add_child(enemy, true)
-	enemy.died.connect(_on_enemy_died)
-	enemy_count += 1
+	add_enemy(enemy)
 	if "noticed" in enemy:
 		enemy.noticed = true
 	_refresh_doors()
@@ -761,3 +759,11 @@ func _on_next_floor_area_entered(_area: Area2D) -> void:
 func _on_boss_door_animation_finished() -> void:
 	if $BossDoor.animation == "opening":
 		player.start_transition()
+
+# Adds an enemy that joins after the room was built (raised from the fallen, a pilot that
+# came with its mount): it counts towards clearing the room like the ones it started with.
+func add_enemy(enemy: Enemy) -> void:
+	add_child(enemy, true)
+	enemy_count += 1
+	if is_node_ready(): # Otherwise _ready connects it with the rest
+		enemy.died.connect(_on_enemy_died)

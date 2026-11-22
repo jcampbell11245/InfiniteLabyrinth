@@ -816,6 +816,8 @@ collision_layer = 2
 collision_mask = 291
 motion_mode = 1
 script = ExtResource("1_q1uhi")
+mountable = true
+pilot_seat = Vector2(-14, 0)
 combos = Array[PackedInt32Array]([PackedInt32Array(0, 0, 1, 0)])
 sprite_bounds = {
 "idle_down": Array[Rect2]([Rect2(-10, -17, 20, 43), Rect2(-10, -16, 20, 42)]),

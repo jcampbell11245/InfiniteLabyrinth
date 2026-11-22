@@ -131,10 +131,15 @@ func _prune() -> void:
 	for enemy in _last_seen.keys():
 		if !_alive(enemy) || frame - _last_seen[enemy] >= STALE_FRAMES:
 			_last_seen.erase(enemy)
-	for attacker in _attackers.duplicate():
-		if !_last_seen.has(attacker):
-			_attackers.erase(attacker)
+	# Rebuilt rather than erased from: a freed attacker (one that blew itself up, say) can't be
+	# erased from a typed array.
+	var staying: Array[Enemy] = []
+	for attacker: Variant in _attackers:
+		if is_instance_valid(attacker) && _last_seen.has(attacker):
+			staying.append(attacker)
+		else:
 			_turn_time.erase(attacker)
+	_attackers = staying
 	if !is_instance_valid(_last_attacker):
 		_last_attacker = null
 
@@ -223,11 +228,13 @@ func _start_rush() -> bool:
 	return true
 
 func _update_rush(delta: float) -> void:
-	for enemy in _rushers.duplicate():
-		if !_alive(enemy) || !_last_seen.has(enemy) || enemy.is_stunned():
-			if _alive(enemy):
-				enemy.end_group_rush()
-			_rushers.erase(enemy)
+	var staying: Array[Enemy] = [] # Rebuilt: a freed rusher can't be erased from a typed array
+	for enemy: Variant in _rushers:
+		if _alive(enemy) && _last_seen.has(enemy) && !(enemy as Enemy).is_stunned():
+			staying.append(enemy)
+		elif _alive(enemy):
+			enemy.end_group_rush()
+	_rushers = staying
 	if _rushers.is_empty():
 		_end_rush()
 		return

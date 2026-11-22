@@ -132,6 +132,21 @@ var centaur_charge_max_distance := 200.0 # Pixels: longest a charge runs
 var centaur_charge_range := 160.0 # Pixels: a player out of reach but this close may be charged at instead of walked up to
 var centaur_hurtbox_margin := 4.0 # Pixels the hurtbox reaches past the drawn body all round, so near misses count
 var boss_laser_cooldown := 1.0
+# Hobgoblins (Hobgoblin.gd): sprint at the player, glint for the parry window and blow up.
+var hobgoblin_contact_reach := 4.0 # Pixels between its body (hurtbox) and the player's at which it stops dead, glints and (after the parry window) goes off
+var hobgoblin_blast_radius := 40.0 # Pixels: everything this close to the blast is caught in it
+var hobgoblin_blast_damage := 2.0 # Damage to the player of a hobgoblin going off on them
+var hobgoblin_blast_enemy_damage := 3.0 # Damage to each enemy caught in a blast
+var hobgoblin_fling_speed := 300.0 # Pixels/sec a parried hobgoblin flies at
+var hobgoblin_fling_time := 1.0 # Seconds a flung hobgoblin flies before going off anyway
+# Pilots (Pilot.gd): goblins that ride dragons, centaurs and orcs.
+var pilot_spawn_chance := 0.1 # Chance each dragon, centaur or orc has of starting with a pilot on it
+var pilot_mount_chance := 0.4 # Share of an on-foot pilot's decisions that send it to a free mount (the rest: fight on)
+var pilot_decide_time := 2.0 # Seconds between its decisions while it waits its turn (swings count as decisions too)
+var pilot_seek_speed := 1.3 # Times its speed while running to a mount
+var pilot_mount_reach := 14.0 # Pixels from a mount's feet at which a pilot climbs on
+var pilot_strike_reach := 40.0 # Pixels from the pilot its follow-up slash reaches; further off it doesn't swing
+var pilot_strike_hold := 0.6 # Seconds of windup hold on its follow-up slash; outlasts the sword cooldown
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
 var engage_margin := 4.0 # Pixels inside the shorter of the two attack reaches to stop at
@@ -459,6 +474,20 @@ const FIELDS := [
 	["Tiles", "slow_tile_multiplier", "Slow tile speed x", 0.1, 1, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "fast_tile_multiplier", "Speed tile speed x", 1, 3, 0.05, "new (SpecialTiles.speed_factor)"],
 	["Tiles", "teleport_glow_range", "Teleporter destination glow range (px)", 0, 200, 4, "new (SpecialTiles._update_glow)"],
+
+	["Goblins", "hobgoblin_contact_reach", "Hobgoblin glint gap to the player (px)", 0, 60, 1, "new (Hobgoblin._run_in)"],
+	["Goblins", "hobgoblin_blast_radius", "Hobgoblin blast radius (px)", 0, 150, 1, "new (Hobgoblin.explode)"],
+	["Goblins", "hobgoblin_blast_damage", "Hobgoblin blast damage to the player", 0, 10, 0.25, "new (Hobgoblin.explode)"],
+	["Goblins", "hobgoblin_blast_enemy_damage", "Hobgoblin blast damage to enemies", 0, 20, 0.25, "new (Hobgoblin.explode)"],
+	["Goblins", "hobgoblin_fling_speed", "Parried hobgoblin fling speed (px/s)", 20, 800, 10, "new (Hobgoblin._fling)"],
+	["Goblins", "hobgoblin_fling_time", "Parried hobgoblin fuse (s)", 0.1, 5, 0.05, "new (Hobgoblin._fly)"],
+	["Goblins", "pilot_spawn_chance", "Pilot spawn chance on a mount", 0, 1, 0.05, "new (Enemy._maybe_spawn_pilot)"],
+	["Goblins", "pilot_mount_chance", "Pilot go-for-a-mount chance", 0, 1, 0.05, "new (Pilot._decide)"],
+	["Goblins", "pilot_decide_time", "Pilot decision interval (s)", 0.1, 10, 0.1, "new (Pilot._update_decision)"],
+	["Goblins", "pilot_seek_speed", "Pilot run-to-mount speed x", 0.1, 3, 0.05, "new (Pilot._seek_mount)"],
+	["Goblins", "pilot_mount_reach", "Pilot climb-on distance (px)", 0, 60, 1, "new (Pilot._seek_mount)"],
+	["Goblins", "pilot_strike_reach", "Pilot follow-up reach (px)", 0, 120, 1, "new (Pilot._ride)"],
+	["Goblins", "pilot_strike_hold", "Pilot follow-up windup hold (s)", 0, 2, 0.05, "new (Pilot.follow_up_strike)"],
 
 	["Items", "item_slots", "Item bar boxes", 1, 9, 1, "new (ItemBar)"],
 	["Items", "skeleton_key_price", "Skeleton key price", 0, 1000, 5, "new (Items.price)"],
