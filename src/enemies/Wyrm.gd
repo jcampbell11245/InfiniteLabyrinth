@@ -115,6 +115,9 @@ var _dashing := false # The charge under way has set off
 var _dash_left := 0.0 # Pixels of the charge still to fly
 var _recover: Timer # Running while it hovers after an attack, before circling again
 var _recover_rooted := false # The recovery under way hangs still instead of backing off
+# Hanging still while its pilot slashes (a parried attack left to the pilot): not a red
+# charge's recovery, so a hit from behind doesn't daze it.
+var _hanging_for_pilot := false
 var _opening: Timer # Running while it flies off after first noticing the player
 var _charge_sound: AudioStreamPlayer
 var _wall_sound: AudioStreamPlayer
@@ -298,7 +301,7 @@ func _physics_process(delta: float) -> void:
 			_pulse_breath(delta)
 		elif _animation_done():
 			_end_attack(0.0, false, false)
-	elif !_recover.is_stopped():
+	elif !_recover.is_stopped() || (_hanging_for_pilot && _pilot_following_up()):
 		if !_recover_rooted: # Backs off after an ordinary charge; hangs open after a red one
 			_circle(delta)
 			_play("fly" if _moving else "idle")
@@ -312,6 +315,7 @@ func _physics_process(delta: float) -> void:
 
 func _on_reset() -> void:
 	noticed = false
+	_hanging_for_pilot = false
 	_was_noticed = false
 	_dashing = false
 	_dash_left = 0.0
@@ -442,6 +446,7 @@ func _roll_cooldown() -> void:
 # hangs where it is, open to hits. Then it circles again. With `follow_up` a pilot riding it
 # adds its slash (Enemy._combo_finished); a fireball that wasn't parried gets none.
 func _end_attack(lag: float, rooted := false, follow_up := true) -> void:
+	_hanging_for_pilot = false
 	_dashing = false
 	_dash_left = 0.0
 	_breath_timer.stop()
@@ -645,9 +650,10 @@ func red_charge_coming() -> bool:
 
 # Hanging open after a red charge: a hit from behind dazes it (Enemy._dazed_from_behind).
 func _in_rollable_recovery() -> bool:
-	return _recover_rooted && !_recover.is_stopped()
+	return _recover_rooted && !_recover.is_stopped() && !_hanging_for_pilot
 
 func _on_staggered() -> void:
+	_hanging_for_pilot = false
 	_recover.stop() # Dazed out of hanging open after a red charge
 	_recover_rooted = false
 	# Unlike other enemies, a stunned dragon takes no extra damage from the next hit
@@ -690,7 +696,8 @@ func _on_animated_sprite_2d_frame_changed() -> void:
 		_hitbox.disabled = true # Only the bite itself hurts, not flying on through after it
 
 # A parried charge or fireball, its pilot about to slash (Enemy._pilot_finishes_combo): the
-# attack stops and it hangs where it is, in reach, while the pilot swings.
+# attack stops and it hangs where it is, in reach, until the pilot's slash is over.
 func _on_combo_left_to_pilot() -> void:
 	_choke_breath()
 	_end_attack(Tuning.wyrm_charge_recovery, true, false)
+	_hanging_for_pilot = true

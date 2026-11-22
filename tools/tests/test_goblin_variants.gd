@@ -284,3 +284,22 @@ func test_a_riding_pilot_doesnt_walk() -> void:
 	for i in 3: # A physics frame to sit it down, then a process frame to animate it
 		await tree.process_frame
 	expect(!String(pilot.animator.animation).begins_with("walk"), "no walk cycle while riding")
+
+func test_a_dragon_holds_still_while_its_pilot_finishes_the_combo() -> void:
+	var design := RoomDesign.new()
+	design.set_object(Vector2i(6, 3), "wyrm")
+	design.set_pilot(Vector2i(6, 3), true)
+	var room: Room = await boot_design(design)
+	var wyrm: Wyrm = first(room, Wyrm)
+	var pilot: Pilot = wyrm.rider
+	var player: Player = autoload("Game").player
+	wyrm.global_position = player.global_position + Vector2(20, 0)
+	pilot._ride()
+	expect(wyrm._pilot_finishes_combo(), "the pilot takes the last hit")
+	await wait_real(autoload("Tuning").wyrm_charge_recovery + 0.15)
+	expect(pilot.follow_up_coming(), "the pilot is still on its slash")
+	expect(!wyrm._in_rollable_recovery(), "hanging for the pilot isn't a red charge's recovery")
+	var at := wyrm.global_position
+	await tree.physics_frame
+	await tree.physics_frame
+	expect(wyrm.global_position.distance_to(at) < 0.5, "the dragon stays put meanwhile")
