@@ -26,8 +26,9 @@ extends MeleeEnemy
 # (Enemy._rider_absorbs), whatever the mount's own defences let through. Only once the pilot
 # is dead does the mount start to take damage. A sword meeting the mount while the pilot's
 # slash winds up is timed against the pilot's glint (meets_sword): in the window it's a
-# parry, which cancels the slash and stuns the mount; early, it's blocked and staggers the
-# player, as for any attack.
+# parry, which cancels the slash and, if it was the last hit of a combo the player had
+# fully cleared, stuns the mount (after a combo they didn't clear, it gives no second
+# chance); early, it's blocked and staggers the player, as for any attack.
 #
 # A pilot that climbs on after noticing the player makes its mount notice them too.
 #
@@ -36,6 +37,9 @@ extends MeleeEnemy
 
 var mount: Enemy = null
 var _strike_pending := false # The mount's attack is over; slash once the player's in reach
+# The slash under way is the last hit of a combo its mount had fully cleared
+# (finish_combo): only then does parrying it stun the mount.
+var _finishing_combo := false
 var _saved_layer := 0
 var _saved_mask := 0
 var _wants_mount := false # Its last decision was to go for a mount (see the top of the file)
@@ -191,6 +195,7 @@ func _can_strike() -> bool:
 		&& _to_player().length() <= Tuning.pilot_strike_reach
 
 func _start_strike() -> void:
+	_finishing_combo = false
 	_start_swing(_is_player_mostly_horizontal())
 	_follow_up_ready = false # One hit, no double attack
 	_unparryable = false
@@ -211,6 +216,7 @@ func can_follow_up() -> bool:
 func finish_combo() -> void:
 	_strike_pending = false
 	_start_strike()
+	_finishing_combo = true
 
 # About to slash (the mount's attack just ended) or slashing.
 func follow_up_coming() -> bool:
@@ -232,8 +238,13 @@ func meets_sword(from_direction: String) -> bool:
 			_parry_feedback()
 			_end_windup_hold()
 			_play("idle")
-			mount._parry_progress = 1.0 # The combo's last hit cleared
-			mount.stagger(from_direction)
+			# Only the last hit of a combo the player had fully cleared stuns the mount. After
+			# a combo they didn't clear (a dodged kick with no back hit), parrying the slash
+			# just turns it aside: the pilot gives no second chance at the stun.
+			if _finishing_combo:
+				mount._parry_progress = 1.0
+				mount.stagger(from_direction)
+			_finishing_combo = false
 			return true
 		Parry.EARLY:
 			_block_player_swing.call_deferred(from_direction, player.swing_started_frame)

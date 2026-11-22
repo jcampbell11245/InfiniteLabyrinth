@@ -203,7 +203,7 @@ func test_parrying_the_pilot_slash_stuns_its_mount() -> void:
 	var player: Player = autoload("Game").player
 	orc.global_position = player.global_position + Vector2(20, 0)
 	pilot._ride()
-	pilot._start_strike()
+	pilot.finish_combo() # The last hit of a combo the player had fully cleared
 	pilot._twinkle() # Its glint, now
 	player.swing_started_at = Time.get_ticks_msec()
 	player.swing_started_frame = Engine.get_physics_frames() + 1
@@ -340,3 +340,18 @@ func test_a_cleared_combo_slash_starts_even_if_the_pilot_swings_out_of_reach() -
 	await tree.physics_frame
 	await tree.physics_frame
 	expect(pilot.is_striking(), "the slash carries on out of reach")
+
+func test_parrying_a_slash_after_an_uncleared_combo_doesnt_stun_the_mount() -> void:
+	var parts: Array = await ridden_orc()
+	var orc: MeleeEnemy = parts[1]
+	var pilot: Pilot = parts[2]
+	var player: Player = autoload("Game").player
+	orc.global_position = player.global_position + Vector2(20, 0)
+	pilot._ride()
+	pilot._start_strike() # A follow-up after a combo that wasn't cleared (Enemy._combo_finished)
+	pilot._twinkle()
+	player.swing_started_at = Time.get_ticks_msec()
+	player.swing_started_frame = Engine.get_physics_frames() + 1
+	expect(pilot.meets_sword(Direction.RIGHT), "the parry turns the slash aside")
+	expect(!pilot.is_striking(), "the slash is off")
+	expect(!orc.is_stunned(), "but the orc isn't stunned: no second chance")
