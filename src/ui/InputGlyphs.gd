@@ -7,14 +7,19 @@ extends RefCounted
 # touched; until then a connected pad wins over the keyboard.
 #
 # The glyphs are drawn in code, in art pixels scaled by `unit` like HudFrame, so they need
-# no sprites. CONFIRM is the interact / buy button, BACK closes menus.
+# no sprites. CONFIRM is the interact / buy button, BACK closes menus, and PREVIOUS / NEXT
+# are the previous / next item buttons (the shop's tab switch): Q and E on the keyboard, the
+# shoulder buttons on a pad, drawn as a wide dark bumper with its name on it.
 
 enum Device { KEYBOARD, XBOX, PLAYSTATION }
-enum Glyph { CONFIRM, BACK }
+enum Glyph { CONFIRM, BACK, PREVIOUS, NEXT }
 
 const FONT := preload("res://assets/fonts/8-BIT WONDER.TTF")
-const KEY_TEXT := {Glyph.CONFIRM: "R", Glyph.BACK: "ESC"} # Must match project.godot's bindings
-const XBOX_TEXT := {Glyph.CONFIRM: "A", Glyph.BACK: "B"}
+# Must match project.godot's bindings (interact, ui_cancel, item_previous, item_next).
+const KEY_TEXT := {Glyph.CONFIRM: "R", Glyph.BACK: "ESC", Glyph.PREVIOUS: "Q", Glyph.NEXT: "E"}
+const XBOX_TEXT := {Glyph.CONFIRM: "A", Glyph.BACK: "B", Glyph.PREVIOUS: "LB", Glyph.NEXT: "RB"}
+const PS_SHOULDER_TEXT := {Glyph.PREVIOUS: "L1", Glyph.NEXT: "R1"}
+const SHOULDERS: Array[Glyph] = [Glyph.PREVIOUS, Glyph.NEXT]
 const XBOX_COLOR := {Glyph.CONFIRM: Color8(60, 170, 70), Glyph.BACK: Color8(200, 50, 50)}
 const PS_SYMBOL_COLOR := {Glyph.CONFIRM: Color8(120, 160, 255), Glyph.BACK: Color8(255, 90, 90)}
 const PAD_FACE := Color8(40, 40, 48)
@@ -44,16 +49,24 @@ static func device() -> Device:
 # Width in art pixels of `glyph` as drawn now: keycaps grow with their text.
 static func width(glyph: Glyph) -> int:
 	if device() != Device.KEYBOARD:
-		return SIZE
+		return _fitted_width(_shoulder_text(glyph)) if glyph in SHOULDERS else SIZE
 	var text: String = KEY_TEXT[glyph]
-	if text.length() == 1:
-		return SIZE
+	return SIZE if text.length() == 1 else _fitted_width(text)
+
+# Wide enough for `text` with a little room each side, and never narrower than a button.
+static func _fitted_width(text: String) -> int:
 	# Measured at a large size and scaled down, so it's the same at any unit.
 	var measured := FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT_SIZE * 10).x / 10.0
 	return maxi(SIZE, ceili(measured) + 5)
 
+static func _shoulder_text(glyph: Glyph) -> String:
+	return PS_SHOULDER_TEXT[glyph] if device() == Device.PLAYSTATION else XBOX_TEXT[glyph]
+
 # Draws `glyph` with its top-left corner at `at` (art pixels).
 static func draw(canvas: CanvasItem, glyph: Glyph, at: Vector2, unit := 1.0) -> void:
+	if glyph in SHOULDERS && device() != Device.KEYBOARD:
+		_draw_shoulder(canvas, glyph, at, unit)
+		return
 	match device():
 		Device.KEYBOARD: _draw_key(canvas, glyph, at, unit)
 		Device.XBOX: _draw_xbox(canvas, glyph, at, unit)
@@ -77,7 +90,17 @@ static func _draw_key(canvas: CanvasItem, glyph: Glyph, at: Vector2, unit: float
 	HudFrame.fill(canvas, Rect2(rect.position + Vector2(0, 1), rect.size - Vector2(0, 2)), INK, unit)
 	HudFrame.fill(canvas, rect.grow(-1), KEYCAP_SIDE, unit)
 	HudFrame.fill(canvas, Rect2(rect.position + Vector2.ONE, rect.size - Vector2(2, 3)), KEYCAP, unit)
-	_text(canvas, KEY_TEXT[glyph], Rect2(rect.position, rect.size - Vector2(0, 1)), INK, unit)
+	var text: String = KEY_TEXT[glyph]
+	var ink := _text(canvas, text, Rect2(rect.position, rect.size - Vector2(0, 1)), INK, unit)
+	if text == "Q":
+		_q_tail(canvas, ink, unit)
+
+# The font's Q has no tail at this size, so on a keycap it reads as an O. This adds one: the
+# Q's cut bottom-right corner filled in, and a pixel hanging below it.
+static func _q_tail(canvas: CanvasItem, ink: Rect2, unit: float) -> void:
+	var cell := Vector2.ONE * unit # The font's pixels are art pixels at TEXT_SIZE
+	canvas.draw_rect(Rect2(ink.end - cell, cell), INK)
+	canvas.draw_rect(Rect2(ink.end - Vector2(cell.x, 0), cell), INK)
 
 static func _draw_xbox(canvas: CanvasItem, glyph: Glyph, at: Vector2, unit: float) -> void:
 	_disc(canvas, at, XBOX_COLOR[glyph], unit)
@@ -95,6 +118,16 @@ static func _draw_playstation(canvas: CanvasItem, glyph: Glyph, at: Vector2, uni
 		for strip: Rect2 in [Rect2(3, 2, 3, 1), Rect2(3, 6, 3, 1), Rect2(2, 3, 1, 3), Rect2(6, 3, 1, 3)]:
 			HudFrame.fill(canvas, Rect2(at + strip.position, strip.size), color, unit)
 
+# A shoulder button: a dark bar, rounder on top like a bumper, with its name in white.
+static func _draw_shoulder(canvas: CanvasItem, glyph: Glyph, at: Vector2, unit: float) -> void:
+	var rect := Rect2(at, Vector2(width(glyph), SIZE))
+	HudFrame.fill(canvas, Rect2(rect.position + Vector2(2, 0), rect.size - Vector2(4, 0)), INK, unit)
+	HudFrame.fill(canvas, Rect2(rect.position + Vector2(1, 1), rect.size - Vector2(2, 1)), INK, unit)
+	HudFrame.fill(canvas, Rect2(rect.position + Vector2(0, 2), rect.size - Vector2(0, 3)), INK, unit)
+	HudFrame.fill(canvas, Rect2(rect.position + Vector2(2, 1), rect.size - Vector2(4, 2)), PAD_FACE, unit)
+	HudFrame.fill(canvas, Rect2(rect.position + Vector2(1, 2), rect.size - Vector2(2, 4)), PAD_FACE, unit)
+	_text(canvas, _shoulder_text(glyph), rect, Color.WHITE, unit)
+
 # A round button: a 9x9 block with its corners cut, outlined in INK.
 static func _disc(canvas: CanvasItem, at: Vector2, color: Color, unit: float) -> void:
 	HudFrame.fill(canvas, Rect2(at + Vector2(2, 0), Vector2(5, 9)), INK, unit)
@@ -103,8 +136,8 @@ static func _disc(canvas: CanvasItem, at: Vector2, color: Color, unit: float) ->
 	HudFrame.fill(canvas, Rect2(at + Vector2(2, 1), Vector2(5, 7)), color, unit)
 	HudFrame.fill(canvas, Rect2(at + Vector2(1, 2), Vector2(7, 5)), color, unit)
 
-# `text` centred in `rect` (art pixels).
-static func _text(canvas: CanvasItem, text: String, rect: Rect2, color: Color, unit: float) -> void:
+# `text` centred in `rect` (art pixels). Returns the box its ink covers, in canvas pixels.
+static func _text(canvas: CanvasItem, text: String, rect: Rect2, color: Color, unit: float) -> Rect2:
 	var size := roundi(TEXT_SIZE * unit)
 	# Centre the letters' ink, not their advance box: the font's advances carry spacing on
 	# the right, and its ascent is taller than the capitals, which pushes text left and down.
@@ -112,6 +145,7 @@ static func _text(canvas: CanvasItem, text: String, rect: Rect2, color: Color, u
 	var box := Rect2(rect.position * unit, rect.size * unit)
 	var origin := (box.get_center() - ink.get_center()).round()
 	canvas.draw_string(FONT, origin, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	return Rect2(origin + ink.position, ink.size)
 
 # The box the glyphs of `text` actually cover, relative to the start of its baseline.
 static func _ink(text: String, size: int) -> Rect2:

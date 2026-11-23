@@ -5,7 +5,8 @@ extends Control
 # tabs along the top and, under the selected tab, a list of things for sale. Each row shows
 # an icon, name, a one-line description and price in coins; the list scrolls when there
 # are more than VISIBLE_ROWS. Up and down pick a row, the previous / next item buttons (or
-# left and right) change tab, confirm buys and back closes. With too few coins the row
+# left and right) change tab, confirm buys and back closes. The previous / next buttons are
+# shown either side of the tabs, so the player can see how to switch. With too few coins the row
 # shakes red and says so.
 #
 # The Upgrades tab (first) sells the lasting upgrades (Upgrades). A row names the level it
@@ -363,9 +364,15 @@ func _draw() -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, SIZE.x)
 	_draw_hints(o)
 
-# Tabs sized to their titles, left to right.
+# Tabs sized to their titles, left to right, between the previous and next item buttons
+# that switch them. While choosing a box to replace, those buttons move the item bar's
+# highlight instead, so they're left out (their space kept, so the tabs don't jump).
 func _draw_tabs(o: Vector2) -> void:
 	var x := o.x + MARGIN
+	var glyph_top := o.y + TAB_TOP + floorf((TAB_HEIGHT - InputGlyphs.SIZE) / 2.0)
+	if !is_replacing():
+		InputGlyphs.draw(self, InputGlyphs.Glyph.PREVIOUS, Vector2(x, glyph_top), UNIT)
+	x += InputGlyphs.width(InputGlyphs.Glyph.PREVIOUS) + TAB_GAP
 	for i in TABS.size():
 		var width := _text_width(String(TABS[i].title), TITLE_SIZE) + TAB_PADDING * 2
 		var tab := Rect2(Vector2(x, o.y + TAB_TOP), Vector2(width, TAB_HEIGHT))
@@ -375,6 +382,8 @@ func _draw_tabs(o: Vector2) -> void:
 		HudFrame.outline(self, tab, ItemBar.SELECTED_EDGE if selected else ItemBar.Minimap.UNLIT, UNIT)
 		_text(String(TABS[i].title), tab.position + Vector2(0, 3), TITLE_SIZE,
 			TEXT_COLOR if selected else DIM_TEXT, HORIZONTAL_ALIGNMENT_CENTER, tab.size.x)
+	if !is_replacing():
+		InputGlyphs.draw(self, InputGlyphs.Glyph.NEXT, Vector2(x, glyph_top), UNIT)
 
 # The player's coins, top right, so the prices have something to compare against.
 func _draw_coins(o: Vector2) -> void:
