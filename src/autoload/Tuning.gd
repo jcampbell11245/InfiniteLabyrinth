@@ -276,6 +276,9 @@ var hitstop_time_scale := 0.05
 var shake_multiplier := 1.0
 var kill_combo_window := 1.0 # Seconds between kills for the death sound to keep pitching up
 
+# --- Display ---
+var show_fps := false # Frames-per-second readout in the bottom-right corner (FpsCounter)
+
 # --- Cheats ---
 var god_mode := false # Hits and falls take no time
 var infinite_arrows := false
@@ -521,6 +524,7 @@ const FIELDS := [
 	["Feel", "shake_multiplier", "Screen shake multiplier", 0, 5, 0.1, "new (Juice.shake)"],
 	["Feel", "kill_combo_window", "Kill combo window (s)", 0, 5, 0.05, "Room.gd _on_enemy_died (was per room visit)"],
 
+	["Display", "show_fps", "Show FPS", 0, 0, 0, "new (FpsCounter)"],
 	["Cheats", "god_mode", "God mode", 0, 0, 0, "new"],
 	["Cheats", "infinite_arrows", "Infinite arrows", 0, 0, 0, "new"],
 	["Cheats", "one_hit_kills", "One-hit kills", 0, 0, 0, "new"],

@@ -320,7 +320,8 @@ the game and pauses it; F2 or **Close** shuts it again. The **Progress** tab edi
 floor (coins, keys, arrows, time left, floor, upgrade levels) and has Refill time, Kill
 enemies in this room and Next floor buttons. The other tabs edit the gameplay numbers in
 `src/autoload/Tuning.gd` (roll, parry window, damage, enemy multipliers, special tiles, timer,
-loot, hit-stop, cheats like god mode), which game code reads live. Each row has a **Reset**: Tuning rows go back
+loot, hit-stop, cheats like god mode), which game code reads live. **Display → Show FPS** puts a
+frames-per-second readout in the bottom-right corner, above the minimap. Each row has a **Reset**: Tuning rows go back
 to their shipped value, Progress rows to what they were when the menu opened. **Reset all**
 resets every row. **Export** writes every Tuning value, changed ones first and marked `*`, to a
 `tuning_exports` folder (same locations as the room creator's export) and copies it to the

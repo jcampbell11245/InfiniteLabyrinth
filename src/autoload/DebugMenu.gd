@@ -32,6 +32,7 @@ const CHANGED := Color(1, 0.85, 0.35) # Names of rows that differ from their res
 const DIM := Color(1, 1, 1, 0.55)
 
 const PROGRESS_TAB := "Progress"
+const FPS_COUNTER := preload("res://src/ui/hud/FpsCounter.gd")
 
 # One editable row. Tuning rows read and write a Tuning key; Progress rows go through
 # getter and setter, which reach into the running game.
@@ -68,6 +69,8 @@ func _ready() -> void:
 	visible = false
 	_build()
 	Tuning.changed.connect(_on_tuning_changed)
+	# The FPS counter lives beside the menu, not in it, so it shows while the menu is shut.
+	get_tree().root.add_child.call_deferred(FPS_COUNTER.new())
 
 func _input(event: InputEvent) -> void:
 	var key := event as InputEventKey
