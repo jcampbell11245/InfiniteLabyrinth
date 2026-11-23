@@ -242,6 +242,8 @@ var skeleton_key_price := 50 # Coins the merchant asks for a skeleton key
 var metal_detector_price := 50 # Coins the merchant asks for a metal detector
 var shop_buy_cooldown := 0.5 # Seconds after a purchase before the shop takes another, against double buys
 var merchant_reach := 30.0 # Pixels from the merchant's feet to the player's within which they can talk
+var dialogue_chars_per_second := 40.0 # How fast a dialogue box types its text out, letters per real second
+var dialogue_blip_every := 2 # Letters typed per blip of the dialogue sound (spaces and punctuation stay silent)
 
 # --- Servers (see Server, ServerBuff) ---
 var server_hits := 3.0 # Health of a server, in sword hits at the default damage
@@ -497,6 +499,8 @@ const FIELDS := [
 	["Items", "metal_detector_price", "Metal detector price", 0, 1000, 5, "new (Items.price)"],
 	["Items", "shop_buy_cooldown", "Shop purchase cooldown (s)", 0, 3, 0.05, "new (ShopMenu)"],
 	["Items", "merchant_reach", "Merchant reach (px)", 5, 100, 1, "new (Merchant.in_reach)"],
+	["Items", "dialogue_chars_per_second", "Dialogue typing speed (letters/s)", 5, 200, 1, "new (DialogueBox)"],
+	["Items", "dialogue_blip_every", "Dialogue letters per blip", 1, 6, 1, "new (DialogueBox)"],
 
 	["Servers", "server_hits", "Server health (sword hits)", 1, 20, 0.5, "new (Server.apply_tuning)"],
 	["Servers", "server_attack_multiplier", "Attack boost: damage dealt x", 1, 5, 0.05, "new (ServerBuff.multiplier)"],

@@ -32,3 +32,5 @@ server_break.wav: synthesized for this project (square wave powering down from 9
 under crackling noise, 6-bit crush): a server breaking.
 server_alert.wav: synthesized for this project (8-bit pulse-wave two-tone alarm, 988/740 Hz,
 three times): the floor server banner as a floor starts.
+dialogue_blip.wav: synthesized for this project (45 ms 25% pulse wave at 620 Hz with a
+falling tail, 6-bit crush): the blip as a dialogue box types out its text.

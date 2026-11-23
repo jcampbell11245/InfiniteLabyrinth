@@ -35,8 +35,9 @@ centaurs: hits take the pilot down first, and its slash is the last hit of each 
 mount's combos, so only parrying that slash stuns a ridden mount.
 
 **Items** sit in the bar in the bottom-left corner: choose one and use it. Buy them from
-the **merchant** at the top of the start room: walk up to him and press Interact to open
-his shop. A **skeleton key** opens the locked doors of the room you're in; a **metal
+the **merchant** at the top of the start room: walk up to him and press Interact, and he
+offers his wares; press Select (J or Enter, A / Cross) to skip his words typing out, then
+again to open his shop. A **skeleton key** opens the locked doors of the room you're in; a **metal
 detector** shows one key room you haven't found on the minimap. Both cost 50 coins. An item
 that would do nothing (no locked door, every key room already showing) isn't used up.
 Items you haven't used come with you to the next floor, but are lost when you die. Buying
@@ -64,6 +65,7 @@ extra attack keys stay active alongside your chosen inputs. In the pause menu, t
 | Choose item (bar, bottom left) | Q / E | LB / RB (L1 / R1) |
 | Use item | L | LT / L2 |
 | Interact (talk to the merchant) | R | A / Cross |
+| Advance dialogue (Select) | J or Enter | A / Cross |
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
@@ -351,6 +353,7 @@ menu and art changes without playing:
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot            # /tmp/shot.png
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot hurt       # plus two frames after a hit
 "$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot shop       # plus the merchant's shop
+"$GODOT" --path . -s res://tools/screenshot.gd -- /tmp/shot dialogue   # plus his greeting, typing and done
 ```
 
 ## Exporting builds
@@ -410,7 +413,8 @@ src/enemies/   Enemy is the base for MeleeEnemy (goblin and knight families; Cen
 src/projectiles/  arrows, fireballs and the boss laser, all one Projectile script
 src/objects/   chests, switches, room detection and the fade-out void
 src/items/     the consumable items and what using each one does
-src/npcs/      the merchant in the start room, who opens the shop (src/ui/menus/ShopMenu)
+src/npcs/      the merchant in the start room, who greets the player in a dialogue box
+               (src/ui/DialogueBox) and then opens the shop (src/ui/menus/ShopMenu)
 src/effects/   flash shader, twinkle, status bars, floor stains and coin pickups
 src/world/     floor layout (WorldGenerator), building it (Overworld), room script (Room),
                special tiles (SpecialTiles), camera and HUD (GameCamera)

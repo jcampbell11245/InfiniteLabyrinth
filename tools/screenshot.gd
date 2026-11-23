@@ -8,7 +8,9 @@ extends SceneTree
 # Boots `scene` (default: a fresh floor, res://src/world/Overworld.tscn), waits `frames`
 # frames (default 90) and saves <output prefix>.png. Add "hurt" anywhere after the prefix
 # to also take a hit then and save <prefix>_hurt_1.png and <prefix>_hurt_2.png a moment
-# later, or "shop" to open the merchant's shop and save <prefix>_shop.png.
+# later, "shop" to open the merchant's shop and save <prefix>_shop.png, or "dialogue" to
+# talk to him and save <prefix>_dialogue_typing.png part way through his greeting and
+# <prefix>_dialogue.png once it's all shown.
 # Write the images outside the repo (a temp folder) so they don't get committed.
 
 var _frame := 0
@@ -17,11 +19,12 @@ var _scene := "res://src/world/Overworld.tscn"
 var _frames := 90
 var _hurt := false
 var _shop := false
+var _dialogue := false
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.is_empty():
-		printerr("Usage: godot --path . -s res://tools/screenshot.gd -- <output prefix> [scene] [frames] [hurt] [shop]")
+		printerr("Usage: godot --path . -s res://tools/screenshot.gd -- <output prefix> [scene] [frames] [hurt] [shop] [dialogue]")
 		quit(2)
 		return
 	_prefix = args[0]
@@ -30,6 +33,8 @@ func _initialize() -> void:
 			_hurt = true
 		elif arg == "shop":
 			_shop = true
+		elif arg == "dialogue":
+			_dialogue = true
 		elif arg.begins_with("res://"):
 			_scene = arg
 		elif arg.is_valid_int():
@@ -45,7 +50,9 @@ func _process(_delta: float) -> bool:
 			root.get_node("Game").player.take_damage(1.0, "left", false)
 		elif _shop:
 			_open_shop()
-		elif !_shop:
+		elif _dialogue:
+			_merchant().talk()
+		else:
 			quit()
 	elif _hurt && _frame == _frames + 10:
 		_save("_hurt_1")
@@ -55,13 +62,22 @@ func _process(_delta: float) -> bool:
 	elif _shop && _frame == _frames + 10:
 		_save("_shop")
 		quit()
+	elif _dialogue && _frame == _frames + 20:
+		_save("_dialogue_typing")
+	elif _dialogue && _frame == _frames + 90:
+		_save("_dialogue")
+		quit()
 	return false
 
-# The merchant stands in the start room (id 60); his shop is the Control under him.
+# The merchant stands in the start room (id 60); his shop is the ShopMenu under him.
 func _open_shop() -> void:
+	_merchant().find_children("*", "ShopMenu", true, false)[0].open()
+
+func _merchant() -> Node:
 	for child in root.get_node("Game").room_by_id(60).get_children():
 		if child.has_method("in_reach"):
-			child.find_children("*", "Control", true, false)[0].open()
+			return child
+	return null
 
 func _save(suffix: String) -> void:
 	var path := _prefix + suffix + ".png"
