@@ -27,7 +27,6 @@ line in `assets/sfx/SOURCE.txt`.
 | --- | --- | --- |
 | `assets/sprites/tiles/special_tiles.png` frame 8 (`SLICK`) | Slick (icy) floor | ![slick](docs/pending_assets/tile_slick.png) |
 | `special_tiles.png` frame 13 (`PASTE`) | Thermal paste that holds whoever steps in | ![paste](docs/pending_assets/tile_paste.png) |
-| `assets/sprites/merchant/merchant.png` | The merchant in the start room ([Merchant.tscn](src/npcs/Merchant.tscn)): the reference image the developer supplied, used as it is and scaled down in the scene (0.095x, smoothed with mipmaps). Licence unknown, so it must be replaced with real pixel art (standing, maybe idle) | ![merchant](assets/sprites/merchant/merchant.png) |
 | Troll (no art of its own) | [Troll.tscn](src/enemies/Troll.tscn) uses the goblin's sprites with a gold `self_modulate`. Needs its own sprite set (stand, walk, slash, all four facings) | ![troll](docs/pending_assets/enemy_troll.gif) |
 | Orc (no art of its own) | [Orc.tscn](src/enemies/Orc.tscn) uses the goblin's sprites scaled 1.5x (shown on the right, with a goblin on the left). Needs its own sprite set | ![orc](docs/pending_assets/enemy_orc.gif) |
 | Warlock (no art of its own) | [Warlock.tscn](src/enemies/Warlock.tscn) uses the wizard's sprites with a green `self_modulate` (see [Caster.gd](src/enemies/Caster.gd)). Needs its own sprite set (stand, walk, shoot) | ![warlock](docs/pending_assets/enemy_warlock.gif) |

@@ -6,10 +6,10 @@ extends StaticBody2D
 # over his head; pressing interact then opens his shop (ShopMenu), which pauses the game.
 # He's solid, like a wall, so the player walks up to him rather than through him.
 #
-# The node's origin is at his feet; the sprite stands on it. The placeholder sprite is a
-# large picture scaled down in the scene, so it's smoothed (mipmaps) rather than pixel-sharp.
+# The node's origin is at his feet; the sprite (32x32, drawn at 1x like the rest of the
+# pixel art) stands on it, its bottom row on the origin.
 
-const PROMPT_HEIGHT := 46.0 # World pixels above his feet where the prompt floats
+const PROMPT_HEIGHT := 39.0 # World pixels above his feet where the prompt floats (his hat is 31 tall)
 const SHOP_LAYER := 50 # Over the HUD
 
 var _shop: ShopMenu
