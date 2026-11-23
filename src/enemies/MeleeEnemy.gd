@@ -22,8 +22,9 @@ extends Enemy
 # player has to roll through the enemy and hit it from behind, which dazes it like a parry
 # (no damage; Enemy._dazed_from_behind). The enemy doesn't turn to follow them until the
 # attack is over. Afterwards it's stuck in end lag: frozen on the attack's last frame for
-# Tuning.heavy_end_lag, unable to move, turn or attack. A hit from behind then dazes it the
-# same way; any other hit lands without knocking it out of the pose.
+# Tuning.heavy_end_lag, unable to move, turn or attack. A hit from behind in the
+# follow-through or the end lag dazes it the same way (no counter); any other hit in the end
+# lag lands without knocking it out of the pose.
 #
 # Any other attack turns round if the player gets behind the enemy at any point in it,
 # windup or follow-through, carrying on the same swing; the blade is still live after the
@@ -552,9 +553,13 @@ func _on_end_lag_over() -> void:
 func _hit_interrupts_attack() -> bool:
 	return !in_end_lag()
 
-# Frozen after an unparryable attack: a hit from behind dazes it (Enemy._dazed_from_behind).
+# Following through an unparryable attack or frozen after it: a hit from behind dazes it
+# (Enemy._dazed_from_behind). The follow-through counts too, or a player who rolled
+# through and hit it straight away would land an ordinary hit, and its counter would turn
+# it round to swing at them.
 func _in_rollable_recovery() -> bool:
-	return in_end_lag()
+	return in_end_lag() \
+		|| _unparryable && _animation_is("slash") && animator.frame > attack_frame
 
 func _is_player_behind() -> bool:
 	return Direction.to_vector(direction).dot(_to_player()) < 0

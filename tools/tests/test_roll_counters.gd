@@ -97,3 +97,24 @@ func test_hit_from_behind_on_a_hanging_wyvern_dazes() -> void:
 	await tree.physics_frame
 	expect(wyvern.is_stunned(), "a hit from behind dazes it")
 	expect_equal(wyvern.health, health, "with no damage")
+
+# Between the strike and the end lag (the follow-through), a hit from behind dazes it too,
+# rather than landing as an ordinary hit that it turns round and counters.
+func test_hit_from_behind_in_the_follow_through_dazes() -> void:
+	var knight: MeleeEnemy = await boot_enemy("knight")
+	player().invincibility_cooldown.start(100.0)
+	await red_swing(knight)
+	for i in 300:
+		if knight.animator.frame > knight.attack_frame:
+			break
+		await tree.physics_frame
+	expect(knight.animator.frame > knight.attack_frame && !knight.in_end_lag(),
+		"in the follow-through, not yet in end lag")
+	player().global_position = knight.global_position - Direction.to_vector(knight.direction) * 30.0
+	var health := knight.health
+	hit_from_behind(knight)
+	for i in 5:
+		await tree.physics_frame
+	expect(knight.is_stunned(), "a hit from behind dazes it")
+	expect_equal(knight.health, health, "with no damage")
+	expect(!knight._animation_is("slash"), "and doesn't turn round to counter with a fresh swing")

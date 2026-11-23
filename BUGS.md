@@ -4,6 +4,11 @@
 
 ## Fixed
 
+- Knights could turn round and hit the player who rolled through their red attack. A hit
+  from behind only dazed the knight before its strike or once it froze in end lag. Hit in
+  the follow-through between the two, it took an ordinary hit, and its counter-attack turned
+  it to face the player and swing. The follow-through now counts as recovery
+  (`MeleeEnemy._in_rollable_recovery`), so a hit from behind there dazes it too.
 - Knights' slashes hit the player from further off than the slash showed. Their hitbox was
   one box for every facing, grown at load time until it reached wherever the player's sword
   could reach the knight from. That put it about 3 px past the slash art to the sides, about

@@ -98,9 +98,9 @@ See README → Layout for the folder map. The parts you'll touch most:
   - *Rolling through a red (unparryable) attack and hitting the enemy from behind dazes it
     like a parry, with no damage* (`Enemy._dazed_from_behind`). That works during the attack
     and while the enemy is still stuck recovering from it (`_in_rollable_recovery`: a
-    knight's or taurtaur's end lag, a wyvern hanging after its red charge). A new enemy with
-    a red attack or a recovery after one overrides `_in_rollable_recovery`. Red attacks that
-    hit the player still do damage.
+    knight's follow-through and end lag, a taurtaur's end lag, a wyvern hanging after its
+    red charge). A new enemy with a red attack or a recovery after one overrides
+    `_in_rollable_recovery`. Red attacks that hit the player still do damage.
 - **Rooms**: every `.tscn` in `src/world/rooms/` is picked up by `WorldGenerator`, which
   caches loaded room scenes for the session; the room creator (F1 on the title screen)
   exports designs to `room_designs/` that get turned into room scenes.
