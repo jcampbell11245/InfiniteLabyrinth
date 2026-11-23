@@ -49,6 +49,12 @@ func test_tuning_applies_live() -> void:
 	tuning.set_value("lighting_enabled", false)
 	expect_equal(ambient(), Color.WHITE, "lighting off shows the cave at full brightness")
 	expect(!player_light().enabled, "lighting off turns the player's light off")
+	var light_map: SubViewport = lighting().get_node("LightMap")
+	expect_equal(light_map.render_target_update_mode, SubViewport.UPDATE_DISABLED,
+			"lighting off stops drawing the light map")
+	tuning.set_value("lighting_enabled", true)
+	expect_equal(light_map.render_target_update_mode, SubViewport.UPDATE_ALWAYS,
+			"lighting back on draws the light map again")
 
 func test_dropped_loot_does_not_glow() -> void:
 	await boot_floor()

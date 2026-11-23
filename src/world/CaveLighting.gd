@@ -119,7 +119,7 @@ func _build_light_map() -> void:
 # texel always covers one game pixel.
 func _process(_delta: float) -> void:
 	var camera := get_viewport().get_camera_2d()
-	if camera == null:
+	if camera == null || !Tuning.lighting_enabled:
 		return
 	var view := get_viewport().get_visible_rect().size / camera.zoom
 	var size := Vector2i(ceili(view.x / 2.0) * 2, ceili(view.y / 2.0) * 2) + Vector2i.ONE * LIGHT_MAP_MARGIN * 2
@@ -288,6 +288,10 @@ func _apply_all() -> void:
 	_receiver.color = ambient_color() * LIGHT_MAP_SCALE
 	_receiver.color.a = 1.0
 	_overlay.visible = Tuning.lighting_enabled
+	# With lighting off nothing shows the light map, so stop drawing it rather than paying
+	# for a second pass over the world every frame.
+	_light_map.render_target_update_mode = (SubViewport.UPDATE_ALWAYS if Tuning.lighting_enabled
+			else SubViewport.UPDATE_DISABLED)
 	for light in get_parent().find_children(LIGHT_NAME, "PointLight2D", true, false):
 		_apply_light(light as PointLight2D)
 
