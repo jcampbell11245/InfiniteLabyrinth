@@ -1279,6 +1279,12 @@ windup_hold_min = 0.05
 windup_hold_max = 0.35
 only_hit_during_attack = true
 per_facing_reach = false
+slash_boxes = Dictionary[String, Rect2]({
+"down": Rect2(9, -28.5, 28.5, 60),
+"left": Rect2(9, -28.5, 33, 55.5),
+"right": Rect2(9, -27, 33, 55.5),
+"up": Rect2(9, -28.5, 18, 60)
+})
 unparryable_attack = true
 coin_reward = 30
 weapon_tips = {"right": Vector2(-16.5, -11.6), "left": Vector2(15.75, -11.6), "up": Vector2(-24.75, -27.6), "down": Vector2(13.5, -27.6)}

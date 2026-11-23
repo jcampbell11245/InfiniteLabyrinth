@@ -4,6 +4,12 @@
 
 ## Fixed
 
+- Knights' slashes hit the player from further off than the slash showed. Their hitbox was
+  one box for every facing, grown at load time until it reached wherever the player's sword
+  could reach the knight from. That put it about 3 px past the slash art to the sides, about
+  15 px past it facing up and about 10 px past it facing down, and wider than the art too.
+  Each facing now gets its own box, traced round the slash art (`MeleeEnemy.slash_boxes`),
+  and `Tuning.slash_art_inset` (2 px) is taken off its far edge and sides.
 - Rooms with more than one wizard log "The object does not have any 'meta' values with the
   key 'last_wizard_caster'" until one of them casts. The turn-taking check read the room's
   last caster with `get_meta(key, null)`, and Godot treats a null default as no default. It

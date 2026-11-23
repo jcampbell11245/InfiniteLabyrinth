@@ -4,8 +4,9 @@ extends Enemy
 # Goblin and Knight. Once the player enters its detection zone, or hits it from anywhere
 # (an arrow from across the room), it fights until the player leaves the room. A knight
 # (only_hit_during_attack) blocks any hit that lands outside its slash and is stunned for
-# Tuning.knight_block_stun afterwards. Knights sit out guarding, chip damage and the
-# per-facing slash reach (see below), which are goblins only.
+# Tuning.knight_block_stun afterwards. Knights sit out guarding and chip damage, which are
+# goblins only. Their slash hitbox is traced round their slash art for each facing
+# (slash_boxes) rather than grown to cover the player's sword reach (_cover_player_reach).
 #
 # Fighting: the enemy whose turn it is (see AttackCoordinator) walks to a spot beside the
 # player, straight left, right, above or below, at a distance where its slash and the
@@ -109,6 +110,12 @@ const ROAM_PICK_TRIES := 12 # Random spots tried for open floor before waiting a
 # Slash length worked out for each facing (true), or one length that covers the worst
 # facing, used every way (false). See _cover_player_reach.
 @export var per_facing_reach := true
+# Slash hitbox for each facing (Direction -> Rect2 in the hitbox's own units, forward along
+# +x before HitboxPivot turns it), traced round the slash art from the strike frame to the
+# end of the swing. Tuning.slash_art_inset comes off its far and side edges so a hit never
+# lands from further off than the slash shows. Empty (goblins): the scene's shape, grown by
+# _cover_player_reach, and per_facing_reach applies.
+@export var slash_boxes: Dictionary[String, Rect2] = {}
 # The way it faces when the room starts: a Direction, or AUTO_FACING to turn to the player
 # as they come into the room (see _on_room_entered). Set per enemy with the room creator.
 @export var starting_direction := Direction.RIGHT
@@ -177,7 +184,10 @@ var _roam_stuck := 0.0 # Seconds without getting closer to _roam_target
 func _ready() -> void:
 	super()
 	_end_lag = _add_timer(_on_end_lag_over)
-	_cover_player_reach.call_deferred() # Once the player's shapes are in place
+	if slash_boxes.is_empty():
+		_cover_player_reach.call_deferred() # Once the player's shapes are in place
+	else: # Resized per facing; the scene's shape is shared with every other knight
+		hitbox.shape = hitbox.shape.duplicate()
 	_roam_home = position
 	if starting_direction == AUTO_FACING:
 		direction = Direction.RIGHT # Until the player comes in
@@ -582,6 +592,11 @@ func _parried_follow_up() -> bool:
 # enemy's hurtbox); the shorter side wins, less Tuning.engage_margin, so both sides' hits
 # connect. Measured from the scenes' shapes.
 func _engage_distance(horizontal: bool) -> float:
+	if !slash_boxes.is_empty(): # Not cached: the inset can change live
+		var closest := INF
+		for dir: String in ([Direction.LEFT, Direction.RIGHT] if horizontal else [Direction.UP, Direction.DOWN]):
+			closest = minf(closest, minf(_slash_gap(dir, _slash_reach(dir)), _sword_gap(dir)))
+		return maxf(closest - Tuning.engage_margin, MIN_ENGAGE)
 	if !_reach_cache.has(horizontal) && !per_facing_reach: # Hurtbox offsets ignored
 		var mine := _forward_reach(hitbox, self) + _half_extent(player.hurtbox, player, horizontal)
 		var theirs := _forward_reach(player.hitbox, player) + _half_extent(hurtbox, self, horizontal)
@@ -609,6 +624,8 @@ func _slash_gap(dir: String, reach: float) -> float:
 
 # Pixels from the origin the slash reaches facing `dir`; see _cover_player_reach.
 func _slash_reach(dir: String) -> float:
+	if slash_boxes.has(dir):
+		return _inset_slash_box(dir).end.x * absf(scale.x)
 	return _reach_by_dir.get(dir, _forward_reach(hitbox, self))
 
 # The player's sword is broad: standing off on a diagonal, the player could catch a corner
@@ -654,14 +671,28 @@ func _cover_player_reach() -> void:
 	_reach_cache.clear()
 	_fit_slash_to_facing()
 
-# Stretches the slash hitbox to the reach worked out for the way it faces.
+# Stretches the slash hitbox to the reach worked out for the way it faces, or sets it to
+# that facing's slash_boxes entry.
 func _fit_slash_to_facing() -> void:
+	if slash_boxes.has(direction):
+		var box := _inset_slash_box(direction)
+		(hitbox.shape as RectangleShape2D).size = box.size
+		hitbox.position = box.get_center()
+		return
 	if !_reach_by_dir.has(direction):
 		return
 	var rect := hitbox.shape as RectangleShape2D
 	var far: float = _reach_by_dir[direction] / absf(scale.x)
 	rect.size.x = far - _slash_near
 	hitbox.position.x = (_slash_near + far) / 2
+
+# The slash_boxes entry for `dir`, less Tuning.slash_art_inset (pixels) off its far edge
+# and both sides. The near edge, against the enemy's body, stays where it is.
+func _inset_slash_box(dir: String) -> Rect2:
+	var box: Rect2 = slash_boxes[dir]
+	var inset := Tuning.slash_art_inset / absf(scale.x)
+	return Rect2(box.position.x, box.position.y + inset,
+		maxf(box.size.x - inset, 0.0), maxf(box.size.y - 2 * inset, 0.0))
 
 static func _shape_centre(shape: CollisionShape2D, owner_body: Node2D) -> Vector2:
 	return shape.position * owner_body.scale.abs()

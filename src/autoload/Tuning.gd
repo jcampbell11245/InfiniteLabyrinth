@@ -150,6 +150,7 @@ var pilot_strike_hold := 0.6 # Seconds of windup hold on its follow-up slash; ou
 
 # --- Melee AI (goblins and knights; see MeleeEnemy and AttackCoordinator) ---
 var engage_margin := 4.0 # Pixels inside the shorter of the two attack reaches to stop at
+var slash_art_inset := 2.0 # Pixels a knight's slash hitbox stops inside its slash art (far edge and sides; MeleeEnemy.slash_boxes)
 var pack_max_attackers := 1 # Enemies in a group allowed to step in and swing at once
 var pack_swings_min := 1 # Swings per turn before stepping back out (groups only)
 var pack_swings_max := 2
@@ -406,6 +407,7 @@ const FIELDS := [
 	["Centaurs", "centaur_hurtbox_margin", "Hurtbox padding (px)", 0, 20, 1, "new (Centaur._fit_hurtbox)"],
 
 	["AI", "engage_margin", "Engage margin (px)", 0, 30, 1, "new (MeleeEnemy engage distance)"],
+	["AI", "slash_art_inset", "Knight slash inset from art (px)", 0, 12, 0.5, "new (MeleeEnemy._inset_slash_box; was grown past the art by _cover_player_reach)"],
 	["AI", "pack_max_attackers", "Max attackers at once", 1, 6, 1, "new (AttackCoordinator)"],
 	["AI", "pack_swings_min", "Swings per turn (min)", 1, 6, 1, "new (MeleeEnemy)"],
 	["AI", "pack_swings_max", "Swings per turn (max)", 1, 6, 1, "new (MeleeEnemy)"],
