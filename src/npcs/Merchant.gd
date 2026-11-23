@@ -4,7 +4,7 @@ extends StaticBody2D
 # The merchant standing at the top of the start room, who sells consumable items. When the
 # player walks up close (within Tuning.merchant_reach of his feet) a button prompt floats
 # over his head; pressing interact has him offer his wares in a dialogue box (DialogueBox),
-# and moving that on opens his shop (ShopMenu). Both pause the game.
+# and moving that on opens his shop (ShopMenu). Both pause the game, but not the music.
 # He's solid, like a wall, so the player walks up to him rather than through him.
 #
 # The node's origin is at his feet; the sprite (32x32, drawn at 1x like the rest of the
@@ -30,6 +30,7 @@ func _ready() -> void:
 	_dialogue = DialogueBox.new()
 	layer.add_child(_dialogue)
 	_dialogue.finished.connect(_shop.open)
+	_shop.closed.connect(Music.play_through_pause.bind(false))
 
 # The prompts follow the device the player last touched.
 func _input(event: InputEvent) -> void:
@@ -44,6 +45,7 @@ func _physics_process(_delta: float) -> void:
 
 # Greets the player; the shop opens once they move the greeting on.
 func talk() -> void:
+	Music.play_through_pause(true)
 	_dialogue.say(NAME, GREETING)
 
 # True while the player is close enough to talk to him and free to do so.

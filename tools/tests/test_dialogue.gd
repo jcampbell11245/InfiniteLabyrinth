@@ -3,7 +3,7 @@ extends "res://tools/tests/test_case.gd"
 # The dialogue box (DialogueBox) and the merchant's greeting. A line types out over time; the
 # first advance finishes it at once, the next moves on (or closes after the last line). The
 # box pauses the game while it's up, and talking to the merchant greets the player before
-# his shop opens.
+# his shop opens, with the music still playing.
 
 func _box() -> DialogueBox:
 	var box := DialogueBox.new()
@@ -68,4 +68,7 @@ func test_merchant_greets_before_the_shop_opens() -> void:
 	box.advance()
 	expect(!box.visible && shop.visible, "moving it on opens the shop")
 	expect(tree.paused, "the game stays paused into the shop")
+	var music := autoload("Music")
+	expect(music.can_process(), "the music keeps playing in the shop")
 	shop.close()
+	expect_equal(music.process_mode, Node.PROCESS_MODE_INHERIT, "and pauses with the game again afterwards")

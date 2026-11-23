@@ -34,6 +34,12 @@ func stop_all() -> void:
 	boss_intro.stop()
 	boss_loop.stop()
 
+# Keeps the music going while the game is paused (the merchant's greeting and shop), or
+# lets it pause with the game again. Switch it on before pausing and off after unpausing,
+# so the players never see the pause.
+func play_through_pause(on: bool) -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS if on else Node.PROCESS_MODE_INHERIT
+
 func play_boss() -> void:
 	boss_intro.play()
 
