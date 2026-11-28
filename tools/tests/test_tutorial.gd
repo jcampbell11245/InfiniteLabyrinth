@@ -71,3 +71,69 @@ func test_exit_goes_to_the_title() -> void:
 	expect(!Overworld.tutorial, "the title screen ends the tutorial")
 	expect_equal(save.floor_number, floor_before, "the save's floor is untouched")
 	_leave_tutorial()
+
+# The tutorial's script (Tutorial), found under the Overworld.
+func _script(world: Overworld) -> Tutorial:
+	for child in world.get_children():
+		if child is Tutorial:
+			return child
+	return null
+
+# Moves every line of an open dialogue box on, finishing each first.
+func _dismiss(box: DialogueBox) -> void:
+	for i in 20:
+		if !box.visible:
+			return
+		box.advance()
+		await tree.process_frame
+
+func test_merchant_unlocks_the_start_room() -> void:
+	var world := await _boot_tutorial()
+	var start: Room = world.rooms_by_id[Constants.START_ROOM]
+	expect(start.has_locked_doors(), "the start room's door starts locked")
+	var locks: TileMap = start.get_node("Locks")
+	var right: Vector2i = start.door_cells[Room.Door.RIGHT]
+	expect_equal(locks.get_cell_source_id(0, right), 2, "with the lever lock")
+	var merchant: Merchant = start.get_node("Merchant")
+	merchant.talk()
+	var box: DialogueBox = merchant._dialogue
+	expect(box.visible, "he talks")
+	expect_equal(box._lines, Tutorial.WELCOME, "he welcomes the player")
+	expect(start.has_locked_doors(), "still locked while he talks")
+	await _dismiss(box)
+	expect(!merchant._shop.visible, "no shop opens")
+	expect(!start.has_locked_doors(), "the door opens once he's done")
+	expect_equal(locks.get_cell_source_id(0, right), 8, "the lock is drawn open")
+	_leave_tutorial()
+
+func test_merchant_speaks_in_the_first_room() -> void:
+	var world := await _boot_tutorial()
+	var tutorial := _script(world)
+	expect(tutorial != null, "the tutorial runs its script")
+	expect(world.rooms_by_id[0].is_key_room(), "the chest room shows yellow on the minimap")
+	var player: Player = autoload("Game").player
+	player.current_room = 0
+	autoload("Game").room_entered.emit(0)
+	await tree.process_frame
+	await tree.process_frame
+	var box: DialogueBox = tutorial._dialogue
+	expect(box.visible, "he speaks up on entering")
+	expect_equal(box._lines, Tutorial.MINIMAP, "about the minimap")
+	await _dismiss(box)
+	autoload("Game").room_entered.emit(0)
+	await tree.process_frame
+	await tree.process_frame
+	expect(!tutorial.is_speaking(), "only the first time")
+
+	var room: Room = world.rooms_by_id[0]
+	var chest: Node = room.get_node("Chest")
+	chest._on_area_2d_area_entered(player.get_node("HitboxPivot/Hitbox"))
+	await tree.process_frame
+	var hourglasses := room.get_children().filter(
+			func(child: Node) -> bool: return child.get_script() == preload("res://src/effects/TimePickup.gd"))
+	expect(hourglasses.is_empty(), "the chest holds no hourglass")
+	await wait_real(Tutorial.KEY_LINE_DELAY + 0.3)
+	expect(box.visible, "he speaks once the chest is open")
+	expect_equal(box._lines, Tutorial.KEY, "about the key")
+	await _dismiss(box)
+	_leave_tutorial()

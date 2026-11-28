@@ -135,6 +135,7 @@ var doors: Array[bool] = [true, true, true, true] # Open state, indexed by Door
 var visited := false # The player has been in this room
 var marked := false # A metal detector has shown it on the minimap (Items)
 var _forced_open := false # A skeleton key opened its locked doors (Items)
+var _held_shut := false # Lever-locked until release_doors(), whatever else clears it (the tutorial's start room)
 var _detectors: TileMap # Transition detector tiles, one per open doorway
 var _key_gate: StaticBody2D # End room only: blocks the top door until the player has keys_to_finish() keys
 var _was_cleared := false # Doors were already unlocked last time they were drawn
@@ -241,20 +242,32 @@ func is_cleared() -> bool:
 		"enemies": return enemy_count == 0
 	return false
 
-# True for a room built from a key room scene, which holds one of the floor's keys.
+# True for a room built from a key room scene, which holds one of the floor's keys, or any
+# other room with a key chest in it (the tutorial's).
 func is_key_room() -> bool:
-	return scene_file_path.begins_with(WorldGenerator.KEYROOMS_DIR)
+	return scene_file_path.begins_with(WorldGenerator.KEYROOMS_DIR) || has_node("Chest")
 
 # True while the room's open doorways are locked until it's cleared. Doors shut at the
 # dungeon's edge don't count, and neither does the end room's key gate.
 func has_locked_doors() -> bool:
-	return locked && completion_criteria != "none" && !is_cleared() && doors.has(true)
+	return locked && (completion_criteria != "none" || _held_shut) && !is_cleared() && doors.has(true)
 
 # Opens the locked doors as if the room had been cleared (a skeleton key), with the same
 # sound and dust. Its enemies stay, and its switches still work, but change nothing.
 func force_unlock() -> void:
 	_forced_open = true
+	_held_shut = false
 	_refresh_doors()
+
+# Keeps the open doors locked, drawn with the lever (switch) locks, until release_doors().
+# Call it before the player first enters, when the locks are drawn. Needs a Locks layer.
+func hold_doors() -> void:
+	_held_shut = true
+
+# Opens doors held by hold_doors(), like clearing the room.
+func release_doors() -> void:
+	if _held_shut:
+		force_unlock()
 
 # --- Geometry ---
 
@@ -621,13 +634,13 @@ func _open_side_doorways() -> void:
 # Lock tiles differ by what clears the room: switches or enemies. Closed doors are
 # redrawn over them straight after, except on the Locks layer.
 func _draw_locks() -> void:
-	var switches := completion_criteria == "switches"
+	var switches := completion_criteria == "switches" || _held_shut
 	if !switches && completion_criteria != "enemies":
 		return
 	var locks: TileMap = $Locks
 	if _floor2_doors:
 		# Only open doors get a lock, since the walls of a closed one don't cover it.
-		var source: int = FLOOR2_LOCK_FIRST_SOURCE[completion_criteria]
+		var source: int = FLOOR2_LOCK_FIRST_SOURCE["switches" if switches else "enemies"]
 		var lock_cells := floor2_lock_cells
 		for door: Door in lock_cells:
 			for cell: Vector2i in lock_cells[door]:

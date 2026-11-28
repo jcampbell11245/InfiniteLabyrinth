@@ -2,12 +2,14 @@ extends Node2D
 
 # Key chest: opens the first time the player's sword hits it and releases a key and an
 # hourglass that float toward the player. The key is added on collection; the hourglass
-# extends the level timer.
+# extends the level timer. The tutorial has no timer, so there it holds only the key.
 
 const KeyPickup := preload("res://src/effects/KeyPickup.gd")
 const TimePickup := preload("res://src/effects/TimePickup.gd")
 const KEY_SPAWN_OFFSET := Vector2(-6, -2) # Where the key floats out, relative to the chest
 const TIME_SPAWN_OFFSET := Vector2(6, -2) # Where the hourglass floats out
+
+signal opened
 
 @export var direction := "down" # Which way the chest faces, an animation suffix
 
@@ -23,12 +25,15 @@ func _on_area_2d_area_entered(area: Area2D) -> void:
 		$AnimatedSprite2D.animation = "open_" + direction
 		_release_pickups()
 		_burst_open()
+		opened.emit()
 
 # Spawns the pickups so they can float around before being collected.
 func _release_pickups() -> void:
 	var key: Node2D = KeyPickup.new()
 	get_parent().add_child(key)
 	key.global_position = global_position + KEY_SPAWN_OFFSET
+	if Overworld.tutorial:
+		return
 	var time_pickup: Node2D = TimePickup.new()
 	time_pickup.seconds = Tuning.chest_time_bonus
 	get_parent().add_child(time_pickup)

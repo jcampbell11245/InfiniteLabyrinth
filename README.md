@@ -168,8 +168,10 @@ The main scene is the title screen (`src/ui/menus/TitleScreen.tscn`). **Start** 
 While the title screen is up, the room scenes load in the background so the run starts
 quickly. **F3** on the title screen starts the tutorial instead: the start room, the seven
 rooms in `src/world/tutorial/` in a line, then the end room, with no timer, no boss door and
-no shop (the merchant only talks). One key opens its end room
-(`Tuning.tutorial_keys_to_finish`), and its exit goes back to the title screen.
+no shop. The start room's door is lever-locked until the merchant has welcomed the player;
+he then talks them through the first room's minimap and chest (`src/world/Tutorial.gd`
+holds his lines). One key opens the tutorial's end room (`Tuning.tutorial_keys_to_finish`),
+and its exit goes back to the title screen.
 
 Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through the
 `SaveData` autoload. Delete it to start over.

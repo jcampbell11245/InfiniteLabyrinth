@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="15"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="16"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/PitfallTransitions.tscn" id="17"]
+[ext_resource type="PackedScene" uid="uid://5b8y37k32nye" path="res://src/objects/Chest.tscn" id="chest"]
 
 [node name="Tutorial1" type="Node2D" unique_id=697913893]
 script = ExtResource("1")
@@ -56,6 +57,9 @@ format = 2
 [node name="GoblinDeath" parent="." unique_id=1380663001 instance=ExtResource("8")]
 
 [node name="KnightDeath" parent="." unique_id=1068225589 instance=ExtResource("3")]
+
+[node name="Chest" parent="." unique_id=1580231947 instance=ExtResource("chest")]
+position = Vector2(372, 372)
 
 [node name="RoomDetection" parent="." unique_id=720449856 instance=ExtResource("6")]
 

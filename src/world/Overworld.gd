@@ -11,7 +11,8 @@ extends Node2D
 # room, TUTORIAL_ROOMS rooms from TUTORIAL_DIR in a line, then the end room, all on the
 # middle row. There's no boss door, no timer (LevelCountdown) and no shop (Merchant), the
 # end room's gate wants Tuning.tutorial_keys_to_finish keys, and its exit goes back to the
-# title screen. It always uses floor 1's art and never touches the save.
+# title screen. It always uses floor 1's art and never touches the save. A Tutorial node
+# runs what the merchant says, and unlocks the start room once he's welcomed the player.
 
 # Top-left offset of the room grid; a room at (row, col) sits at GRID_ORIGIN + ROOM_SIZE * (col, row).
 # Column 0 holds the start room, columns 1..COLUMNS the generated rooms, then the end room.
@@ -23,6 +24,7 @@ const TUTORIAL_DIR := "res://src/world/tutorial/"
 const TUTORIAL_ROOMS := 7 # Rooms between the start and end rooms, Tutorial1..Tutorial7
 # Start room nodes for the boss fight, taken out of the tutorial's start room.
 const BOSS_DOOR_NODES: Array[String] = ["BossDoor", "BossDoorBottom", "TransitionDetectorB"]
+const LocksLayer := preload("res://src/world/tiles/Locks.tscn")
 
 static var test_design: RoomDesign # Set while play-testing a room from the room creator
 static var tutorial := false # Set while playing the tutorial; the title screen clears it
@@ -143,6 +145,12 @@ func _build_tutorial() -> void:
 		var node := start.get_node(node_name)
 		start.remove_child(node)
 		node.free()
+	# Its door stays lever-locked until the merchant has spoken. The start room has no lock
+	# layer of its own; it goes just over Top, where other rooms have theirs.
+	var locks := LocksLayer.instantiate()
+	start.add_child(locks)
+	start.move_child(locks, start.get_node("Top").get_index() + 1)
+	start.hold_doors()
 	_place_room(start, Constants.START_ROOM, middle, 0)
 	for door: Room.Door in [Room.Door.TOP, Room.Door.BOTTOM, Room.Door.LEFT]:
 		start.close_door(door)
@@ -157,6 +165,7 @@ func _build_tutorial() -> void:
 	end.close_door(Room.Door.RIGHT)
 	end.close_door(Room.Door.BOTTOM)
 	end.add_key_gate()
+	add_child(Tutorial.new())
 
 # Builds the room creator's design on its own, with the player on it and every door shut.
 func _build_test(design: RoomDesign) -> void:
