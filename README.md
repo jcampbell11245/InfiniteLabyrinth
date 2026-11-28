@@ -169,8 +169,10 @@ While the title screen is up, the room scenes load in the background so the run 
 quickly. **F3** on the title screen starts the tutorial instead: the start room, the seven
 rooms in `src/world/tutorial/` in a line, then the end room, with no timer, no boss door and
 no shop. The start room's door is lever-locked until the merchant has welcomed the player;
-he then talks them through the first room's minimap and chest (`src/world/Tutorial.gd`
-holds his lines). One key opens the tutorial's end room (`Tuning.tutorial_keys_to_finish`),
+he then talks them through the first room's minimap and chest, and the second room's
+parry lesson against a goblin that can't hurt the player (`TutorialGoblin`): it blocks
+their first attacks, then the game freezes with a spotlight on its parry star until they
+strike (`src/world/Tutorial.gd` holds his lines). One key opens the tutorial's end room (`Tuning.tutorial_keys_to_finish`),
 and its exit goes back to the title screen.
 
 Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through the

@@ -147,6 +147,7 @@ var swing_started_at := 0 # Ticks (ms) when the current or last sword swing bega
 var swing_started_frame := -1 # Physics frame the current or last swing began
 var spin_started_frame := -1 # Physics frame the current or last spin attack began
 var _parried_swing := -2 # swing_started_frame of the last swing that parried an enemy
+var _queued_swing := false # queue_swing(): swing as soon as the player can
 var _daze_timer: Timer # Running while dazed from a blocked swing
 var _vulnerable_timer: Timer # Running while the next hit taken is multiplied
 var _dizzy: Node2D # Stars shown while dazed
@@ -323,7 +324,7 @@ func _read_input() -> FrameInput:
 		if input.released == "" && Input.is_action_just_released(key):
 			input.released = dir
 	input.roll = Input.is_action_just_pressed("roll")
-	input.melee = Input.is_action_just_pressed("melee_attack")
+	input.melee = Input.is_action_just_pressed("melee_attack") || _queued_swing
 	input.melee_held = Input.is_action_pressed("melee_attack")
 	input.ranged = Input.is_action_just_pressed("ranged_attack")
 	input.ranged_held = Input.is_action_pressed("ranged_attack")
@@ -331,6 +332,12 @@ func _read_input() -> FrameInput:
 	input.use_item = Input.is_action_just_pressed("use_item")
 	input.acting = true
 	return input
+
+# Swings as soon as the player can (the sword's cooldown may still be running), as if
+# attack had been pressed then. For a press the game missed because it came while paused
+# (the tutorial lets the game go on an attack press, and that press should swing).
+func queue_swing() -> void:
+	_queued_swing = true
 
 # False while dazed, down a pitfall, dying, walking through a door, or while the screen is
 # still moving to a new room (the room isn't fully in view yet, so they could walk into a
@@ -391,6 +398,7 @@ func _handle_input(input: FrameInput) -> void:
 	# before the cooldown has begun.
 	input.melee = input.melee && can_swing()
 	if input.melee:
+		_queued_swing = false
 		_cancel_charge() # A swing (say, to parry) puts the bow down
 		hitbox.disabled = false
 		swing_started_at = Time.get_ticks_msec()

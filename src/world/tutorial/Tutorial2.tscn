@@ -15,9 +15,13 @@
 [ext_resource type="PackedScene" uid="uid://dlo73keb1n3lu" path="res://src/world/tiles/DoorBottoms.tscn" id="15"]
 [ext_resource type="PackedScene" uid="uid://bwghlm1g2jovf" path="res://src/world/tiles/Locks.tscn" id="16"]
 [ext_resource type="PackedScene" path="res://src/world/tiles/PitfallTransitions.tscn" id="17"]
+[ext_resource type="PackedScene" uid="uid://djujgfar0wll5" path="res://src/enemies/Goblin.tscn" id="goblin"]
+[ext_resource type="Script" path="res://src/enemies/TutorialGoblin.gd" id="lesson_goblin"]
 
 [node name="Tutorial2" type="Node2D" unique_id=697913893]
 script = ExtResource("1")
+completion_criteria = "enemies"
+enemy_count = 1
 
 [node name="Tiles" parent="." unique_id=326158555 instance=ExtResource("4")]
 format = 2
@@ -56,6 +60,11 @@ format = 2
 [node name="GoblinDeath" parent="." unique_id=1380663001 instance=ExtResource("8")]
 
 [node name="KnightDeath" parent="." unique_id=1068225589 instance=ExtResource("3")]
+
+[node name="Goblin" parent="." unique_id=1427705113 instance=ExtResource("goblin")]
+position = Vector2(468, 372)
+script = ExtResource("lesson_goblin")
+starting_direction = "left"
 
 [node name="RoomDetection" parent="." unique_id=720449856 instance=ExtResource("6")]
 

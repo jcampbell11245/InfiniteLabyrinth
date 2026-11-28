@@ -114,9 +114,8 @@ func test_merchant_speaks_in_the_first_room() -> void:
 	var player: Player = autoload("Game").player
 	player.current_room = 0
 	autoload("Game").room_entered.emit(0)
-	await tree.process_frame
-	await tree.process_frame
 	var box: DialogueBox = tutorial._dialogue
+	await wait_real(Tutorial.ROOM_LINE_DELAY + 0.2)
 	expect(box.visible, "he speaks up on entering")
 	expect_equal(box._lines, Tutorial.MINIMAP, "about the minimap")
 	await _dismiss(box)
@@ -136,4 +135,81 @@ func test_merchant_speaks_in_the_first_room() -> void:
 	expect(box.visible, "he speaks once the chest is open")
 	expect_equal(box._lines, Tutorial.KEY, "about the key")
 	await _dismiss(box)
+	_leave_tutorial()
+
+# Waits up to `seconds` of real time for `done` to return true; false if it never does.
+func _wait_for(done: Callable, seconds: float) -> bool:
+	var until := Time.get_ticks_msec() + int(seconds * 1000)
+	while Time.get_ticks_msec() < until:
+		if done.call():
+			return true
+		await tree.process_frame
+	return done.call()
+
+func test_parry_lesson() -> void:
+	var world := await _boot_tutorial()
+	var game := autoload("Game")
+	var tutorial := _script(world)
+	var box: DialogueBox = tutorial._dialogue
+	var room: Room = world.rooms_by_id[Tutorial.PARRY_ROOM]
+	var goblin: TutorialGoblin = room.get_node("Goblin")
+	var player: Player = game.player
+	var full_health := goblin.health
+	player.position = room.position + room.centre + Vector2(-60, 0)
+	player.current_room = Tutorial.PARRY_ROOM
+	game.room_entered.emit(Tutorial.PARRY_ROOM)
+	expect(await _wait_for(func() -> bool: return box.visible, 2.0), "he speaks on entering")
+	expect(box._lines[0].contains(Tutorial.attack_button()), "naming the attack button")
+	expect(room.has_locked_doors(), "the room is locked until the goblin is beaten")
+	await _dismiss(box)
+
+	# Arrows and swings do nothing to it yet; the first block brings the next line.
+	goblin.take_damage(Direction.RIGHT, 5.0)
+	expect_equal(goblin.health, full_health, "an arrow does it no harm")
+	expect(await _wait_for(func() -> bool: return box.visible, 2.0), "a block brings his next line")
+	expect_equal(box._lines, Tutorial.NOT_LIKE_THAT, "telling the player to parry")
+	expect_equal(goblin.stage, TutorialGoblin.Stage.GUARDING, "it waits for him to finish")
+	await _dismiss(box)
+	expect_equal(goblin.stage, TutorialGoblin.Stage.ATTACKING, "then it attacks")
+
+	# It comes and swings; its star freezes the game under a spotlight.
+	var struck := [false]
+	var watch := func() -> bool:
+		if !goblin.hitbox.disabled:
+			struck[0] = true
+		return tree.paused && tutorial._spotlight != null
+	expect(await _wait_for(watch, 6.0), "its star freezes the game under a spotlight")
+	expect_equal(box._lines, Tutorial.STRIKE_NOW, "and he says to strike")
+	expect(is_instance_valid(goblin._held_star), "its star stays on its blade")
+	var press := InputEventAction.new()
+	press.action = "melee_attack"
+	press.pressed = true
+	tutorial._input(press)
+	expect(!tree.paused, "pressing attack lets the game go")
+	expect(player._queued_swing, "and the press swings once the sword is ready")
+	player._queued_swing = false # The test swings by hand below
+	expect(!box.visible, "and moves the line on")
+
+	# However long the player waits, the swing doesn't come.
+	await wait_real(1.5)
+	expect(!struck[0] && goblin.hitbox.disabled, "its swing never lands")
+	expect(goblin._animation_is("slash"), "it's held in its windup")
+	player.swing_started_at = Time.get_ticks_msec()
+	player.swing_started_frame = Engine.get_physics_frames()
+	goblin._on_player_sword(Direction.RIGHT)
+	expect_equal(goblin.stage, TutorialGoblin.Stage.DAZED, "a swing now parries it")
+	expect(await _wait_for(func() -> bool: return box.visible, 2.0), "he speaks once it's dazed")
+	expect_equal(box._lines, Tutorial.DAZED, "telling the player to finish it")
+	await _dismiss(box)
+	await wait_real(2.0)
+	expect(goblin.is_stunned(), "the daze doesn't run down")
+
+	for i in 10:
+		if !is_instance_valid(goblin) || goblin.health <= 0:
+			break
+		goblin.invincibility_cooldown.stop()
+		goblin.take_damage(Direction.RIGHT, 1.0)
+		await tree.process_frame
+	await tree.process_frame
+	expect(!room.has_locked_doors(), "beating it opens the room")
 	_leave_tutorial()
