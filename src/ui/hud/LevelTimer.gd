@@ -7,8 +7,8 @@ extends RichTextLabel
 # (Player.lose_time), and the timer shows it: it flashes red, jolts and drains quickly down
 # to the new time with a run of fast, falling ticks, while the time lost floats off below.
 #
-# For the last FINAL_SECONDS the timer slides down to the middle of the screen, grows and
-# turns red, and every second ticks with a rising blip and a punch.
+# For the last FINAL_SECONDS the timer slides down to the middle of the screen, grows,
+# turns red and goes half see-through (so it doesn't hide the room), and every second ticks with a rising blip and a punch.
 #
 # A hit that takes more time than is left is shown in full (the game runs in slow motion
 # meanwhile; see Player.lose_time): the timer slides to the middle, ticks rapidly down to
@@ -17,6 +17,9 @@ extends RichTextLabel
 const FINAL_SECONDS := 5
 const FINAL_SCALE := 3.5 # Size in the middle, relative to its size at the top
 const FINAL_COLOR := Color(1, 0.15, 0.15)
+# Opacity in the middle, so the player can still see the fight behind it. Set on the
+# holder rather than the label, so the label's flashes to white stay see-through too.
+const FINAL_ALPHA := 0.5
 const SLIDE_TIME := 0.5
 const PUNCH_SCALE := 1.25 # Extra growth on each tick, settling back over PUNCH_TIME
 const PUNCH_TIME := 0.25
@@ -138,6 +141,7 @@ func _enter_final() -> void:
 	_tween.tween_property(holder, "scale", corner_scale * FINAL_SCALE, SLIDE_TIME) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_tween.tween_property(self, "modulate", FINAL_COLOR, SLIDE_TIME * 0.5)
+	_tween.tween_property(holder, "modulate:a", FINAL_ALPHA, SLIDE_TIME)
 
 # Back to normal, in case time is ever added back during the final seconds.
 func _leave_final() -> void:
@@ -148,6 +152,7 @@ func _leave_final() -> void:
 	_tween.tween_property(holder, "position", corner_position, SLIDE_TIME)
 	_tween.tween_property(holder, "scale", corner_scale, SLIDE_TIME)
 	_tween.tween_property(self, "modulate", Color.WHITE, SLIDE_TIME)
+	_tween.tween_property(holder, "modulate:a", 1.0, SLIDE_TIME)
 
 # One second gone: a blip that climbs as time runs out, a punch in size and a flash.
 func _tick_second(seconds: int) -> void:
