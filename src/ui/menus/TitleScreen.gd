@@ -3,10 +3,11 @@ extends Control
 # First screen on launch. Start begins a run through Boot; Options opens the shared audio
 # and controls settings panel; Quit closes the game. Works with the mouse (hovering selects,
 # clicking presses), the D-pad/stick/arrow keys and ui_accept (A, Enter, Space). ui_cancel (Escape
-# or B) closes the options panel. F1 opens the room creator.
+# or B) closes the options panel. F1 opens the room creator; F3 starts the tutorial.
 
 const BOOT_SCENE := "res://src/ui/menus/Boot.tscn"
 const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
+const OVERWORLD := "res://src/world/Overworld.tscn"
 const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected option's
 
 @onready var canvas: Control = $Canvas
@@ -19,6 +20,7 @@ const CURSOR_GAP := 32.0 # Space from the cursor's left edge to the selected opt
 func _ready() -> void:
 	# A leftover play-test design must never make Start build someone's test room.
 	Overworld.test_design = null
+	Overworld.tutorial = false # Likewise, Start must build a real floor
 	get_viewport().size_changed.connect(_fit_canvas)
 	_fit_canvas()
 	for button: BaseButton in [start_button, options_button, quit_button]:
@@ -58,13 +60,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_hide_options()
 		get_viewport().set_input_as_handled()
 		return
-	if event is InputEventKey && event.pressed && (event as InputEventKey).keycode == KEY_F1:
+	var key := event as InputEventKey
+	if key != null && key.pressed && !key.echo && key.keycode in [KEY_F1, KEY_F3]:
 		# Handled first: changing scene takes this screen out of the tree, viewport and all.
 		get_viewport().set_input_as_handled()
 		Music.stop_title()
-		# The room creator loads enemy and tile scenes the room preload may still hold.
+		# Both load enemy and tile scenes the room preload may still hold.
 		WorldGenerator.finish_preload()
-		get_tree().change_scene_to_file(ROOM_EDITOR)
+		Overworld.tutorial = key.keycode == KEY_F3
+		get_tree().change_scene_to_file(OVERWORLD if Overworld.tutorial else ROOM_EDITOR)
 		return
 	# If focus was lost (e.g. a click on the background), the next up/down/accept
 	# selects the first control of whatever screen is showing instead of doing nothing.

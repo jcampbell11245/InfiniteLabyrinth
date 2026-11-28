@@ -6,7 +6,7 @@ extends Timer
 #
 # It only runs in the cave: the clock holds still while the player is in the start room
 # (shopping, getting ready) or the end room (the floor is as good as done), and while a
-# broken watch is on (ItemEffects).
+# broken watch is on (ItemEffects). The tutorial has no time limit, so there it never starts.
 
 const STILL_ROOMS: Array[int] = [Constants.START_ROOM, Constants.END_ROOM]
 
@@ -14,6 +14,8 @@ func _process(_delta: float) -> void:
 	paused = Tuning.freeze_timer || ItemEffects.clock_stopped() || (get_parent() as Player).current_room in STILL_ROOMS
 
 func _ready() -> void:
+	# Read by the Timer when it's ready, which comes after this.
+	autostart = !Overworld.tutorial
 	wait_time = Tuning.time_limit()
 	if OS.is_debug_build() && SaveData.debug_time_limit > 0:
 		wait_time = SaveData.debug_time_limit

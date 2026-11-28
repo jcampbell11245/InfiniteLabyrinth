@@ -197,6 +197,7 @@ var chest_time_bonus := 30.0 # Seconds added to the level timer when a chest hou
 var start_arrows := 10 # Arrows at the start of each floor
 var start_keys := 0 # Keys given at the start of each floor, on top of any carried over
 var keys_to_finish := 2 # Keys that open the end room; any spare carry over to the next floor
+var tutorial_keys_to_finish := 1 # Keys that open the tutorial's end room
 var start_floor := 1 # Floor a new run starts on
 var arrow_drop_chance := 0.1
 var arrow_drop_max := 2
@@ -457,6 +458,7 @@ const FIELDS := [
 	["Loot", "start_arrows", "Arrows per floor", 0, 99, 1, "Constants.gd START_ARROWS"],
 	["Loot", "start_keys", "Keys per floor", 0, 3, 1, "Game.gd DEBUG_START_KEYS"],
 	["Loot", "keys_to_finish", "Keys to open the end room", 0, 3, 1, "Room.gd (was 3)"],
+	["Loot", "tutorial_keys_to_finish", "Keys to open the tutorial's end room", 0, 3, 1, "new (tutorial)"],
 	["Loot", "start_floor", "Run start floor", 1, 10, 1, "Game.gd START_FLOOR"],
 	["Loot", "arrow_drop_chance", "Arrow drop chance", 0, 1, 0.05, "Constants.gd ARROW_DROP_CHANCE"],
 	["Loot", "arrow_drop_max", "Arrow drop max", 1, 10, 1, "Constants.gd ARROW_DROP_MAX"],

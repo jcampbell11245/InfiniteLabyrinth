@@ -76,8 +76,9 @@ extra attack keys stay active alongside your chosen inputs. In the pause menu, t
 | Pause | Esc | Start |
 | Room creator (title screen) | F1 | |
 | Debug menu (debug builds) | F2 | |
+| Tutorial (title screen) | F3 | |
 
-Every action in the table except F1 and F2 can be rebound in Options → Controls. Escape can be
+Every action in the table except F1, F2 and F3 can be rebound in Options → Controls. Escape can be
 rebound off Pause and bound back: while capturing Pause's key, a tap of Escape restores it and
 holding Escape (or B) cancels instead.
 
@@ -165,7 +166,10 @@ from the Godot project manager) and press **Run** (F5). Or run it straight from 
 The main scene is the title screen (`src/ui/menus/TitleScreen.tscn`). **Start** goes through
 `Boot`, which starts a run on floor 1, to the generated floor (`src/world/Overworld.tscn`).
 While the title screen is up, the room scenes load in the background so the run starts
-quickly.
+quickly. **F3** on the title screen starts the tutorial instead: the start room, the seven
+rooms in `src/world/tutorial/` in a line, then the end room, with no timer, no boss door and
+no shop (the merchant only talks). One key opens its end room
+(`Tuning.tutorial_keys_to_finish`), and its exit goes back to the title screen.
 
 Progress (floor, coins, upgrade levels) is saved in `user://save.cfg` through the
 `SaveData` autoload. Delete it to start over.
@@ -428,6 +432,7 @@ src/world/     floor layout (WorldGenerator), building it (Overworld), room scri
   rooms/       random rooms (every .tscn here is picked up automatically)
   keyrooms/    rooms holding the three keys
   special/     start, end and boss rooms
+  tutorial/    the tutorial's rooms, Tutorial1..7, in order from the start room
   tiles/       TileMap scenes used by rooms (SpecialTiles.tscn: traps and teleporters)
 src/editor/    room creator (RoomEditor), its design model and export (RoomDesign) and the
                blank room it paints on

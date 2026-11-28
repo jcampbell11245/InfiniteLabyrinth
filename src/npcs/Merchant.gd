@@ -6,6 +6,7 @@ extends StaticBody2D
 # over his head; pressing interact has him offer his wares in a dialogue box (DialogueBox),
 # and moving that on opens his shop (ShopMenu). Both pause the game, but not the music.
 # He's solid, like a wall, so the player walks up to him rather than through him.
+# In the tutorial he talks but has no shop to open.
 #
 # The node's origin is at his feet; the sprite (32x32, drawn at 1x like the rest of the
 # pixel art) stands on it, its bottom row on the origin.
@@ -14,6 +15,7 @@ const PROMPT_HEIGHT := 39.0 # World pixels above his feet where the prompt float
 const SHOP_LAYER := 50 # Over the HUD
 const NAME := "Shopkeeper"
 const GREETING: Array[String] = ["Care to browse my wares?"]
+const TUTORIAL_GREETING: Array[String] = ["My shop's shut while you're learning the ropes."]
 
 var _shop: ShopMenu
 var _dialogue: DialogueBox
@@ -29,7 +31,10 @@ func _ready() -> void:
 	layer.add_child(_shop)
 	_dialogue = DialogueBox.new()
 	layer.add_child(_dialogue)
-	_dialogue.finished.connect(_shop.open)
+	if Overworld.tutorial:
+		_dialogue.finished.connect(Music.play_through_pause.bind(false))
+	else:
+		_dialogue.finished.connect(_shop.open)
 	_shop.closed.connect(Music.play_through_pause.bind(false))
 
 # The prompts follow the device the player last touched.
@@ -46,7 +51,7 @@ func _physics_process(_delta: float) -> void:
 # Greets the player; the shop opens once they move the greeting on.
 func talk() -> void:
 	Music.play_through_pause(true)
-	_dialogue.say(NAME, GREETING)
+	_dialogue.say(NAME, TUTORIAL_GREETING if Overworld.tutorial else GREETING)
 
 # True while the player is close enough to talk to him and free to do so.
 func in_reach() -> bool:

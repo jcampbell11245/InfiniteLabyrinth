@@ -77,6 +77,11 @@ var _drain_pitch_start := DRAIN_TICK_PITCH_START
 var _drain_pitch_end := DRAIN_TICK_PITCH_END
 
 func _ready() -> void:
+	# The tutorial has no time limit (LevelCountdown), so nothing to show.
+	if Overworld.tutorial:
+		holder.hide()
+		set_process(false)
+		return
 	# Running out of time pauses the game, so keep updating to show 0:00 under it.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_tick = AudioStreamPlayer.new()

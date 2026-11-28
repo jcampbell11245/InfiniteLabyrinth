@@ -89,7 +89,13 @@ static func allowed_on(floor_number: int, mask: int) -> bool:
 static func art_floor() -> int:
 	if Overworld.test_design != null:
 		return Overworld.test_design.preview_floor
+	if Overworld.tutorial:
+		return 1
 	return SaveData.floor_number
+
+# Keys the end room's gate wants: fewer in the tutorial.
+static func keys_to_finish() -> int:
+	return Tuning.tutorial_keys_to_finish if Overworld.tutorial else Tuning.keys_to_finish
 
 # Room geometry, all worked out from floor_size. Points are room-local pixels.
 var floor_last: int: # Last floor cell on both axes
@@ -130,7 +136,7 @@ var visited := false # The player has been in this room
 var marked := false # A metal detector has shown it on the minimap (Items)
 var _forced_open := false # A skeleton key opened its locked doors (Items)
 var _detectors: TileMap # Transition detector tiles, one per open doorway
-var _key_gate: StaticBody2D # End room only: blocks the top door until the player has Tuning.keys_to_finish keys
+var _key_gate: StaticBody2D # End room only: blocks the top door until the player has keys_to_finish() keys
 var _was_cleared := false # Doors were already unlocked last time they were drawn
 var _kill_streak := 0 # Kills in quick succession (Tuning.kill_combo_window); pitches death sounds up
 var _last_kill_at := -100000 # Ticks (ms) of the last kill in this room
@@ -537,7 +543,7 @@ func set_arch_in_front(in_front: bool) -> void:
 # Redraws the door tiles from the room's state. Safe to call any number of times.
 func _refresh_doors() -> void:
 	_draw_closed_doors()
-	if room_id == Constants.END_ROOM && Game.keys >= Tuning.keys_to_finish:
+	if room_id == Constants.END_ROOM && Game.keys >= keys_to_finish():
 		tiles.set_cell(0, door_cells[Door.TOP], 1, Vector2i.ZERO)
 		if _key_gate != null:
 			_key_gate.queue_free()
@@ -751,6 +757,9 @@ func raise_fallen(index: int) -> Enemy:
 	return enemy
 
 func _on_next_floor_area_entered(_area: Area2D) -> void:
+	if Overworld.tutorial:
+		Game.overworld.finish_tutorial()
+		return
 	Game.finish_floor()
 	SaveData.floor_number = Game.overworld.floor_number + 1
 	SaveData.save()

@@ -6,14 +6,26 @@ extends Node2D
 #
 # With test_design set (by the room creator) it builds just that room instead, with every
 # door closed, to play-test it. F1, or dying, goes back to the room creator.
+#
+# With tutorial set (by F3 on the title screen) it builds the tutorial instead: the start
+# room, TUTORIAL_ROOMS rooms from TUTORIAL_DIR in a line, then the end room, all on the
+# middle row. There's no boss door, no timer (LevelCountdown) and no shop (Merchant), the
+# end room's gate wants Tuning.tutorial_keys_to_finish keys, and its exit goes back to the
+# title screen. It always uses floor 1's art and never touches the save.
 
 # Top-left offset of the room grid; a room at (row, col) sits at GRID_ORIGIN + ROOM_SIZE * (col, row).
 # Column 0 holds the start room, columns 1..COLUMNS the generated rooms, then the end room.
 const GRID_ORIGIN := Vector2(-191, -168)
 const ROOM_EDITOR := "res://src/editor/RoomEditor.tscn"
 const TEST_ROOM_ID := 0
+const TITLE_SCREEN := "res://src/ui/menus/TitleScreen.tscn"
+const TUTORIAL_DIR := "res://src/world/tutorial/"
+const TUTORIAL_ROOMS := 7 # Rooms between the start and end rooms, Tutorial1..Tutorial7
+# Start room nodes for the boss fight, taken out of the tutorial's start room.
+const BOSS_DOOR_NODES: Array[String] = ["BossDoor", "BossDoorBottom", "TransitionDetectorB"]
 
 static var test_design: RoomDesign # Set while play-testing a room from the room creator
+static var tutorial := false # Set while playing the tutorial; the title screen clears it
 
 var floor_number := 1
 var rooms_by_id := {} # room_id -> Room
@@ -25,13 +37,15 @@ func _exit_tree() -> void:
 	Game.unregister(self)
 
 func _ready() -> void:
-	floor_number = SaveData.floor_number
+	floor_number = 1 if tutorial else SaveData.floor_number
 	add_child(CaveLighting.new())
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	if is_test():
 		_build_test(test_design)
+	elif tutorial:
+		_build_tutorial()
 	else:
 		_build(WorldGenerator.generate(rng, floor_number))
 	# Some servers turn silver, into premium servers boosting the whole floor (a play-test rolls
@@ -66,6 +80,17 @@ func leave_test() -> void:
 
 func grid_position(row: int, col: int) -> Vector2:
 	return GRID_ORIGIN + Constants.ROOM_SIZE * Vector2(col, row)
+
+# The tutorial's scene for room `index` (0-based) of the line between the start and end rooms.
+static func tutorial_room(index: int) -> String:
+	return TUTORIAL_DIR + "Tutorial%d.tscn" % (index + 1)
+
+# Leaves the finished tutorial for the title screen, saving nothing.
+func finish_tutorial() -> void:
+	get_tree().paused = false
+	Juice.end_time_effects()
+	Music.stop_all()
+	get_tree().change_scene_to_file(TITLE_SCREEN)
 
 func reset_world() -> void:
 	SaveData.coins = Game.coins
@@ -108,6 +133,31 @@ func _build(layout: Array[PackedStringArray]) -> void:
 			elif col == last_col - 1:
 				room.close_door(Room.Door.RIGHT)
 
+# Builds the tutorial: the start room (without its boss door), the tutorial rooms in a line
+# along the middle row, then the end room, with every door off that line closed.
+func _build_tutorial() -> void:
+	var middle := WorldGenerator.MIDDLE_ROW
+	var start: Room = WorldGenerator.scene(WorldGenerator.START_ROOM).instantiate()
+	# Taken out before the room is added, so it builds its left wall as an ordinary side.
+	for node_name in BOSS_DOOR_NODES:
+		var node := start.get_node(node_name)
+		start.remove_child(node)
+		node.free()
+	_place_room(start, Constants.START_ROOM, middle, 0)
+	for door: Room.Door in [Room.Door.TOP, Room.Door.BOTTOM, Room.Door.LEFT]:
+		start.close_door(door)
+
+	for i in range(TUTORIAL_ROOMS):
+		var room := _add_room(WorldGenerator.scene(tutorial_room(i)), i, middle, i + 1)
+		room.close_door(Room.Door.TOP)
+		room.close_door(Room.Door.BOTTOM)
+
+	var end := _add_room(WorldGenerator.scene(WorldGenerator.END_ROOM), Constants.END_ROOM, middle, TUTORIAL_ROOMS + 1)
+	end.close_door(Room.Door.TOP)
+	end.close_door(Room.Door.RIGHT)
+	end.close_door(Room.Door.BOTTOM)
+	end.add_key_gate()
+
 # Builds the room creator's design on its own, with the player on it and every door shut.
 func _build_test(design: RoomDesign) -> void:
 	var room := design.build_room()
@@ -138,7 +188,9 @@ func _attach_left_of(room: Room, neighbour: Room) -> void:
 	room.position = neighbour.position + left_door - right_door - Vector2(Room.CELL_SIZE, 0)
 
 func _add_room(scene: PackedScene, id: int, row: int, col: int) -> Room:
-	var room: Room = scene.instantiate()
+	return _place_room(scene.instantiate(), id, row, col)
+
+func _place_room(room: Room, id: int, row: int, col: int) -> Room:
 	add_child(room)
 	room.position = grid_position(row, col)
 	room.room_id = id
