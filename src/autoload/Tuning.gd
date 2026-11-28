@@ -241,6 +241,16 @@ var teleport_glow_range := 20.0 # Pixels from a teleporter's edge at which its d
 var item_slots := 3 # Boxes on the item bar in the bottom-left corner of the screen
 var skeleton_key_price := 50 # Coins the merchant asks for a skeleton key
 var metal_detector_price := 50 # Coins the merchant asks for a metal detector
+var lucky_cat_price := 50 # Coins the merchant asks for a lucky cat
+var lucky_cat_time := 15.0 # Seconds a lucky cat lasts
+var lucky_cat_coin_multiplier := 3.0 # Coins enemies drop under a lucky cat, times normal
+var lucky_cat_arrow_drop_chance := 1.0 # Chance an enemy drops arrows under a lucky cat (instead of arrow_drop_chance)
+var ram_stick_price := 50 # Coins the merchant asks for a ram stick
+var ram_stick_time := 10.0 # Seconds a ram stick lasts
+var ram_stick_parry_multiplier := 2.0 # Parry windows under a ram stick, times normal
+var preowned_mace_price := 50 # Coins the merchant asks for a preowned mace
+var broken_watch_price := 50 # Coins the merchant asks for a broken watch
+var broken_watch_time := 10.0 # Seconds a broken watch stops the level timer (and hits take no time)
 var shop_buy_cooldown := 0.5 # Seconds after a purchase before the shop takes another, against double buys
 var merchant_reach := 30.0 # Pixels from the merchant's feet to the player's within which they can talk
 var dialogue_chars_per_second := 40.0 # How fast a dialogue box types its text out, letters per real second
@@ -499,6 +509,16 @@ const FIELDS := [
 	["Items", "item_slots", "Item bar boxes", 1, 9, 1, "new (ItemBar)"],
 	["Items", "skeleton_key_price", "Skeleton key price", 0, 1000, 5, "new (Items.price)"],
 	["Items", "metal_detector_price", "Metal detector price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "lucky_cat_price", "Lucky cat price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "lucky_cat_time", "Lucky cat duration (s)", 1, 120, 1, "new (Items.duration)"],
+	["Items", "lucky_cat_coin_multiplier", "Lucky cat coin drop x", 1, 20, 0.5, "new (ItemEffects.coin_multiplier)"],
+	["Items", "lucky_cat_arrow_drop_chance", "Lucky cat arrow drop chance", 0, 1, 0.05, "new (ItemEffects.arrow_drop_chance)"],
+	["Items", "ram_stick_price", "Ram stick price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "ram_stick_time", "Ram stick duration (s)", 1, 120, 1, "new (Items.duration)"],
+	["Items", "ram_stick_parry_multiplier", "Ram stick parry window x", 1, 5, 0.1, "new (ItemEffects.parry_window)"],
+	["Items", "preowned_mace_price", "Preowned mace price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "broken_watch_price", "Broken watch price", 0, 1000, 5, "new (Items.price)"],
+	["Items", "broken_watch_time", "Broken watch duration (s)", 1, 120, 1, "new (Items.duration)"],
 	["Items", "shop_buy_cooldown", "Shop purchase cooldown (s)", 0, 3, 0.05, "new (ShopMenu)"],
 	["Items", "merchant_reach", "Merchant reach (px)", 5, 100, 1, "new (Merchant.in_reach)"],
 	["Items", "dialogue_chars_per_second", "Dialogue typing speed (letters/s)", 5, 200, 1, "new (DialogueBox)"],

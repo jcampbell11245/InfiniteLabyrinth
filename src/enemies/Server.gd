@@ -150,6 +150,10 @@ func _on_player_sword(from_direction: String) -> void:
 	if player.swing_started_frame != _swing_landed && _hit_once(from_direction, player.sword_damage()):
 		_swing_landed = player.swing_started_frame
 
+# A preowned mace can't daze a tower: the swing just lands.
+func _mace_hit(from_direction: String) -> void:
+	_on_player_sword(from_direction)
+
 func spin_hit() -> void:
 	if player.spin_started_frame != _spin_landed && _hit_once(_away_from_player(), player.spin_damage()):
 		_spin_landed = player.spin_started_frame

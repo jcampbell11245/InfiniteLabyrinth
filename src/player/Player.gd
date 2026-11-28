@@ -157,6 +157,7 @@ var _was_slashing := false # The last physics frame ended mid-swing
 var _finisher_target: Enemy
 # Status effects from warlocks: inverted controls, lowered stats, daze, a jammed bow.
 var curses: Curses
+var item_effects: ItemEffects # Timed item boosts and a charged mace (see Items)
 
 # Spin attack; see SPIN_FRAME.
 var _spin_charging := false # Sword button held since a swing
@@ -219,6 +220,9 @@ func _ready() -> void:
 	curses = Curses.new()
 	curses.player = self
 	add_child(curses)
+	item_effects = ItemEffects.new()
+	item_effects.name = "ItemEffects"
+	add_child(item_effects)
 	_add_spin_hitbox()
 	_add_status_bars()
 
@@ -391,6 +395,7 @@ func _handle_input(input: FrameInput) -> void:
 		hitbox.disabled = false
 		swing_started_at = Time.get_ticks_msec()
 		swing_started_frame = Engine.get_physics_frames()
+		item_effects.on_swing(swing_started_frame)
 		if _group_rush_on():
 			_rush_swing = swing_started_frame
 		Juice.play($Slash)
@@ -622,9 +627,10 @@ func take_damage(damage: float, from_direction: String, mute: bool) -> bool:
 	return false
 
 # Damage comes off the level timer, in whole seconds (at least one). Running it out ends
-# the run, as the timer reaching zero on its own does.
+# the run, as the timer reaching zero on its own does. Nothing comes off while a broken
+# watch has the clock stopped.
 func lose_time(seconds: float) -> void:
-	if Tuning.god_mode || level_countdown.is_stopped():
+	if Tuning.god_mode || level_countdown.is_stopped() || ItemEffects.clock_stopped():
 		return
 	var lost := maxf(ceilf(seconds - 0.001), 1.0)
 	var left := level_countdown.time_left - lost
@@ -745,6 +751,11 @@ func _sword_is_on(shot: Projectile) -> bool:
 # Mid-swing with the sword out.
 func is_slashing() -> bool:
 	return _action() == Action.SLASH && !hitbox.disabled
+
+# The current swing is the one a preowned mace charged: every enemy it hits is dazed
+# (Enemy._mace_hit).
+func is_mace_swing() -> bool:
+	return is_slashing() && item_effects.mace_swing == swing_started_frame
 
 # The current swing parried an enemy. Any other enemy the same swing catches lets it pass
 # through instead of blocking it (see Enemy._block_player_swing), so a good parry is never

@@ -38,8 +38,15 @@ mount's combos, so only parrying that slash stuns a ridden mount.
 the **merchant** at the top of the start room: walk up to him and press Interact, and he
 offers his wares; press Select (J or Enter, A / Cross) to skip his words typing out, then
 again to open his shop. A **skeleton key** opens the locked doors of the room you're in; a **metal
-detector** shows one key room you haven't found on the minimap. Both cost 50 coins. An item
-that would do nothing (no locked door, every key room already showing) isn't used up.
+detector** shows one key room you haven't found on the minimap. A **lucky cat** makes enemies
+drop three times the coins, and arrows every time, for 15 seconds; a **ram stick** doubles the
+parry window for 10 seconds; a **preowned mace** makes your next swing daze every enemy it
+hits; a **broken watch** stops the clock for 10 seconds, and hits in that time take none off.
+Every item costs 50 coins. While an item is working, its icon shows just above the item bar,
+with a line under it that shrinks as its time runs out. An item that would do nothing (no
+locked door, every key room already showing, a mace already charged, a watch in the start
+or end room where the clock is already still) isn't used up. Using a timed item again while
+it's on adds its time.
 Items you haven't used come with you to the next floor, but are lost when you die. Buying
 with every box full lets you choose a box on the item bar to throw away for the new item.
 

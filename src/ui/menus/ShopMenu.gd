@@ -59,7 +59,8 @@ const TEXT_SIZE := 4.0 # The message and button hints
 enum Sells { UPGRADES, ITEMS }
 const TABS: Array[Dictionary] = [
 	{title = "Upgrades", sells = Sells.UPGRADES, stock = [Upgrades.Kind.TIME, Upgrades.Kind.LOOTING]},
-	{title = "Items", sells = Sells.ITEMS, stock = [Items.Kind.SKELETON_KEY, Items.Kind.METAL_DETECTOR]},
+	{title = "Items", sells = Sells.ITEMS, stock = [Items.Kind.SKELETON_KEY, Items.Kind.METAL_DETECTOR,
+		Items.Kind.LUCKY_CAT, Items.Kind.RAM_STICK, Items.Kind.PREOWNED_MACE, Items.Kind.BROKEN_WATCH]},
 ]
 const UPGRADES_TAB := 0
 const ITEMS_TAB := 1
@@ -415,7 +416,7 @@ func _draw_row(o: Vector2, index: int, entry: int) -> void:
 	draw_texture_rect(icon, Rect2(icon_at * UNIT, icon.get_size() * UNIT), false)
 
 	var title: String = _upgrade_title(entry) if upgrade else String(Items.INFO[entry].name)
-	var description: String = Upgrades.description(entry) if upgrade else String(Items.INFO[entry].text)
+	var description: String = Upgrades.description(entry) if upgrade else Items.description(entry)
 	var text_left := row.position.x + TEXT_LEFT
 	_text(title, Vector2(text_left, row.position.y + 3), NAME_SIZE, TEXT_COLOR)
 	_text(description, Vector2(text_left, row.position.y + DESCRIPTION_TOP), DESCRIPTION_SIZE, DIM_TEXT)

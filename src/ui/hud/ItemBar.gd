@@ -13,6 +13,10 @@ extends Node2D
 # corners, the same margin from the screen's edges, and the unselected boxes outlined in
 # the grey of an unvisited room's dot. The highlighted box has a plain white outline.
 #
+# Above the bar, a row of small icons shows the items still working (ItemEffects): each timed
+# boost with a line under it that shrinks as its time runs out, and a charged mace until
+# its swing.
+#
 # Everything is drawn in code in HUD units (HudLayer is scaled 5x, so one unit is one of the
 # minimap's art pixels) and kept on whole units so the edges stay crisp pixels. The node
 # places itself against the bottom-left of the screen, which is lower on screens taller
@@ -41,6 +45,11 @@ const SHAKE_DISTANCE := 2.0 # HUD units the refused box swings each way at first
 const SHAKE_SWINGS := 2 # Full side-to-side swings while it shakes
 const REFUSE_TIME := 0.3
 
+const EFFECT_ICON := 12 # Item icons are 12 units square
+const EFFECT_GAP := 2 # Between the effect icons, and between their row and the bar
+const TIME_LINE := Color(1, 1, 1, 0.85) # The line under a timed effect showing its time left
+const TIMED_EFFECTS: Array[Items.Kind] = [Items.Kind.LUCKY_CAT, Items.Kind.RAM_STICK, Items.Kind.BROKEN_WATCH]
+
 # Placeholder (PENDING_ASSETS.md): the jammed bow's click, borrowed until the bar has its own.
 const REFUSED_SOUND := preload("res://assets/sfx/clank_bad.wav")
 const REFUSED_PITCH := 1.6
@@ -58,6 +67,7 @@ var _flash_tween: Tween
 var _refused_tween: Tween
 var _refused_sound: AudioStreamPlayer
 var _detector_sound: AudioStreamPlayer
+var _effects_shown := false # Effect icons were drawn last frame, so their going needs a redraw
 
 func _ready() -> void:
 	Game.item_selected.connect(_on_item_selected)
@@ -172,10 +182,48 @@ func _draw() -> void:
 		_draw_icon(Game.item_in(i), box)
 		if i == _flash_slot && _flash > 0.0:
 			draw_rect(box, FLASH_COLOR * Color(1, 1, 1, _flash))
+	_draw_effects()
+
+# The items working now, in a row just above the bar's outer line, left-aligned with it.
+func _draw_effects() -> void:
+	var kinds := _working_items()
+	if kinds.is_empty():
+		return
+	var effects := ItemEffects.current()
+	var step := EFFECT_ICON + EFFECT_GAP
+	var height := EFFECT_ICON + 2 # The icon and its time line under it
+	var inset := PAD + 1
+	var row := Rect2(0, -EFFECT_GAP - 2 - height - inset * 2,
+		kinds.size() * step - EFFECT_GAP + inset * 2, height + inset * 2)
+	HudFrame.backing(self, row)
+	for i in kinds.size():
+		var kind := kinds[i]
+		var at := row.position + Vector2(inset + i * step, inset)
+		draw_texture(Items.ICONS[kind], at)
+		if kind in TIMED_EFFECTS:
+			var left := effects.time_left(kind)
+			var share := left / maxf(Items.duration(kind), left)
+			var width := ceilf(EFFECT_ICON * share)
+			draw_rect(Rect2(at + Vector2(0, EFFECT_ICON + 1), Vector2(width, 1)), TIME_LINE)
+
+# The items working now: the timed boosts that are on, then a charged mace.
+func _working_items() -> Array[Items.Kind]:
+	var kinds: Array[Items.Kind] = []
+	var effects := ItemEffects.current()
+	if effects == null:
+		return kinds
+	for kind in TIMED_EFFECTS:
+		if effects.is_active(kind):
+			kinds.append(kind)
+	if effects.mace_charged:
+		kinds.append(Items.Kind.PREOWNED_MACE)
+	return kinds
 
 func _process(_delta: float) -> void:
-	if Game.choosing_item:
-		queue_redraw() # The blink
+	var effects_on := !_working_items().is_empty()
+	if Game.choosing_item || effects_on || _effects_shown:
+		queue_redraw() # The blink, or the effects' time lines
+	_effects_shown = effects_on
 
 func _blink_on() -> bool:
 	return int(Time.get_ticks_msec() / (CHOOSING_BLINK * 1000.0)) % 2 == 0

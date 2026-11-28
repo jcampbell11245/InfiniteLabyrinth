@@ -96,7 +96,7 @@ func _light_fuse() -> void:
 	animator.pause()
 	_windup_held = true # Its glint is now, not after a random hold (Enemy._update_windup)
 	_twinkle()
-	_fuse.start(Tuning.parry_window)
+	_fuse.start(ItemEffects.parry_window())
 	Juice.play($Attack, 0.08, voice_pitch)
 
 # Pixels between its hurtbox and the player's, along whichever axis they're further apart

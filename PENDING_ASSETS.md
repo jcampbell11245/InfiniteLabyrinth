@@ -43,6 +43,10 @@ line in `assets/sfx/SOURCE.txt`.
 | `assets/sprites/server/server.png` and `server_silver.png` | Server ([Server.tscn](src/enemies/Server.tscn)): a server tower with blinking drive lights, drawn by script as a placeholder (four idle frames). The silver sheet is a premium (floor) server, bright so it stands apart from the dark normal one (top row normal, bottom row silver). The light on its cap is drawn in code in the boost's colour | ![server](docs/pending_assets/enemy_server.png) |
 | `status_icons.png` cell 14 (`Icon.ATTACK_UP`) | Status-bar icon over an enemy under a server's attack boost: the attack-down sword with a green up arrow, edited by script | ![attack up icon](docs/pending_assets/icon_attack_up.png) |
 | `status_icons.png` cell 15 (`Icon.DEFENSE_UP`) | Status-bar icon over an enemy under a server's defense boost: the defense-down shield with its arrows flipped up and turned green, edited by script | ![defense up icon](docs/pending_assets/icon_defense_up.png) |
+| `assets/sprites/hud/item_lucky_cat.png` | Lucky cat shop item and item-bar icon ([Items.gd](src/items/Items.gd)): a beckoning cat with a gold bell, drawn by script | ![lucky cat](docs/pending_assets/item_lucky_cat.png) |
+| `assets/sprites/hud/item_ram_stick.png` | Ram stick shop item and item-bar icon: a green memory module with gold contacts, drawn by script | ![ram stick](docs/pending_assets/item_ram_stick.png) |
+| `assets/sprites/hud/item_preowned_mace.png` | Preowned mace shop item and item-bar icon: a rusty spiked mace, drawn by script | ![preowned mace](docs/pending_assets/item_preowned_mace.png) |
+| `assets/sprites/hud/item_broken_watch.png` | Broken watch shop item and item-bar icon: a gold pocket watch with a cracked face, drawn by script | ![broken watch](docs/pending_assets/item_broken_watch.png) |
 
 ## Sound effects
 

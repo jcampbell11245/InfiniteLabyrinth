@@ -501,7 +501,7 @@ func _charging_fireball() -> bool:
 # The warning glow, quickening as the breath comes, and Tuning.wyrm_breath_parry_window
 # before it the glint at its mouth that a parry is timed on.
 func _pulse_breath(delta: float) -> void:
-	if !_breath_glinted && _breath_timer.time_left <= Tuning.wyrm_breath_parry_window:
+	if !_breath_glinted && _breath_timer.time_left <= ItemEffects.parry_window(Tuning.wyrm_breath_parry_window):
 		_breath_glinted = true
 		_breath_glint_at = Time.get_ticks_msec()
 		Juice.twinkle(self, _mouth_offset() / scale)

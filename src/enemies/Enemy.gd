@@ -82,6 +82,7 @@ var rider: Pilot = null
 # A hit of the combo under way caught the player, so the combo ends there and no pilot
 # follow-up comes (see landed_hit and _combo_finished).
 var _combo_landed := false
+var _mace_swing_landed := -2 # Player.swing_started_frame of the mace swing that last hit it
 # How strongly each server boost is on it, by ServerBuff.Kind: 0 none, 1 full, between for a
 # floor server's share (see ServerBuff). Kept up to date every frame by a ServerBuff.Watcher.
 var _buffs: Array[float] = [0.0, 0.0, 0.0]
@@ -304,8 +305,9 @@ func die() -> void:
 		rider.dismount()
 	Juice.burst(room, global_position, blood_color, 18, 100.0, Vector2.ZERO, 3.0, 0.5)
 	Juice.splat(room, global_position + FEET_OFFSET, blood_color.darkened(0.1))
-	Juice.drop_coins(room, global_position, roundi(coin_reward * _coin_multiplier()))
-	if randf() < Tuning.arrow_drop_chance:
+	Juice.drop_coins(room, global_position,
+		roundi(coin_reward * _coin_multiplier() * ItemEffects.coin_multiplier()))
+	if randf() < ItemEffects.arrow_drop_chance(): # Every time under a lucky cat
 		Juice.drop_arrows(room, global_position, randi_range(1, Tuning.arrow_drop_max))
 	died.emit(self)
 	queue_free()
@@ -553,6 +555,21 @@ func _on_player_sword(from_direction: String) -> void:
 		Parry.LATE:
 			pass
 
+# Hit by a swing charged with a preowned mace (ItemEffects): whatever it was doing, no
+# parry timing or guard. The hit does its damage (a knight's shield still stops that) and,
+# if it didn't kill it, dazes it like a parry. A rider takes the damage first, as usual, and
+# the mount is dazed.
+func _mace_hit(from_direction: String) -> void:
+	if _mace_swing_landed == player.swing_started_frame:
+		return # The blade is still out over it after the hit
+	_mace_swing_landed = player.swing_started_frame
+	player.mark_swing_parried() # Others it catches let it through too
+	take_damage(from_direction, player.sword_damage())
+	if health > 0 && is_inside_tree():
+		_parry_feedback()
+		_parry_progress = 1.0
+		stagger(from_direction)
+
 # Caught from behind by a player who rolled through its unparryable attack: dazed as if
 # parried (stars, the stun, the player's sword cooldown skipped), with no damage. The roll
 # is the counter, as the parry is for a white attack.
@@ -791,7 +808,7 @@ func _update_windup() -> void:
 # or for an unparryable attack the longer Tuning.unparryable_window to roll behind in.
 func _twinkle() -> void:
 	_twinkled_at = Time.get_ticks_msec()
-	_parry_timer.start(Tuning.unparryable_window if _unparryable else Tuning.parry_window)
+	_parry_timer.start(Tuning.unparryable_window if _unparryable else ItemEffects.parry_window())
 	Juice.twinkle(self, _twinkle_position(),
 		UNPARRYABLE_TWINKLE_COLOR if _unparryable else Color(0, 0, 0, 0))
 
@@ -833,6 +850,9 @@ func _on_invincibility_cooldown_timeout() -> void:
 func _on_hurtbox_area_shape_entered(_area_id: RID, area: Area2D, _area_shape: int, _self_shape: int) -> void:
 	if area.get_name() == "Hitbox":
 		var from_direction: String = area.get_parent().get_parent().direction
+		if player.is_mace_swing():
+			_mace_hit(from_direction)
+			return
 		# Its pilot's follow-up slash is met by the sword first (parried, or blocked early).
 		if is_instance_valid(rider) && rider.meets_sword(from_direction):
 			return
